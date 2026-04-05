@@ -79,18 +79,31 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 /* ★スクロール領域：touch-action:pan-yでスクロールを優先 */
 .sb-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
 .prow{display:flex;border-bottom:1px solid var(--border);position:relative;}
+/* 番組表行の圧縮 */
+.tcol{flex-shrink:0;width:62px;border-right:1px solid var(--border);padding:6px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;}
+.time-range{font-size:9px;text-align:center;line-height:1.5;letter-spacing:0;}
+.tr-first{display:block;font-size:10px;font-weight:700;color:var(--green2);}
+.tr-sep{display:block;font-size:7px;color:var(--border);line-height:1;}
+.tr-last{display:block;font-size:9px;color:var(--text3);}
+.time-range span{display:block;}
+.icol{flex:1;padding:7px 10px;min-width:0;user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+.pname{font-size:11px;font-weight:500;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+.pmeta{display:flex;align-items:center;gap:6px;margin-top:2px;}
+
+
 .prow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
 .prow.active{background:var(--green5);}
 .prow.active::before{background:var(--green2);}
-.tcol{flex-shrink:0;width:58px;border-right:1px solid var(--border);padding:7px 0;display:flex;flex-direction:column;align-items:center;gap:2px;}
-.tchip{font-size:10px;font-weight:500;color:var(--text3);padding:4px;border-radius:3px;text-align:center;width:46px;line-height:1.3;user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer;}
-.tchip.on{background:var(--green2);color:var(--white);font-weight:700;}
-.icol{flex:1;padding:9px 11px;min-width:0;user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer;}
-.pname{font-size:11px;font-weight:500;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.prow.active .pname{font-weight:700;color:var(--green);}
-.pmeta{display:flex;align-items:center;gap:6px;margin-top:3px;}
-.pcat{font-size:9px;font-weight:700;color:var(--green2);}
-.pdur{font-size:9px;color:var(--text3);}
+
+
+
+
+
+
+
+
+
 .footer{background:var(--forest);color:rgba(255,255,255,0.45);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
 
 /* ── 疑似全画面 ── */
@@ -146,16 +159,33 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 
 body.fs-open{overflow:hidden;}
 
+/* スマホ縦画面 */
 @media(max-width:840px){
-  .page{grid-template-columns:1fr;padding:12px 12px 48px;}
-  .sidebar{position:static;max-height:360px;}
+  .page{grid-template-columns:1fr;padding:10px 10px 40px;gap:12px;}
+  .sidebar{position:static;max-height:none;}
   .h-date{display:none;}
 }
+/* スマホ小画面 */
 @media(max-width:480px){
-  .header{padding:0 14px;height:54px;}
-  .h-logo-main{font-size:16px;}
-  .h-time{font-size:18px;}
-  .onair-badge{padding:3px 8px;font-size:9px;}
+  .header{padding:0 12px;height:52px;}
+  .h-logo-main{font-size:15px;}
+  .h-time{font-size:17px;}
+  .onair-badge{padding:3px 7px;font-size:9px;}
+}
+/* スマホ横画面：動画と番組表を横並び */
+@media(max-height:500px) and (orientation:landscape){
+  .page{
+    grid-template-columns:1fr 280px;
+    padding:6px 10px 10px;
+    gap:10px;
+  }
+  .sidebar{
+    position:sticky;top:52px;
+    max-height:calc(100vh - 62px);
+  }
+  .header{height:44px;}
+  .h-logo-sub{display:none;}
+  .h-time{font-size:15px;}
 }
 </style>
 </head>
@@ -649,34 +679,70 @@ function renderSB(){
   for(var pIdx=0;pIdx<CYCLE.length;pIdx++){
     (function(pIdx){
       var prog=CYCLE[pIdx];
+      var times=allT(pIdx); // 6サイクル分の時刻（分）
+
       var row=document.createElement('div');
       row.className='prow';
+      row.id='row-'+pIdx;
+
+      // 時刻列：「開始〜最終」の範囲表示 + アクティブな時刻を強調
       var tc=document.createElement('div');
       tc.className='tcol';
-      var times=allT(pIdx);
-      for(var ci=0;ci<times.length;ci++){
-        (function(cIdx){
-          var chip=document.createElement('div');
-          chip.className='tchip';
-          chip.id='chip-'+pIdx+'-'+cIdx;
-          chip.textContent=hm(times[cIdx]);
-          addTap(chip,function(){
-            if(inAir()){isManual=false;playSchedule(cIdx,pIdx);}
-            else{playManual(pIdx);}
-          });
-          tc.appendChild(chip);
-        })(ci);
-      }
+
+      var firstTime=hm(times[0]);       // 例: 06:00
+      var lastTime=hm(times[times.length-1]); // 例: 21:00
+
+      var timeRange=document.createElement('div');
+      timeRange.className='time-range';
+      timeRange.id='trange-'+pIdx;
+      timeRange.innerHTML=
+        '<span class="tr-first">'+firstTime+'</span>'+
+        '<span class="tr-sep" style="color:var(--border);font-size:8px;">│</span>'+
+        '<span class="tr-last" style="color:var(--text3);">'+lastTime+'</span>';
+
+      addTap(tc, function(){
+        if(inAir()){
+          // 放送中：現在のサイクルの現在位置から再生
+          var pos=nowPos();
+          if(pos&&pos.p===pIdx){isManual=false;playSchedule(pos.c,pIdx);}
+          else{
+            // 現在と異なる番組→最初から任意視聴
+            playManual(pIdx);
+          }
+        }else{
+          playManual(pIdx);
+        }
+      });
+      tc.appendChild(timeRange);
+
+      // 番組情報列
       var ic=document.createElement('div');
       ic.className='icol';
-      ic.innerHTML='<div class="pname">'+prog.title+'</div>'
-        +'<div class="pmeta"><span class="pcat">'+prog.cat+'</span>'
-        +'<span class="pdur">/ '+prog.dur+'分</span></div>';
+      ic.innerHTML=
+        '<div class="pname">'+prog.title+'</div>'+
+        '<div class="pmeta">'+
+          '<span class="pcat">'+prog.cat+'</span>'+
+          '<span class="pdur">/ '+prog.dur+'分</span>'+
+        '</div>';
       addTap(ic,function(){playManual(pIdx);});
+
       row.appendChild(tc);row.appendChild(ic);
       list.appendChild(row);
     })(pIdx);
   }
+}
+// ─── サイドバーハイライト更新（時刻列も対応） ───
+function hlSB(c,p){
+  document.querySelectorAll('.prow').forEach(function(r,i){r.classList.toggle('active',i===p);});
+  // アクティブ行の時刻列を強調（first時刻を緑に）
+  document.querySelectorAll('.tr-first').forEach(function(el){
+    el.style.color='';el.style.fontWeight='';
+  });
+  var activeFirst=document.querySelector('#row-'+p+' .tr-first');
+  if(activeFirst){activeFirst.style.color='var(--green2)';activeFirst.style.fontWeight='700';}
+  // 現在のサイクルの時刻を特に強調
+  var tr=document.getElementById('trange-'+p);
+  if(tr){tr.scrollIntoView({block:'nearest',behavior:'smooth'});}
 }
 
 // ─── 定期チェック・時計 ───
