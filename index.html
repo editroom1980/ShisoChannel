@@ -93,37 +93,55 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .pdur{font-size:9px;color:var(--text3);}
 .footer{background:var(--forest);color:rgba(255,255,255,0.45);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
 
-/* 疑似全画面 */
-#pseudo-fs{
+/* ── 疑似全画面（CSS only、iframeは移動しない） ── */
+.player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
-  background:#000;
-  display:none;
-  flex-direction:column;
+  padding-bottom:0;
+  border-radius:0;border:none;
+  box-shadow:none;
 }
-#pseudo-fs.active{display:flex;}
-#pseudo-fs-player{flex:1;position:relative;}
-#pseudo-fs-player iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
-#pseudo-fs-bar{
+.player-wrap.expanded #yt-player-api{
+  position:absolute;inset:0 0 44px 0; /* 下部バー分 */
+}
+.player-wrap.expanded #yt-player-api iframe{
+  width:100%;height:100%;
+}
+/* 疑似全画面時の下部バー */
+.expand-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  height:44px;
   background:rgba(0,0,0,0.85);
-  padding:10px 16px;
-  display:flex;align-items:center;gap:12px;
-  flex-shrink:0;
+  display:none;
+  align-items:center;
+  padding:0 16px;
+  gap:12px;
+  z-index:10;
 }
-#pseudo-fs-title{font-size:12px;color:rgba(255,255,255,0.7);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-#pseudo-fs-close{
-  background:none;border:1px solid rgba(255,255,255,0.4);
-  color:#fff;font-size:11px;padding:5px 14px;border-radius:3px;
-  cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;
+.player-wrap.expanded .expand-bar{display:flex;}
+.expand-bar-title{
+  font-size:12px;color:rgba(255,255,255,0.75);
+  flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.expand-close-btn{
+  background:none;border:1px solid rgba(255,255,255,0.45);
+  color:#fff;font-size:11px;padding:5px 14px;
+  border-radius:3px;cursor:pointer;font-family:inherit;
   white-space:nowrap;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
 }
 /* 拡大ボタン */
-.expand-btn{
-  position:absolute;bottom:10px;right:10px;z-index:15;
-  background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.4);
-  color:#fff;font-size:11px;padding:5px 10px;border-radius:3px;
-  cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;
+.expand-open-btn{
+  position:absolute;bottom:10px;right:10px;z-index:20;
+  background:rgba(0,0,0,0.6);
+  border:1px solid rgba(255,255,255,0.5);
+  color:#fff;font-size:12px;padding:6px 12px;
+  border-radius:3px;cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:transparent;
   letter-spacing:1px;
 }
+/* 疑似全画面中は背面ページをスクロール不可に */
+body.fs-open{overflow:hidden;}
+
 @media(max-width:840px){
   .page{grid-template-columns:1fr;padding:12px 12px 48px;}
   .sidebar{position:static;max-height:360px;}
@@ -188,7 +206,13 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
         </div>
         <!-- YouTube IFrame API がここにiframeを生成する -->
         <div id="yt-player-api"></div>
-        <button class="expand-btn" id="expand-btn" onclick="openPseudoFs()">⛶ 拡大</button>
+        <!-- 拡大ボタン（通常時表示） -->
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶ 拡大</button>
+        <!-- 下部バー（拡大時表示） -->
+        <div class="expand-bar">
+          <span class="expand-bar-title" id="expand-bar-title">—</span>
+          <button class="expand-close-btn" onclick="closeExpand()">✕ 閉じる</button>
+        </div>
       </div>
       <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
         <div class="ldot g" id="ldot"></div>
@@ -217,18 +241,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
       <div class="sb-list" id="sb-list"></div>
     </div>
   </div>
-  <!-- 疑似全画面レイヤー -->
-<div id="pseudo-fs">
-  <div id="pseudo-fs-player">
-    <!-- 疑似全画面中はここにiframeを移動 -->
-  </div>
-  <div id="pseudo-fs-bar">
-    <span id="pseudo-fs-title">—</span>
-    <button id="pseudo-fs-close" onclick="closePseudoFs()">✕ 閉じる</button>
-  </div>
-</div>
-
-<footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　広報情報課　TEL 0790-63-3115</footer>
+  <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　広報情報課　TEL 0790-63-3115</footer>
 </div>
 
 <!-- YouTube IFrame API -->
@@ -441,52 +454,34 @@ function playManual(pIdx){
   setEndTimer(CYCLE[pIdx].dur*60);
 }
 // ══════════════════════════════════════════════
-//  疑似全画面制御
-//  iframeをfixedレイヤーに移動して画面全体に表示
-//  Safariの全画面API制限を回避
+//  疑似全画面（CSSクラスの付け外しのみ・iframeは移動しない）
 // ══════════════════════════════════════════════
-var isPseudoFs = false;
+var isExpanded = false;
 
-function openPseudoFs(){
-  if(isPseudoFs)return;
-  isPseudoFs = true;
-  var pfs = document.getElementById('pseudo-fs');
-  var pfsPlayer = document.getElementById('pseudo-fs-player');
-  var ytDiv = document.getElementById('yt-player-api');
-  // iframeをyt-player-apiごと疑似全画面レイヤーに移動
-  pfsPlayer.appendChild(ytDiv);
-  pfs.classList.add('active');
-  // タイトルを更新
-  document.getElementById('pseudo-fs-title').textContent =
-    document.getElementById('viewing-title').textContent;
-  // スクロール防止
-  document.body.style.overflow = 'hidden';
+function openExpand(){
+  if(isExpanded) return;
+  isExpanded = true;
+  document.querySelector('.player-wrap').classList.add('expanded');
+  document.body.classList.add('fs-open');
+  updateExpandTitle();
 }
 
-function closePseudoFs(){
-  if(!isPseudoFs)return;
-  isPseudoFs = false;
-  var pfs = document.getElementById('pseudo-fs');
-  var ytDiv = document.getElementById('yt-player-api');
-  var playerWrap = document.querySelector('.player-wrap');
-  // iframeをプレイヤーラップに戻す（expand-btnの前に挿入）
-  var expandBtn = document.getElementById('expand-btn');
-  playerWrap.insertBefore(ytDiv, expandBtn);
-  pfs.classList.remove('active');
-  document.body.style.overflow = '';
+function closeExpand(){
+  if(!isExpanded) return;
+  isExpanded = false;
+  document.querySelector('.player-wrap').classList.remove('expanded');
+  document.body.classList.remove('fs-open');
 }
 
-// 疑似全画面中のタイトル更新
-function updatePseudoFsTitle(){
-  if(isPseudoFs){
-    document.getElementById('pseudo-fs-title').textContent =
-      document.getElementById('viewing-title').textContent;
-  }
+function updateExpandTitle(){
+  var t = document.getElementById('viewing-title').textContent;
+  var el = document.getElementById('expand-bar-title');
+  if(el) el.textContent = t;
 }
 
 function gotoOffAir(){
   clearEndTimer();
-  closePseudoFs(); // 疑似全画面を閉じる
+  closeExpand();
   isOff=true;isManual=false;
   stopVideo();
   showSpinner(false);showEnded(true);
@@ -529,7 +524,7 @@ function setViewUI(c,p){
   document.getElementById('viewing-title').textContent=CYCLE[p].title;
   document.getElementById('viewing-cat').textContent=CYCLE[p].cat;
   hlSB(c,p);
-  updatePseudoFsTitle();
+  updateExpandTitle();
 }
 function refreshLive(){
   if(isOff)return;
