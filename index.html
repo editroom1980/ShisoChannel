@@ -484,6 +484,17 @@ function closeExpand(){
   if(!isExpanded)return;
   isExpanded=false;
   clearFsUiTimer();
+
+  // ★解除前に現在の再生位置を記録
+  var resumeSec=0;
+  var wasPlaying=false;
+  try{
+    if(ytPlayer&&ytReady){
+      resumeSec=ytPlayer.getCurrentTime()||0;
+      wasPlaying=(ytPlayer.getPlayerState()===YT.PlayerState.PLAYING);
+    }
+  }catch(_){}
+
   var wrap=document.getElementById('player-wrap');
   wrap.removeEventListener('touchstart',onFsTap);
   wrap.removeEventListener('click',onFsTap);
@@ -491,26 +502,25 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
-  // 疑似全画面解除後：iPhoneで再生が停止する問題を修正
-  // 複数回試行して確実に再開させる
-  var _resumeCount=0;
-  var _resumeTimer=setInterval(function(){
-    _resumeCount++;
-    if(!isOff&&ytPlayer&&ytReady){
+
+  // ★expandedクラス除去後、iPhoneのレイアウト再計算完了を待って再開
+  // seekToで正確な位置から再生することでiframeリロードによるリセットを上書き
+  if(wasPlaying&&!isOff){
+    setTimeout(function(){
       try{
-        var st=ytPlayer.getPlayerState();
-        // 再生中(1)でなければ再生を試みる
-        if(st!==1&&st!==0){ // 0=終了は除く
-          ytPlayer.playVideo();
-        }
-        if(st===1||st===0||_resumeCount>=6){
-          clearInterval(_resumeTimer);
-        }
-      }catch(_){clearInterval(_resumeTimer);}
-    }else{
-      clearInterval(_resumeTimer);
-    }
-  },300);
+        ytPlayer.seekTo(resumeSec,true);
+        ytPlayer.playVideo();
+      }catch(_){}
+      // 念のため0.5秒後にも再確認
+      setTimeout(function(){
+        try{
+          if(ytPlayer.getPlayerState()!==YT.PlayerState.PLAYING){
+            ytPlayer.playVideo();
+          }
+        }catch(_){}
+      },500);
+    },150);
+  }
 }
 
 function showFsUi(){var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');resetFsUiTimer();}
