@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>しそうチャンネル</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
+:root{
+  --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;--green3:#52a070;
+  --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
+  --white:#fff;--off:#f6f8f6;--border:#d4e0d6;
+  --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;font-size:14px;min-height:100vh;}
+#power-screen{position:fixed;inset:0;z-index:999;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.ps-logo-main{font-size:26px;font-weight:700;color:var(--white);letter-spacing:4px;}
+.ps-logo-main em{color:var(--gold2);font-style:normal;}
+.ps-logo-sub{font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:3px;margin-top:4px;}
+.ps-clock{font-size:52px;font-weight:200;color:var(--white);letter-spacing:4px;font-variant-numeric:tabular-nums;}
+.ps-date-str{font-size:22px;font-weight:300;color:rgba(255,255,255,0.65);letter-spacing:2px;margin-bottom:-6px;}
+.ps-btn{margin-top:8px;background:var(--gold);color:var(--forest);border:none;cursor:pointer;font-size:16px;font-weight:700;padding:16px 52px;border-radius:4px;letter-spacing:3px;font-family:inherit;-webkit-tap-highlight-color:transparent;user-select:none;}
+.ps-hint{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;}
+#main-content{display:none;}
+.header{background:var(--forest);padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 12px rgba(0,0,0,0.25);}
+.h-logo{display:flex;flex-direction:column;}
+.h-logo-main{font-size:19px;font-weight:700;color:var(--white);letter-spacing:2px;}
+.h-logo-main em{color:var(--gold2);font-style:normal;}
+.h-logo-sub{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-top:3px;}
+.h-right{display:flex;align-items:center;gap:14px;}
+.h-datetime{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
+.h-time{font-size:22px;font-weight:300;color:rgba(255,255,255,0.85);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1;}
+.onair-badge{display:flex;align-items:center;gap:6px;border:1px solid var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:2px;letter-spacing:2px;background:rgba(184,48,48,0.2);}
+.onair-badge.off{border-color:var(--text3);background:rgba(100,100,100,0.15);}
+.bdot{width:6px;height:6px;background:#ff6060;border-radius:50%;animation:blink 1.4s infinite;}
+.bdot.grey{background:var(--text3);animation:none;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.page{max-width:1240px;margin:0 auto;padding:20px 20px 56px;display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
+.viewing-bar{background:var(--white);border:1px solid var(--border);border-bottom:none;border-radius:6px 6px 0 0;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;}
+#viewing-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.5;flex:1;}
+.cat-tag{font-size:10px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-top:2px;}
+.player-wrap{position:relative;padding-bottom:56.25%;border:1px solid var(--border);border-top:none;overflow:hidden;box-shadow:0 4px 24px rgba(30,58,40,0.18);background:#000;}
+/* YT APIがここにiframeを差し込む */
+#yt-player-api{position:absolute;inset:0;width:100%;height:100%;}
+#ended-ov{position:absolute;inset:0;z-index:20;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+#sw-ov{position:absolute;inset:0;z-index:30;background:rgba(30,58,40,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+.ended-icon{font-size:40px;opacity:0.5;}
+.ended-ttl{font-size:18px;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:2px;text-align:center;padding:0 20px;}
+.ended-sub{font-size:12px;color:rgba(255,255,255,0.35);letter-spacing:1px;}
+.sw-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sw-lbl{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;}
+.live-btn{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;padding:9px 16px;width:100%;text-align:left;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.live-btn.no-click{cursor:default;}
+.ldot{width:7px;height:7px;background:var(--red);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;}
+.ldot.g{background:var(--text3);animation:none;}
+.llbl{font-size:10px;font-weight:700;letter-spacing:2px;flex-shrink:0;}
+.llbl.r{color:var(--red);}
+.llbl.g{color:var(--text3);}
+.ldiv{width:1px;height:14px;background:var(--border);flex-shrink:0;}
+#live-name{font-size:12px;color:var(--text2);line-height:1.4;flex:1;}
+#live-hint{font-size:10px;color:var(--green2);white-space:nowrap;flex-shrink:0;font-weight:700;display:none;}
+.prog-row{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-top:10px;display:flex;align-items:center;gap:10px;}
+.pt{font-size:11px;color:var(--text3);white-space:nowrap;min-width:34px;font-variant-numeric:tabular-nums;}
+.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
+.cycle-tag{font-size:10px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.next-row{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:9px 14px;margin-top:8px;display:flex;align-items:center;gap:10px;}
+.next-pill{font-size:10px;font-weight:700;color:var(--white);background:var(--green2);padding:2px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+#next-title{font-size:12px;color:var(--text2);line-height:1.4;}
+#next-time{margin-left:auto;font-size:12px;color:var(--text3);white-space:nowrap;padding-left:8px;flex-shrink:0;}
+.sidebar{background:var(--white);border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 2px 12px rgba(30,58,40,0.08);position:sticky;top:78px;max-height:calc(100vh - 96px);display:flex;flex-direction:column;}
+.sb-head{background:var(--forest);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sb-ttl{font-size:12px;font-weight:700;color:var(--white);letter-spacing:3px;}
+#today-date{font-size:10px;color:rgba(255,255,255,0.5);}
+/* ★スクロール領域：touch-action:pan-yでスクロールを優先 */
+.sb-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
+.prow{display:flex;border-bottom:1px solid var(--border);position:relative;}
+.prow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
+.prow.active{background:var(--green5);}
+.prow.active::before{background:var(--green2);}
+.tcol{flex-shrink:0;width:58px;border-right:1px solid var(--border);padding:7px 0;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.tchip{font-size:10px;font-weight:500;color:var(--text3);padding:4px;border-radius:3px;text-align:center;width:46px;line-height:1.3;user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+.tchip.on{background:var(--green2);color:var(--white);font-weight:700;}
+.icol{flex:1;padding:9px 11px;min-width:0;user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+.pname{font-size:11px;font-weight:500;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.prow.active .pname{font-weight:700;color:var(--green);}
+.pmeta{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.pcat{font-size:9px;font-weight:700;color:var(--green2);}
+.pdur{font-size:9px;color:var(--text3);}
+.footer{background:var(--forest);color:rgba(255,255,255,0.45);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
+@media(max-width:840px){
+  .page{grid-template-columns:1fr;padding:12px 12px 48px;}
+  .sidebar{position:static;max-height:360px;}
+  .h-date{display:none;}
+}
+@media(max-width:480px){
+  .header{padding:0 14px;height:54px;}
+  .h-logo-main{font-size:16px;}
+  .h-time{font-size:18px;}
+  .onair-badge{padding:3px 8px;font-size:9px;}
+}
+</style>
+</head>
+<body>
+
+<div id="power-screen">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+    <div class="ps-logo-main">しそう<em>チャンネル</em></div>
+    <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
+  </div>
+  <div style="height:20px"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+    <div class="ps-date-str" id="ps-date">—</div>
+    <div class="ps-clock" id="ps-clock">00:00:00</div>
+  </div>
+  <button class="ps-btn" id="ps-btn">▶ 放送開始</button>
+  <div class="ps-hint">ボタンを押すと現在放送中の番組が自動で始まります</div>
+</div>
+
+<div id="main-content">
+  <header class="header">
+    <div class="h-logo">
+      <div class="h-logo-main">しそう<em>チャンネル</em></div>
+      <div class="h-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
+    </div>
+    <div class="h-right">
+      <div class="h-datetime">
+        <div class="h-date" id="h-date">—</div>
+        <div class="h-time" id="h-time">00:00:00</div>
+      </div>
+      <div class="onair-badge" id="onair-badge">
+        <div class="bdot" id="bdot"></div>
+        <span>ON AIR</span>
+      </div>
+    </div>
+  </header>
+  <div class="page">
+    <div>
+      <div class="viewing-bar">
+        <div id="viewing-title">読み込み中...</div>
+        <span class="cat-tag" id="viewing-cat">—</span>
+      </div>
+      <div class="player-wrap">
+        <div id="ended-ov">
+          <div class="ended-icon">📺</div>
+          <div class="ended-ttl">本日の放送は終了しました</div>
+          <div class="ended-sub">次の放送は 06:00 から始まります</div>
+        </div>
+        <div id="sw-ov">
+          <div class="sw-spinner"></div>
+          <div class="sw-lbl" id="sw-lbl">切り替え中...</div>
+        </div>
+        <!-- YouTube IFrame API がここにiframeを生成する -->
+        <div id="yt-player-api"></div>
+      </div>
+      <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
+        <div class="ldot g" id="ldot"></div>
+        <span class="llbl g" id="llbl">LIVE</span>
+        <div class="ldiv"></div>
+        <span id="live-name">—</span>
+        <span id="live-hint">← 戻る</span>
+      </button>
+      <div class="prog-row">
+        <span class="pt" id="p-start">--:--</span>
+        <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
+        <span class="pt" id="p-end">--:--</span>
+        <span class="cycle-tag" id="p-cycle">—</span>
+      </div>
+      <div class="next-row">
+        <span class="next-pill">次の番組</span>
+        <span id="next-title">—</span>
+        <span id="next-time">—</span>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="sb-head">
+        <div class="sb-ttl">番 組 表</div>
+        <div id="today-date">—</div>
+      </div>
+      <div class="sb-list" id="sb-list"></div>
+    </div>
+  </div>
+  <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　広報情報課　TEL 0790-63-3115</footer>
+</div>
+
+<!-- YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  番組定義
+// ═══════════════════════════════════════════════════
+var CYCLE=[
+  {title:'市政20周年記念映像「宍粟市20年のあゆみ」',               cat:'市政情報',       ytId:'dbsj3CWSLiE',dur:10},
+  {title:'綾瀬はるかさん主演映画「ルート29」宍粟市ロケ地めぐり',   cat:'観光・文化',     ytId:'Qp0Tx46GBY0',dur:20},
+  {title:'宍粟を歩いて制覇「市役所～山崎西小」',                    cat:'スポーツ・健康', ytId:'XbXiujutzMk',dur:30},
+  {title:'歴史小説『風奔る』〜物語の生まれた風景を訪ねて〜',        cat:'歴史・文化',     ytId:'2ChiZEqM3HQ',dur:30},
+  {title:'宍粟を歩いて制覇（再）「山崎西小学校～八重谷峠」',        cat:'スポーツ・健康', ytId:'KYgGtYHDA3I',dur:30},
+  {title:'グラウンドゴルフで挑戦状「VS伊和グラウンドゴルフクラブ」',cat:'スポーツ・健康', ytId:'34qaae2COfo',dur:15},
+  {title:'やるで！YTS「田植え体験」',                               cat:'産業・農業',     ytId:'qNTiySv0QMc',dur:13},
+  {title:'宍粟市職員募集動画１',                                     cat:'市政情報',       ytId:'Uj8V8s2Mt7M',dur:2},
+  {title:'しそうトピックス「雪害対処訓練」',                         cat:'市政情報',       ytId:'4zrqPyh6DO8',dur:15},
+  {title:'360年以上に亘る伝承「宇原獅子舞」',                       cat:'歴史・伝統',     ytId:'cmHAVfNYqLU',dur:15},
+];
+var S=6,E=24,CM=180,NC=(E-S)*60/CM;
+var CS=[]; for(var i=0;i<NC;i++) CS.push(S*60+i*CM);
+var CO=[]; var _a=0; for(var i=0;i<CYCLE.length;i++){CO.push(_a);_a+=CYCLE[i].dur;}
+
+// ─── utils ───
+function f2(n){return String(n).padStart(2,'0');}
+function hm(m){return f2(Math.floor(m/60))+':'+f2(m%60);}
+function nowF(){var d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
+function inAir(){var n=nowF();return n>=S*60&&n<E*60;}
+function nowPos(){
+  if(!inAir())return null;
+  var n=nowF();
+  for(var c=NC-1;c>=0;c--){
+    if(n>=CS[c]){
+      var off=n-CS[c],p=0;
+      for(var i=CYCLE.length-1;i>=0;i--){if(CO[i]<=off){p=i;break;}}
+      return{c:c,p:p};
+    }
+  }
+  return null;
+}
+function smOf(c,p){return CS[c]+CO[p];}
+function emOf(c,p){return smOf(c,p)+CYCLE[p].dur;}
+function esOf(c,p){return Math.max(0,Math.floor((nowF()-smOf(c,p))*60));}
+function nxtOf(c,p){
+  if(p<CYCLE.length-1)return{c:c,p:p+1};
+  if(c<NC-1)return{c:c+1,p:0};
+  return null;
+}
+function allT(pIdx){var r=[];for(var i=0;i<CS.length;i++)r.push(CS[i]+CO[pIdx]);return r;}
+
+// ─── 状態 ───
+var isManual=false,isOff=false;
+var vC=0,vP=0,lC=0,lP=0;
+// YT Player
+var ytPlayer=null,ytReady=false;
+var pendingYtId='',pendingSec=0;
+var spinnerTimer=null;
+
+// ═══════════════════════════════════════════════════
+//  YouTube IFrame Player API
+//
+//  【Safari自動再生の正しい解決方法】
+//  1. YT.Player を最初に作成し ready にしておく
+//  2. ユーザータップ → loadVideoById() を呼ぶ
+//     loadVideoById はタップ操作のコールチェーン内なら Safari も許可する
+//  3. onStateChange で ENDED(0) を検知して次の番組へ
+// ═══════════════════════════════════════════════════
+function onYouTubeIframeAPIReady(){
+  ytPlayer=new YT.Player('yt-player-api',{
+    width:'100%',
+    height:'100%',
+    playerVars:{
+      autoplay:0,
+      playsinline:1,  // iPhone Safari必須：全画面強制を防ぎインライン再生
+      rel:0,
+      modestbranding:1,
+      fs:1
+    },
+    events:{
+      onReady:function(e){
+        ytReady=true;
+        ytPlayer=e.target;
+        if(pendingYtId){
+          var id=pendingYtId,sec=pendingSec;
+          pendingYtId='';pendingSec=0;
+          e.target.loadVideoById({videoId:id,startSeconds:sec});
+          // pendingで再生した場合もスピナーを3秒でタイムアウト
+          clearSpinnerTimer();
+          spinnerTimer=setTimeout(function(){showSpinner(false);},3000);
+        }
+      },
+      onStateChange:function(e){
+        var st=e.data;
+        if(st===YT.PlayerState.ENDED){onEnded();return;}
+        // 再生中・バッファ中はオーバーレイを必ず消す
+        if(st===YT.PlayerState.PLAYING||st===YT.PlayerState.BUFFERING){
+          showEnded(false);showSpinner(false);
+        }
+      }
+    }
+  });
+}
+
+// ─── 全画面 ───
+function isFs(){return !!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement);}
+function exitFs(){
+  try{
+    if(document.fullscreenElement)document.exitFullscreen();
+    else if(document.webkitFullscreenElement)document.webkitExitFullscreen();
+    else if(document.mozFullScreenElement)document.mozCancelFullScreen();
+  }catch(_){}
+}
+// fullscreenchangeは削除：loadVideoByIdが全画面状態を自動維持するため不要
+// （ここで余計なplayVideoを呼ぶと動画切り替え中と競合する）
+
+// ─── オーバーレイ ───
+function showEnded(v){document.getElementById('ended-ov').style.display=v?'flex':'none';}
+function showSpinner(v,t){
+  document.getElementById('sw-ov').style.display=v?'flex':'none';
+  if(t)document.getElementById('sw-lbl').textContent=t;
+}
+
+// ═══════════════════════════════════════════════════
+//  動画ロード
+//  ★ Safari対策の核心：
+//    loadVideoById() はユーザータップのコールチェーン内で
+//    呼ばれる必要がある。renderSB→addTap→loadVideo の
+//    経路が全て同期的につながっていることが重要。
+// ═══════════════════════════════════════════════════
+function clearSpinnerTimer(){if(spinnerTimer){clearTimeout(spinnerTimer);spinnerTimer=null;}}
+
+function loadVideo(ytId,sec,msg){
+  clearSpinnerTimer();
+  showEnded(false);
+  showSpinner(true,msg||'切り替え中...');
+  if(ytReady&&ytPlayer){
+    ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
+  } else {
+    pendingYtId=ytId;
+    pendingSec=sec;
+  }
+  // 3秒以内に再生が始まらなければスピナーを強制的に消す
+  spinnerTimer=setTimeout(function(){showSpinner(false);},3000);
+}
+
+function stopVideo(){
+  clearSpinnerTimer();
+  if(ytPlayer&&ytReady){try{ytPlayer.stopVideo();}catch(_){}}
+}
+
+// ─── 動画終了 ───
+// ルール：何があっても「今の時刻のスケジュール番組」へ遷移
+//         早送り・任意視聴終了・通常終了すべて同じ挙動
+//         全画面中は全画面を維持したまま再生継続
+function onEnded(){
+  isManual=false;
+  var pos=nowPos();
+  if(!pos){
+    // 放送時間外：全画面解除してoffAir表示
+    if(isFs()){exitFs();setTimeout(gotoOffAir,300);}
+    else{gotoOffAir();}
+    return;
+  }
+  // 放送時間内：現在スケジュールの番組を再生（全画面状態を維持）
+  playSchedule(pos.c,pos.p);
+}
+
+// ═══════════════════════════════════════════════════
+//  再生モード
+// ═══════════════════════════════════════════════════
+function playSchedule(c,p){
+  isManual=false;isOff=false;
+  vC=c;vP=p;
+  loadVideo(CYCLE[p].ytId,esOf(c,p),'放送中の番組に切り替えています...');
+  setViewUI(c,p);refreshLive();
+}
+function playManual(pIdx){
+  // ★この関数はaddTapのtouchend/click内から直接呼ばれる（Safariコールチェーン維持）
+  isManual=true;isOff=false;
+  var pos=nowPos();
+  var c=pos?pos.c:0;
+  vC=c;vP=pIdx;
+  loadVideo(CYCLE[pIdx].ytId,0,'番組を読み込んでいます...');
+  setViewUI(c,pIdx);refreshLive();
+}
+function gotoOffAir(){
+  isOff=true;isManual=false;
+  stopVideo();
+  showSpinner(false);showEnded(true);
+  document.getElementById('viewing-title').textContent='本日の放送は終了しました';
+  document.getElementById('viewing-cat').textContent='';
+  document.getElementById('onair-badge').classList.add('off');
+  document.getElementById('bdot').className='bdot grey';
+  setLiveBtn('off');
+  document.getElementById('live-name').textContent='本日の放送は終了しました';
+  document.getElementById('p-bar').style.width='100%';
+  document.getElementById('p-start').textContent='24:00';
+  document.getElementById('p-end').textContent='—';
+  document.getElementById('p-cycle').textContent='放送終了';
+  document.getElementById('next-title').textContent=CYCLE[0].title;
+  document.getElementById('next-time').textContent='06:00';
+  document.querySelectorAll('.prow').forEach(function(r){r.classList.remove('active');});
+  document.querySelectorAll('.tchip').forEach(function(c){c.classList.remove('on');});
+}
+
+// ─── LIVEボタン ───
+function setLiveBtn(mode){
+  var btn=document.getElementById('live-btn');
+  var dot=document.getElementById('ldot');
+  var lbl=document.getElementById('llbl');
+  var hint=document.getElementById('live-hint');
+  if(mode==='live'){btn.className='live-btn no-click';dot.className='ldot';lbl.className='llbl r';hint.style.display='none';}
+  else if(mode==='manual'){btn.className='live-btn';dot.className='ldot g';lbl.className='llbl g';hint.style.display='';}
+  else{btn.className='live-btn no-click';dot.className='ldot g';lbl.className='llbl g';hint.style.display='none';}
+}
+function onLiveClick(){
+  if(!isManual)return;
+  isManual=false;
+  var pos=nowPos();
+  if(pos)playSchedule(pos.c,pos.p);
+  else gotoOffAir();
+}
+
+// ─── UI ───
+function setViewUI(c,p){
+  document.getElementById('viewing-title').textContent=CYCLE[p].title;
+  document.getElementById('viewing-cat').textContent=CYCLE[p].cat;
+  hlSB(c,p);
+}
+function refreshLive(){
+  if(isOff)return;
+  var pos=nowPos();
+  if(!pos){gotoOffAir();return;}
+  var c=pos.c,p=pos.p;lC=c;lP=p;
+  document.getElementById('onair-badge').classList.remove('off');
+  document.getElementById('bdot').className='bdot';
+  document.getElementById('live-name').textContent=CYCLE[p].title;
+  document.getElementById('p-start').textContent=hm(smOf(c,p));
+  document.getElementById('p-end').textContent=hm(emOf(c,p));
+  document.getElementById('p-cycle').textContent='第'+(c+1)+'サイクル';
+  var n=nowF(),sm=smOf(c,p),em=emOf(c,p);
+  document.getElementById('p-bar').style.width=Math.min(100,Math.max(0,((n-sm)/(em-sm))*100))+'%';
+  var nx=nxtOf(c,p);
+  document.getElementById('next-title').textContent=nx?CYCLE[nx.p].title:CYCLE[0].title;
+  document.getElementById('next-time').textContent=nx?hm(smOf(nx.c,nx.p)):'06:00（翌日）';
+  setLiveBtn(isManual?'manual':'live');
+}
+function hlSB(c,p){
+  document.querySelectorAll('.prow').forEach(function(r,i){r.classList.toggle('active',i===p);});
+  document.querySelectorAll('.tchip').forEach(function(ch){ch.classList.remove('on');});
+  var chip=document.getElementById('chip-'+p+'-'+c);
+  if(chip){chip.classList.add('on');chip.scrollIntoView({block:'nearest',behavior:'smooth'});}
+}
+
+// ═══════════════════════════════════════════════════
+//  スクロールとタップを区別（誤タップ防止）
+//  touchstart → touchmove → touchend のシーケンスで
+//  8px以上動いた場合はスクロールと判定しタップをキャンセル
+// ═══════════════════════════════════════════════════
+function addTap(el,onTap){
+  var startX=0,startY=0,moved=false,touchFired=false;
+  el.addEventListener('touchstart',function(e){
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    moved=false;touchFired=false;
+  },{passive:true});
+  el.addEventListener('touchmove',function(e){
+    if(Math.abs(e.touches[0].clientY-startY)>8||Math.abs(e.touches[0].clientX-startX)>8){
+      moved=true;
+    }
+  },{passive:true});
+  el.addEventListener('touchend',function(e){
+    if(!moved){
+      e.preventDefault(); // iOSの300ms遅延click防止
+      touchFired=true;
+      onTap();
+    }
+  },{passive:false});
+  // PCはclickのみ、iOSはtouchendで処理済みのためclickはスキップ
+  el.addEventListener('click',function(e){
+    if(touchFired){touchFired=false;return;} // touchendで処理済み
+    onTap();
+  });
+}
+
+// ─── 番組表 ───
+function renderSB(){
+  var list=document.getElementById('sb-list');
+  list.innerHTML='';
+  for(var pIdx=0;pIdx<CYCLE.length;pIdx++){
+    (function(pIdx){
+      var prog=CYCLE[pIdx];
+      var row=document.createElement('div');
+      row.className='prow';
+      var tc=document.createElement('div');
+      tc.className='tcol';
+      var times=allT(pIdx);
+      for(var ci=0;ci<times.length;ci++){
+        (function(cIdx){
+          var chip=document.createElement('div');
+          chip.className='tchip';
+          chip.id='chip-'+pIdx+'-'+cIdx;
+          chip.textContent=hm(times[cIdx]);
+          addTap(chip,function(){
+            if(inAir()){isManual=false;playSchedule(cIdx,pIdx);}
+            else{playManual(pIdx);}
+          });
+          tc.appendChild(chip);
+        })(ci);
+      }
+      var ic=document.createElement('div');
+      ic.className='icol';
+      ic.innerHTML='<div class="pname">'+prog.title+'</div>'
+        +'<div class="pmeta"><span class="pcat">'+prog.cat+'</span>'
+        +'<span class="pdur">/ '+prog.dur+'分</span></div>';
+      addTap(ic,function(){playManual(pIdx);});
+      row.appendChild(tc);row.appendChild(ic);
+      list.appendChild(row);
+    })(pIdx);
+  }
+}
+
+// ─── 定期チェック・時計 ───
+function periodicCheck(){
+  if(isManual){refreshLive();return;}
+  var pos=nowPos();
+  if(!pos){if(!isOff)gotoOffAir();return;}
+  var c=pos.c,p=pos.p;
+  refreshLive();
+  if(!isOff&&(c!==lC||p!==lP))playSchedule(c,p);
+}
+function updateClock(){
+  var d=new Date();
+  var t=f2(d.getHours())+':'+f2(d.getMinutes())+':'+f2(d.getSeconds());
+  var ds=d.getFullYear()+'/'+f2(d.getMonth()+1)+'/'+f2(d.getDate());
+  var dsJP=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+  var el;
+  el=document.getElementById('ps-clock');if(el)el.textContent=t;
+  el=document.getElementById('ps-date');if(el)el.textContent=dsJP;
+  el=document.getElementById('h-time');if(el)el.textContent=t;
+  el=document.getElementById('h-date');if(el)el.textContent=ds;
+}
+
+// ─── 電源ボタン ───
+function powerOn(){
+  document.getElementById('power-screen').style.display='none';
+  document.getElementById('main-content').style.display='block';
+  var pos=nowPos();
+  if(pos){playSchedule(pos.c,pos.p);}
+  else{gotoOffAir();}
+}
+
+// ─── 初期化 ───
+function init(){
+  var d=new Date();
+  document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+  renderSB();
+  updateClock();
+  addTap(document.getElementById('ps-btn'),powerOn);
+  setInterval(updateClock,1000);
+  setInterval(periodicCheck,10000);
+}
+init();
+</script>
+</body>
+</html>
