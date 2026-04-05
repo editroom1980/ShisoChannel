@@ -51,7 +51,6 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   display:grid;
   grid-template-columns:1fr 340px;
   gap:20px;
-  align-items:start;
 }
 
 /* ══ 左カラム：プレイヤーエリア ══ */
@@ -377,7 +376,7 @@ body.fs-open{overflow:hidden;}
     </div>
   </div>
 
-  <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　広報情報課　TEL 0790-63-3115</footer>
+  <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　秘書広報課　TEL 0790-63-3115</footer>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -759,6 +758,20 @@ function powerOn(){
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
+function syncSidebarHeight(){
+  // PC時：番組表の最小高さを左カラム（プレイヤーエリア）の高さに合わせる
+  if(window.innerWidth>840){
+    var leftCol=document.querySelector('.page > div:first-child');
+    var sidebar=document.querySelector('.sidebar');
+    if(leftCol&&sidebar){
+      sidebar.style.minHeight=leftCol.offsetHeight+'px';
+    }
+  }else{
+    var sidebar=document.querySelector('.sidebar');
+    if(sidebar)sidebar.style.minHeight='';
+  }
+}
+
 function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
@@ -766,6 +779,9 @@ function init(){
   addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
+  // 起動時とリサイズ時に高さを同期
+  setTimeout(syncSidebarHeight,500);
+  window.addEventListener('resize',syncSidebarHeight);
 }
 init();
 </script>
