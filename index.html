@@ -244,6 +244,7 @@ var vC=0,vP=0,lC=0,lP=0;
 var ytPlayer=null,ytReady=false;
 var pendingYtId='',pendingSec=0;
 var spinnerTimer=null;
+var endTimer=null;  // 全画面中Safari対策：番組終了タイマー
 
 // ═══════════════════════════════════════════════════
 //  YouTube IFrame Player API
@@ -318,6 +319,19 @@ function showSpinner(v,t){
 // ═══════════════════════════════════════════════════
 function clearSpinnerTimer(){if(spinnerTimer){clearTimeout(spinnerTimer);spinnerTimer=null;}}
 
+// 番組終了タイマー（Safari全画面中にonEndedが来ない問題の対策）
+function clearEndTimer(){if(endTimer){clearTimeout(endTimer);endTimer=null;}}
+function setEndTimer(remainSec){
+  clearEndTimer();
+  if(remainSec<=0)return;
+  // 残り時間+5秒後にonEndedを強制呼び出し
+  // （正常にonEndedが来た場合はclearEndTimerで解除済み）
+  endTimer=setTimeout(function(){
+    endTimer=null;
+    onEnded();
+  },(remainSec+5)*1000);
+}
+
 function loadVideo(ytId,sec,msg){
   clearSpinnerTimer();
   showEnded(false);
@@ -342,6 +356,7 @@ function stopVideo(){
 //         早送り・任意視聴終了・通常終了すべて同じ挙動
 //         全画面中は全画面を維持したまま再生継続
 function onEnded(){
+  clearEndTimer(); // タイマー経由・イベント経由どちらでも重複防止
   isManual=false;
   var pos=nowPos();
   if(!pos){
@@ -358,21 +373,31 @@ function onEnded(){
 //  再生モード
 // ═══════════════════════════════════════════════════
 function playSchedule(c,p){
+  clearEndTimer();
   isManual=false;isOff=false;
   vC=c;vP=p;
-  loadVideo(CYCLE[p].ytId,esOf(c,p),'放送中の番組に切り替えています...');
+  var sec=esOf(c,p);
+  var durSec=CYCLE[p].dur*60;
+  var remainSec=durSec-sec;
+  loadVideo(CYCLE[p].ytId,sec,'放送中の番組に切り替えています...');
   setViewUI(c,p);refreshLive();
+  // Safari全画面対策：残り時間+5秒後にonEndedを強制呼び出し
+  setEndTimer(remainSec);
 }
 function playManual(pIdx){
   // ★この関数はaddTapのtouchend/click内から直接呼ばれる（Safariコールチェーン維持）
+  clearEndTimer();
   isManual=true;isOff=false;
   var pos=nowPos();
   var c=pos?pos.c:0;
   vC=c;vP=pIdx;
   loadVideo(CYCLE[pIdx].ytId,0,'番組を読み込んでいます...');
   setViewUI(c,pIdx);refreshLive();
+  // Safari全画面対策：動画尺+5秒後にonEndedを強制呼び出し
+  setEndTimer(CYCLE[pIdx].dur*60);
 }
 function gotoOffAir(){
+  clearEndTimer();
   isOff=true;isManual=false;
   stopVideo();
   showSpinner(false);showEnded(true);
