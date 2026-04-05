@@ -45,7 +45,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .player-wrap{position:relative;padding-bottom:56.25%;border:1px solid var(--border);border-top:none;overflow:hidden;box-shadow:0 4px 24px rgba(30,58,40,0.18);background:#000;}
 /* YT APIがここにiframeを差し込む */
 #yt-player-api{position:absolute;inset:0;width:100%;height:100%;}
-#ended-ov{position:absolute;inset:0;z-index:20;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+#ended-ov{position:absolute;inset:0;z-index:35;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
 #sw-ov{position:absolute;inset:0;z-index:30;background:rgba(30,58,40,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
 .ended-icon{font-size:40px;opacity:0.5;}
 .ended-ttl{font-size:18px;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:2px;text-align:center;padding:0 20px;}
@@ -93,47 +93,57 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .pdur{font-size:9px;color:var(--text3);}
 .footer{background:var(--forest);color:rgba(255,255,255,0.45);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
 
-/* ── 疑似全画面（スマホのみ） ── */
+/* ── 疑似全画面 ── */
 .player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
   padding-bottom:0;border-radius:0;border:none;box-shadow:none;
 }
 .player-wrap.expanded #yt-player-api{
-  position:absolute;top:0;left:0;right:0;bottom:44px;
+  position:absolute;inset:0;
 }
 .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
-/* 下部バー */
-.expand-bar{
-  position:absolute;bottom:0;left:0;right:0;height:44px;
-  background:rgba(0,0,0,0.88);
-  display:none;align-items:center;padding:0 16px;gap:12px;z-index:10;
+
+/* 疑似全画面中のUI（タイトルバー）：上部 */
+.fs-ui-bar{
+  position:absolute;top:0;left:0;right:0;
+  height:44px;z-index:20;
+  background:linear-gradient(rgba(0,0,0,0.7),transparent);
+  display:none;align-items:center;padding:0 14px;
+  transition:opacity 0.3s;
 }
-.player-wrap.expanded .expand-bar{display:flex;}
-.expand-bar-title{font-size:13px;color:rgba(255,255,255,0.8);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.player-wrap.expanded .fs-ui-bar{display:flex;}
+.fs-ui-bar.hidden{opacity:0;pointer-events:none;}
+.fs-ui-title{
+  font-size:12px;color:rgba(255,255,255,0.85);
+  flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+
+/* 拡大ボタン・閉じるボタン：YouTubeの全画面ボタンと同じ右下位置に重ねる */
+/* YouTube iframeのフルスクリーンボタンは右下約 8px 8px の位置にある */
+.expand-open-btn,
 .expand-close-btn{
-  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.5);
-  color:#fff;font-size:13px;font-weight:700;padding:8px 20px;border-radius:4px;
-  cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;
+  position:absolute;
+  bottom:8px;right:8px;
+  z-index:30;
+  width:36px;height:36px;
+  background:rgba(0,0,0,0.01); /* ほぼ透明だが反応する */
+  border:none;
+  color:transparent; /* テキスト非表示：元のYouTubeボタンの上に重なるだけ */
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  padding:0;
+  font-size:0;
 }
-/* 拡大ボタン：デフォルト非表示（PC非表示・スマホのみ表示） */
-.expand-open-btn{display:none;}
-@media(max-width:840px){
-  /* スマホのみ：動画の上に大きく中央配置 */
-  .expand-open-btn{
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    position:absolute;
-    left:0;right:0;bottom:0;
-    height:44px;
-    background:rgba(0,0,0,0.55);
-    border:none;border-top:1px solid rgba(255,255,255,0.2);
-    color:#fff;font-size:14px;font-weight:700;
-    cursor:pointer;font-family:inherit;
-    -webkit-tap-highlight-color:transparent;
-    z-index:20;letter-spacing:1px;
-  }
-  /* 拡大中は拡大ボタンを隠す */
-  .player-wrap.expanded .expand-open-btn{display:none;}
+/* 閉じるボタンは疑似全画面中のみ表示 */
+.expand-close-btn{display:none;}
+.player-wrap.expanded .expand-open-btn{display:none;}
+.player-wrap.expanded .expand-close-btn{display:block;}
+
+/* スマホ以外（PC）では両ボタンを非表示 */
+@media(min-width:841px){
+  .expand-open-btn,.expand-close-btn{display:none!important;}
 }
+
 body.fs-open{overflow:hidden;}
 
 @media(max-width:840px){
@@ -200,13 +210,15 @@ body.fs-open{overflow:hidden;}
         </div>
         <!-- YouTube IFrame API がここにiframeを生成する -->
         <div id="yt-player-api"></div>
-        <!-- 拡大ボタン（通常時表示） -->
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶ 拡大</button>
-        <!-- 下部バー（拡大時表示） -->
-        <div class="expand-bar">
-          <span class="expand-bar-title" id="expand-bar-title">—</span>
-          <button class="expand-close-btn" onclick="closeExpand()">✕ 閉じる</button>
+        <!-- 疑似全画面中のタイトルバー（上部） -->
+        <div class="fs-ui-bar" id="fs-ui-bar">
+          <span class="fs-ui-title" id="fs-ui-title">—</span>
         </div>
+        <!-- 拡大ボタン（YouTubeの全画面ボタンに重なる・スマホのみ） -->
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"></button>
+        <!-- 閉じるボタン（疑似全画面中・同じ位置） -->
+        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"></button>
+      </div>
       </div>
       <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
         <div class="ldot g" id="ldot"></div>
@@ -388,7 +400,17 @@ function loadVideo(ytId,sec,msg){
   showEnded(false);
   showSpinner(true,msg||'切り替え中...');
   if(ytReady&&ytPlayer){
+    // YT.PlayerState: -1=未初期化, 0=終了, 1=再生, 2=停止(pause), 5=頭出し済
+    // loadVideoByIdはどの状態でも自動再生するが念のためplayVideoも呼ぶ
     ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
+    // iOSでpauseVideo後にloadVideoByIdが効かない場合の保険
+    setTimeout(function(){
+      try{
+        var st=ytPlayer.getPlayerState();
+        // 再生中でなければplayVideoを呼ぶ
+        if(st!==1){ytPlayer.playVideo();}
+      }catch(_){}
+    },500);
   } else {
     pendingYtId=ytId;
     pendingSec=sec;
@@ -399,7 +421,8 @@ function loadVideo(ytId,sec,msg){
 
 function stopVideo(){
   clearSpinnerTimer();
-  if(ytPlayer&&ytReady){try{ytPlayer.stopVideo();}catch(_){}}
+  // stopVideoではなくpauseVideo：stopVideo後はloadVideoByIdが効かないことがある
+  if(ytPlayer&&ytReady){try{ytPlayer.pauseVideo();}catch(_){}}
 }
 
 // ─── 動画終了 ───
@@ -439,6 +462,8 @@ function playManual(pIdx){
   // ★この関数はaddTapのtouchend/click内から直接呼ばれる（Safariコールチェーン維持）
   clearEndTimer();
   isManual=true;isOff=false;
+  // 放送終了オーバーレイを確実に消す
+  showEnded(false);
   var pos=nowPos();
   var c=pos?pos.c:0;
   vC=c;vP=pIdx;
@@ -451,25 +476,66 @@ function playManual(pIdx){
 //  疑似全画面（スマホのみ・CSSクラスの付け外し）
 // ══════════════════════════════════════════════
 var isExpanded = false;
+var fsUiTimer = null; // UI自動非表示タイマー
 
 function openExpand(){
-  if(isExpanded){closeExpand();return;} // すでに拡大中なら閉じる（トグル）
+  if(isOff) return;      // 放送終了中は拡大不可
+  if(isExpanded){closeExpand();return;}
   isExpanded = true;
   document.querySelector('.player-wrap').classList.add('expanded');
   document.body.classList.add('fs-open');
   updateExpandTitle();
+  showFsUi(); // UI表示してタイマーセット
+  // タップでUI再表示
+  var wrap = document.querySelector('.player-wrap');
+  wrap.addEventListener('touchstart', onFsTap, {passive:true});
+  wrap.addEventListener('click', onFsTap);
 }
 
 function closeExpand(){
   if(!isExpanded)return;
   isExpanded = false;
-  document.querySelector('.player-wrap').classList.remove('expanded');
+  clearFsUiTimer();
+  var wrap = document.querySelector('.player-wrap');
+  wrap.removeEventListener('touchstart', onFsTap);
+  wrap.removeEventListener('click', onFsTap);
+  wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
+  // UIを再表示状態に戻す
+  var bar = document.getElementById('fs-ui-bar');
+  if(bar) bar.classList.remove('hidden');
+}
+
+// UI（タイトルバー）の表示・非表示
+function showFsUi(){
+  var bar = document.getElementById('fs-ui-bar');
+  if(bar) bar.classList.remove('hidden');
+  resetFsUiTimer();
+}
+
+function hideFsUi(){
+  var bar = document.getElementById('fs-ui-bar');
+  if(bar) bar.classList.add('hidden');
+}
+
+function resetFsUiTimer(){
+  clearFsUiTimer();
+  // YouTubeのUIが消える時間（約3秒）に合わせて3秒後に非表示
+  fsUiTimer = setTimeout(hideFsUi, 3000);
+}
+
+function clearFsUiTimer(){
+  if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}
+}
+
+function onFsTap(){
+  if(!isExpanded)return;
+  showFsUi();
 }
 
 function updateExpandTitle(){
   var t = document.getElementById('viewing-title').textContent;
-  var el = document.getElementById('expand-bar-title');
+  var el = document.getElementById('fs-ui-title');
   if(el) el.textContent = t;
 }
 
