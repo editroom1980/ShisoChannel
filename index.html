@@ -49,7 +49,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   max-width:1240px;margin:0 auto;
   padding:20px 20px 48px;
   display:grid;
-  grid-template-columns:1fr 340px;
+  grid-template-columns:1fr 300px;
   gap:20px;
 }
 
@@ -491,16 +491,26 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
-  // 疑似全画面解除後：iPhoneで再生が一時停止する問題を修正
-  setTimeout(function(){
-    if(ytPlayer&&ytReady&&!isOff){
+  // 疑似全画面解除後：iPhoneで再生が停止する問題を修正
+  // 複数回試行して確実に再開させる
+  var _resumeCount=0;
+  var _resumeTimer=setInterval(function(){
+    _resumeCount++;
+    if(!isOff&&ytPlayer&&ytReady){
       try{
-        if(ytPlayer.getPlayerState()===YT.PlayerState.PAUSED){
+        var st=ytPlayer.getPlayerState();
+        // 再生中(1)でなければ再生を試みる
+        if(st!==1&&st!==0){ // 0=終了は除く
           ytPlayer.playVideo();
         }
-      }catch(_){}
+        if(st===1||st===0||_resumeCount>=6){
+          clearInterval(_resumeTimer);
+        }
+      }catch(_){clearInterval(_resumeTimer);}
+    }else{
+      clearInterval(_resumeTimer);
     }
-  },500);
+  },300);
 }
 
 function showFsUi(){var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');resetFsUiTimer();}
@@ -658,21 +668,24 @@ function hlSB(c,p){
 //  タップ判定（スクロールと区別）
 // ══════════════════════════════════════════════
 function addTap(el,onTap){
-  var startX=0,startY=0,moved=false,touchFired=false;
-  el.addEventListener('touchstart',function(e){
-    startX=e.touches[0].clientX;startY=e.touches[0].clientY;
-    moved=false;touchFired=false;
-  },{passive:true});
-  el.addEventListener('touchmove',function(e){
-    if(Math.abs(e.touches[0].clientY-startY)>8||Math.abs(e.touches[0].clientX-startX)>8)moved=true;
-  },{passive:true});
-  el.addEventListener('touchend',function(e){
-    if(!moved){e.preventDefault();touchFired=true;onTap();}
-  },{passive:false});
-  el.addEventListener('click',function(){
-    if(touchFired){touchFired=false;return;}
-    onTap();
-  });
+  var hasTouchSupport=('ontouchstart' in window);
+  if(hasTouchSupport){
+    // タッチデバイス：touchend でスクロールと区別してタップ処理
+    var startX=0,startY=0,moved=false;
+    el.addEventListener('touchstart',function(e){
+      startX=e.touches[0].clientX;startY=e.touches[0].clientY;moved=false;
+    },{passive:true});
+    el.addEventListener('touchmove',function(e){
+      if(Math.abs(e.touches[0].clientY-startY)>8||Math.abs(e.touches[0].clientX-startX)>8)moved=true;
+    },{passive:true});
+    el.addEventListener('touchend',function(e){
+      if(!moved){e.preventDefault();onTap();}
+    },{passive:false});
+    // タッチデバイスのclickは300ms遅延があるので使わない
+  }else{
+    // マウス（PC/Mac）：通常のclickのみ
+    el.addEventListener('click',function(){onTap();});
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -703,7 +716,7 @@ function renderSB(){
           chip.className='time-chip-item';
           chip.id='chip-'+pIdx+'-'+cIdx;
           chip.textContent=hm(times[cIdx]);
-          addTap(chip,function(){
+                    addTap(chip,function(){
             if(inAir()){
               var pos=nowPos();
               if(pos&&pos.p===pIdx){isManual=false;playSchedule(pos.c,pIdx);}
@@ -758,19 +771,6 @@ function powerOn(){
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
-function syncSidebarHeight(){
-  // PC時：番組表の最小高さを左カラム（プレイヤーエリア）の高さに合わせる
-  if(window.innerWidth>840){
-    var leftCol=document.querySelector('.page > div:first-child');
-    var sidebar=document.querySelector('.sidebar');
-    if(leftCol&&sidebar){
-      sidebar.style.minHeight=leftCol.offsetHeight+'px';
-    }
-  }else{
-    var sidebar=document.querySelector('.sidebar');
-    if(sidebar)sidebar.style.minHeight='';
-  }
-}
 
 function init(){
   var d=new Date();
@@ -779,9 +779,6 @@ function init(){
   addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
-  // 起動時とリサイズ時に高さを同期
-  setTimeout(syncSidebarHeight,500);
-  window.addEventListener('resize',syncSidebarHeight);
 }
 init();
 </script>
