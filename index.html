@@ -93,53 +93,47 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .pdur{font-size:9px;color:var(--text3);}
 .footer{background:var(--forest);color:rgba(255,255,255,0.45);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
 
-/* ── 疑似全画面（CSS only、iframeは移動しない） ── */
+/* ── 疑似全画面（スマホのみ） ── */
 .player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
-  padding-bottom:0;
-  border-radius:0;border:none;
-  box-shadow:none;
+  padding-bottom:0;border-radius:0;border:none;box-shadow:none;
 }
 .player-wrap.expanded #yt-player-api{
-  position:absolute;inset:0 0 44px 0; /* 下部バー分 */
+  position:absolute;top:0;left:0;right:0;bottom:44px;
 }
-.player-wrap.expanded #yt-player-api iframe{
-  width:100%;height:100%;
-}
-/* 疑似全画面時の下部バー */
+.player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
+/* 下部バー */
 .expand-bar{
-  position:absolute;bottom:0;left:0;right:0;
-  height:44px;
-  background:rgba(0,0,0,0.85);
-  display:none;
-  align-items:center;
-  padding:0 16px;
-  gap:12px;
-  z-index:10;
+  position:absolute;bottom:0;left:0;right:0;height:44px;
+  background:rgba(0,0,0,0.88);
+  display:none;align-items:center;padding:0 16px;gap:12px;z-index:10;
 }
 .player-wrap.expanded .expand-bar{display:flex;}
-.expand-bar-title{
-  font-size:12px;color:rgba(255,255,255,0.75);
-  flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
-}
+.expand-bar-title{font-size:13px;color:rgba(255,255,255,0.8);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .expand-close-btn{
-  background:none;border:1px solid rgba(255,255,255,0.45);
-  color:#fff;font-size:11px;padding:5px 14px;
-  border-radius:3px;cursor:pointer;font-family:inherit;
-  white-space:nowrap;flex-shrink:0;
-  -webkit-tap-highlight-color:transparent;
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.5);
+  color:#fff;font-size:13px;font-weight:700;padding:8px 20px;border-radius:4px;
+  cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;
 }
-/* 拡大ボタン */
-.expand-open-btn{
-  position:absolute;bottom:10px;right:10px;z-index:20;
-  background:rgba(0,0,0,0.6);
-  border:1px solid rgba(255,255,255,0.5);
-  color:#fff;font-size:12px;padding:6px 12px;
-  border-radius:3px;cursor:pointer;font-family:inherit;
-  -webkit-tap-highlight-color:transparent;
-  letter-spacing:1px;
+/* 拡大ボタン：デフォルト非表示（PC非表示・スマホのみ表示） */
+.expand-open-btn{display:none;}
+@media(max-width:840px){
+  /* スマホのみ：動画の上に大きく中央配置 */
+  .expand-open-btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    position:absolute;
+    left:0;right:0;bottom:0;
+    height:44px;
+    background:rgba(0,0,0,0.55);
+    border:none;border-top:1px solid rgba(255,255,255,0.2);
+    color:#fff;font-size:14px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+    -webkit-tap-highlight-color:transparent;
+    z-index:20;letter-spacing:1px;
+  }
+  /* 拡大中は拡大ボタンを隠す */
+  .player-wrap.expanded .expand-open-btn{display:none;}
 }
-/* 疑似全画面中は背面ページをスクロール不可に */
 body.fs-open{overflow:hidden;}
 
 @media(max-width:840px){
@@ -454,12 +448,12 @@ function playManual(pIdx){
   setEndTimer(CYCLE[pIdx].dur*60);
 }
 // ══════════════════════════════════════════════
-//  疑似全画面（CSSクラスの付け外しのみ・iframeは移動しない）
+//  疑似全画面（スマホのみ・CSSクラスの付け外し）
 // ══════════════════════════════════════════════
 var isExpanded = false;
 
 function openExpand(){
-  if(isExpanded) return;
+  if(isExpanded){closeExpand();return;} // すでに拡大中なら閉じる（トグル）
   isExpanded = true;
   document.querySelector('.player-wrap').classList.add('expanded');
   document.body.classList.add('fs-open');
@@ -467,7 +461,7 @@ function openExpand(){
 }
 
 function closeExpand(){
-  if(!isExpanded) return;
+  if(!isExpanded)return;
   isExpanded = false;
   document.querySelector('.player-wrap').classList.remove('expanded');
   document.body.classList.remove('fs-open');
