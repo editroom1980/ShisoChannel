@@ -29,160 +29,257 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 
 /* ══ ヘッダー ══ */
 #main-content{display:none;}
-.header{background:var(--forest);padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 10px rgba(0,0,0,0.2);}
+.header{background:var(--forest);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 10px rgba(0,0,0,0.2);}
 .h-logo{display:flex;flex-direction:column;}
-.h-logo-main{font-size:18px;font-weight:700;color:var(--white);letter-spacing:2px;}
+.h-logo-main{font-size:19px;font-weight:700;color:var(--white);letter-spacing:2px;}
 .h-logo-main em{color:var(--gold2);font-style:normal;}
-.h-logo-sub{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-top:2px;}
-.h-right{display:flex;align-items:center;gap:12px;}
-.h-datetime{display:flex;flex-direction:column;align-items:flex-end;gap:0;}
-.h-date{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:1px;}
-.h-time{font-size:20px;font-weight:300;color:rgba(255,255,255,0.85);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1.1;}
-.onair-badge{display:flex;align-items:center;gap:5px;border:1px solid var(--red);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:2px;letter-spacing:2px;background:rgba(184,48,48,0.2);}
+.h-logo-sub{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-top:3px;}
+.h-right{display:flex;align-items:center;gap:14px;}
+.h-datetime{display:flex;flex-direction:column;align-items:flex-end;}
+.h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
+.h-time{font-size:22px;font-weight:300;color:rgba(255,255,255,0.85);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1.1;}
+.onair-badge{display:flex;align-items:center;gap:6px;border:1px solid var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:2px;letter-spacing:2px;background:rgba(184,48,48,0.2);}
 .onair-badge.off{border-color:var(--text3);background:rgba(100,100,100,0.15);}
-.bdot{width:5px;height:5px;background:#ff6060;border-radius:50%;animation:blink 1.4s infinite;}
+.bdot{width:6px;height:6px;background:#ff6060;border-radius:50%;animation:blink 1.4s infinite;}
 .bdot.grey{background:var(--text3);animation:none;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 
-/* ══ ページレイアウト ══ */
-.page{max-width:1240px;margin:0 auto;padding:16px 16px 40px;display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;}
+/* ══ ページレイアウト（PC/Mac） ══ */
+.page{
+  max-width:1240px;margin:0 auto;
+  padding:20px 20px 48px;
+  display:grid;
+  grid-template-columns:1fr 340px;
+  gap:20px;
+  align-items:start;
+}
 
-/* ══ プレイヤーエリア ══ */
-.viewing-bar{background:var(--white);border:1px solid var(--border);border-bottom:none;border-radius:6px 6px 0 0;padding:10px 14px;display:flex;align-items:flex-start;gap:8px;}
-#viewing-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.4;flex:1;}
-.cat-tag{font-size:9px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-top:1px;}
+/* ══ 左カラム：プレイヤーエリア ══ */
 
-.player-wrap{position:relative;padding-bottom:56.25%;border:1px solid var(--border);border-top:none;overflow:hidden;box-shadow:0 3px 16px rgba(30,58,40,0.15);background:#000;}
+/* タイトルバー */
+.viewing-bar{
+  background:var(--white);border:1px solid var(--border);border-bottom:none;
+  border-radius:6px 6px 0 0;
+  padding:12px 16px;
+  display:flex;align-items:flex-start;gap:10px;
+  min-height:48px;
+}
+#viewing-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.5;flex:1;}
+.cat-tag{font-size:10px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-top:2px;}
+
+/* プレイヤー本体 */
+.player-wrap{
+  position:relative;padding-bottom:56.25%;
+  border:1px solid var(--border);border-top:none;
+  overflow:hidden;box-shadow:0 4px 20px rgba(30,58,40,0.15);background:#000;
+}
 #yt-player-api{position:absolute;inset:0;width:100%;height:100%;}
 #ended-ov{position:absolute;inset:0;z-index:35;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 #sw-ov{position:absolute;inset:0;z-index:30;background:rgba(30,58,40,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
-.ended-icon{font-size:36px;opacity:0.5;}
-.ended-ttl{font-size:16px;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:2px;text-align:center;padding:0 20px;}
-.ended-sub{font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:1px;}
-.sw-spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+.ended-icon{font-size:38px;opacity:0.5;}
+.ended-ttl{font-size:17px;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:2px;text-align:center;padding:0 20px;}
+.ended-sub{font-size:12px;color:rgba(255,255,255,0.35);letter-spacing:1px;}
+.sw-spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sw-lbl{font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:2px;}
+.sw-lbl{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;}
 
 /* 疑似全画面タイトルバー */
-.fs-ui-bar{position:absolute;top:0;left:0;right:0;height:40px;z-index:20;background:linear-gradient(rgba(0,0,0,0.65),transparent);display:none;align-items:center;padding:0 12px;transition:opacity 0.3s;}
+.fs-ui-bar{position:absolute;top:0;left:0;right:0;height:42px;z-index:20;background:linear-gradient(rgba(0,0,0,0.65),transparent);display:none;align-items:center;padding:0 14px;transition:opacity 0.3s;}
 .player-wrap.expanded .fs-ui-bar{display:flex;}
 .fs-ui-bar.hidden{opacity:0;pointer-events:none;}
-.fs-ui-title{font-size:11px;color:rgba(255,255,255,0.85);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.fs-ui-title{font-size:12px;color:rgba(255,255,255,0.85);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 
-/* 疑似全画面ボタン（スマホのみ・YTボタンに重ねる） */
-.expand-open-btn,.expand-close-btn{position:absolute;bottom:8px;right:8px;z-index:30;width:36px;height:36px;background:transparent;border:none;cursor:pointer;padding:0;font-size:0;-webkit-tap-highlight-color:transparent;display:none;}
-.expand-close-btn{display:none;}
-.player-wrap.expanded .expand-open-btn{display:none;}
-.player-wrap.expanded .expand-close-btn{display:none;}
-/* スマホ */
-@media(max-width:840px),(max-height:500px){
+/* 疑似全画面ボタン（スマホのみ・YT全画面ボタンに重なる透明ボタン） */
+.expand-open-btn,.expand-close-btn{
+  position:absolute;bottom:8px;right:8px;z-index:30;
+  width:36px;height:36px;
+  background:transparent;border:none;cursor:pointer;padding:0;font-size:0;
+  -webkit-tap-highlight-color:transparent;
+  display:none; /* デフォルト非表示 */
+}
+/* スマホ・タブレット（縦横問わず） */
+@media(max-width:840px){
   .expand-open-btn{display:block;}
-  .player-wrap.expanded{position:fixed;inset:0;z-index:500;padding-bottom:0;border-radius:0;border:none;box-shadow:none;}
-  .player-wrap.expanded #yt-player-api{position:absolute;inset:0;}
-  .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
   .player-wrap.expanded .expand-open-btn{display:none;}
   .player-wrap.expanded .expand-close-btn{display:block;}
 }
-@media(min-width:841px) and (min-height:501px){
-  .expand-open-btn,.expand-close-btn{display:none!important;}
+/* 横画面スマホ */
+@media(orientation:landscape) and (max-height:500px){
+  .expand-open-btn{display:block;}
+  .player-wrap.expanded .expand-open-btn{display:none;}
+  .player-wrap.expanded .expand-close-btn{display:block;}
 }
+/* 疑似全画面状態 */
+.player-wrap.expanded{
+  position:fixed;inset:0;z-index:500;
+  padding-bottom:0;border-radius:0;border:none;box-shadow:none;
+}
+.player-wrap.expanded #yt-player-api{position:absolute;inset:0;}
+.player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
 body.fs-open{overflow:hidden;}
 
-/* ══ LIVEボタン ══ */
-.live-btn{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;padding:7px 14px;width:100%;text-align:left;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+/* ══ LIVEボタン（タイトルバーと同じ高さ・同じパディング） ══ */
+.live-btn{
+  display:flex;align-items:center;gap:8px;
+  background:var(--white);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 6px 6px;
+  padding:12px 16px; /* viewing-barと同じpadding */
+  min-height:48px;   /* viewing-barと同じ高さ */
+  width:100%;text-align:left;font-family:inherit;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
 .live-btn.no-click{cursor:default;}
-.ldot{width:6px;height:6px;background:var(--red);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;}
+.ldot{width:7px;height:7px;background:var(--red);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;}
 .ldot.g{background:var(--text3);animation:none;}
-.llbl{font-size:9px;font-weight:700;letter-spacing:2px;flex-shrink:0;}
+.llbl{font-size:10px;font-weight:700;letter-spacing:2px;flex-shrink:0;}
 .llbl.r{color:var(--red);}
 .llbl.g{color:var(--text3);}
-.ldiv{width:1px;height:12px;background:var(--border);flex-shrink:0;}
-#live-name{font-size:11px;color:var(--text2);line-height:1.3;flex:1;}
-#live-hint{font-size:9px;color:var(--green2);white-space:nowrap;flex-shrink:0;font-weight:700;display:none;}
+.ldiv{width:1px;height:14px;background:var(--border);flex-shrink:0;}
+#live-name{font-size:13px;color:var(--text2);line-height:1.4;flex:1;}
+#live-hint{font-size:10px;color:var(--green2);white-space:nowrap;flex-shrink:0;font-weight:700;display:none;}
 
-/* ══ プログレスバー ══ */
-.prog-row{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:7px 12px;margin-top:8px;display:flex;align-items:center;gap:8px;}
-.pt{font-size:10px;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
-.bar-bg{flex:1;height:4px;background:var(--green5);border-radius:2px;overflow:hidden;}
-.bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:2px;transition:width .8s linear;width:0%;}
-.cycle-tag{font-size:9px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:2px 7px;border-radius:20px;white-space:nowrap;}
+/* ══ プログレスバー（タイトルバーと同じ高さ） ══ */
+.prog-row{
+  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  padding:12px 16px; /* viewing-barと同じpadding */
+  min-height:48px;   /* 高さを揃える */
+  margin-top:10px;
+  display:flex;align-items:center;gap:12px;
+}
+.pt{font-size:12px;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
+.cycle-tag{font-size:10px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:3px 9px;border-radius:20px;white-space:nowrap;}
 
-/* ══ 次の番組 ══ */
-.next-row{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:7px 12px;margin-top:6px;display:flex;align-items:center;gap:8px;}
-.next-pill{font-size:9px;font-weight:700;color:var(--white);background:var(--green2);padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
-#next-title{font-size:11px;color:var(--text2);line-height:1.3;flex:1;}
-#next-time{font-size:10px;color:var(--text3);white-space:nowrap;padding-left:6px;flex-shrink:0;}
+/* ══ 次の番組（タイトルバーと同じ高さ） ══ */
+.next-row{
+  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  padding:12px 16px; /* viewing-barと同じpadding */
+  min-height:48px;   /* 高さを揃える */
+  margin-top:8px;
+  display:flex;align-items:center;gap:10px;
+}
+.next-pill{font-size:10px;font-weight:700;color:var(--white);background:var(--green2);padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+#next-title{font-size:13px;color:var(--text2);line-height:1.4;flex:1;}
+#next-time{font-size:12px;color:var(--text3);white-space:nowrap;padding-left:8px;flex-shrink:0;}
 
 /* ══ 番組表サイドバー ══ */
-.sidebar{background:var(--white);border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 2px 10px rgba(30,58,40,0.07);position:sticky;top:74px;max-height:calc(100vh - 90px);display:flex;flex-direction:column;}
-.sb-head{background:var(--forest);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.sb-ttl{font-size:11px;font-weight:700;color:var(--white);letter-spacing:3px;}
-#today-date{font-size:9px;color:rgba(255,255,255,0.5);}
-.sb-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;touch-action:pan-y;}
+.sidebar{
+  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  overflow:hidden;
+  box-shadow:0 2px 12px rgba(30,58,40,0.08);
+  /* 左カラムと同じ高さになるよう sticky + max-height で制御 */
+  position:sticky;top:76px;
+  max-height:calc(100vh - 92px);
+  display:flex;flex-direction:column;
+}
+.sb-head{
+  background:var(--forest);padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.sb-ttl{font-size:12px;font-weight:700;color:var(--white);letter-spacing:3px;}
+#today-date{font-size:10px;color:rgba(255,255,255,0.5);}
+
+/* 番組リスト：スクロール可能 */
+.sb-list{
+  overflow-y:auto;flex:1;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}
 
 /* 番組行 */
-.prow{display:flex;flex-direction:column;border-bottom:1px solid var(--border);cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent;}
+.prow{
+  display:flex;flex-direction:column;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;position:relative;
+  -webkit-tap-highlight-color:transparent;
+}
 .prow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
 .prow.active{background:var(--green5);}
 .prow.active::before{background:var(--green2);}
-.prow:active{background:var(--green5);}
 
-/* 時刻バー（タイトル上部） */
-.time-bar{display:flex;align-items:center;gap:0;padding:4px 10px 0;border-bottom:1px solid var(--green5);}
-.time-chip-item{font-size:9px;font-weight:700;color:var(--text3);padding:1px 4px;border-radius:2px;white-space:nowrap;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+/* 時刻バー（タイトル上・横並び） */
+.time-bar{
+  display:flex;align-items:center;
+  padding:5px 12px 3px;
+  border-bottom:1px solid var(--green5);
+  gap:0;flex-wrap:nowrap;overflow:hidden;
+}
+.time-chip-item{
+  font-size:10px;font-weight:600;color:var(--text3);
+  padding:1px 4px;border-radius:2px;
+  white-space:nowrap;flex-shrink:0;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .1s,color .1s;
+}
 .time-chip-item:active{background:var(--green4);color:var(--forest);}
-.time-chip-item.on{color:var(--white);background:var(--green2);border-radius:2px;}
-.time-sep{font-size:7px;color:var(--border);padding:0 1px;flex-shrink:0;}
+.time-chip-item.on{color:var(--white);background:var(--green2);}
+.time-sep{font-size:8px;color:var(--border);padding:0 2px;flex-shrink:0;user-select:none;}
 
 /* 番組情報エリア */
-.pinfo{padding:5px 10px 7px;display:flex;flex-direction:column;gap:2px;}
-.prow.active .pinfo .pname{color:var(--green);font-weight:700;}
-.pname{font-size:12px;font-weight:500;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.pmeta{display:flex;align-items:center;gap:5px;}
-.pcat{font-size:10px;font-weight:700;color:var(--green2);}
-.pdur{font-size:10px;color:var(--text3);}
+.pinfo{padding:6px 12px 8px;display:flex;flex-direction:column;gap:3px;}
+.pname{font-size:13px;font-weight:600;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.prow.active .pname{color:var(--green);font-weight:700;}
+.pmeta{display:flex;align-items:center;gap:6px;}
+.pcat{font-size:11px;font-weight:700;color:var(--green2);}
+.pdur{font-size:11px;color:var(--text3);}
 
 /* ══ フッター ══ */
-.footer{background:var(--forest);color:rgba(255,255,255,0.4);text-align:center;padding:12px;font-size:10px;letter-spacing:1px;}
+.footer{background:var(--forest);color:rgba(255,255,255,0.4);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
 
 /* ══ レスポンシブ ══ */
 
-/* タブレット・PC */
-@media(min-width:841px){
-  .page{padding:20px 20px 56px;gap:20px;}
-  .pname{font-size:11px;}
-}
-
 /* スマホ縦画面 */
 @media(max-width:840px){
-  .page{grid-template-columns:1fr;padding:10px 10px 36px;gap:10px;}
-  .sidebar{position:static;max-height:none;}
-  .h-date{display:none;}
-  .header{height:52px;padding:0 14px;}
+  .page{
+    grid-template-columns:1fr;
+    padding:10px 10px 36px;
+    gap:10px;
+  }
+  .sidebar{
+    position:static;
+    /* 画面の残りの高さに合わせて番組表の高さを決める */
+    max-height:calc(100vh - 380px);
+    min-height:200px;
+  }
+  .header{height:54px;padding:0 14px;}
   .h-logo-main{font-size:16px;}
+  .h-logo-sub{font-size:8px;}
   .h-time{font-size:18px;}
+  .onair-badge{padding:3px 8px;font-size:9px;}
+  .h-date{display:none;}
+  /* スマホはUI要素をやや小さく */
+  .viewing-bar{padding:9px 12px;min-height:42px;}
+  #viewing-title{font-size:13px;}
+  .live-btn{padding:9px 12px;min-height:42px;}
+  #live-name{font-size:12px;}
+  .prog-row{padding:8px 12px;min-height:40px;margin-top:6px;}
+  .next-row{padding:8px 12px;min-height:40px;margin-top:6px;}
+  #next-title{font-size:12px;}
 }
 
 /* スマホ横画面：動画(左) ＋ 番組表(右) */
 @media(orientation:landscape) and (max-height:500px){
   .page{
     grid-template-columns:1fr 260px;
-    padding:6px 8px 8px;
+    padding:4px 8px 8px;
     gap:8px;
-    align-items:start;
   }
   .sidebar{
-    position:sticky;
-    top:46px;
-    max-height:calc(100vh - 54px);
+    position:sticky;top:44px;
+    max-height:calc(100vh - 52px);
   }
   .header{height:42px;padding:0 10px;}
   .h-logo-sub,.h-date{display:none;}
   .h-logo-main{font-size:14px;}
   .h-time{font-size:15px;}
-  .onair-badge{padding:2px 6px;font-size:8px;}
-  /* 横画面では情報行を非表示にしてプレイヤーを最大化 */
+  .onair-badge{padding:2px 7px;font-size:9px;}
+  /* 横画面ではプログレス・次番組を隠してプレイヤーを大きく */
   .prog-row,.next-row{display:none;}
+  .viewing-bar{padding:7px 10px;min-height:36px;}
+  #viewing-title{font-size:12px;}
+  .live-btn{padding:7px 10px;min-height:36px;}
+  #live-name{font-size:11px;}
 }
 </style>
 </head>
@@ -229,6 +326,7 @@ body.fs-open{overflow:hidden;}
         <div id="viewing-title">読み込み中...</div>
         <span class="cat-tag" id="viewing-cat">—</span>
       </div>
+
       <div class="player-wrap" id="player-wrap">
         <div id="ended-ov">
           <div class="ended-icon">📺</div>
@@ -240,11 +338,9 @@ body.fs-open{overflow:hidden;}
           <div class="sw-lbl" id="sw-lbl">切り替え中...</div>
         </div>
         <div id="yt-player-api"></div>
-        <!-- 疑似全画面タイトルバー -->
         <div class="fs-ui-bar" id="fs-ui-bar">
           <span class="fs-ui-title" id="fs-ui-title">—</span>
         </div>
-        <!-- 疑似全画面ボタン（スマホのみ・YT全画面ボタンに重なる） -->
         <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"></button>
         <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"></button>
       </div>
@@ -281,7 +377,7 @@ body.fs-open{overflow:hidden;}
     </div>
   </div>
 
-  <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　広報情報課</footer>
+  <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　広報情報課　TEL 0790-63-3115</footer>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -305,7 +401,6 @@ var S=6,E=24,CM=180,NC=(E-S)*60/CM;
 var CS=[];for(var i=0;i<NC;i++)CS.push(S*60+i*CM);
 var CO=[];var _a=0;for(var i=0;i<CYCLE.length;i++){CO.push(_a);_a+=CYCLE[i].dur;}
 
-// ── utils ──
 var f2=function(n){return String(n).padStart(2,'0');};
 var hm=function(m){return f2(Math.floor(m/60))+':'+f2(m%60);};
 var nowF=function(){var d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;};
@@ -333,7 +428,7 @@ var nxtOf=function(c,p){
 };
 var allT=function(pIdx){var r=[];for(var i=0;i<CS.length;i++)r.push(CS[i]+CO[pIdx]);return r;};
 
-// ── 状態 ──
+// ── 状態管理 ──
 var isManual=false,isOff=false;
 var vC=0,vP=0,lC=0,lP=0;
 var ytPlayer=null,ytReady=false;
@@ -370,10 +465,9 @@ function onYouTubeIframeAPIReady(){
 }
 
 // ══════════════════════════════════════════════
-//  疑似全画面（スマホのみ・CSSクラスの付け外し）
+//  疑似全画面（スマホのみ）
 // ══════════════════════════════════════════════
-var isExpanded=false;
-var fsUiTimer=null;
+var isExpanded=false,fsUiTimer=null;
 
 function openExpand(){
   if(isOff)return;
@@ -382,8 +476,7 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  updateExpandTitle();
-  showFsUi();
+  updateExpandTitle();showFsUi();
   wrap.addEventListener('touchstart',onFsTap,{passive:true});
   wrap.addEventListener('click',onFsTap);
 }
@@ -399,13 +492,11 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
-  // ★全画面解除後：iPhoneで再生が止まる問題を修正
-  // 少し待ってから再生状態を確認して再開
+  // 疑似全画面解除後：iPhoneで再生が一時停止する問題を修正
   setTimeout(function(){
     if(ytPlayer&&ytReady&&!isOff){
       try{
-        var st=ytPlayer.getPlayerState();
-        if(st===YT.PlayerState.PAUSED||st===2){
+        if(ytPlayer.getPlayerState()===YT.PlayerState.PAUSED){
           ytPlayer.playVideo();
         }
       }catch(_){}
@@ -413,26 +504,11 @@ function closeExpand(){
   },500);
 }
 
-function showFsUi(){
-  var bar=document.getElementById('fs-ui-bar');
-  if(bar)bar.classList.remove('hidden');
-  resetFsUiTimer();
-}
-function hideFsUi(){
-  var bar=document.getElementById('fs-ui-bar');
-  if(bar)bar.classList.add('hidden');
-}
-function resetFsUiTimer(){
-  clearFsUiTimer();
-  fsUiTimer=setTimeout(hideFsUi,3000);
-}
-function clearFsUiTimer(){
-  if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}
-}
-function onFsTap(){
-  if(!isExpanded)return;
-  showFsUi();
-}
+function showFsUi(){var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');resetFsUiTimer();}
+function hideFsUi(){var b=document.getElementById('fs-ui-bar');if(b)b.classList.add('hidden');}
+function resetFsUiTimer(){clearFsUiTimer();fsUiTimer=setTimeout(hideFsUi,3000);}
+function clearFsUiTimer(){if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}}
+function onFsTap(){if(!isExpanded)return;showFsUi();}
 function updateExpandTitle(){
   var t=document.getElementById('viewing-title').textContent;
   var el=document.getElementById('fs-ui-title');
@@ -449,21 +525,22 @@ function showSpinner(v,t){
 // ── タイマー ──
 function clearSpinnerTimer(){if(spinnerTimer){clearTimeout(spinnerTimer);spinnerTimer=null;}}
 function clearEndTimer(){if(endTimer){clearTimeout(endTimer);endTimer=null;}}
-function setEndTimer(remainSec){
+function setEndTimer(sec){
   clearEndTimer();
-  if(remainSec<=0)return;
-  endTimer=setTimeout(function(){endTimer=null;onEnded();},(remainSec+5)*1000);
+  if(sec<=0)return;
+  endTimer=setTimeout(function(){endTimer=null;onEnded();},(sec+5)*1000);
 }
 
-// ── loadVideo ──
+// ── 動画ロード（ユーザー操作チェーン内で呼ぶこと・Safari対策） ──
 function loadVideo(ytId,sec,msg){
   clearSpinnerTimer();
   showEnded(false);
   showSpinner(true,msg||'切り替え中...');
   if(ytReady&&ytPlayer){
     ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
+    // iOS でpause後にloadVideoByIdが効かない場合の保険
     setTimeout(function(){
-      try{var st=ytPlayer.getPlayerState();if(st!==1)ytPlayer.playVideo();}catch(_){}
+      try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
     },500);
   }else{
     pendingYtId=ytId;pendingSec=sec;
@@ -478,12 +555,11 @@ function pauseVideo(){
 
 // ── 動画終了 ──
 function onEnded(){
-  clearEndTimer();
-  isManual=false;
+  clearEndTimer();isManual=false;
   var pos=nowPos();
   if(!pos){
     if(isExpanded){closeExpand();setTimeout(gotoOffAir,300);}
-    else{gotoOffAir();}
+    else gotoOffAir();
     return;
   }
   playSchedule(pos.c,pos.p);
@@ -493,22 +569,19 @@ function onEnded(){
 //  再生モード
 // ══════════════════════════════════════════════
 function playSchedule(c,p){
-  clearEndTimer();
-  isManual=false;isOff=false;
+  clearEndTimer();isManual=false;isOff=false;
   vC=c;vP=p;
   var sec=esOf(c,p);
-  var remainSec=CYCLE[p].dur*60-sec;
   loadVideo(CYCLE[p].ytId,sec,'放送中の番組に切り替えています...');
   setViewUI(c,p);refreshLive();
-  setEndTimer(remainSec);
+  setEndTimer(CYCLE[p].dur*60-sec);
 }
 
+// ★ Safari対策：ユーザータップのコールチェーン内で直接呼ぶ
 function playManual(pIdx){
-  clearEndTimer();
-  isManual=true;isOff=false;
+  clearEndTimer();isManual=true;isOff=false;
   showEnded(false);
-  var pos=nowPos();
-  var c=pos?pos.c:0;
+  var pos=nowPos();var c=pos?pos.c:0;
   vC=c;vP=pIdx;
   loadVideo(CYCLE[pIdx].ytId,0,'番組を読み込んでいます...');
   setViewUI(c,pIdx);refreshLive();
@@ -516,8 +589,7 @@ function playManual(pIdx){
 }
 
 function gotoOffAir(){
-  clearEndTimer();
-  closeExpand();
+  clearEndTimer();closeExpand();
   isOff=true;isManual=false;
   pauseVideo();
   showSpinner(false);showEnded(true);
@@ -548,25 +620,20 @@ function setLiveBtn(mode){
   else{btn.className='live-btn no-click';dot.className='ldot g';lbl.className='llbl g';hint.style.display='none';}
 }
 function onLiveClick(){
-  if(!isManual)return;
-  isManual=false;
+  if(!isManual)return;isManual=false;
   var pos=nowPos();
-  if(pos)playSchedule(pos.c,pos.p);
-  else gotoOffAir();
+  if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
 
 // ── UI更新 ──
 function setViewUI(c,p){
   document.getElementById('viewing-title').textContent=CYCLE[p].title;
   document.getElementById('viewing-cat').textContent=CYCLE[p].cat;
-  updateExpandTitle();
-  hlSB(c,p);
+  updateExpandTitle();hlSB(c,p);
 }
-
 function refreshLive(){
   if(isOff)return;
-  var pos=nowPos();
-  if(!pos){gotoOffAir();return;}
+  var pos=nowPos();if(!pos){gotoOffAir();return;}
   var c=pos.c,p=pos.p;lC=c;lP=p;
   document.getElementById('onair-badge').classList.remove('off');
   document.getElementById('bdot').className='bdot';
@@ -581,7 +648,6 @@ function refreshLive(){
   document.getElementById('next-time').textContent=nx?hm(smOf(nx.c,nx.p)):'06:00（翌日）';
   setLiveBtn(isManual?'manual':'live');
 }
-
 function hlSB(c,p){
   document.querySelectorAll('.prow').forEach(function(r,i){r.classList.toggle('active',i===p);});
   document.querySelectorAll('.time-chip-item').forEach(function(el){el.classList.remove('on');});
@@ -590,7 +656,7 @@ function hlSB(c,p){
 }
 
 // ══════════════════════════════════════════════
-//  スクロール・タップ判定
+//  タップ判定（スクロールと区別）
 // ══════════════════════════════════════════════
 function addTap(el,onTap){
   var startX=0,startY=0,moved=false,touchFired=false;
@@ -619,23 +685,19 @@ function renderSB(){
   for(var pIdx=0;pIdx<CYCLE.length;pIdx++){
     (function(pIdx){
       var prog=CYCLE[pIdx];
-      var times=allT(pIdx); // 6サイクル分の時刻（分）
+      var times=allT(pIdx);
 
       var row=document.createElement('div');
-      row.className='prow';
-      row.id='row-'+pIdx;
+      row.className='prow';row.id='row-'+pIdx;
 
-      // ── 時刻バー（タイトル上・横並び） ──
+      // 時刻バー（タイトル上・横並び・6時刻）
       var timeBar=document.createElement('div');
       timeBar.className='time-bar';
-
       for(var ci=0;ci<times.length;ci++){
         (function(cIdx){
-          // 区切り
           if(cIdx>0){
             var sep=document.createElement('span');
-            sep.className='time-sep';
-            sep.textContent='|';
+            sep.className='time-sep';sep.textContent='|';
             timeBar.appendChild(sep);
           }
           var chip=document.createElement('span');
@@ -653,12 +715,13 @@ function renderSB(){
         })(ci);
       }
 
-      // ── 番組情報 ──
+      // 番組情報
       var pinfo=document.createElement('div');
       pinfo.className='pinfo';
       pinfo.innerHTML=
         '<div class="pname">'+prog.title+'</div>'+
-        '<div class="pmeta"><span class="pcat">'+prog.cat+'</span><span class="pdur">/ '+prog.dur+'分</span></div>';
+        '<div class="pmeta"><span class="pcat">'+prog.cat+'</span>'+
+        '<span class="pdur">/ '+prog.dur+'分</span></div>';
       addTap(pinfo,function(){playManual(pIdx);});
 
       row.appendChild(timeBar);
@@ -669,7 +732,7 @@ function renderSB(){
 }
 
 // ══════════════════════════════════════════════
-//  定期チェック・時計
+//  定期チェック・時計・電源・初期化
 // ══════════════════════════════════════════════
 function periodicCheck(){
   if(isManual){refreshLive();return;}
@@ -679,7 +742,6 @@ function periodicCheck(){
   refreshLive();
   if(!isOff&&(c!==lC||p!==lP))playSchedule(c,p);
 }
-
 function updateClock(){
   var d=new Date();
   var t=f2(d.getHours())+':'+f2(d.getMinutes())+':'+f2(d.getSeconds());
@@ -691,26 +753,16 @@ function updateClock(){
   el=document.getElementById('h-time');if(el)el.textContent=t;
   el=document.getElementById('h-date');if(el)el.textContent=ds;
 }
-
-// ══════════════════════════════════════════════
-//  電源ボタン
-// ══════════════════════════════════════════════
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
   var pos=nowPos();
-  if(pos){playSchedule(pos.c,pos.p);}
-  else{gotoOffAir();}
+  if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
-
-// ══════════════════════════════════════════════
-//  初期化
-// ══════════════════════════════════════════════
 function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
-  renderSB();
-  updateClock();
+  renderSB();updateClock();
   addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
