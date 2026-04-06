@@ -105,12 +105,14 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 /* 拡大・閉じるボタン：デフォルト非表示（PC非表示） */
 .expand-open-btn, .expand-close-btn {
   position:absolute;
-  bottom:8px; right:8px;
+  bottom:10px; right:12px;
   z-index:40;
   width:44px; height:44px;
   border-radius:50%;
   border:none; cursor:pointer;
   display:none !important; /* PCではdisplay:noneを強制 */
+  opacity:1;
+  transition:opacity 0.5s;
   align-items:center; justify-content:center;
   -webkit-tap-highlight-color:transparent;
   font-size:20px; color:#fff;
@@ -122,6 +124,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 @media(max-width:840px){
   .expand-open-btn {
     display:flex !important;
+    opacity:0; /* 初期は非表示、再生開始時にshowExpandBtn()で表示 */
   }
   /* 疑似全画面中：拡大→非表示、閉じる→表示 */
   .player-wrap.expanded .expand-open-btn {
@@ -141,6 +144,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 @media(orientation:landscape) and (max-height:500px){
   .expand-open-btn {
     display:flex !important;
+    opacity:0; /* 初期は非表示、再生開始時にshowExpandBtn()で表示 */
   }
   .player-wrap.expanded .expand-open-btn {
     display:none !important;
@@ -382,7 +386,7 @@ body.fs-open{overflow:hidden;}
         <span class="cat-tag" id="viewing-cat">—</span>
       </div>
 
-      <div class="player-wrap" id="player-wrap">
+      <div class="player-wrap" id="player-wrap" ontouchstart="if(!isExpanded)showExpandBtn()" onclick="if(!isExpanded)showExpandBtn()">
         <div id="ended-ov">
           <div class="ended-icon">📺</div>
           <div class="ended-ttl">本日の放送は終了しました</div>
@@ -397,9 +401,9 @@ body.fs-open{overflow:hidden;}
           <span class="fs-ui-title" id="fs-ui-title">—</span>
         </div>
         <!-- 拡大ボタン：YouTubeの全画面ボタンと同位置に重なる -->
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶</button>
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"><svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
         <!-- 閉じるボタン：疑似全画面中のみ表示 -->
-        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()">✕</button>
+        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"><svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
         <!-- 疑似全画面中のタップキャプチャーレイヤー（iframeの上に重なる透明レイヤー） -->
         <div id="fs-tap-layer"></div>
       </div>
@@ -521,6 +525,8 @@ function onYouTubeIframeAPIReady(){
         if(st===YT.PlayerState.ENDED){onEnded();return;}
         if(st===YT.PlayerState.PLAYING||st===YT.PlayerState.BUFFERING){
           showEnded(false);showSpinner(false);
+          // 再生開始時に拡大ボタンを表示してタイマースタート
+          if(!isExpanded) showExpandBtn();
         }
       }
     }
@@ -530,7 +536,7 @@ function onYouTubeIframeAPIReady(){
 // ══════════════════════════════════════════════
 //  疑似全画面（スマホのみ）
 // ══════════════════════════════════════════════
-var isExpanded=false,fsUiTimer=null;
+var isExpanded=false,fsUiTimer=null,expandBtnTimer=null;
 
 function openExpand(){
   if(isOff)return;
@@ -566,6 +572,22 @@ function closeExpand(){
       }catch(_){}
     },200);
   }
+}
+
+// 通常時（非全画面）の拡大ボタン自動非表示
+function showExpandBtn(){
+  var btn=document.getElementById('expand-open-btn');
+  if(btn)btn.style.opacity='1';
+  clearExpandBtnTimer();
+  // YouTubeのUIが消えるタイミング（約3秒）に合わせて消す
+  expandBtnTimer=setTimeout(hideExpandBtn,3000);
+}
+function hideExpandBtn(){
+  var btn=document.getElementById('expand-open-btn');
+  if(btn)btn.style.opacity='0';
+}
+function clearExpandBtnTimer(){
+  if(expandBtnTimer){clearTimeout(expandBtnTimer);expandBtnTimer=null;}
 }
 
 function showFsUi(){
