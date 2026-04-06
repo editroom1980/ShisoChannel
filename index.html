@@ -96,7 +96,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 /* 拡大・閉じるボタン：デフォルト非表示（PC非表示） */
 .expand-open-btn, .expand-close-btn {
   position:absolute;
-  bottom:10px; right:10px;
+  bottom:8px; right:8px;
   z-index:40;
   width:44px; height:44px;
   border-radius:50%;
@@ -525,8 +525,9 @@ function openExpand(){
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
   updateExpandTitle();showFsUi();
-  wrap.addEventListener('touchstart',onFsTap,{passive:true});
-  wrap.addEventListener('click',onFsTap);
+  // iframeがタップを吸収するためdocumentレベルで検知
+  document.addEventListener('touchstart',onFsTap,{passive:true});
+  document.addEventListener('click',onFsTap);
 }
 
 function closeExpand(){
@@ -535,9 +536,10 @@ function closeExpand(){
   clearFsUiTimer();
 
   var wrap=document.getElementById('player-wrap');
-  wrap.removeEventListener('touchstart',onFsTap);
-  wrap.removeEventListener('click',onFsTap);
   wrap.classList.remove('expanded');
+  // documentレベルのイベントを解除
+  document.removeEventListener('touchstart',onFsTap);
+  document.removeEventListener('click',onFsTap);
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
@@ -717,7 +719,26 @@ function hlSB(c,p){
   document.querySelectorAll('.prow').forEach(function(r,i){r.classList.toggle('active',i===p);});
   document.querySelectorAll('.time-chip-item').forEach(function(el){el.classList.remove('on');});
   var chip=document.getElementById('chip-'+p+'-'+c);
-  if(chip){chip.classList.add('on');chip.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  if(chip){
+    chip.classList.add('on');
+    // sb-list内だけスクロール（ページ全体をスクロールしない）
+    var list=document.getElementById('sb-list');
+    var row=document.getElementById('row-'+p);
+    if(list&&row){
+      var listTop=list.getBoundingClientRect().top;
+      var rowTop=row.getBoundingClientRect().top;
+      var rowH=row.offsetHeight;
+      var listH=list.offsetHeight;
+      var scrollTop=list.scrollTop;
+      // rowが見えていない場合のみスクロール
+      var relTop=rowTop-listTop;
+      if(relTop<0){
+        list.scrollTop=scrollTop+relTop-8;
+      }else if(relTop+rowH>listH){
+        list.scrollTop=scrollTop+relTop+rowH-listH+8;
+      }
+    }
+  }
 }
 
 // ══════════════════════════════════════════════
