@@ -679,10 +679,23 @@ function showSpinner(v,t){
 // ── タイマー ──
 function clearSpinnerTimer(){if(spinnerTimer){clearTimeout(spinnerTimer);spinnerTimer=null;}}
 function clearEndTimer(){if(endTimer){clearTimeout(endTimer);endTimer=null;}}
-function setEndTimer(sec){
+
+// 放送終了時刻(c,p)になった瞬間に切り替えるタイマー
+// YouTubeの実尺に関係なく、放送スケジュール通りに正確に切り替わる
+function setEndTimer(c,p){
   clearEndTimer();
-  if(sec<=0)return;
-  endTimer=setTimeout(function(){endTimer=null;onEnded();},(sec+5)*1000);
+  var endMin=emOf(c,p);        // 番組終了時刻（分）
+  var nowMin=nowF();            // 現在時刻（分）
+  var remainMs=(endMin-nowMin)*60*1000; // 残りミリ秒
+  if(remainMs<=0){
+    // すでに終了時刻を過ぎている場合は即切り替え
+    setTimeout(function(){onEnded();},100);
+    return;
+  }
+  endTimer=setTimeout(function(){
+    endTimer=null;
+    onEnded();
+  },remainMs);
 }
 
 // ── 動画ロード（ユーザー操作チェーン内で呼ぶこと・Safari対策） ──
@@ -731,7 +744,8 @@ function playSchedule(c,p){
   var sec=esOf(c,p);
   loadVideo(CYCLE[p].ytId,sec,'放送中の番組に切り替えています...');
   setViewUI(c,p);refreshLive();
-  setEndTimer(CYCLE[p].dur*60-sec);
+  // 放送終了時刻(c,p)を基準にタイマーセット（YouTubeの実尺に依存しない）
+  setEndTimer(c,p);
 }
 
 // ★ Safari対策：ユーザータップのコールチェーン内で直接呼ぶ
