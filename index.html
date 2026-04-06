@@ -129,7 +129,8 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   flex-shrink:0;
 }
 .expand-open-btn:active{background:var(--green5);}
-@media(max-width:840px){
+/* タッチデバイス（iPhone・iPad）のみ拡大ボタンを表示 */
+@media(pointer:coarse){
   .expand-open-btn{display:flex;}
 }
 @media(orientation:landscape) and (max-height:500px){
