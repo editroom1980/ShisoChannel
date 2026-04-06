@@ -145,6 +145,25 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
 body.fs-open{overflow:hidden;}
 
+/* 閉じるボタン：疑似全画面中のみ表示・右下固定 */
+.expand-close-btn{
+  display:none;
+  position:absolute;
+  bottom:10px;right:12px;
+  z-index:40;
+  align-items:center;justify-content:center;gap:4px;
+  padding:0 14px;height:36px;
+  border-radius:4px;border:none;cursor:pointer;
+  background:rgba(0,0,0,0.65);
+  color:#fff;font-size:13px;font-weight:700;
+  font-family:inherit;letter-spacing:1px;
+  -webkit-tap-highlight-color:transparent;
+  transition:opacity 0.3s;
+}
+.player-wrap.expanded .expand-close-btn{
+  display:flex;
+}
+
 /* ══ LIVEボタン（タイトルバーと同じ高さ・同じパディング） ══ */
 .live-btn{
   display:flex;align-items:center;gap:8px;
