@@ -460,7 +460,10 @@ body.fs-open{overflow:hidden;}
     <div class="sidebar">
       <div class="sb-head">
         <div class="sb-ttl">番 組 表</div>
-        <div id="today-date">—</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+          <div id="today-date">—</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:0.5px;text-align:right;">番組名をクリックするといつでも視聴できます</div>
+        </div>
       </div>
       <div class="sb-list" id="sb-list"></div>
     </div>
