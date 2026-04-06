@@ -93,30 +93,56 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
    player-wrap内に position:absolute で配置
    YouTubeのiframeの全画面ボタンと同じ右下位置に重ねる
    スマホのみ表示 */
+/* 拡大・閉じるボタン：デフォルト非表示（PC非表示） */
 .expand-open-btn, .expand-close-btn {
   position:absolute;
   bottom:10px; right:10px;
-  z-index:40;  /* iframeより前面 */
-  width:42px; height:42px;
+  z-index:40;
+  width:44px; height:44px;
   border-radius:50%;
   border:none; cursor:pointer;
-  display:none; /* デフォルト非表示 */
+  display:none !important; /* PCではdisplay:noneを強制 */
   align-items:center; justify-content:center;
   -webkit-tap-highlight-color:transparent;
-  font-size:18px; color:#fff;
-  background:rgba(0,0,0,0.55);
+  font-size:20px; color:#fff;
+  background:rgba(0,0,0,0.6);
   font-family:inherit;
+  transition:opacity 0.3s;
 }
-/* スマホのみ表示 */
+/* スマホのみ：拡大ボタンを表示 */
 @media(max-width:840px){
-  .expand-open-btn { display:flex; }
-  .player-wrap.expanded .expand-open-btn { display:none; }
-  .player-wrap.expanded .expand-close-btn { display:flex; }
+  .expand-open-btn {
+    display:flex !important;
+  }
+  /* 疑似全画面中：拡大→非表示、閉じる→表示 */
+  .player-wrap.expanded .expand-open-btn {
+    display:none !important;
+  }
+  .player-wrap.expanded .expand-close-btn {
+    display:flex !important;
+  }
+  /* fs-ui-bar が hidden の時（3秒後自動非表示）は
+     閉じるボタンも一緒に非表示にする */
+  .player-wrap.expanded .fs-ui-bar.hidden ~ .expand-close-btn {
+    opacity:0;
+    pointer-events:none;
+  }
 }
+/* 横画面スマホ */
 @media(orientation:landscape) and (max-height:500px){
-  .expand-open-btn { display:flex; }
-  .player-wrap.expanded .expand-open-btn { display:none; }
-  .player-wrap.expanded .expand-close-btn { display:flex; }
+  .expand-open-btn {
+    display:flex !important;
+  }
+  .player-wrap.expanded .expand-open-btn {
+    display:none !important;
+  }
+  .player-wrap.expanded .expand-close-btn {
+    display:flex !important;
+  }
+  .player-wrap.expanded .fs-ui-bar.hidden ~ .expand-close-btn {
+    opacity:0;
+    pointer-events:none;
+  }
 }
 @media(orientation:landscape) and (max-height:500px){
   .expand-open-btn{
@@ -529,8 +555,19 @@ function closeExpand(){
   }
 }
 
-function showFsUi(){var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');resetFsUiTimer();}
-function hideFsUi(){var b=document.getElementById('fs-ui-bar');if(b)b.classList.add('hidden');}
+function showFsUi(){
+  var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');
+  // 閉じるボタンも表示
+  var cb=document.getElementById('expand-close-btn');
+  if(cb){cb.style.opacity='';cb.style.pointerEvents='';}
+  resetFsUiTimer();
+}
+function hideFsUi(){
+  var b=document.getElementById('fs-ui-bar');if(b)b.classList.add('hidden');
+  // 閉じるボタンも非表示
+  var cb=document.getElementById('expand-close-btn');
+  if(cb){cb.style.opacity='0';cb.style.pointerEvents='none';}
+}
 function resetFsUiTimer(){clearFsUiTimer();fsUiTimer=setTimeout(hideFsUi,3000);}
 function clearFsUiTimer(){if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}}
 function onFsTap(){if(!isExpanded)return;showFsUi();}
