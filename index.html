@@ -129,8 +129,9 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   flex-shrink:0;
 }
 .expand-open-btn:active{background:var(--green5);}
-/* タッチデバイス（iPhone・iPad）のみ拡大ボタンを表示 */
-@media(pointer:coarse){
+/* 全デバイスで拡大ボタンを表示 */
+@media(pointer:coarse),
+(pointer:fine){
   .expand-open-btn{display:flex;}
 }
 @media(orientation:landscape) and (max-height:500px){
@@ -141,12 +142,26 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
   padding-bottom:0;border-radius:0;border:none;box-shadow:none;
-  height:100% !important;  /* 横画面で固定heightを上書き */
+  height:100% !important;
   width:100% !important;
 }
 .player-wrap.expanded #yt-player-api{position:absolute;inset:0;}
 .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
 body.fs-open{overflow:hidden;}
+/* PC全画面時（requestFullscreen） */
+.player-wrap:fullscreen{
+  padding-bottom:0;background:#000;
+  width:100vw;height:100vh;
+}
+.player-wrap:-webkit-full-screen{
+  padding-bottom:0;background:#000;
+  width:100vw;height:100vh;
+}
+.player-wrap:fullscreen #yt-player-api{position:absolute;inset:0;}
+.player-wrap:fullscreen #yt-player-api iframe{width:100%;height:100%;}
+/* 全画面中のUIボタン */
+.player-wrap:fullscreen .expand-close-btn{display:flex;}
+.player-wrap:-webkit-full-screen .expand-close-btn{display:flex;}
 
 /* 閉じるボタン：疑似全画面中のみ表示・右下固定 */
 .expand-close-btn{
@@ -534,6 +549,20 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
+// PC全画面：ESCキーや外部操作で全画面解除された時の処理
+['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){
+  document.addEventListener(ev,function(){
+    var isFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    if(!isFull&&isExpanded){
+      // 全画面が解除された（ESCなど）
+      isExpanded=false;
+      clearFsUiTimer();
+      var btn=document.getElementById('expand-close-btn');
+      if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
+    }
+  });
+});
+
 // ══════════════════════════════════════════════
 //  疑似全画面（スマホのみ）
 // ══════════════════════════════════════════════
@@ -542,6 +571,20 @@ var isExpanded=false,fsUiTimer=null;
 function openExpand(){
   if(isOff)return;
   if(isExpanded){closeExpand();return;}
+  // PC/Mac：requestFullscreenで本物の全画面
+  var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+  if(!isTouch){
+    var wrap=document.getElementById('player-wrap');
+    var req=wrap.requestFullscreen||wrap.webkitRequestFullscreen||wrap.mozRequestFullScreen;
+    if(req){
+      isExpanded=true;
+      req.call(wrap);
+      // 全画面になったらAPIに通知してUIを表示
+      updateExpandTitle();showFsUi();
+      return;
+    }
+  }
+  // タッチデバイス：疑似全画面（position:fixed）
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
@@ -554,17 +597,32 @@ function closeExpand(){
   isExpanded=false;
   clearFsUiTimer();
 
+  // PC：本物の全画面を解除
+  var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+  if(!isTouch){
+    try{
+      if(document.fullscreenElement||document.webkitFullscreenElement){
+        if(document.exitFullscreen) document.exitFullscreen();
+        else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+    }catch(_){}
+    var btn=document.getElementById('expand-close-btn');
+    if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
+    var tl=document.getElementById('_fs_tl');
+    if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
+    return;
+  }
+
+  // タッチデバイス：疑似全画面を解除
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
-  // 一時的なタップレイヤーを削除
-  var tl=document.getElementById('_fs_tl');
-  if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
-  // iPhoneで疑似全画面解除後に再生が止まる問題への対処
-  // position:fixedを外すとSafariがiframeを再描画して一時停止する
-  // ユーザー操作（閉じるボタンタップ）の直後なのでplayVideoが許可される
+  var tl=document.getElementById('_fs_tl');
+  if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
+
+  // タッチデバイス：解除後に再生を維持
   if(!isOff&&ytPlayer&&ytReady){
     setTimeout(function(){
       try{
