@@ -87,6 +87,15 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .player-wrap.expanded .fs-ui-bar{display:flex;}
 .fs-ui-bar.hidden{opacity:0;pointer-events:none;}
 .fs-ui-title{font-size:12px;color:rgba(255,255,255,0.85);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+/* 疑似全画面中のタップキャプチャーレイヤー */
+#fs-tap-layer{
+  display:none;
+  position:absolute;inset:0;
+  z-index:25; /* fs-ui-bar(20)とボタン(40)の間 */
+  background:transparent;
+  cursor:pointer;
+}
+/* fs-tap-layerの表示はJSで制御 */
 
 /* 疑似全画面ボタン（スマホのみ・YT全画面ボタンに重なる透明ボタン） */
 /* 疑似全画面ボタン（拡大・閉じる）
@@ -391,6 +400,8 @@ body.fs-open{overflow:hidden;}
         <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶</button>
         <!-- 閉じるボタン：疑似全画面中のみ表示 -->
         <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()">✕</button>
+        <!-- 疑似全画面中のタップキャプチャーレイヤー（iframeの上に重なる透明レイヤー） -->
+        <div id="fs-tap-layer"></div>
       </div>
 
       <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
@@ -428,6 +439,10 @@ body.fs-open{overflow:hidden;}
   <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　秘書広報課　TEL 0790-63-3115</footer>
 </div>
 
+<script>
+// YouTube IFrame API が既にロード済みの場合（再読み込み時）に対応
+window.onYouTubeIframeAPIReadyCallbacks = window.onYouTubeIframeAPIReadyCallbacks || [];
+</script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ══════════════════════════════════════════════
@@ -525,9 +540,6 @@ function openExpand(){
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
   updateExpandTitle();showFsUi();
-  // iframeがタップを吸収するためdocumentレベルで検知
-  document.addEventListener('touchstart',onFsTap,{passive:true});
-  document.addEventListener('click',onFsTap);
 }
 
 function closeExpand(){
@@ -537,9 +549,8 @@ function closeExpand(){
 
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
-  // documentレベルのイベントを解除
-  document.removeEventListener('touchstart',onFsTap);
-  document.removeEventListener('click',onFsTap);
+  // タップキャプチャーレイヤーを非表示
+  var tl=document.getElementById('fs-tap-layer');if(tl)tl.style.display='none';
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
@@ -558,17 +569,33 @@ function closeExpand(){
 }
 
 function showFsUi(){
+  // タイトルバーと閉じるボタンを表示
   var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');
-  // 閉じるボタンも表示
   var cb=document.getElementById('expand-close-btn');
   if(cb){cb.style.opacity='';cb.style.pointerEvents='';}
+  // タップキャプチャーレイヤーを非表示（UIが見えている間はiframeを操作できる）
+  var tl=document.getElementById('fs-tap-layer');if(tl)tl.style.display='none';
   resetFsUiTimer();
 }
 function hideFsUi(){
+  // タイトルバーと閉じるボタンを非表示
   var b=document.getElementById('fs-ui-bar');if(b)b.classList.add('hidden');
-  // 閉じるボタンも非表示
   var cb=document.getElementById('expand-close-btn');
   if(cb){cb.style.opacity='0';cb.style.pointerEvents='none';}
+  // タップキャプチャーレイヤーを表示（UIが消えている間はタップを横取りしてUIを再表示）
+  var tl=document.getElementById('fs-tap-layer');
+  if(tl&&isExpanded){
+    tl.style.display='block';
+    // タップでUIを再表示
+    tl.onclick=function(){
+      tl.style.display='none';
+      showFsUi();
+    };
+    tl.ontouchstart=function(){
+      tl.style.display='none';
+      showFsUi();
+    };
+  }
 }
 function resetFsUiTimer(){clearFsUiTimer();fsUiTimer=setTimeout(hideFsUi,3000);}
 function clearFsUiTimer(){if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}}
@@ -849,6 +876,13 @@ function powerOn(){
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
 
+function initYTPlayer(){
+  // YouTube IFrame API が既にロード済みの場合（再読み込み時）に直接初期化
+  if(window.YT && window.YT.Player){
+    onYouTubeIframeAPIReady();
+  }
+}
+
 function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
@@ -856,6 +890,8 @@ function init(){
   addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
+  // 再読み込み時にYT APIが既にロード済みの場合の対応
+  setTimeout(initYTPlayer, 100);
 }
 init();
 </script>
