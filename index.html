@@ -89,21 +89,34 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .fs-ui-title{font-size:12px;color:rgba(255,255,255,0.85);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 
 /* 疑似全画面ボタン（スマホのみ・YT全画面ボタンに重なる透明ボタン） */
-/* 疑似全画面ボタン：player-wrapの外・live-btnの中に配置 */
-.expand-open-btn,.expand-close-btn{
-  display:none; /* PCでは非表示 */
+/* 疑似全画面ボタン（拡大・閉じる）
+   player-wrap内に position:absolute で配置
+   YouTubeのiframeの全画面ボタンと同じ右下位置に重ねる
+   スマホのみ表示 */
+.expand-open-btn, .expand-close-btn {
+  position:absolute;
+  bottom:10px; right:10px;
+  z-index:40;  /* iframeより前面 */
+  width:42px; height:42px;
+  border-radius:50%;
+  border:none; cursor:pointer;
+  display:none; /* デフォルト非表示 */
+  align-items:center; justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  font-size:18px; color:#fff;
+  background:rgba(0,0,0,0.55);
+  font-family:inherit;
 }
 /* スマホのみ表示 */
 @media(max-width:840px){
-  .expand-open-btn{
-    display:flex;align-items:center;justify-content:center;gap:6px;
-    margin-left:auto;
-    background:none;border:none;cursor:pointer;padding:0;
-    color:var(--green2);font-size:11px;font-weight:700;
-    -webkit-tap-highlight-color:transparent;flex-shrink:0;
-    font-family:inherit;letter-spacing:1px;
-  }
-  .expand-close-btn{display:none;}
+  .expand-open-btn { display:flex; }
+  .player-wrap.expanded .expand-open-btn { display:none; }
+  .player-wrap.expanded .expand-close-btn { display:flex; }
+}
+@media(orientation:landscape) and (max-height:500px){
+  .expand-open-btn { display:flex; }
+  .player-wrap.expanded .expand-open-btn { display:none; }
+  .player-wrap.expanded .expand-close-btn { display:flex; }
 }
 @media(orientation:landscape) and (max-height:500px){
   .expand-open-btn{
@@ -348,6 +361,10 @@ body.fs-open{overflow:hidden;}
         <div class="fs-ui-bar" id="fs-ui-bar">
           <span class="fs-ui-title" id="fs-ui-title">—</span>
         </div>
+        <!-- 拡大ボタン：YouTubeの全画面ボタンと同位置に重なる -->
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶</button>
+        <!-- 閉じるボタン：疑似全画面中のみ表示 -->
+        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()">✕</button>
       </div>
 
       <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
@@ -356,8 +373,6 @@ body.fs-open{overflow:hidden;}
         <div class="ldiv"></div>
         <span id="live-name">—</span>
         <span id="live-hint">← 戻る</span>
-        <!-- 疑似全画面ボタン：スマホのみ表示・live-btn右端 -->
-        <button class="expand-open-btn" id="expand-open-btn" onclick="handleExpandBtn(event)">⛶ 拡大</button>
       </button>
 
       <div class="prog-row">
@@ -483,9 +498,6 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  // 拡大ボタンを非表示
-  var btn=document.getElementById('expand-open-btn');
-  if(btn)btn.style.display='none';
   updateExpandTitle();showFsUi();
   wrap.addEventListener('touchstart',onFsTap,{passive:true});
   wrap.addEventListener('click',onFsTap);
@@ -503,10 +515,6 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
-  // 拡大ボタンを再表示
-  var btn=document.getElementById('expand-open-btn');
-  if(btn)btn.style.display='';
-
   // iPhoneで疑似全画面解除後に再生が止まる問題への対処
   // position:fixedを外すとSafariがiframeを再描画して一時停止する
   // ユーザー操作（閉じるボタンタップ）の直後なのでplayVideoが許可される
@@ -643,10 +651,6 @@ function onLiveClick(){
   if(!isManual)return;isManual=false;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
-}
-function handleExpandBtn(e){
-  e.stopPropagation(); // live-btnのclickに伝播しない
-  openExpand();
 }
 
 // ── UI更新 ──
