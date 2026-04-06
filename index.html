@@ -485,16 +485,6 @@ function closeExpand(){
   isExpanded=false;
   clearFsUiTimer();
 
-  // ★解除前に現在の再生位置を記録
-  var resumeSec=0;
-  var wasPlaying=false;
-  try{
-    if(ytPlayer&&ytReady){
-      resumeSec=ytPlayer.getCurrentTime()||0;
-      wasPlaying=(ytPlayer.getPlayerState()===YT.PlayerState.PLAYING);
-    }
-  }catch(_){}
-
   var wrap=document.getElementById('player-wrap');
   wrap.removeEventListener('touchstart',onFsTap);
   wrap.removeEventListener('click',onFsTap);
@@ -503,23 +493,15 @@ function closeExpand(){
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
 
-  // ★expandedクラス除去後、iPhoneのレイアウト再計算完了を待って再開
-  // seekToで正確な位置から再生することでiframeリロードによるリセットを上書き
-  if(wasPlaying&&!isOff){
-    setTimeout(function(){
-      try{
-        ytPlayer.seekTo(resumeSec,true);
-        ytPlayer.playVideo();
-      }catch(_){}
-      // 念のため0.5秒後にも再確認
-      setTimeout(function(){
-        try{
-          if(ytPlayer.getPlayerState()!==YT.PlayerState.PLAYING){
-            ytPlayer.playVideo();
-          }
-        }catch(_){}
-      },500);
-    },150);
+  // ユーザーが閉じるボタンを押した直後（ユーザー操作チェーン内）なので
+  // loadVideoById が Safari でも自動再生される
+  if(!isOff&&ytPlayer&&ytReady){
+    // 現在スケジュール位置から再ロード（最も確実な再開方法）
+    var pos=nowPos();
+    if(pos){
+      var sec=esOf(pos.c,pos.p);
+      ytPlayer.loadVideoById({videoId:CYCLE[pos.p].ytId,startSeconds:sec});
+    }
   }
 }
 
@@ -577,10 +559,12 @@ function onEnded(){
   clearEndTimer();isManual=false;
   var pos=nowPos();
   if(!pos){
-    if(isExpanded){closeExpand();setTimeout(gotoOffAir,300);}
-    else gotoOffAir();
+    // 放送時間外：疑似全画面を解除してoffAir表示
+    if(isExpanded){closeExpand();}
+    setTimeout(gotoOffAir,isExpanded?300:0);
     return;
   }
+  // 疑似全画面中でも expandedを維持したまま次の番組へ
   playSchedule(pos.c,pos.p);
 }
 
