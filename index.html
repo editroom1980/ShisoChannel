@@ -569,7 +569,7 @@ function onYouTubeIframeAPIReady(){
 var isExpanded=false,fsUiTimer=null;
 
 function openExpand(){
-  if(isOff)return;
+  // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
   // PC/Mac：requestFullscreenで本物の全画面
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
