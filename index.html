@@ -89,24 +89,32 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .fs-ui-title{font-size:12px;color:rgba(255,255,255,0.85);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 
 /* 疑似全画面ボタン（スマホのみ・YT全画面ボタンに重なる透明ボタン） */
+/* 疑似全画面ボタン：player-wrapの外・live-btnの中に配置 */
 .expand-open-btn,.expand-close-btn{
-  position:absolute;bottom:8px;right:8px;z-index:30;
-  width:36px;height:36px;
-  background:transparent;border:none;cursor:pointer;padding:0;font-size:0;
-  -webkit-tap-highlight-color:transparent;
-  display:none; /* デフォルト非表示 */
+  display:none; /* PCでは非表示 */
 }
-/* スマホ・タブレット（縦横問わず） */
+/* スマホのみ表示 */
 @media(max-width:840px){
-  .expand-open-btn{display:block;}
-  .player-wrap.expanded .expand-open-btn{display:none;}
-  .player-wrap.expanded .expand-close-btn{display:block;}
+  .expand-open-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    margin-left:auto;
+    background:none;border:none;cursor:pointer;padding:0;
+    color:var(--green2);font-size:11px;font-weight:700;
+    -webkit-tap-highlight-color:transparent;flex-shrink:0;
+    font-family:inherit;letter-spacing:1px;
+  }
+  .expand-close-btn{display:none;}
 }
-/* 横画面スマホ */
 @media(orientation:landscape) and (max-height:500px){
-  .expand-open-btn{display:block;}
-  .player-wrap.expanded .expand-open-btn{display:none;}
-  .player-wrap.expanded .expand-close-btn{display:block;}
+  .expand-open-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    margin-left:auto;
+    background:none;border:none;cursor:pointer;padding:0;
+    color:var(--green2);font-size:11px;font-weight:700;
+    -webkit-tap-highlight-color:transparent;flex-shrink:0;
+    font-family:inherit;letter-spacing:1px;
+  }
+  .expand-close-btn{display:none;}
 }
 /* 疑似全画面状態 */
 .player-wrap.expanded{
@@ -340,8 +348,6 @@ body.fs-open{overflow:hidden;}
         <div class="fs-ui-bar" id="fs-ui-bar">
           <span class="fs-ui-title" id="fs-ui-title">—</span>
         </div>
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"></button>
-        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"></button>
       </div>
 
       <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
@@ -350,6 +356,8 @@ body.fs-open{overflow:hidden;}
         <div class="ldiv"></div>
         <span id="live-name">—</span>
         <span id="live-hint">← 戻る</span>
+        <!-- 疑似全画面ボタン：スマホのみ表示・live-btn右端 -->
+        <button class="expand-open-btn" id="expand-open-btn" onclick="handleExpandBtn(event)">⛶ 拡大</button>
       </button>
 
       <div class="prog-row">
@@ -475,6 +483,9 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
+  // 拡大ボタンを非表示
+  var btn=document.getElementById('expand-open-btn');
+  if(btn)btn.style.display='none';
   updateExpandTitle();showFsUi();
   wrap.addEventListener('touchstart',onFsTap,{passive:true});
   wrap.addEventListener('click',onFsTap);
@@ -492,16 +503,21 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
+  // 拡大ボタンを再表示
+  var btn=document.getElementById('expand-open-btn');
+  if(btn)btn.style.display='';
 
-  // ユーザーが閉じるボタンを押した直後（ユーザー操作チェーン内）なので
-  // loadVideoById が Safari でも自動再生される
+  // iPhoneで疑似全画面解除後に再生が止まる問題への対処
+  // position:fixedを外すとSafariがiframeを再描画して一時停止する
+  // ユーザー操作（閉じるボタンタップ）の直後なのでplayVideoが許可される
   if(!isOff&&ytPlayer&&ytReady){
-    // 現在スケジュール位置から再ロード（最も確実な再開方法）
-    var pos=nowPos();
-    if(pos){
-      var sec=esOf(pos.c,pos.p);
-      ytPlayer.loadVideoById({videoId:CYCLE[pos.p].ytId,startSeconds:sec});
-    }
+    setTimeout(function(){
+      try{
+        if(ytPlayer.getPlayerState()!==YT.PlayerState.PLAYING){
+          ytPlayer.playVideo();
+        }
+      }catch(_){}
+    },200);
   }
 }
 
@@ -560,8 +576,9 @@ function onEnded(){
   var pos=nowPos();
   if(!pos){
     // 放送時間外：疑似全画面を解除してoffAir表示
-    if(isExpanded){closeExpand();}
-    setTimeout(gotoOffAir,isExpanded?300:0);
+    var wasExp=isExpanded;
+    if(wasExp)closeExpand();
+    setTimeout(gotoOffAir,wasExp?300:0);
     return;
   }
   // 疑似全画面中でも expandedを維持したまま次の番組へ
@@ -626,6 +643,10 @@ function onLiveClick(){
   if(!isManual)return;isManual=false;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
+}
+function handleExpandBtn(e){
+  e.stopPropagation(); // live-btnのclickに伝播しない
+  openExpand();
 }
 
 // ── UI更新 ──
