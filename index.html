@@ -83,19 +83,8 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .sw-lbl{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;}
 
 /* 疑似全画面タイトルバー */
-.fs-ui-bar{position:absolute;top:0;left:0;right:0;height:42px;z-index:20;background:linear-gradient(rgba(0,0,0,0.65),transparent);display:none;align-items:center;padding:0 14px;transition:opacity 0.3s;}
-.player-wrap.expanded .fs-ui-bar{display:flex;}
-.fs-ui-bar.hidden{opacity:0;pointer-events:none;}
-.fs-ui-title{font-size:12px;color:rgba(255,255,255,0.85);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-/* 疑似全画面中のタップキャプチャーレイヤー */
-#fs-tap-layer{
-  display:none;
-  position:absolute;inset:0;
-  z-index:25; /* fs-ui-bar(20)とボタン(40)の間 */
-  background:transparent;
-  cursor:pointer;
-}
-/* fs-tap-layerの表示はJSで制御 */
+
+
 
 /* 疑似全画面ボタン（スマホのみ・YT全画面ボタンに重なる透明ボタン） */
 /* 疑似全画面ボタン（拡大・閉じる）
@@ -365,7 +354,7 @@ body.fs-open{overflow:hidden;}
         <span class="cat-tag" id="viewing-cat">—</span>
       </div>
 
-      <div class="player-wrap" id="player-wrap" ontouchstart="if(!isExpanded)showExpandBtn()" onclick="if(!isExpanded)showExpandBtn()">
+      <div class="player-wrap" id="player-wrap">
         <div id="ended-ov">
           <div class="ended-icon">📺</div>
           <div class="ended-ttl">本日の放送は終了しました</div>
@@ -376,15 +365,7 @@ body.fs-open{overflow:hidden;}
           <div class="sw-lbl" id="sw-lbl">切り替え中...</div>
         </div>
         <div id="yt-player-api"></div>
-        <div class="fs-ui-bar" id="fs-ui-bar">
-          <span class="fs-ui-title" id="fs-ui-title">—</span>
-        </div>
-        <!-- 拡大ボタン：YouTubeの全画面ボタンと同位置に重なる -->
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"><svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
-        <!-- 閉じるボタン：疑似全画面中のみ表示 -->
-        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"><svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
-        <!-- 疑似全画面中のタップキャプチャーレイヤー（iframeの上に重なる透明レイヤー） -->
-        <div id="fs-tap-layer"></div>
+        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()">✕ 解除</button>
       </div>
 
       <div class="live-bar">
@@ -395,7 +376,7 @@ body.fs-open{overflow:hidden;}
           <span id="live-name">—</span>
           <span id="live-hint">← 戻る</span>
         </button>
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶&nbsp;拡大</button>
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶ 拡大</button>
       </div>
 
       <div class="prog-row">
@@ -535,8 +516,9 @@ function closeExpand(){
 
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
-  // タップキャプチャーレイヤーを非表示
-  var tl=document.getElementById('fs-tap-layer');if(tl)tl.style.display='none';
+  // 一時的なタップレイヤーを削除
+  var tl=document.getElementById('_fs_tl');
+  if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
@@ -555,33 +537,29 @@ function closeExpand(){
 }
 
 function showFsUi(){
-  // タイトルバーと閉じるボタンを表示
-  // タイトルバーと閉じるボタンを表示
-  var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');
+  // 閉じるボタンを表示
   var cb=document.getElementById('expand-close-btn');
-  if(cb){cb.style.opacity='';cb.style.pointerEvents='';}
-  // タップキャプチャーレイヤーを非表示（UIが見えている間はiframeを操作できる）
-  var tl=document.getElementById('fs-tap-layer');if(tl)tl.style.display='none';
+  if(cb){cb.style.opacity='1';cb.style.pointerEvents='';}
   resetFsUiTimer();
 }
 function hideFsUi(){
-  // タイトルバーと閉じるボタンを非表示
-  var b=document.getElementById('fs-ui-bar');if(b)b.classList.add('hidden');
+  // 閉じるボタンを非表示
   var cb=document.getElementById('expand-close-btn');
   if(cb){cb.style.opacity='0';cb.style.pointerEvents='none';}
-  // タップキャプチャーレイヤーを表示（UIが消えている間はタップを横取りしてUIを再表示）
-  var tl=document.getElementById('fs-tap-layer');
-  if(tl&&isExpanded){
-    tl.style.display='block';
-    // タップでUIを再表示
-    tl.onclick=function(){
-      tl.style.display='none';
+  // タップで再表示するためplayer-wrapに一時的な透明レイヤーをJS追加
+  if(isExpanded){
+    var wrap=document.getElementById('player-wrap');
+    var tl=document.createElement('div');
+    tl.style.cssText='position:absolute;inset:0;z-index:35;background:transparent;';
+    tl.id='_fs_tl';
+    function onTapRestore(){
+      var t=document.getElementById('_fs_tl');
+      if(t&&t.parentNode)t.parentNode.removeChild(t);
       showFsUi();
-    };
-    tl.ontouchstart=function(){
-      tl.style.display='none';
-      showFsUi();
-    };
+    }
+    tl.ontouchstart=onTapRestore;
+    tl.onclick=onTapRestore;
+    wrap.appendChild(tl);
   }
 }
 function resetFsUiTimer(){clearFsUiTimer();fsUiTimer=setTimeout(hideFsUi,3000);}
