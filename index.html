@@ -102,72 +102,51 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
    player-wrap内に position:absolute で配置
    YouTubeのiframeの全画面ボタンと同じ右下位置に重ねる
    スマホのみ表示 */
-/* 拡大・閉じるボタン：デフォルト非表示（PC非表示） */
-.expand-open-btn, .expand-close-btn {
-  position:absolute;
-  bottom:10px; right:12px;
-  z-index:40;
-  width:44px; height:44px;
-  border-radius:50%;
-  border:none; cursor:pointer;
-  display:none !important; /* PCではdisplay:noneを強制 */
-  opacity:1;
-  transition:opacity 0.5s;
-  align-items:center; justify-content:center;
-  -webkit-tap-highlight-color:transparent;
-  font-size:20px; color:#fff;
-  background:rgba(0,0,0,0.6);
+/* ══ live-bar（LIVEバー + 拡大ボタンのコンテナ） ══ */
+.live-bar{
+  display:flex;
+  align-items:stretch;
+  border:1px solid var(--border);
+  border-top:none;
+  border-radius:0 0 6px 6px;
+  background:var(--white);
+  overflow:hidden;
+}
+/* LIVEボタン：flex-grow で残りスペースを埋める */
+.live-bar .live-btn{
+  flex:1;
+  border:none;
+  border-radius:0;
+  padding:12px 16px;
+  min-height:48px;
+}
+/* 拡大ボタン：右端に固定・スマホのみ表示 */
+.expand-open-btn{
+  display:none; /* デフォルト非表示 */
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:0 14px;
+  border:none;
+  border-left:1px solid var(--border);
+  background:var(--white);
+  color:var(--green2);
+  font-size:12px;
+  font-weight:700;
   font-family:inherit;
-  transition:opacity 0.3s;
+  cursor:pointer;
+  white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+  flex-shrink:0;
 }
-/* スマホのみ：拡大ボタンを表示 */
+.expand-open-btn:active{background:var(--green5);}
 @media(max-width:840px){
-  .expand-open-btn {
-    display:flex !important;
-    opacity:0; /* 初期は非表示、再生開始時にshowExpandBtn()で表示 */
-  }
-  /* 疑似全画面中：拡大→非表示、閉じる→表示 */
-  .player-wrap.expanded .expand-open-btn {
-    display:none !important;
-  }
-  .player-wrap.expanded .expand-close-btn {
-    display:flex !important;
-  }
-  /* fs-ui-bar が hidden の時（3秒後自動非表示）は
-     閉じるボタンも一緒に非表示にする */
-  .player-wrap.expanded .fs-ui-bar.hidden ~ .expand-close-btn {
-    opacity:0;
-    pointer-events:none;
-  }
-}
-/* 横画面スマホ */
-@media(orientation:landscape) and (max-height:500px){
-  .expand-open-btn {
-    display:flex !important;
-    opacity:0; /* 初期は非表示、再生開始時にshowExpandBtn()で表示 */
-  }
-  .player-wrap.expanded .expand-open-btn {
-    display:none !important;
-  }
-  .player-wrap.expanded .expand-close-btn {
-    display:flex !important;
-  }
-  .player-wrap.expanded .fs-ui-bar.hidden ~ .expand-close-btn {
-    opacity:0;
-    pointer-events:none;
-  }
+  .expand-open-btn{display:flex;}
 }
 @media(orientation:landscape) and (max-height:500px){
-  .expand-open-btn{
-    display:flex;align-items:center;justify-content:center;gap:6px;
-    margin-left:auto;
-    background:none;border:none;cursor:pointer;padding:0;
-    color:var(--green2);font-size:11px;font-weight:700;
-    -webkit-tap-highlight-color:transparent;flex-shrink:0;
-    font-family:inherit;letter-spacing:1px;
-  }
-  .expand-close-btn{display:none;}
+  .expand-open-btn{display:flex;}
 }
+
 /* 疑似全画面状態 */
 .player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
@@ -408,13 +387,16 @@ body.fs-open{overflow:hidden;}
         <div id="fs-tap-layer"></div>
       </div>
 
-      <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
-        <div class="ldot g" id="ldot"></div>
-        <span class="llbl g" id="llbl">LIVE</span>
-        <div class="ldiv"></div>
-        <span id="live-name">—</span>
-        <span id="live-hint">← 戻る</span>
-      </button>
+      <div class="live-bar">
+        <button class="live-btn no-click" id="live-btn" onclick="onLiveClick()">
+          <div class="ldot g" id="ldot"></div>
+          <span class="llbl g" id="llbl">LIVE</span>
+          <div class="ldiv"></div>
+          <span id="live-name">—</span>
+          <span id="live-hint">← 戻る</span>
+        </button>
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()">⛶&nbsp;拡大</button>
+      </div>
 
       <div class="prog-row">
         <span class="pt" id="p-start">--:--</span>
@@ -525,8 +507,6 @@ function onYouTubeIframeAPIReady(){
         if(st===YT.PlayerState.ENDED){onEnded();return;}
         if(st===YT.PlayerState.PLAYING||st===YT.PlayerState.BUFFERING){
           showEnded(false);showSpinner(false);
-          // 再生開始時に拡大ボタンを表示してタイマースタート
-          if(!isExpanded) showExpandBtn();
         }
       }
     }
@@ -536,7 +516,7 @@ function onYouTubeIframeAPIReady(){
 // ══════════════════════════════════════════════
 //  疑似全画面（スマホのみ）
 // ══════════════════════════════════════════════
-var isExpanded=false,fsUiTimer=null,expandBtnTimer=null;
+var isExpanded=false,fsUiTimer=null;
 
 function openExpand(){
   if(isOff)return;
@@ -574,23 +554,8 @@ function closeExpand(){
   }
 }
 
-// 通常時（非全画面）の拡大ボタン自動非表示
-function showExpandBtn(){
-  var btn=document.getElementById('expand-open-btn');
-  if(btn)btn.style.opacity='1';
-  clearExpandBtnTimer();
-  // YouTubeのUIが消えるタイミング（約3秒）に合わせて消す
-  expandBtnTimer=setTimeout(hideExpandBtn,3000);
-}
-function hideExpandBtn(){
-  var btn=document.getElementById('expand-open-btn');
-  if(btn)btn.style.opacity='0';
-}
-function clearExpandBtnTimer(){
-  if(expandBtnTimer){clearTimeout(expandBtnTimer);expandBtnTimer=null;}
-}
-
 function showFsUi(){
+  // タイトルバーと閉じるボタンを表示
   // タイトルバーと閉じるボタンを表示
   var b=document.getElementById('fs-ui-bar');if(b)b.classList.remove('hidden');
   var cb=document.getElementById('expand-close-btn');
