@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそうチャンネル">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -47,8 +47,9 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .header{
   background:var(--forest);
   padding:0 24px;
-  padding-top:env(safe-area-inset-top); /* iPhoneステータスバー分を確保 */
-  height:calc(60px + env(safe-area-inset-top));
+  /* safe-area-insetの半分だけ余白を追加（多すぎないように調整） */
+  padding-top:calc(env(safe-area-inset-top) * 0.5);
+  height:calc(60px + env(safe-area-inset-top) * 0.5);
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:300;
   box-shadow:0 2px 10px rgba(0,0,0,0.2);
@@ -172,14 +173,34 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
 body.fs-open{
   overflow:hidden;
-  /* 疑似全画面中：ステータスバー領域を黒で覆う */
   background:#000;
 }
-/* 疑似全画面中のplayer-wrapをステータスバー含めて全画面に */
+/* 疑似全画面中：player-wrapを全画面に */
 body.fs-open .player-wrap.expanded{
   top:0 !important;
-  padding-top:env(safe-area-inset-top);
   background:#000;
+}
+/* 疑似全画面中：横画面のDynamic Island（左端）を黒で覆う */
+body.fs-open::before{
+  content:'';
+  position:fixed;
+  top:0; left:0;
+  width:env(safe-area-inset-left, 50px);
+  height:100vh;
+  background:#000;
+  z-index:600; /* player-wrap(500)より前面 */
+  pointer-events:none;
+}
+/* 疑似全画面中：右端のsafe-areaも黒で覆う */
+body.fs-open::after{
+  content:'';
+  position:fixed;
+  top:0; right:0;
+  width:env(safe-area-inset-right, 0px);
+  height:100vh;
+  background:#000;
+  z-index:600;
+  pointer-events:none;
 }
 /* ══ YouTubeボタンブロックレイヤー ══ */
 /* 共有ボタン（左端）・YouTubeロゴ（右端）のみブロック、シークバーは通す */
@@ -403,9 +424,9 @@ body.fs-open .player-wrap.expanded{
     min-height:200px;
   }
   .header{
-    height:calc(54px + env(safe-area-inset-top));
+    height:calc(54px + env(safe-area-inset-top) * 0.5);
     padding:0 14px;
-    padding-top:env(safe-area-inset-top);
+    padding-top:calc(env(safe-area-inset-top) * 0.5);
   }
   .h-logo-main{font-size:16px;}
   .h-logo-sub{font-size:8px;}
