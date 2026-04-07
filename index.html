@@ -480,8 +480,12 @@ body.fs-open .player-wrap.expanded{
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
   </div>
+  <div id="ps-now-wrap" style="display:none;flex-direction:column;align-items:center;gap:4px;">
+    <div style="font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:2px;">ON AIR</div>
+    <div id="ps-now-title" style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.75);letter-spacing:1px;text-align:center;padding:0 24px;line-height:1.6;"></div>
+  </div>
   <button class="ps-btn" id="ps-btn">▶ 放送開始</button>
-  <div class="ps-hint">ボタンを押すと現在放送中の番組が自動で始まります</div>
+  <div class="ps-hint" id="ps-hint">読み込み中...</div>
 </div>
 
 <!-- メイン -->
@@ -650,6 +654,10 @@ function onYouTubeIframeAPIReady(){
         if(st===YT.PlayerState.ENDED){onEnded();return;}
         if(st===YT.PlayerState.PLAYING||st===YT.PlayerState.BUFFERING){
           showEnded(false);showSpinner(false);
+        }
+        // 自動遷移：再生開始を検知したら電源画面を閉じる
+        if(st===YT.PlayerState.PLAYING&&autoTransitReady){
+          autoTransit();
         }
       }
     }
@@ -1056,6 +1064,8 @@ function updateClock(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
+  // 自動遷移で既に再生開始済みの場合はスキップ
+  if(!autoTransitReady&&(ytPlayer&&ytReady))return;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
@@ -1067,15 +1077,66 @@ function initYTPlayer(){
   }
 }
 
+// ── 自動遷移管理 ──
+var autoTransitReady=false;  // 再生検知フラグ
+var autoTransitTimer=null;   // 最大待機タイマー
+
+function autoTransit(){
+  // 二重遷移防止
+  if(!autoTransitReady)return;
+  autoTransitReady=false;
+  if(autoTransitTimer){clearTimeout(autoTransitTimer);autoTransitTimer=null;}
+  // 電源画面が残っている場合のみ遷移
+  var ps=document.getElementById('power-screen');
+  if(ps&&ps.style.display!=='none'){
+    document.getElementById('main-content').style.display='block';
+    ps.style.display='none';
+  }
+}
+
 function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();updateClock();
-  addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
-  // 再読み込み時にYT APIが既にロード済みの場合の対応
-  setTimeout(initYTPlayer, 100);
+
+  // 現在放送中の番組名を電源画面に表示
+  var pos=nowPos();
+  if(pos){
+    var titleEl=document.getElementById('ps-now-title');
+    var wrapEl=document.getElementById('ps-now-wrap');
+    if(titleEl)titleEl.textContent=CYCLE[pos.p].title;
+    if(wrapEl)wrapEl.style.display='flex';
+    document.getElementById('ps-hint').textContent='まもなく自動で放送が始まります';
+  }else{
+    document.getElementById('ps-hint').textContent='番組表でお好きな番組を再視聴できます';
+  }
+
+  // 案③：「再生開始検知」か「最大5秒」の早い方で自動遷移
+  if(pos){
+    autoTransitReady=true;
+    // 最大5秒タイマー（回線が遅い場合の保険）
+    autoTransitTimer=setTimeout(function(){autoTransit();},5000);
+    // 裏でYTプレイヤーをロード開始（再生検知のため）
+    setTimeout(function(){
+      initYTPlayer();
+      // YT APIロード後にplayScheduleを呼ぶ
+      setTimeout(function(){
+        if(pos)playSchedule(pos.c,pos.p);
+      },200);
+    },100);
+  }else{
+    // 放送時間外はボタン押下のみ
+    setTimeout(initYTPlayer,100);
+  }
+
+  // ボタン押下：タイマーキャンセルして即遷移
+  addTap(document.getElementById('ps-btn'),function(){
+    autoTransitReady=false;
+    if(autoTransitTimer){clearTimeout(autoTransitTimer);autoTransitTimer=null;}
+    powerOn();
+  });
 }
 init();
 
