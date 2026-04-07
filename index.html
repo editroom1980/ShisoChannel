@@ -195,16 +195,31 @@ body.fs-open{overflow:hidden;}
   cursor:default;
   -webkit-tap-highlight-color:transparent;
 }
-/* 設定ボタン（⚙️）をピンポイントでブロック：右上の一番右端 */
+/* 設定ボタン（⚙️）をブロック：右上の一番右端
+   PCや横画面では動画が大きくなるがボタンのpx位置は変わらないため
+   幅を広めに設定して確実にカバー */
 #yt-block-settings{
   position:absolute;
   top:0; right:0;
-  width:48px;
-  height:52px;
+  width:52px;   /* 縦スマホ */
+  height:56px;
   z-index:10;
   background:transparent;
   cursor:default;
   -webkit-tap-highlight-color:transparent;
+}
+/* PC・横画面：動画が大きくなるとYouTubeがUIを拡大するため幅を広げる */
+@media(min-width:841px){
+  #yt-block-settings{
+    width:72px;
+    height:68px;
+  }
+}
+@media(orientation:landscape) and (max-height:500px){
+  #yt-block-settings{
+    width:60px;
+    height:60px;
+  }
 }
 /* 疑似全画面中も有効 */
 .player-wrap.expanded .yt-block,
