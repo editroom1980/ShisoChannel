@@ -1064,8 +1064,8 @@ function updateClock(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
-  // 自動遷移で既に再生開始済みの場合はスキップ
-  if(!autoTransitReady&&(ytPlayer&&ytReady))return;
+  // 自動遷移済み（裏で再生開始済み）の場合は再playSchedule不要
+  if(autoTransited)return;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
@@ -1080,15 +1080,15 @@ function initYTPlayer(){
 // ── 自動遷移管理 ──
 var autoTransitReady=false;  // 再生検知フラグ
 var autoTransitTimer=null;   // 最大待機タイマー
+var autoTransited=false;     // 遷移済みフラグ（重複再生防止）
 
 function autoTransit(){
-  // 二重遷移防止
   if(!autoTransitReady)return;
   autoTransitReady=false;
   if(autoTransitTimer){clearTimeout(autoTransitTimer);autoTransitTimer=null;}
-  // 電源画面が残っている場合のみ遷移
   var ps=document.getElementById('power-screen');
   if(ps&&ps.style.display!=='none'){
+    autoTransited=true;
     document.getElementById('main-content').style.display='block';
     ps.style.display='none';
   }
