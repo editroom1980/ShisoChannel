@@ -184,10 +184,11 @@ body.fs-open{overflow:hidden;}
   right:0;
   width:200px; /* YouTubeロゴ・その他の動画ボタンをカバー */
 }
-/* 上部タイトルバーブロック */
+/* 上部タイトルバーブロック（左側のチャンネル名・アイコンのみ、右側ボタンは通す） */
 #yt-block-top{
   position:absolute;
-  top:0; left:0; right:0;
+  top:0; left:0;
+  width:60%; /* 右側の音量・字幕・設定ボタンは通す */
   height:52px;
   z-index:10;
   background:transparent;
