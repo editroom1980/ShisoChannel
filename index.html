@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="しそうチャンネル">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -44,7 +44,15 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 
 /* ══ ヘッダー ══ */
 #main-content{display:none;}
-.header{background:var(--forest);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 10px rgba(0,0,0,0.2);}
+.header{
+  background:var(--forest);
+  padding:0 24px;
+  padding-top:env(safe-area-inset-top); /* iPhoneステータスバー分を確保 */
+  height:calc(60px + env(safe-area-inset-top));
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:300;
+  box-shadow:0 2px 10px rgba(0,0,0,0.2);
+}
 .h-logo{display:flex;flex-direction:column;}
 .h-logo-main{font-size:19px;font-weight:700;color:var(--white);letter-spacing:2px;}
 .h-logo-main em{color:var(--gold2);font-style:normal;}
@@ -162,7 +170,17 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 }
 .player-wrap.expanded #yt-player-api{position:absolute;inset:0;}
 .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
-body.fs-open{overflow:hidden;}
+body.fs-open{
+  overflow:hidden;
+  /* 疑似全画面中：ステータスバー領域を黒で覆う */
+  background:#000;
+}
+/* 疑似全画面中のplayer-wrapをステータスバー含めて全画面に */
+body.fs-open .player-wrap.expanded{
+  top:0 !important;
+  padding-top:env(safe-area-inset-top);
+  background:#000;
+}
 /* ══ YouTubeボタンブロックレイヤー ══ */
 /* 共有ボタン（左端）・YouTubeロゴ（右端）のみブロック、シークバーは通す */
 .yt-block{
@@ -384,7 +402,11 @@ body.fs-open{overflow:hidden;}
     max-height:calc(100vh - 380px);
     min-height:200px;
   }
-  .header{height:54px;padding:0 14px;}
+  .header{
+    height:calc(54px + env(safe-area-inset-top));
+    padding:0 14px;
+    padding-top:env(safe-area-inset-top);
+  }
   .h-logo-main{font-size:16px;}
   .h-logo-sub{font-size:8px;}
   .h-time{font-size:18px;}
