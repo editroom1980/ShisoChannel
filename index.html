@@ -522,8 +522,9 @@ body.fs-open .player-wrap.expanded{
           <div class="ended-sub">次の放送は 06:00 から始まります</div>
         </div>
         <div id="sw-ov">
-          <div class="sw-spinner"></div>
+          <div class="sw-spinner" id="sw-spinner"></div>
           <div class="sw-lbl" id="sw-lbl">切り替え中...</div>
+          <button id="ios-play-btn" style="display:none;margin-top:8px;background:var(--gold);color:var(--forest);border:none;cursor:pointer;font-size:15px;font-weight:700;padding:14px 40px;border-radius:4px;letter-spacing:2px;font-family:inherit;-webkit-tap-highlight-color:transparent;" onclick="onIosPlayTap()">▶ タップして再生</button>
         </div>
         <div id="yt-player-api"></div>
         <!-- YouTubeボタンブロックレイヤー（シークバーは通す） -->
@@ -1082,6 +1083,9 @@ var autoTransitReady=false;  // 再生検知フラグ
 var autoTransitTimer=null;   // 最大待機タイマー
 var autoTransited=false;     // 遷移済みフラグ（重複再生防止）
 
+// iOSかどうかの判定
+var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)&&!window.MSStream;
+
 function autoTransit(){
   if(!autoTransitReady)return;
   autoTransitReady=false;
@@ -1091,7 +1095,22 @@ function autoTransit(){
     autoTransited=true;
     document.getElementById('main-content').style.display='block';
     ps.style.display='none';
+    // iOS：自動再生できないので「タップして再生」ボタンを表示
+    if(isIOS){
+      showSpinner(true,'');
+      document.getElementById('sw-spinner').style.display='none';
+      document.getElementById('ios-play-btn').style.display='';
+    }
+    // PC：そのまま再生継続（裏で再生済み）
   }
+}
+
+function onIosPlayTap(){
+  document.getElementById('ios-play-btn').style.display='none';
+  document.getElementById('sw-spinner').style.display='';
+  showSpinner(true,'放送中の番組に切り替えています...');
+  var pos=nowPos();
+  if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
 
 function init(){
