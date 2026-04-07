@@ -184,11 +184,22 @@ body.fs-open{overflow:hidden;}
   right:0;
   width:200px; /* YouTubeロゴ・その他の動画ボタンをカバー */
 }
-/* 上部タイトルバーブロック（左側のチャンネル名・アイコンのみ、右側ボタンは通す） */
+/* 上部タイトルバーブロック（左側のチャンネル名・アイコンのみ） */
 #yt-block-top{
   position:absolute;
   top:0; left:0;
-  width:60%; /* 右側の音量・字幕・設定ボタンは通す */
+  width:60%;
+  height:52px;
+  z-index:10;
+  background:transparent;
+  cursor:default;
+  -webkit-tap-highlight-color:transparent;
+}
+/* 設定ボタン（⚙️）をピンポイントでブロック：右上の一番右端 */
+#yt-block-settings{
+  position:absolute;
+  top:0; right:0;
+  width:48px;
   height:52px;
   z-index:10;
   background:transparent;
@@ -476,6 +487,7 @@ body.fs-open{overflow:hidden;}
         <div class="yt-block" id="yt-block-left"></div>
         <div class="yt-block" id="yt-block-right"></div>
         <div id="yt-block-top"></div>
+        <div id="yt-block-settings"></div>
         <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>&nbsp;解除</button>
       </div>
 
