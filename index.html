@@ -48,8 +48,8 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   background:var(--forest);
   padding:0 24px;
   /* safe-area-inset-topでステータスバー分を確保（被らないように） */
-  padding-top:max(0px, calc(env(safe-area-inset-top) - 14px));
-  height:calc(60px + max(0px, calc(env(safe-area-inset-top) - 14px)));
+  padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
+  height:calc(60px + max(0px, calc(env(safe-area-inset-top) - 8px)));
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:300;
   box-shadow:0 2px 10px rgba(0,0,0,0.2);
@@ -192,10 +192,12 @@ body.fs-open .player-wrap.expanded{
   cursor:default;
   -webkit-tap-highlight-color:transparent;
 }
-/* 左端：共有ボタン領域 */
+/* 左端：共有ボタン領域（シークバーに干渉しないよう高さを制限） */
 #yt-block-left{
   left:0;
-  width:80px; /* 共有ボタンをカバー */
+  width:70px; /* 共有ボタンをカバー */
+  height:44px; /* シークバー上部のみ・底面のクリックを通す */
+  bottom:0;
 }
 /* 右端：YouTubeロゴ領域 */
 #yt-block-right{
@@ -243,6 +245,26 @@ body.fs-open .player-wrap.expanded{
 .player-wrap.expanded .yt-block,
 .player-wrap.expanded #yt-block-top{
   z-index:10;
+}
+/* YouTube全画面中（iframeの全画面含む）もブロックを最前面に */
+.player-wrap.yt-fullscreen .yt-block,
+.player-wrap.yt-fullscreen #yt-block-top,
+.player-wrap.yt-fullscreen #yt-block-settings{
+  z-index:2147483647;
+  position:fixed;
+}
+/* YT全画面中のブロック位置を画面全体にマッピング */
+.player-wrap.yt-fullscreen #yt-block-left{
+  left:0; bottom:0; width:100px; height:80px; position:fixed;
+}
+.player-wrap.yt-fullscreen #yt-block-right{
+  right:0; bottom:0; width:220px; height:80px; position:fixed;
+}
+.player-wrap.yt-fullscreen #yt-block-top{
+  top:0; left:0; width:60%; height:70px; position:fixed;
+}
+.player-wrap.yt-fullscreen #yt-block-settings{
+  top:0; right:0; width:80px; height:70px; position:fixed;
 }
 /* PC全画面時（requestFullscreen） */
 .player-wrap:fullscreen{
@@ -399,13 +421,13 @@ body.fs-open .player-wrap.expanded{
   .sidebar{
     position:static;
     /* 画面の残りの高さに合わせて番組表の高さを決める */
-    max-height:calc(100vh - 380px);
+    max-height:calc(100svh - 380px);
     min-height:200px;
   }
   .header{
-    height:calc(54px + max(0px, calc(env(safe-area-inset-top) - 14px)));
+    height:calc(54px + max(0px, calc(env(safe-area-inset-top) - 8px)));
     padding:0 14px;
-    padding-top:max(0px, calc(env(safe-area-inset-top) - 14px));
+    padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
   .h-logo-main{font-size:16px;}
   .h-logo-sub{font-size:8px;}
@@ -433,9 +455,7 @@ body.fs-open .player-wrap.expanded{
   }
   /* ヘッダー */
   .header{height:38px;padding:0 10px;}
-  .h-date{display:none;}
-  .h-logo{flex-direction:row;align-items:baseline;gap:8px;}
-  .h-logo-sub{display:block;font-size:6px;margin-top:0;letter-spacing:1.5px;}
+  .h-logo-sub,.h-date{display:none;}
   .h-logo-main{font-size:13px;letter-spacing:1px;}
   .h-time{font-size:14px;}
   .onair-badge{padding:2px 6px;font-size:8px;}
@@ -480,12 +500,8 @@ body.fs-open .player-wrap.expanded{
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
   </div>
-  <div id="ps-now-wrap" style="display:none;flex-direction:column;align-items:center;gap:4px;">
-    <div style="font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:2px;">ON AIR</div>
-    <div id="ps-now-title" style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.75);letter-spacing:1px;text-align:center;padding:0 24px;line-height:1.6;"></div>
-  </div>
   <button class="ps-btn" id="ps-btn">▶ 放送開始</button>
-  <div class="ps-hint" id="ps-hint">読み込み中...</div>
+  <div class="ps-hint">ボタンを押すと現在放送中の番組が自動で始まります</div>
 </div>
 
 <!-- メイン -->
@@ -661,15 +677,23 @@ function onYouTubeIframeAPIReady(){
 }
 
 // PC全画面：ESCキーや外部操作で全画面解除された時の処理
+// + YouTube iframe の全画面検知（Silk対応）
 ['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){
   document.addEventListener(ev,function(){
     var isFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
-    if(!isFull&&isExpanded){
-      // 全画面が解除された（ESCなど）
-      isExpanded=false;
-      clearFsUiTimer();
-      var btn=document.getElementById('expand-close-btn');
-      if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
+    var wrap=document.getElementById('player-wrap');
+    if(isFull){
+      // 全画面になった → yt-fullscreenクラスでブロックを全画面にマッピング
+      if(wrap)wrap.classList.add('yt-fullscreen');
+    }else{
+      // 全画面が解除された
+      if(wrap)wrap.classList.remove('yt-fullscreen');
+      if(isExpanded&&!isSilk){
+        isExpanded=false;
+        clearFsUiTimer();
+        var btn=document.getElementById('expand-close-btn');
+        if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
+      }
     }
   });
 });
@@ -679,12 +703,16 @@ function onYouTubeIframeAPIReady(){
 // ══════════════════════════════════════════════
 var isExpanded=false,fsUiTimer=null;
 
+// Silk/FireTVブラウザ判定
+var isSilk=navigator.userAgent.indexOf('Silk')!==-1||navigator.userAgent.indexOf('AFT')!==-1;
+
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
-  // PC/Mac：requestFullscreenで本物の全画面
+  // Silk/FireTV：疑似全画面（position:fixed）を使う
+  // PC/Mac（非タッチ・非Silk）：requestFullscreenで本物の全画面
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  if(!isTouch){
+  if(!isTouch&&!isSilk){
     var wrap=document.getElementById('player-wrap');
     var req=wrap.requestFullscreen||wrap.webkitRequestFullscreen||wrap.mozRequestFullScreen;
     if(req){
@@ -695,7 +723,7 @@ function openExpand(){
       return;
     }
   }
-  // タッチデバイス：疑似全画面（position:fixed）
+  // タッチデバイス・Silk：疑似全画面（position:fixed）
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
@@ -708,9 +736,9 @@ function closeExpand(){
   isExpanded=false;
   clearFsUiTimer();
 
-  // PC：本物の全画面を解除
+  // PC（非Silk）：本物の全画面を解除
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  if(!isTouch){
+  if(!isTouch&&!isSilk){
     try{
       if(document.fullscreenElement||document.webkitFullscreenElement){
         if(document.exitFullscreen) document.exitFullscreen();
@@ -1071,30 +1099,20 @@ function initYTPlayer(){
   }
 }
 
-
-
 function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();updateClock();
+  addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
-
-  // 現在放送中の番組名を電源画面に表示
-  var pos=nowPos();
-  if(pos){
-    var titleEl=document.getElementById('ps-now-title');
-    var wrapEl=document.getElementById('ps-now-wrap');
-    if(titleEl)titleEl.textContent=CYCLE[pos.p].title;
-    if(wrapEl)wrapEl.style.display='flex';
-    document.getElementById('ps-hint').textContent='ボタンを押すと現在放送中の番組が始まります';
-  }else{
-    document.getElementById('ps-hint').textContent='番組表でお好きな番組を再視聴できます';
+  // Silk/FireTV：拡大ボタンを強制表示
+  if(isSilk){
+    var expBtn=document.getElementById('expand-open-btn');
+    if(expBtn)expBtn.style.display='flex';
   }
-
-  addTap(document.getElementById('ps-btn'),powerOn);
   // 再読み込み時にYT APIが既にロード済みの場合の対応
-  setTimeout(initYTPlayer,100);
+  setTimeout(initYTPlayer, 100);
 }
 init();
 
