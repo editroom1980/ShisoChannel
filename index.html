@@ -186,21 +186,24 @@ body.fs-open .player-wrap.expanded{
 .yt-block{
   position:absolute;
   bottom:0;
-  height:65px; /* YouTubeコントロールバー全体をカバー */
+  height:150px; /* 全画面ボタン含む全ボタンをカバー（計測値: 下端から約130px） */
   z-index:10;
   background:transparent;
   cursor:default;
+  pointer-events:auto;
   -webkit-tap-highlight-color:transparent;
 }
-/* 左端：共有・再生時間テキスト領域 */
+/* 左端：共有ボタン領域（シークバーに干渉しない高さ） */
 #yt-block-left{
   left:0;
-  width:105px; /* 共有ボタン＋再生時間表示をカバー */
+  width:105px;
+  height:65px; /* 共有ボタンは下から65px以内にある */
 }
 /* 右端：YouTubeロゴ・その他の動画・全画面ボタン全てブロック */
 #yt-block-right{
   right:0;
   width:320px; /* 全画面ボタン含む右端全域をカバー */
+  height:150px; /* 全画面ボタンは下端から約130px上にある（計測値） */
 }
 /* 上部タイトルバーブロック（チャンネル名・アイコン全体） */
 #yt-block-top{
@@ -267,6 +270,15 @@ body.fs-open .player-wrap.expanded{
 .player-wrap:-webkit-full-screen #yt-block-settings{
   z-index:2147483647 !important;
   pointer-events:auto !important;
+}
+/* PC全画面中：右ブロックの高さを全画面時の比率に合わせて調整 */
+.player-wrap:fullscreen #yt-block-right,
+.player-wrap:-webkit-full-screen #yt-block-right{
+  height:150px !important;
+}
+.player-wrap:fullscreen #yt-block-left,
+.player-wrap:-webkit-full-screen #yt-block-left{
+  height:65px !important;
 }
 
 /* 閉じるボタン：疑似全画面中のみ表示・右下固定 */
@@ -482,7 +494,7 @@ body.silk-mode .page{
   align-items:start;
 }
 body.silk-mode .header{
-  height:44px;
+  height:38px;
   padding:0 12px;
   padding-top:0;
 }
@@ -492,14 +504,15 @@ body.silk-mode .h-logo-main{font-size:14px;}
 body.silk-mode .h-time{font-size:15px;}
 body.silk-mode .h-date{display:none;}
 body.silk-mode .onair-badge{padding:2px 6px;font-size:8px;}
-body.silk-mode .viewing-bar{padding:6px 10px;min-height:36px;}
-body.silk-mode #viewing-title{font-size:12px;}
+body.silk-mode .viewing-bar{display:none;} /* スペース節約 */
 body.silk-mode .player-wrap{
   padding-bottom:0 !important;
   /* aspect-ratio:16/9 で幅から高さを自動計算（黒帯なし） */
   aspect-ratio:16/9;
   height:auto;
   width:100%;
+  /* 念のため最大高さをsvhで制限（Silkバー高さ不明時の保険） */
+  max-height:calc(100svh - 38px - 34px - 20px);
 }
 body.silk-mode #yt-player-api{
   position:absolute;inset:0;width:100%;height:100%;
@@ -510,8 +523,8 @@ body.silk-mode .prog-row{display:none;}
 body.silk-mode .next-row{display:none;}
 body.silk-mode .sidebar{
   position:sticky;
-  top:48px;
-  max-height:calc(100vh - 60px - 52px);
+  top:42px;
+  max-height:calc(100svh - 42px);
 }
 body.silk-mode .footer{display:none;}
 /* Silk専用：ヘッダーを固定して番組表をスクロール可能に */
