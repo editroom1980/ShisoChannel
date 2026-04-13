@@ -202,6 +202,10 @@ body.fs-open .player-wrap.expanded{
   right:0;
   width:260px; /* YouTubeロゴ・その他の動画・全画面ボタン手前まで */
 }
+/* Silk専用：全画面ボタン(右から48px)も含めてさらに広くブロック */
+body.silk-mode #yt-block-right{
+  width:310px; /* 全画面ボタンも完全カバー */
+}
 /* 上部タイトルバーブロック（チャンネル名・アイコン全体） */
 #yt-block-top{
   position:absolute;
@@ -466,7 +470,7 @@ body.fs-open .player-wrap.expanded{
 /* ══ Silk/FireTV専用レイアウト ══ */
 /* body.silk-modeが付与された時のみ適用（JS判定） */
 body.silk-mode .page{
-  grid-template-columns:1fr 260px;
+  grid-template-columns:1fr 380px;
   padding:4px 8px 8px;
   gap:8px;
   align-items:start;
@@ -486,8 +490,8 @@ body.silk-mode .viewing-bar{padding:6px 10px;min-height:36px;}
 body.silk-mode #viewing-title{font-size:12px;}
 body.silk-mode .player-wrap{
   padding-bottom:0 !important;
-  /* 100vh - Silkアドレスバー約60px - ヘッダー44px - タイトル36px - LIVEバー34px - プログレス40px - 次番組40px - padding24px */
-  height:calc(100vh - 60px - 44px - 36px - 34px - 40px - 40px - 24px);
+  /* 100vh - Silkバー60px - ヘッダー44px - タイトル36px - LIVEバー34px - padding上下8px - gap4px */
+  height:calc(100vh - 60px - 44px - 36px - 34px - 16px);
 }
 body.silk-mode #yt-player-api{
   position:absolute;inset:0;width:100%;height:100%;
@@ -506,6 +510,35 @@ body.silk-mode .footer{display:none;}
 /* Silk専用：ヘッダーを固定して番組表をスクロール可能に */
 body.silk-mode .header{
   position:sticky;top:0;z-index:300;
+}
+/* YT全画面用ブロックオーバーレイ（body直下・position:fixed） */
+#yt-fs-overlay{
+  display:none;
+  position:fixed;
+  z-index:2147483647;
+  pointer-events:none; /* 基本は通す */
+}
+#yt-fs-overlay.active{display:block;}
+/* 各ブロック領域 */
+#yt-fs-left{
+  position:fixed;left:0;bottom:0;
+  width:110px;height:80px;
+  z-index:2147483647;pointer-events:auto;cursor:default;
+}
+#yt-fs-right{
+  position:fixed;right:0;bottom:0;
+  width:320px;height:80px;
+  z-index:2147483647;pointer-events:auto;cursor:default;
+}
+#yt-fs-top{
+  position:fixed;top:0;left:0;
+  width:70%;height:70px;
+  z-index:2147483647;pointer-events:auto;cursor:default;
+}
+#yt-fs-settings{
+  position:fixed;top:0;right:0;
+  width:100px;height:70px;
+  z-index:2147483647;pointer-events:auto;cursor:default;
 }
 </style>
 </head>
@@ -695,16 +728,24 @@ function onYouTubeIframeAPIReady(){
         if(st===YT.PlayerState.PLAYING||st===YT.PlayerState.BUFFERING){
           showEnded(false);showSpinner(false);
         }
+        // YT全画面状態を定期チェック（Silk対応）
+        if(isSilk)checkYTFullscreen();
       }
     }
   });
 }
 
-// PC全画面：ESCキーや外部操作で全画面解除された時の処理（PC専用）
+// PC全画面：ESCキーや外部操作で全画面解除された時の処理
+// Silk：documentレベルの全画面はiframe全画面で発火することがある
 ['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){
   document.addEventListener(ev,function(){
-    if(isSilk)return; // SilkはrequestFullscreen非使用なのでスキップ
     var isFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    if(isSilk){
+      // Silk：全画面になったらfixedオーバーレイを表示
+      showYTFsOverlay(isFull);
+      return;
+    }
+    // PC専用：疑似全画面の解除
     if(!isFull&&isExpanded){
       isExpanded=false;
       clearFsUiTimer();
@@ -713,6 +754,34 @@ function onYouTubeIframeAPIReady(){
     }
   });
 });
+
+// Silk：YT全画面中かどうかを判定してオーバーレイを制御
+var ytFsActive=false;
+var ytFsCheckTimer=null;
+
+function showYTFsOverlay(show){
+  ytFsActive=show;
+  var ids=['yt-fs-left','yt-fs-right','yt-fs-top','yt-fs-settings'];
+  var display=show?'block':'none';
+  ids.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.display=display;
+  });
+  if(show&&!ytFsCheckTimer){
+    // 定期的に全画面解除を監視
+    ytFsCheckTimer=setInterval(checkYTFullscreen,500);
+  }else if(!show&&ytFsCheckTimer){
+    clearInterval(ytFsCheckTimer);ytFsCheckTimer=null;
+  }
+}
+
+function checkYTFullscreen(){
+  // document.fullscreenElement または videoの全画面状態で判定
+  var isFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  if(isFull!==ytFsActive){
+    showYTFsOverlay(isFull);
+  }
+}
 
 // ══════════════════════════════════════════════
 //  疑似全画面（スマホのみ）
@@ -1133,5 +1202,11 @@ document.addEventListener('contextmenu', function(e){e.preventDefault();});
 // iframeへの長押しによるメニューを抑制
 document.addEventListener('touchstart', function(){}, {passive:true});
 </script>
+
+<!-- YT全画面用ブロックオーバーレイ（body直下・Silk用） -->
+<div id="yt-fs-left"></div>
+<div id="yt-fs-right"></div>
+<div id="yt-fs-top"></div>
+<div id="yt-fs-settings"></div>
 </body>
 </html>
