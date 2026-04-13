@@ -186,30 +186,28 @@ body.fs-open .player-wrap.expanded{
 .yt-block{
   position:absolute;
   bottom:0;
-  height:55px;
+  height:65px; /* YouTubeコントロールバー全体をカバー */
   z-index:10;
   background:transparent;
   cursor:default;
   -webkit-tap-highlight-color:transparent;
 }
-/* 左端：共有ボタン領域（シークバーに干渉しないよう高さを制限） */
+/* 左端：共有・再生時間テキスト領域 */
 #yt-block-left{
   left:0;
-  width:70px; /* 共有ボタンをカバー */
-  height:44px; /* シークバー上部のみ・底面のクリックを通す */
-  bottom:0;
+  width:105px; /* 共有ボタン＋再生時間表示をカバー */
 }
-/* 右端：YouTubeロゴ領域 */
+/* 右端：YouTubeロゴ・その他の動画ボタン領域 */
 #yt-block-right{
   right:0;
-  width:200px; /* YouTubeロゴ・その他の動画ボタンをカバー */
+  width:260px; /* YouTubeロゴ・その他の動画・全画面ボタン手前まで */
 }
-/* 上部タイトルバーブロック（左側のチャンネル名・アイコンのみ） */
+/* 上部タイトルバーブロック（チャンネル名・アイコン全体） */
 #yt-block-top{
   position:absolute;
   top:0; left:0;
-  width:60%;
-  height:52px;
+  width:70%; /* より広くカバー */
+  height:60px; /* 上部UIの高さに合わせて拡大 */
   z-index:10;
   background:transparent;
   cursor:default;
@@ -231,8 +229,8 @@ body.fs-open .player-wrap.expanded{
 /* PC・横画面：動画が大きくなるとYouTubeがUIを拡大するため幅を広げる */
 @media(min-width:841px){
   #yt-block-settings{
-    width:72px;
-    height:68px;
+    width:90px;  /* 設定ボタンを余裕を持ってカバー */
+    height:80px;
   }
 }
 @media(orientation:landscape) and (max-height:500px){
@@ -245,26 +243,6 @@ body.fs-open .player-wrap.expanded{
 .player-wrap.expanded .yt-block,
 .player-wrap.expanded #yt-block-top{
   z-index:10;
-}
-/* YouTube全画面中（iframeの全画面含む）もブロックを最前面に */
-.player-wrap.yt-fullscreen .yt-block,
-.player-wrap.yt-fullscreen #yt-block-top,
-.player-wrap.yt-fullscreen #yt-block-settings{
-  z-index:2147483647;
-  position:fixed;
-}
-/* YT全画面中のブロック位置を画面全体にマッピング */
-.player-wrap.yt-fullscreen #yt-block-left{
-  left:0; bottom:0; width:100px; height:80px; position:fixed;
-}
-.player-wrap.yt-fullscreen #yt-block-right{
-  right:0; bottom:0; width:220px; height:80px; position:fixed;
-}
-.player-wrap.yt-fullscreen #yt-block-top{
-  top:0; left:0; width:60%; height:70px; position:fixed;
-}
-.player-wrap.yt-fullscreen #yt-block-settings{
-  top:0; right:0; width:80px; height:70px; position:fixed;
 }
 /* PC全画面時（requestFullscreen） */
 .player-wrap:fullscreen{
@@ -421,7 +399,7 @@ body.fs-open .player-wrap.expanded{
   .sidebar{
     position:static;
     /* 画面の残りの高さに合わせて番組表の高さを決める */
-    max-height:calc(100svh - 380px);
+    max-height:calc(100vh - 380px);
     min-height:200px;
   }
   .header{
@@ -484,6 +462,50 @@ body.fs-open .player-wrap.expanded{
   .expand-open-btn{padding:0 10px;font-size:11px;}
   /* フッター非表示 */
   .footer{display:none;}
+}
+/* ══ Silk/FireTV専用レイアウト ══ */
+/* body.silk-modeが付与された時のみ適用（JS判定） */
+body.silk-mode .page{
+  grid-template-columns:1fr 260px;
+  padding:4px 8px 8px;
+  gap:8px;
+  align-items:start;
+}
+body.silk-mode .header{
+  height:44px;
+  padding:0 12px;
+  padding-top:0;
+}
+body.silk-mode .h-logo-sub{display:none;}
+body.silk-mode .h-logo{flex-direction:row;align-items:baseline;gap:6px;}
+body.silk-mode .h-logo-main{font-size:14px;}
+body.silk-mode .h-time{font-size:15px;}
+body.silk-mode .h-date{display:none;}
+body.silk-mode .onair-badge{padding:2px 6px;font-size:8px;}
+body.silk-mode .viewing-bar{padding:6px 10px;min-height:36px;}
+body.silk-mode #viewing-title{font-size:12px;}
+body.silk-mode .player-wrap{
+  padding-bottom:0 !important;
+  /* 100vh - Silkアドレスバー約60px - ヘッダー44px - タイトル36px - LIVEバー34px - プログレス40px - 次番組40px - padding24px */
+  height:calc(100vh - 60px - 44px - 36px - 34px - 40px - 40px - 24px);
+}
+body.silk-mode #yt-player-api{
+  position:absolute;inset:0;width:100%;height:100%;
+}
+body.silk-mode .live-btn{padding:6px 10px;min-height:34px;}
+body.silk-mode #live-name{font-size:11px;}
+body.silk-mode .prog-row{padding:6px 10px;min-height:36px;margin-top:4px;}
+body.silk-mode .next-row{padding:6px 10px;min-height:36px;margin-top:4px;}
+body.silk-mode #next-title{font-size:11px;}
+body.silk-mode .sidebar{
+  position:sticky;
+  top:48px;
+  max-height:calc(100vh - 60px - 52px);
+}
+body.silk-mode .footer{display:none;}
+/* Silk専用：ヘッダーを固定して番組表をスクロール可能に */
+body.silk-mode .header{
+  position:sticky;top:0;z-index:300;
 }
 </style>
 </head>
@@ -646,6 +668,8 @@ var vC=0,vP=0,lC=0,lP=0;
 var ytPlayer=null,ytReady=false;
 var pendingYtId='',pendingSec=0;
 var spinnerTimer=null,endTimer=null;
+// Silk/FireTVブラウザ判定（UAにSilkまたはAFTを含む）
+var isSilk=navigator.userAgent.indexOf('Silk')!==-1||navigator.userAgent.indexOf('AFT')!==-1;
 
 // ══════════════════════════════════════════════
 //  YouTube IFrame API
@@ -676,24 +700,16 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
-// PC全画面：ESCキーや外部操作で全画面解除された時の処理
-// + YouTube iframe の全画面検知（Silk対応）
+// PC全画面：ESCキーや外部操作で全画面解除された時の処理（PC専用）
 ['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){
   document.addEventListener(ev,function(){
+    if(isSilk)return; // SilkはrequestFullscreen非使用なのでスキップ
     var isFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
-    var wrap=document.getElementById('player-wrap');
-    if(isFull){
-      // 全画面になった → yt-fullscreenクラスでブロックを全画面にマッピング
-      if(wrap)wrap.classList.add('yt-fullscreen');
-    }else{
-      // 全画面が解除された
-      if(wrap)wrap.classList.remove('yt-fullscreen');
-      if(isExpanded&&!isSilk){
-        isExpanded=false;
-        clearFsUiTimer();
-        var btn=document.getElementById('expand-close-btn');
-        if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
-      }
+    if(!isFull&&isExpanded){
+      isExpanded=false;
+      clearFsUiTimer();
+      var btn=document.getElementById('expand-close-btn');
+      if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
     }
   });
 });
@@ -703,14 +719,10 @@ function onYouTubeIframeAPIReady(){
 // ══════════════════════════════════════════════
 var isExpanded=false,fsUiTimer=null;
 
-// Silk/FireTVブラウザ判定
-var isSilk=navigator.userAgent.indexOf('Silk')!==-1||navigator.userAgent.indexOf('AFT')!==-1;
-
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
-  // Silk/FireTV：疑似全画面（position:fixed）を使う
-  // PC/Mac（非タッチ・非Silk）：requestFullscreenで本物の全画面
+  // PC/Mac（Silk以外）：requestFullscreenで本物の全画面
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   if(!isTouch&&!isSilk){
     var wrap=document.getElementById('player-wrap');
@@ -718,12 +730,11 @@ function openExpand(){
     if(req){
       isExpanded=true;
       req.call(wrap);
-      // 全画面になったらAPIに通知してUIを表示
       updateExpandTitle();showFsUi();
       return;
     }
   }
-  // タッチデバイス・Silk：疑似全画面（position:fixed）
+  // タッチデバイス・Silk/FireTV：疑似全画面（position:fixed）
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
@@ -736,7 +747,7 @@ function closeExpand(){
   isExpanded=false;
   clearFsUiTimer();
 
-  // PC（非Silk）：本物の全画面を解除
+  // PC（Silk以外）：本物の全画面を解除
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   if(!isTouch&&!isSilk){
     try{
@@ -1106,13 +1117,14 @@ function init(){
   addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
-  // Silk/FireTV：拡大ボタンを強制表示
+  // 再読み込み時にYT APIが既にロード済みの場合の対応
+  setTimeout(initYTPlayer, 100);
+  // Silk/FireTV：専用レイアウト適用 + 拡大ボタン強制表示
   if(isSilk){
+    document.body.classList.add('silk-mode');
     var expBtn=document.getElementById('expand-open-btn');
     if(expBtn)expBtn.style.display='flex';
   }
-  // 再読み込み時にYT APIが既にロード済みの場合の対応
-  setTimeout(initYTPlayer, 100);
 }
 init();
 
