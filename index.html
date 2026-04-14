@@ -95,8 +95,10 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   position:relative;padding-bottom:56.25%;
   border:1px solid var(--border);border-top:none;
   overflow:hidden;box-shadow:0 4px 20px rgba(30,58,40,0.15);background:#000;
+  isolation:isolate;
 }
-#yt-player-api{position:absolute;inset:0;width:100%;height:100%;}
+#yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+
 #ended-ov{position:absolute;inset:0;z-index:35;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 #sw-ov{position:absolute;inset:0;z-index:30;background:rgba(30,58,40,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
 .ended-icon{font-size:38px;opacity:0.5;}
@@ -231,10 +233,12 @@ tpx;
   top:0; left:0;
   width:100%;
   height:80px;
-  z-index:9999;
-  background:transparent;
+  z-index:2147483647;
+  background:rgba(0,0,0,0.001);
   cursor:default;
   pointer-events:auto;
+  touch-action:none;
+  user-select:none;
   -webkit-tap-highlight-color:transparent;
 }
 /* 設定ボタン（⚙️）をブロック：右上の一番右端
@@ -288,10 +292,12 @@ upx;
   top:0; left:0;
   width:100%;
   height:80px;
-  z-index:9999;
-  background:transparent;
+  z-index:2147483647;
+  background:rgba(0,0,0,0.001);
   cursor:default;
   pointer-events:auto;
+  touch-action:none;
+  user-select:none;
   -webkit-tap-highlight-color:transparent;
 }
 /* PC全画面時（requestFullscreen） */
@@ -620,6 +626,20 @@ upx;
 <script>
 // YouTube IFrame API が既にロード済みの場合（再読み込み時）に対応
 window.onYouTubeIframeAPIReadyCallbacks = window.onYouTubeIframeAPIReadyCallbacks || [];
+
+  // yt-block-top: チャンネルボタンへのクリックを完全ブロック
+  (function(){
+    var blockTop = document.getElementById('yt-block-top');
+    if(!blockTop) return;
+    ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(function(evt){
+      blockTop.addEventListener(evt, function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
+      }, true);
+    });
+  })();
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
