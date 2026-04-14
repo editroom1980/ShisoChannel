@@ -234,11 +234,9 @@ tpx;
   width:100%;
   height:80px;
   z-index:2147483647;
-  background:rgba(0,0,0,0.001);
+  background:transparent;
   cursor:default;
   pointer-events:auto;
-  touch-action:none;
-  user-select:none;
   -webkit-tap-highlight-color:transparent;
 }
 /* 設定ボタン（⚙️）をブロック：右上の一番右端
@@ -293,11 +291,9 @@ upx;
   width:100%;
   height:80px;
   z-index:2147483647;
-  background:rgba(0,0,0,0.001);
+  background:transparent;
   cursor:default;
   pointer-events:auto;
-  touch-action:none;
-  user-select:none;
   -webkit-tap-highlight-color:transparent;
 }
 /* PC全画面時（requestFullscreen） */
@@ -626,20 +622,6 @@ upx;
 <script>
 // YouTube IFrame API が既にロード済みの場合（再読み込み時）に対応
 window.onYouTubeIframeAPIReadyCallbacks = window.onYouTubeIframeAPIReadyCallbacks || [];
-
-  // yt-block-top: チャンネルボタンへのクリックを完全ブロック
-  (function(){
-    var blockTop = document.getElementById('yt-block-top');
-    if(!blockTop) return;
-    ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(function(evt){
-      blockTop.addEventListener(evt, function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-      }, true);
-    });
-  })();
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
