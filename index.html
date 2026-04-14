@@ -138,13 +138,13 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   display:none; /* デフォルト非表示 */
   align-items:center;
   justify-content:center;
-  gap:4px;
+  gap:8px;
   padding:0 14px;
   border:none;
   border-left:1px solid var(--border);
   background:var(--white);
   color:var(--green2);
-  font-size:12px;
+  font-size:24px;
   font-weight:700;
   font-family:inherit;
   cursor:pointer;
@@ -229,7 +229,7 @@ tpx;
 #yt-block-top{
   position:absolute;
   top:0; left:0;
-  width:60%;
+  width:70%;
   height:52px;
   z-index:10;
   background:transparent;
@@ -286,7 +286,7 @@ upx;
 .player-wrap.expanded #yt-block-top{
   position:absolute;
   top:0; left:0;
-  width:60%;
+  width:70%;
   height:52px;
   z-index:10;
   background:transparent;
@@ -309,18 +309,18 @@ upx;
 .player-wrap:fullscreen .expand-close-btn{display:flex;}
 .player-wrap:-webkit-full-screen .expand-close-btn{display:flex;}
 
-/* 閉じるボタン：疑似全画面中のみ表示・右下固定 */
+/* 閉じるボタン：疑似全画面中のみ表示・右下固定（2倍サイズ） */
 .expand-close-btn{
   display:none;
   position:absolute;
-  bottom:10px;right:12px;
+  bottom:20px;right:24px;
   z-index:40;
-  align-items:center;justify-content:center;gap:4px;
-  padding:0 14px;height:36px;
-  border-radius:4px;border:none;cursor:pointer;
+  align-items:center;justify-content:center;gap:8px;
+  padding:0 28px;height:72px;
+  border-radius:8px;border:none;cursor:pointer;
   background:rgba(0,0,0,0.65);
-  color:#fff;font-size:13px;font-weight:700;
-  font-family:inherit;letter-spacing:1px;
+  color:#fff;font-size:26px;font-weight:700;
+  font-family:inherit;letter-spacing:2px;
   -webkit-tap-highlight-color:transparent;
   transition:opacity 0.3s;
 }
@@ -576,7 +576,7 @@ upx;
         <div id="yt-block-top"></div>
         <div id="yt-block-settings"></div>
         <div id="yt-block-fs"></div>
-        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>&nbsp;解除</button>
+        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>&nbsp;解除</button>
       </div>
 
       <div class="live-bar">
@@ -587,7 +587,7 @@ upx;
           <span id="live-name">—</span>
           <span id="live-hint">← 戻る</span>
         </button>
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>&nbsp;拡大</button>
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>&nbsp;拡大</button>
       </div>
 
       <div class="prog-row">
