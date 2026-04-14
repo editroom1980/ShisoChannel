@@ -234,6 +234,7 @@ tpx;
   z-index:10;
   background:transparent;
   cursor:default;
+  pointer-events:auto;
   -webkit-tap-highlight-color:transparent;
 }
 /* 設定ボタン（⚙️）をブロック：右上の一番右端
@@ -283,7 +284,15 @@ upx;
 /* 疑似全画面中も有効 */
 .player-wrap.expanded .yt-block,
 .player-wrap.expanded #yt-block-top{
+  position:absolute;
+  top:0; left:0;
+  width:60%;
+  height:52px;
   z-index:10;
+  background:transparent;
+  cursor:default;
+  pointer-events:auto;
+  -webkit-tap-highlight-color:transparent;
 }
 /* PC全画面時（requestFullscreen） */
 .player-wrap:fullscreen{
