@@ -98,6 +98,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   isolation:isolate;
 }
 #yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+#yt-player-api iframe{pointer-events:none;}
 
 #ended-ov{position:absolute;inset:0;z-index:35;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 #sw-ov{position:absolute;inset:0;z-index:30;background:rgba(30,58,40,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
@@ -1129,6 +1130,47 @@ function init(){
   setTimeout(initYTPlayer, 100);
 }
 init();
+
+// ============================================================
+// チャンネルボタンブロック：
+// iframeをpointer-events:noneにしてクリックを完全制御
+// yt-block-top領域以外のクリックはYT Player APIで処理
+// ============================================================
+(function(){
+  var wrap = document.getElementById('player-wrap');
+  var blockTop = document.getElementById('yt-block-top');
+  if(!wrap || !blockTop) return;
+
+  // player-wrap全体のクリックを捕捉
+  wrap.addEventListener('click', function(e) {
+    var bRect = blockTop.getBoundingClientRect();
+    // チャンネルボタン領域（yt-block-top）内のクリックは完全ブロック
+    if(e.clientX >= bRect.left && e.clientX <= bRect.right &&
+       e.clientY >= bRect.top  && e.clientY <= bRect.bottom) {
+      e.stopPropagation();
+      e.preventDefault();
+      return false;
+    }
+    // それ以外はYT Playerでクリックをシミュレート（再生/一時停止）
+    if(window.ytPlayer && window.ytPlayer.getPlayerState) {
+      var state = window.ytPlayer.getPlayerState();
+      if(state === 1) window.ytPlayer.pauseVideo();
+      else window.ytPlayer.playVideo();
+    }
+  }, true);
+
+  // タッチも同様に処理
+  wrap.addEventListener('touchend', function(e) {
+    var touch = e.changedTouches[0];
+    var bRect = blockTop.getBoundingClientRect();
+    if(touch.clientX >= bRect.left && touch.clientX <= bRect.right &&
+       touch.clientY >= bRect.top  && touch.clientY <= bRect.bottom) {
+      e.stopPropagation();
+      e.preventDefault();
+      return false;
+    }
+  }, true);
+})();
 
 // 右クリック・コンテキストメニューを無効化
 document.addEventListener('contextmenu', function(e){e.preventDefault();});
