@@ -318,12 +318,12 @@ upx;
   position:absolute;
   bottom:20px;right:24px;
   z-index:40;
-  align-items:center;justify-content:center;gap:8px;
-  padding:0 28px;height:72px;
+  align-items:center;justify-content:center;gap:0;
+  padding:0;width:44px;height:44px;
   border-radius:8px;border:none;cursor:pointer;
   background:rgba(0,0,0,0.65);
-  color:#fff;font-size:26px;font-weight:700;
-  font-family:inherit;letter-spacing:2px;
+  color:#fff;font-weight:700;
+  font-family:inherit;
   -webkit-tap-highlight-color:transparent;
   transition:opacity 0.3s;
 }
@@ -408,8 +408,9 @@ upx;
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;border-left:1px solid var(--border);
-  border-radius:0;padding:0 12px;height:100%;
+  border-radius:0;padding:0 10px;height:100%;
   display:flex !important;margin-left:auto;
+  min-width:auto;
 }
 .next-pill{font-size:10px;font-weight:700;color:var(--white);background:var(--green2);padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
 #next-title{font-size:13px;color:var(--text2);line-height:1.4;flex:1;}
@@ -663,7 +664,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
         <div id="yt-block-settings"></div>
         <div id="yt-block-fs"></div>
         <div id="yt-block-top" style="position:absolute;top:0;left:0;width:50%;height:60px;z-index:2147483647;background:transparent;cursor:default;pointer-events:auto;-webkit-tap-highlight-color:transparent;"></div>
-        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>&nbsp;解除</button>
+        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()" title="解除"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
       </div>
 
       <!-- カスタムコントロールバー -->
@@ -682,7 +683,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
         <!-- 字幕 -->
         <button class="ctrl-btn ctrl-cc cc-off" id="ctrl-cc" onclick="toggleCC()" title="字幕">CC</button>
         <!-- 拡大 -->
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>&nbsp;拡大</button>
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()" title="拡大"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
       </div>
     </div>
 
@@ -858,6 +859,16 @@ function closeExpand(){
     if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
     var tl=document.getElementById('_fs_tl');
     if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
+    // PC：解除後に再生を維持
+    if(!isOff&&ytPlayer&&ytReady){
+      setTimeout(function(){
+        try{
+          if(ytPlayer.getPlayerState()!==YT.PlayerState.PLAYING){
+            ytPlayer.playVideo();
+          }
+        }catch(_){}
+      },300);
+    }
     return;
   }
 
