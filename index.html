@@ -360,7 +360,7 @@ upx;
   display:flex;align-items:center;gap:12px;
 }
 .pt{font-size:12px;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
-.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;}
+.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;cursor:pointer;}
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
 .cycle-tag{font-size:10px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:3px 9px;border-radius:20px;white-space:nowrap;}
 
@@ -519,7 +519,7 @@ upx;
 /* ══ Silk/FireTV専用レイアウト ══ */
 /* body.silk-modeが付与された時のみ適用（JS判定） */
 body.silk-mode .page{
-  grid-template-columns:1fr 260px;
+  grid-template-columns:1fr 371px;
   padding:4px 8px 8px;
   gap:8px;
   align-items:start;
@@ -548,12 +548,13 @@ body.silk-mode #yt-player-api{
 }
 body.silk-mode .live-btn{padding:6px 10px;min-height:34px;}
 body.silk-mode #live-name{font-size:11px;}
-body.silk-mode .prog-row{display:none;}
-body.silk-mode .next-row{display:none;}
+body.silk-mode .prog-row{padding:6px 10px;min-height:36px;margin-top:4px;}
+body.silk-mode .next-row{padding:6px 10px;min-height:36px;margin-top:4px;}
+body.silk-mode #next-title{font-size:11px;}
 body.silk-mode .sidebar{
   position:sticky;
-  top:42px;
-  max-height:calc(100svh - 42px);
+  top:48px;
+  max-height:calc(100svh - 52px);
 }
 body.silk-mode .footer{display:none;}
 body.silk-mode .expand-open-btn{display:flex !important;}
@@ -1216,6 +1217,50 @@ init();
   }, true);
 })();
 
+
+// ── プログレスバークリックでシーク ──
+// bar-bg要素のクリック・タッチに対応（PC/FireTV/iOS共通）
+(function(){
+  function initSeekBar(){
+    var barBg = document.querySelector('.bar-bg');
+    if(!barBg) return;
+
+    function doSeek(clientX){
+      // ytPlayerが存在しないか再生中でない場合はスキップ
+      if(!window.ytPlayer || !window.ytPlayer.seekTo) return;
+      var rect = barBg.getBoundingClientRect();
+      var ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      // vP が現在の番組インデックス
+      var dur = (typeof vP !== 'undefined' && window.CYCLE && CYCLE[vP]) ? CYCLE[vP].dur : 0;
+      if(dur <= 0) return;
+      var seekSec = Math.floor(ratio * dur * 60);
+      ytPlayer.seekTo(seekSec, true);
+      // プログレスバーの表示を即時更新
+      document.getElementById('p-bar').style.width = (ratio * 100) + '%';
+    }
+
+    // マウスクリック（PC）
+    barBg.addEventListener('click', function(e){
+      e.stopPropagation();
+      doSeek(e.clientX);
+    });
+
+    // タッチ（FireTV・iOS）
+    barBg.addEventListener('touchend', function(e){
+      e.stopPropagation();
+      if(e.changedTouches && e.changedTouches.length > 0){
+        doSeek(e.changedTouches[0].clientX);
+      }
+    }, {passive:true});
+  }
+
+  // DOMが準備できてから実行
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initSeekBar);
+  } else {
+    initSeekBar();
+  }
+})();
 // 右クリック・コンテキストメニューを無効化
 document.addEventListener('contextmenu', function(e){e.preventDefault();});
 // iframeへの長押しによるメニューを抑制
