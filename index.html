@@ -600,16 +600,18 @@ upx;
   display:none;
   position:absolute;
   bottom:0;left:0;right:0;
-  height:60px;
+  height:44px;
   z-index:2147483646;
   background:rgba(0,0,0,0.75);
   align-items:center;
-  gap:12px;
+  gap:14px;
   padding:0 16px;
 }
+#fs-ctrl-bar .bar-bg{flex:1;}
+#fs-ctrl-bar .vol-slider{width:50px;}
 .fs-ctrl-btn{
   display:flex;align-items:center;justify-content:center;
-  min-width:44px;height:44px;
+  min-width:36px;height:36px;
   border:none;border-radius:4px;background:transparent;
   color:#fff;cursor:pointer;flex-shrink:0;
   -webkit-tap-highlight-color:transparent;font-family:inherit;
@@ -622,6 +624,8 @@ upx;
   border:1.5px solid rgba(255,255,255,0.5);border-radius:3px;
   color:rgba(255,255,255,0.5);
 }
+/* 全画面CCボタン：音量バーとの間隔を通常バーと同じに */
+#fs-ctrl-bar #fs-cc{margin-left:14px;}
 .fs-cc-sq.cc-on{color:#fff;border-color:#fff;}
 #fs-ctrl-bar .bar-bg{flex:1;cursor:pointer;height:6px;}
 /* ══ Silk/FireTV専用レイアウト ══ */
