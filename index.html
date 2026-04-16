@@ -104,6 +104,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   background:transparent;
   cursor:default;
   pointer-events:auto;
+  transition:background 0.1s;
 }
 #yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
 #yt-player-api iframe{pointer-events:none;}
@@ -388,12 +389,12 @@ upx;
   background:var(--white);border:1px solid var(--border);border-top:none;
   border-radius:0 0 6px 6px;
   padding:0 12px;
-  height:48px;
+  height:56px;
   overflow:visible;
 }
 .ctrl-btn{
   display:flex;align-items:center;justify-content:center;
-  min-width:36px;height:36px;
+  min-width:46px;height:46px;
   border:none;border-radius:4px;background:transparent;
   color:var(--green2);cursor:pointer;flex-shrink:0;
   -webkit-tap-highlight-color:transparent;font-family:inherit;
@@ -407,16 +408,16 @@ upx;
 }
 .vol-slider::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
-  width:14px;height:14px;border-radius:50%;
+  width:18px;height:18px;border-radius:50%;
   background:var(--green2);cursor:pointer;
 }
-.ctrl-cc{font-size:11px;font-weight:700;padding:0 6px;
+.ctrl-cc{font-size:14px;font-weight:700;padding:2px 7px;
   border:1px solid var(--border);border-radius:3px;min-width:auto;}
 .ctrl-cc.cc-on{color:var(--green2);border-color:var(--green2);background:var(--green5);}
 .ctrl-cc.cc-off{color:var(--text3);}
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
-  border:none;border-left:1px solid var(--border);
+  border:none;
   border-radius:0;padding:0 10px;height:100%;
   display:flex !important;margin-left:auto;
   min-width:auto;
@@ -493,6 +494,13 @@ upx;
 
 /* スマホ縦画面 */
 @media(max-width:840px){
+  /* iPhoneスマホ縦画面：custom-ctrlをコンパクトに */
+  .custom-ctrl{height:40px;padding:0 8px;gap:5px;}
+  .ctrl-btn{min-width:34px;height:34px;}
+  .vol-slider{width:50px;}
+  .ctrl-cc{font-size:11px;padding:1px 5px;}
+  .custom-ctrl .expand-open-btn{padding:0 7px;}
+
   .page{
     grid-template-columns:1fr;
     padding:10px 10px 36px;
@@ -674,26 +682,26 @@ body.silk-mode .expand-open-btn{display:flex !important;}
         <div id="yt-block-settings"></div>
         <div id="yt-block-fs"></div>
         <div id="yt-block-top" style="position:absolute;top:0;left:0;width:50%;height:60px;z-index:2147483647;background:transparent;cursor:default;pointer-events:auto;-webkit-tap-highlight-color:transparent;"></div>
-        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()" title="解除"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
+        <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()" title="解除"><svg viewBox="0 0 24 24" width="31" height="31" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
       </div>
 
       <!-- カスタムコントロールバー -->
       <div class="custom-ctrl" id="custom-ctrl">
         <!-- 再生/停止 -->
         <button class="ctrl-btn" id="ctrl-play" onclick="togglePlayPause()" title="再生/停止">
-          <svg id="ctrl-play-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="ctrl-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         </button>
         <!-- シークバー -->
         <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
         <!-- 音量 -->
         <button class="ctrl-btn" id="ctrl-mute" onclick="toggleMute()" title="ミュート">
-          <svg id="ctrl-vol-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+          <svg id="ctrl-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
         </button>
         <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="100" oninput="onVolSlider()">
         <!-- 字幕 -->
         <button class="ctrl-btn ctrl-cc cc-off" id="ctrl-cc" onclick="toggleCC()" title="字幕">CC</button>
         <!-- 拡大 -->
-        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()" title="拡大"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+        <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()" title="拡大"><svg viewBox="0 0 24 24" width="31" height="31" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
       </div>
     </div>
 
@@ -1235,10 +1243,20 @@ var isMuted=false;
 var lastVol=100;
 
 function togglePlayPause(){
-  if(!ytPlayer||!ytPlayer.getPlayerState)return;
-  var state=ytPlayer.getPlayerState();
-  if(state===1){ytPlayer.pauseVideo();}
-  else{ytPlayer.playVideo();}
+  if(!ytPlayer||!ytReady)return;
+  // YouTube UI一瞬表示を防ぐ：300ms間オーバーレイで隠す
+  var mb=document.getElementById('yt-mouse-block');
+  if(mb){mb.style.background='#000';setTimeout(function(){mb.style.background='transparent';},300);}
+  try{
+    var state=ytPlayer.getPlayerState();
+    if(state===1||state===3){
+      ytPlayer.pauseVideo();
+    }else{
+      ytPlayer.playVideo();
+    }
+  }catch(e){
+    try{ytPlayer.playVideo();}catch(e2){}
+  }
 }
 
 function toggleMute(){
