@@ -385,10 +385,10 @@ upx;
 
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:10px;
   background:var(--white);border:1px solid var(--border);border-top:none;
   border-radius:0 0 6px 6px;
-  padding:0 12px;
+  padding:0 14px;
   height:56px;
   overflow:visible;
 }
@@ -411,8 +411,10 @@ upx;
   width:18px;height:18px;border-radius:50%;
   background:var(--green2);cursor:pointer;
 }
-.ctrl-cc{font-size:14px;font-weight:700;padding:2px 7px;
-  border:1px solid var(--border);border-radius:3px;min-width:auto;}
+.ctrl-cc{font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  width:38px;height:38px;
+  border:1px solid var(--border);border-radius:3px;flex-shrink:0;}
 .ctrl-cc.cc-on{color:var(--green2);border-color:var(--green2);background:var(--green5);}
 .ctrl-cc.cc-off{color:var(--text3);}
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
@@ -573,6 +575,36 @@ upx;
   /* フッター非表示 */
   .footer{display:none;}
 }
+
+/* ══ 全画面コントロールバー ══ */
+#fs-ctrl-bar{
+  display:none;
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:60px;
+  z-index:2147483646;
+  background:rgba(0,0,0,0.75);
+  align-items:center;
+  gap:12px;
+  padding:0 16px;
+}
+.fs-ctrl-btn{
+  display:flex;align-items:center;justify-content:center;
+  min-width:44px;height:44px;
+  border:none;border-radius:4px;background:transparent;
+  color:#fff;cursor:pointer;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;font-family:inherit;
+}
+.fs-ctrl-btn:hover,.fs-ctrl-btn:active{background:rgba(255,255,255,0.15);}
+.fs-cc-sq{
+  font-size:14px;font-weight:700;
+  width:36px;height:36px;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid rgba(255,255,255,0.5);border-radius:3px;
+  color:rgba(255,255,255,0.5);
+}
+.fs-cc-sq.cc-on{color:#fff;border-color:#fff;}
+#fs-ctrl-bar .bar-bg{flex:1;cursor:pointer;height:6px;}
 /* ══ Silk/FireTV専用レイアウト ══ */
 /* body.silk-modeが付与された時のみ適用（JS判定） */
 body.silk-mode .page{
@@ -683,12 +715,27 @@ body.silk-mode .expand-open-btn{display:flex !important;}
         <div id="yt-block-fs"></div>
         <div id="yt-block-top" style="position:absolute;top:0;left:0;width:50%;height:60px;z-index:2147483647;background:transparent;cursor:default;pointer-events:auto;-webkit-tap-highlight-color:transparent;"></div>
         <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()" title="解除"><svg viewBox="0 0 24 24" width="31" height="31" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
+        <!-- 全画面コントロールバー -->
+        <div id="fs-ctrl-bar">
+          <button class="fs-ctrl-btn" id="fs-play" title="再生/停止">
+            <svg id="fs-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <div class="bar-bg" id="fs-seek-bg"><div class="bar-fill" id="p-bar-fs"></div></div>
+          <button class="fs-ctrl-btn" id="fs-mute" title="ミュート">
+            <svg id="fs-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+          </button>
+          <input type="range" class="vol-slider" id="fs-vol-slider" min="0" max="100" value="100">
+          <button class="fs-ctrl-btn" id="fs-cc" title="字幕"><span class="fs-cc-sq cc-off" id="fs-cc-sq">CC</span></button>
+          <button class="fs-ctrl-btn" id="fs-close" title="解除">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+          </button>
+        </div>
       </div>
 
       <!-- カスタムコントロールバー -->
       <div class="custom-ctrl" id="custom-ctrl">
         <!-- 再生/停止 -->
-        <button class="ctrl-btn" id="ctrl-play" onclick="togglePlayPause()" title="再生/停止">
+        <button class="ctrl-btn" id="ctrl-play" title="再生/停止">
           <svg id="ctrl-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         </button>
         <!-- シークバー -->
@@ -786,13 +833,16 @@ function onYouTubeIframeAPIReady(){
     playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1},
     events:{
       onStateChange:function(e){
-        // 再生/停止ボタンアイコンを更新
+        var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        var playPath='<path d="M8 5v14l11-7z"/>';
         var icon=document.getElementById('ctrl-play-icon');
-        if(!icon)return;
+        var fsIcon=document.getElementById('fs-play-icon');
         if(e.data===1){ // 再生中
-          icon.innerHTML='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+          if(icon) icon.innerHTML=pausePath;
+          if(fsIcon) fsIcon.innerHTML=pausePath;
         }else{
-          icon.innerHTML='<path d="M8 5v14l11-7z"/>';
+          if(icon) icon.innerHTML=playPath;
+          if(fsIcon) fsIcon.innerHTML=playPath;
         }
       },
       onReady:function(e){
@@ -912,15 +962,17 @@ function closeExpand(){
 }
 
 function showFsUi(){
-  // 閉じるボタンを表示
   var cb=document.getElementById('expand-close-btn');
   if(cb){cb.style.opacity='1';cb.style.pointerEvents='';}
+  var fsBar=document.getElementById('fs-ctrl-bar');
+  if(fsBar)fsBar.style.display='flex';
   resetFsUiTimer();
 }
 function hideFsUi(){
-  // 閉じるボタンを非表示
   var cb=document.getElementById('expand-close-btn');
   if(cb){cb.style.opacity='0';cb.style.pointerEvents='none';}
+  var fsBar=document.getElementById('fs-ctrl-bar');
+  if(fsBar)fsBar.style.display='none';
   // タップで再表示するためplayer-wrapに一時的な透明レイヤーをJS追加
   if(isExpanded){
     var wrap=document.getElementById('player-wrap');
@@ -979,6 +1031,9 @@ function setEndTimer(c,p){
 function loadVideo(ytId,sec,msg){
   clearSpinnerTimer();
   showEnded(false);
+  // シークバーをリセット
+  var pb=document.getElementById('p-bar');if(pb)pb.style.width='0%';
+  var pbfs=document.getElementById('p-bar-fs');if(pbfs)pbfs.style.width='0%';
   showSpinner(true,msg||'切り替え中...');
   if(ytReady&&ytPlayer){
     ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
@@ -1090,8 +1145,11 @@ function refreshLive(){
   if(vt)vt.textContent=CYCLE[p].title;
   // シークバー更新
   var n=nowF(),sm=smOf(c,p),em=emOf(c,p);
+  var pct=Math.min(100,Math.max(0,((n-sm)/(em-sm))*100));
   var pb=document.getElementById('p-bar');
-  if(pb)pb.style.width=Math.min(100,Math.max(0,((n-sm)/(em-sm))*100))+'%';
+  if(pb)pb.style.width=pct+'%';
+  var pbfs=document.getElementById('p-bar-fs');
+  if(pbfs)pbfs.style.width=pct+'%';
   setLiveBtn(isManual?'manual':'live');
 }
 function hlSB(c,p){
@@ -1243,10 +1301,7 @@ var isMuted=false;
 var lastVol=100;
 
 function togglePlayPause(){
-  if(!ytPlayer||!ytReady)return;
-  // YouTube UI一瞬表示を防ぐ：300ms間オーバーレイで隠す
-  var mb=document.getElementById('yt-mouse-block');
-  if(mb){mb.style.background='#000';setTimeout(function(){mb.style.background='transparent';},300);}
+  if(!ytPlayer)return;
   try{
     var state=ytPlayer.getPlayerState();
     if(state===1||state===3){
@@ -1263,14 +1318,19 @@ function toggleMute(){
   if(!ytPlayer)return;
   isMuted=!isMuted;
   var icon=document.getElementById('ctrl-vol-icon');
+  var fsIcon=document.getElementById('fs-vol-icon');
+  var mutePath='<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+  var volPath='<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
   if(isMuted){
     lastVol=ytPlayer.getVolume();
     ytPlayer.mute();
-    if(icon)icon.innerHTML='<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+    if(icon)icon.innerHTML=mutePath;
+    if(fsIcon)fsIcon.innerHTML=mutePath;
   }else{
     ytPlayer.unMute();
     ytPlayer.setVolume(lastVol);
-    if(icon)icon.innerHTML='<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
+    if(icon)icon.innerHTML=volPath;
+    if(fsIcon)fsIcon.innerHTML=volPath;
   }
 }
 
@@ -1291,12 +1351,15 @@ function toggleCC(){
   if(!ytPlayer)return;
   ccActive=!ccActive;
   var btn=document.getElementById('ctrl-cc');
+  var fsSq=document.getElementById('fs-cc-sq');
   if(ccActive){
     try{ytPlayer.loadModule('captions');ytPlayer.setOption('captions','track',{languageCode:'ja'});}catch(e){}
     if(btn){btn.classList.add('cc-on');btn.classList.remove('cc-off');}
+    if(fsSq){fsSq.classList.add('cc-on');fsSq.classList.remove('cc-off');}
   }else{
     try{ytPlayer.unloadModule('captions');}catch(e){}
     if(btn){btn.classList.add('cc-off');btn.classList.remove('cc-on');}
+    if(fsSq){fsSq.classList.add('cc-off');fsSq.classList.remove('cc-on');}
   }
 }
 
@@ -1311,6 +1374,55 @@ function init(){
   setInterval(periodicCheck,10000);
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
+
+  // ctrl-play: addTapでiOS確実対応（onclickの代替）
+  var cpBtn=document.getElementById('ctrl-play');
+  if(cpBtn) addTap(cpBtn, togglePlayPause);
+
+  // fs-ctrl-bar の初期化
+  addTap(document.getElementById('fs-play'), togglePlayPause);
+  addTap(document.getElementById('fs-mute'), toggleMute);
+  addTap(document.getElementById('fs-cc'), toggleCC);
+  addTap(document.getElementById('fs-close'), closeExpand);
+  // fs-vol-slider
+  var fsVol=document.getElementById('fs-vol-slider');
+  if(fsVol){
+    fsVol.addEventListener('input',function(){
+      if(!ytPlayer)return;
+      var val=parseInt(this.value);
+      ytPlayer.setVolume(val);
+      var mv=document.getElementById('vol-slider');
+      if(mv)mv.value=this.value;
+      isMuted=(val===0);
+      if(isMuted)ytPlayer.mute();else ytPlayer.unMute();
+    });
+  }
+  // fs-seek-bg のシーク
+  var fsSeek=document.getElementById('fs-seek-bg');
+  if(fsSeek){
+    function doFsSeek(clientX){
+      if(!window.ytPlayer||!window.ytPlayer.seekTo)return;
+      var rect=fsSeek.getBoundingClientRect();
+      var ratio=Math.min(1,Math.max(0,(clientX-rect.left)/rect.width));
+      var dur=(typeof vP!=='undefined'&&CYCLE&&CYCLE[vP])?CYCLE[vP].dur:0;
+      if(dur<=0)return;
+      ytPlayer.seekTo(Math.floor(ratio*dur*60),true);
+      var pb=document.getElementById('p-bar');var pbfs=document.getElementById('p-bar-fs');
+      if(pb)pb.style.width=(ratio*100)+'%';
+      if(pbfs)pbfs.style.width=(ratio*100)+'%';
+    }
+    fsSeek.addEventListener('click',function(e){e.stopPropagation();doFsSeek(e.clientX);});
+    fsSeek.addEventListener('touchend',function(e){
+      e.stopPropagation();
+      if(e.changedTouches&&e.changedTouches.length>0)doFsSeek(e.changedTouches[0].clientX);
+    },{passive:true});
+  }
+  // fs-ctrl-barタップでタイマーリセット
+  var fsBar=document.getElementById('fs-ctrl-bar');
+  if(fsBar){
+    fsBar.addEventListener('touchstart',function(){if(isExpanded)resetFsUiTimer();},{passive:true});
+    fsBar.addEventListener('click',function(){if(isExpanded)resetFsUiTimer();});
+  }
 }
 init();
 
