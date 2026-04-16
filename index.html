@@ -97,7 +97,16 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   overflow:hidden;box-shadow:0 4px 20px rgba(30,58,40,0.15);background:#000;
   isolation:isolate;
 }
+/* iframeへのマウスイベントを完全遮断→YouTubeのUI表示を防ぐ */
+#yt-mouse-block{
+  position:absolute;inset:0;
+  z-index:5;
+  background:transparent;
+  cursor:default;
+  pointer-events:auto;
+}
 #yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+#yt-player-api iframe{pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
 
 #ended-ov{position:absolute;inset:0;z-index:35;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
@@ -658,6 +667,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
           <div class="sw-lbl" id="sw-lbl">切り替え中...</div>
         </div>
         <div id="yt-player-api"></div>
+        <div id="yt-mouse-block"></div>
         <!-- YouTubeボタンブロックレイヤー（シークバーは通す） -->
         <div class="yt-block" id="yt-block-left"></div>
         <div class="yt-block" id="yt-block-right"></div>
