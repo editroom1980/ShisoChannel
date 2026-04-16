@@ -385,13 +385,17 @@ upx;
 
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:0;
   background:var(--white);border:1px solid var(--border);border-top:none;
   border-radius:0 0 6px 6px;
-  padding:0 14px;
+  padding:0 10px;
   height:56px;
   overflow:visible;
+  justify-content:space-between;
 }
+/* シークバーはflex:1で伸縮、他要素は均等gap */
+.custom-ctrl>*{flex-shrink:0;}
+.custom-ctrl .bar-bg{flex:1;margin:0 6px;}
 .ctrl-btn{
   display:flex;align-items:center;justify-content:center;
   min-width:46px;height:46px;
@@ -413,15 +417,16 @@ upx;
 }
 .ctrl-cc{font-size:13px;font-weight:700;
   display:flex;align-items:center;justify-content:center;
-  width:38px;height:38px;
   border:1px solid var(--border);border-radius:3px;flex-shrink:0;}
+/* ctrl-btnクラスのmin-width/heightを正方形で上書き */
+.ctrl-btn.ctrl-cc{width:36px !important;height:36px !important;min-width:36px !important;padding:0 !important;}
 .ctrl-cc.cc-on{color:var(--green2);border-color:var(--green2);background:var(--green5);}
 .ctrl-cc.cc-off{color:var(--text3);}
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;
   border-radius:0;padding:0 10px;height:100%;
-  display:flex !important;margin-left:auto;
+  display:flex !important;
   min-width:auto;
 }
 .next-pill{font-size:10px;font-weight:700;color:var(--white);background:var(--green2);padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
@@ -744,7 +749,6 @@ body.silk-mode .expand-open-btn{display:flex !important;}
         <button class="ctrl-btn" id="ctrl-mute" onclick="toggleMute()" title="ミュート">
           <svg id="ctrl-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
         </button>
-        <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="100" oninput="onVolSlider()">
         <!-- 字幕 -->
         <button class="ctrl-btn ctrl-cc cc-off" id="ctrl-cc" onclick="toggleCC()" title="字幕">CC</button>
         <!-- 拡大 -->
@@ -833,6 +837,7 @@ function onYouTubeIframeAPIReady(){
     playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1},
     events:{
       onStateChange:function(e){
+        // 再生状態に応じてアイコン更新
         var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
         var playPath='<path d="M8 5v14l11-7z"/>';
         var icon=document.getElementById('ctrl-play-icon');
@@ -840,9 +845,17 @@ function onYouTubeIframeAPIReady(){
         if(e.data===1){ // 再生中
           if(icon) icon.innerHTML=pausePath;
           if(fsIcon) fsIcon.innerHTML=pausePath;
+          // 再生開始時に字幕状態を強制適用（YouTube自動字幕を抑制）
+          setTimeout(function(){applyCCState();}, 800);
         }else{
           if(icon) icon.innerHTML=playPath;
           if(fsIcon) fsIcon.innerHTML=playPath;
+        }
+        // 動画終了(state=0)かつ手動再生中 → 現在放送中に切り替え
+        if(e.data===0&&isManual){
+          isManual=false;
+          var pos=nowPos();
+          if(pos) playSchedule(pos.c,pos.p); else gotoOffAir();
         }
       },
       onReady:function(e){
@@ -1051,6 +1064,8 @@ function loadVideo(ytId,sec,msg){
     pendingYtId=ytId;pendingSec=sec;
   }
   spinnerTimer=setTimeout(function(){showSpinner(false);},3000);
+  // 動画切替後に字幕状態を再適用（ytPlayerのready後に実行）
+  setTimeout(applyCCState, 1500);
 }
 
 function pauseVideo(){
@@ -1094,7 +1109,7 @@ function playManual(pIdx){
   vC=c;vP=pIdx;
   loadVideo(CYCLE[pIdx].ytId,0,'番組を読み込んでいます...');
   setViewUI(c,pIdx);refreshLive();
-  setEndTimer(CYCLE[pIdx].dur*60);
+  // setEndTimerは呼ばない: 動画終了はonStateChange(e.data===0)で検知
 }
 
 function gotoOffAir(){
@@ -1261,8 +1276,18 @@ function renderSB(){
 // ══════════════════════════════════════════════
 // ── シークバー更新（1秒毎・実際の再生位置と連動） ──
 function updateSeekBar(){
-  if(isOff||!ytPlayer||!ytReady)return;
+  if(!ytPlayer||!ytReady)return;
   try{
+    var state=ytPlayer.getPlayerState();
+    // 再生アイコンを状態に応じて更新（1秒毎に必ずポーリング）
+    var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    var playPath='<path d="M8 5v14l11-7z"/>';
+    var isPlay=(state===1||state===3);
+    var icon=document.getElementById('ctrl-play-icon');
+    var fsIcon=document.getElementById('fs-play-icon');
+    if(icon)icon.innerHTML=isPlay?pausePath:playPath;
+    if(fsIcon)fsIcon.innerHTML=isPlay?pausePath:playPath;
+    // シークバー更新
     var dur=ytPlayer.getDuration();
     var cur=ytPlayer.getCurrentTime();
     if(dur>0){
@@ -1368,13 +1393,28 @@ function toggleCC(){
   var btn=document.getElementById('ctrl-cc');
   var fsSq=document.getElementById('fs-cc-sq');
   if(ccActive){
-    try{ytPlayer.loadModule('captions');ytPlayer.setOption('captions','track',{languageCode:'ja'});}catch(e){}
+    try{
+      ytPlayer.loadModule('captions');
+      ytPlayer.setOption('captions','track',{languageCode:'ja'});
+    }catch(e){}
     if(btn){btn.classList.add('cc-on');btn.classList.remove('cc-off');}
     if(fsSq){fsSq.classList.add('cc-on');fsSq.classList.remove('cc-off');}
   }else{
-    try{ytPlayer.unloadModule('captions');}catch(e){}
+    try{
+      ytPlayer.setOption('captions','track',{});
+      ytPlayer.unloadModule('captions');
+    }catch(e){}
     if(btn){btn.classList.add('cc-off');btn.classList.remove('cc-on');}
     if(fsSq){fsSq.classList.add('cc-off');fsSq.classList.remove('cc-on');}
+  }
+}
+// 字幕状態を現在のccActiveに合わせて再適用（動画切替後に呼ぶ）
+function applyCCState(){
+  if(!ytPlayer)return;
+  if(ccActive){
+    try{ytPlayer.loadModule('captions');ytPlayer.setOption('captions','track',{languageCode:'ja'});}catch(e){}
+  }else{
+    try{ytPlayer.setOption('captions','track',{});ytPlayer.unloadModule('captions');}catch(e){}
   }
 }
 
@@ -1502,7 +1542,7 @@ init();
 // bar-bg要素のクリック・タッチに対応（PC/FireTV/iOS共通）
 (function(){
   function initSeekBar(){
-    var barBg = document.querySelector('.bar-bg');
+    var barBg = document.querySelector('#custom-ctrl .bar-bg');
     if(!barBg) return;
 
     function doSeek(clientX){
