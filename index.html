@@ -740,7 +740,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
       <!-- カスタムコントロールバー -->
       <div class="custom-ctrl" id="custom-ctrl">
         <!-- 再生/停止 -->
-        <button class="ctrl-btn" id="ctrl-play" title="再生/停止">
+        <button class="ctrl-btn" id="ctrl-play" title="再生/停止" onclick="togglePlayPause()">
           <svg id="ctrl-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         </button>
         <!-- シークバー -->
@@ -844,11 +844,13 @@ function onYouTubeIframeAPIReady(){
         var icon=document.getElementById('ctrl-play-icon');
         var fsIcon=document.getElementById('fs-play-icon');
         if(e.data===1){ // 再生中
+          ourPlaying=true;
           if(icon) icon.innerHTML=pausePath;
           if(fsIcon) fsIcon.innerHTML=pausePath;
           // 再生開始時に字幕状態を強制適用（YouTube自動字幕を抑制）
           setTimeout(function(){applyCCState();}, 800);
         }else{
+          ourPlaying=false;
           if(icon) icon.innerHTML=playPath;
           if(fsIcon) fsIcon.innerHTML=playPath;
         }
@@ -1067,6 +1069,7 @@ function loadVideo(ytId,sec,msg){
   clearSpinnerTimer();
   showEnded(false);
   // シークバーをリセット
+  ourPlaying=false; // 動画切替時にフラグリセット
   var pb=document.getElementById('p-bar');if(pb)pb.style.width='0%';
   var pbfs=document.getElementById('p-bar-fs');if(pbfs)pbfs.style.width='0%';
   showSpinner(true,msg||'切り替え中...');
@@ -1300,6 +1303,7 @@ function updateSeekBar(){
     var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
     var playPath='<path d="M8 5v14l11-7z"/>';
     var isPlay=(state===1||state===3);
+    ourPlaying=isPlay; // 常に同期
     var icon=document.getElementById('ctrl-play-icon');
     var fsIcon=document.getElementById('fs-play-icon');
     if(icon)icon.innerHTML=isPlay?pausePath:playPath;
@@ -1356,21 +1360,15 @@ var isSilk=navigator.userAgent.indexOf('Silk')!==-1||navigator.userAgent.indexOf
 var ccActive=false;
 var isMuted=false;
 var lastVol=100;
+var ourPlaying=false; // 再生状態フラグ（iOS対応）
 
 function togglePlayPause(){
   if(!ytPlayer)return;
-  try{
-    var state=ytPlayer.getPlayerState();
-    // 1=再生中 3=バッファ中 → 停止
-    if(state===1||state===3){
-      ytPlayer.pauseVideo();
-    }else{
-      // それ以外（-1/0/2/5）→ 再生
-      ytPlayer.playVideo();
-    }
-  }catch(e){
-    // エラー時は再生を試みる（iOS対応）
-    setTimeout(function(){try{ytPlayer.playVideo();}catch(_){}},100);
+  // 自前の再生状態フラグで判定（iOSでgetPlayerStateが不安定なため）
+  if(ourPlaying){
+    try{ytPlayer.pauseVideo();}catch(_){}
+  }else{
+    try{ytPlayer.playVideo();}catch(_){}  // ジェスチャーチェーン内で同期呼び出し
   }
 }
 
@@ -1486,6 +1484,8 @@ function init(){
     var pbfs=document.getElementById('p-bar-fs');
     if(pb)pb.style.width=(ratio*100)+'%';
     if(pbfs)pbfs.style.width=(ratio*100)+'%';
+    // iOS: シーク後に再生を維持
+    try{if(ourPlaying)ytPlayer.playVideo();}catch(_){}
   };
   var fsSeek=document.getElementById('fs-seek-bg');
   if(fsSeek){
@@ -1576,6 +1576,10 @@ init();
       if(pb) pb.style.width = (ratio * 100) + '%';
       var pbfs = document.getElementById('p-bar-fs');
       if(pbfs) pbfs.style.width = (ratio * 100) + '%';
+      // iOS: シーク後に再生を維持
+      try{
+        if(ourPlaying) ytPlayer.playVideo();
+      }catch(_){}
     }
 
     // マウスクリック（PC）
