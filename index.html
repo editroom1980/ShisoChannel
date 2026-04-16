@@ -405,7 +405,7 @@ upx;
 }
 .ctrl-btn:hover,.ctrl-btn:active{background:var(--green5);}
 .vol-slider{
-  width:70px;height:4px;
+  width:52px;height:4px;
   -webkit-appearance:none;appearance:none;
   background:var(--green4);border-radius:2px;
   outline:none;cursor:pointer;flex-shrink:0;
@@ -749,6 +749,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
         <button class="ctrl-btn" id="ctrl-mute" onclick="toggleMute()" title="ミュート">
           <svg id="ctrl-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
         </button>
+        <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="100" oninput="onVolSlider()">
         <!-- 字幕 -->
         <button class="ctrl-btn ctrl-cc cc-off" id="ctrl-cc" onclick="toggleCC()" title="字幕">CC</button>
         <!-- 拡大 -->
@@ -851,11 +852,19 @@ function onYouTubeIframeAPIReady(){
           if(icon) icon.innerHTML=playPath;
           if(fsIcon) fsIcon.innerHTML=playPath;
         }
-        // 動画終了(state=0)かつ手動再生中 → 現在放送中に切り替え
+        // 動画終了(state=0)かつ手動再生中 → 動画が実際に末尾付近の時のみ切り替え
+        // （シーク直後のstate=0誤発火を防ぐ）
         if(e.data===0&&isManual){
-          isManual=false;
-          var pos=nowPos();
-          if(pos) playSchedule(pos.c,pos.p); else gotoOffAir();
+          try{
+            var dur2=ytPlayer.getDuration();
+            var cur2=ytPlayer.getCurrentTime();
+            // 残り3秒以内の場合のみ終了とみなす
+            if(dur2>0&&(dur2-cur2)<=3){
+              isManual=false;
+              var pos=nowPos();
+              if(pos) playSchedule(pos.c,pos.p); else gotoOffAir();
+            }
+          }catch(_){}
         }
       },
       onReady:function(e){
@@ -911,6 +920,11 @@ function openExpand(){
       req.call(wrap);
       // 全画面になったらAPIに通知してUIを表示
       updateExpandTitle();showFsUi();
+      // PC全画面: mousemoveでコントロールバーを表示
+      var _mmHandler=function(){if(isExpanded)showFsUi();};
+      wrap.addEventListener('mousemove',_mmHandler);
+      // closeExpand時にリスナー削除用に保存
+      wrap._mmHandler=_mmHandler;
       return;
     }
   }
@@ -943,6 +957,8 @@ function closeExpand(){
     // fs-ctrl-barを非表示
     var fsBar=document.getElementById('fs-ctrl-bar');
     if(fsBar)fsBar.style.display='none';
+    // mousemoveリスナー削除
+    if(wrap._mmHandler){wrap.removeEventListener('mousemove',wrap._mmHandler);wrap._mmHandler=null;}
     // PC：解除後に再生を維持
     if(!isOff&&ytPlayer&&ytReady){
       setTimeout(function(){
@@ -996,7 +1012,7 @@ function hideFsUi(){
   if(isExpanded){
     var wrap=document.getElementById('player-wrap');
     var tl=document.createElement('div');
-    tl.style.cssText='position:absolute;inset:0;z-index:35;background:transparent;';
+    tl.style.cssText='position:absolute;inset:0;z-index:36;background:transparent;pointer-events:auto;';
     tl.id='_fs_tl';
     function onTapRestore(){
       var t=document.getElementById('_fs_tl');
@@ -1144,7 +1160,8 @@ function setLiveBtn(mode){
   }
 }
 function onLiveClick(){
-  if(!isManual)return;isManual=false;
+  // isManualに関係なく常に現在放送中の番組の該当時間にジャンプ
+  isManual=false;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
 }
@@ -1344,13 +1361,16 @@ function togglePlayPause(){
   if(!ytPlayer)return;
   try{
     var state=ytPlayer.getPlayerState();
+    // 1=再生中 3=バッファ中 → 停止
     if(state===1||state===3){
       ytPlayer.pauseVideo();
     }else{
+      // それ以外（-1/0/2/5）→ 再生
       ytPlayer.playVideo();
     }
   }catch(e){
-    try{ytPlayer.playVideo();}catch(e2){}
+    // エラー時は再生を試みる（iOS対応）
+    setTimeout(function(){try{ytPlayer.playVideo();}catch(_){}},100);
   }
 }
 
@@ -1431,21 +1451,9 @@ function init(){
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
 
-  // ctrl-play: click と touchend 両方登録（iPhone/iPad両対応）
-  (function(){
-    var cpBtn=document.getElementById('ctrl-play');
-    if(!cpBtn)return;
-    var lastToggle=0;
-    function safeToggle(e){
-      if(e&&e.preventDefault)e.preventDefault();
-      var now=Date.now();
-      if(now-lastToggle<300)return;
-      lastToggle=now;
-      togglePlayPause();
-    }
-    cpBtn.addEventListener('touchend',function(e){safeToggle(e);},{passive:false});
-    cpBtn.addEventListener('click',function(e){safeToggle(e);});
-  })();
+  // ctrl-play: addTapで統一（iOS/iPad/PC/FireTV全対応）
+  var cpBtn=document.getElementById('ctrl-play');
+  if(cpBtn) addTap(cpBtn, togglePlayPause);
 
   // fs-ctrl-bar の初期化
   addTap(document.getElementById('fs-play'), togglePlayPause);
@@ -1487,11 +1495,22 @@ function init(){
       if(e.changedTouches&&e.changedTouches.length>0)doFsSeek(e.changedTouches[0].clientX,this);
     },{passive:true});
   }
-  // fs-ctrl-barタップでタイマーリセット
+  // fs-ctrl-barタップ/マウス操作でタイマーリセット＋動画停止を防ぐ
   var fsBar2=document.getElementById('fs-ctrl-bar');
   if(fsBar2){
-    fsBar2.addEventListener('touchstart',function(){if(isExpanded)resetFsUiTimer();},{passive:true});
-    fsBar2.addEventListener('click',function(){if(isExpanded)resetFsUiTimer();});
+    fsBar2.addEventListener('touchstart',function(e){
+      e.stopPropagation();
+      if(isExpanded)resetFsUiTimer();
+    },{passive:true});
+    fsBar2.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(isExpanded)resetFsUiTimer();
+    });
+    // マウス移動でタイマーリセット（PC全画面）
+    fsBar2.addEventListener('mousemove',function(e){
+      e.stopPropagation();
+      if(isExpanded)resetFsUiTimer();
+    });
   }
 }
 init();
