@@ -387,18 +387,16 @@ upx;
 
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
-  display:flex;align-items:center;gap:0;
+  display:flex;align-items:center;
   background:var(--white);border:1px solid var(--border);border-top:none;
   border-radius:0 0 6px 6px;
-  padding:0 10px;
+  padding:0 16px;
   height:56px;
   overflow:visible;
-  justify-content:space-between;
+  gap:14px;
 }
-/* シークバーはflex:1で伸縮、他要素は均等gap */
 .custom-ctrl>*{flex-shrink:0;}
-.custom-ctrl .bar-bg{flex:1;margin:0 10px;}
-.custom-ctrl .ctrl-btn,.custom-ctrl .ctrl-cc{margin:0 2px;}
+.custom-ctrl .bar-bg{flex:1;margin:0;}
 .ctrl-btn{
   display:flex;align-items:center;justify-content:center;
   min-width:46px;height:46px;
@@ -408,7 +406,7 @@ upx;
 }
 .ctrl-btn:hover,.ctrl-btn:active{background:var(--green5);}
 .vol-slider{
-  width:52px;height:4px;
+  width:50px;height:4px;
   -webkit-appearance:none;appearance:none;
   background:var(--green4);border-radius:2px;
   outline:none;cursor:pointer;flex-shrink:0;
@@ -428,8 +426,10 @@ upx;
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;
-  border-radius:0;padding:0 10px;height:100%;
+  border-radius:4px;padding:0;
+  width:46px;height:46px;
   display:flex !important;
+  align-items:center;justify-content:center;
   min-width:auto;
 }
 .next-pill{font-size:10px;font-weight:700;color:var(--white);background:var(--green2);padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
@@ -849,15 +849,10 @@ function onYouTubeIframeAPIReady(){
         var icon=document.getElementById('ctrl-play-icon');
         var fsIcon=document.getElementById('fs-play-icon');
         if(e.data===1){ // 再生中
-          ourPlaying=true;
-          if(icon) icon.innerHTML=pausePath;
-          if(fsIcon) fsIcon.innerHTML=pausePath;
-          // 再生開始時に字幕状態を強制適用（YouTube自動字幕を抑制）
+          updatePlayIcon(true);
           setTimeout(function(){applyCCState();}, 800);
         }else{
-          ourPlaying=false;
-          if(icon) icon.innerHTML=playPath;
-          if(fsIcon) fsIcon.innerHTML=playPath;
+          updatePlayIcon(false);
         }
         // 動画終了(state=0)かつ手動再生中 → 動画が実際に末尾付近の時のみ切り替え
         // （シーク直後のstate=0誤発火を防ぐ）
@@ -1307,11 +1302,13 @@ function updateSeekBar(){
     var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
     var playPath='<path d="M8 5v14l11-7z"/>';
     var isPlay=(state===1||state===3);
-    ourPlaying=isPlay; // 常に同期
-    var icon=document.getElementById('ctrl-play-icon');
-    var fsIcon=document.getElementById('fs-play-icon');
-    if(icon)icon.innerHTML=isPlay?pausePath:playPath;
-    if(fsIcon)fsIcon.innerHTML=isPlay?pausePath:playPath;
+    if(!seekInProgress){ // シーク中はアイコンを更新しない（フリッカー防止）
+      ourPlaying=isPlay;
+      var icon=document.getElementById('ctrl-play-icon');
+      var fsIcon=document.getElementById('fs-play-icon');
+      if(icon)icon.innerHTML=isPlay?pausePath:playPath;
+      if(fsIcon)fsIcon.innerHTML=isPlay?pausePath:playPath;
+    }
     // シークバー更新
     var dur=ytPlayer.getDuration();
     var cur=ytPlayer.getCurrentTime();
@@ -1368,17 +1365,30 @@ var ourPlaying=false; // 再生状態フラグ（iOS対応）
 var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)&&('ontouchstart' in window);
 var iosFirstPlay=false; // iOSで最初のユーザーgestureによる再生が完了したか
 var vCurrentId=''; // 現在ロード中の動画ID
+var seekInProgress=false; // シーク中フラグ（アイコンフリッカー防止）
 var vCurrentSec=0; // 現在の開始秒数
 
 function togglePlayPause(){
   if(!ytPlayer)return;
   var playing=false;
   try{var s=ytPlayer.getPlayerState();playing=(s===1||s===3);}catch(_){playing=ourPlaying;}
+  // アイコンを即座に更新（APIの応答を待たない）
+  var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  var playPath='<path d="M8 5v14l11-7z"/>';
+  var icon=document.getElementById('ctrl-play-icon');
+  var fsIcon=document.getElementById('fs-play-icon');
   if(playing){
+    // 停止マーク→再生マークに即座に切替
+    if(icon)icon.innerHTML=playPath;
+    if(fsIcon)fsIcon.innerHTML=playPath;
+    ourPlaying=false;
     try{ytPlayer.pauseVideo();}catch(_){}
   }else{
+    // 再生マーク→停止マークに即座に切替
+    if(icon)icon.innerHTML=pausePath;
+    if(fsIcon)fsIcon.innerHTML=pausePath;
+    ourPlaying=true;
     if(isIOS&&!iosFirstPlay&&vCurrentId){
-      // iOS初回gesture再生: loadVideoByIdをgestureチェーン内で呼ぶ
       iosFirstPlay=true;
       try{ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:vCurrentSec});}catch(_){}
     }else{
@@ -1517,6 +1527,8 @@ function init(){
       iosFirstPlay=true;
       try{ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:Math.floor(seekPos)});}catch(_){}
     }else{
+      seekInProgress=true;
+      setTimeout(function(){seekInProgress=false;},1500);
       try{ytPlayer.seekTo(seekPos,true);}catch(_){}
     }
   };
@@ -1560,6 +1572,10 @@ init();
 
   // player-wrap全体のクリックを捕捉
   wrap.addEventListener('click', function(e) {
+    // fs-ctrl-bar内のクリックは無視（全画面コントロールバー）
+    var fsBar = document.getElementById('fs-ctrl-bar');
+    if(fsBar && fsBar.contains(e.target)) return;
+
     var bRect = blockTop.getBoundingClientRect();
     // チャンネルボタン領域（yt-block-top）内のクリックは完全ブロック
     if(e.clientX >= bRect.left && e.clientX <= bRect.right &&
@@ -1610,10 +1626,12 @@ init();
       var pbfs = document.getElementById('p-bar-fs');
       if(pbfs) pbfs.style.width = (ratio * 100) + '%';
       if(isIOS&&vCurrentId){
-        // iOS: seekToは機能しないのでloadVideoByIdで代替（gestureチェーン内）
         iosFirstPlay=true;
         try{ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:Math.floor(seekPos)});}catch(_){}
       }else{
+        // シーク中フラグ（1.5秒間アイコン更新を止めてフリッカー防止）
+        seekInProgress=true;
+        setTimeout(function(){seekInProgress=false;},1500);
         try{ytPlayer.seekTo(seekPos,true);}catch(_){}
       }
     }
