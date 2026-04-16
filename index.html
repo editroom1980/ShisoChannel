@@ -87,7 +87,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   display:flex;align-items:center;gap:8px;
   min-height:44px;
 }
-#viewing-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.5;flex:1;}
+#viewing-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.5;}
 .cat-tag{font-size:10px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-top:2px;}
 
 /* プレイヤー本体 */
@@ -319,8 +319,8 @@ upx;
 .player-wrap:fullscreen #yt-player-api{position:absolute;inset:0;}
 .player-wrap:fullscreen #yt-player-api iframe{width:100%;height:100%;}
 /* 全画面中のUIボタン */
-.player-wrap:fullscreen .expand-close-btn{display:flex;}
-.player-wrap:-webkit-full-screen .expand-close-btn{display:flex;}
+.player-wrap:fullscreen .expand-close-btn{display:none;}
+.player-wrap:-webkit-full-screen .expand-close-btn{display:none;}
 
 /* 閉じるボタン：疑似全画面中のみ表示・右下固定（2倍サイズ） */
 .expand-close-btn{
@@ -338,7 +338,7 @@ upx;
   transition:opacity 0.3s;
 }
 .player-wrap.expanded .expand-close-btn{
-  display:flex;
+  display:none;
 }
 
 /* ══ LIVEボタン（タイトルバーと同じ高さ・同じパディング） ══ */
@@ -927,6 +927,9 @@ function closeExpand(){
     if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
     var tl=document.getElementById('_fs_tl');
     if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
+    // fs-ctrl-barを非表示
+    var fsBar=document.getElementById('fs-ctrl-bar');
+    if(fsBar)fsBar.style.display='none';
     // PC：解除後に再生を維持
     if(!isOff&&ytPlayer&&ytReady){
       setTimeout(function(){
@@ -949,6 +952,9 @@ function closeExpand(){
   var tl=document.getElementById('_fs_tl');
   if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
 
+  // fs-ctrl-barを非表示
+  var fsBarT=document.getElementById('fs-ctrl-bar');
+  if(fsBarT)fsBarT.style.display='none';
   // タッチデバイス：解除後に再生を維持
   if(!isOff&&ytPlayer&&ytReady){
     setTimeout(function(){
@@ -1143,13 +1149,6 @@ function refreshLive(){
   // viewing-title更新（LIVE番組名）
   var vt=document.getElementById('viewing-title');
   if(vt)vt.textContent=CYCLE[p].title;
-  // シークバー更新
-  var n=nowF(),sm=smOf(c,p),em=emOf(c,p);
-  var pct=Math.min(100,Math.max(0,((n-sm)/(em-sm))*100));
-  var pb=document.getElementById('p-bar');
-  if(pb)pb.style.width=pct+'%';
-  var pbfs=document.getElementById('p-bar-fs');
-  if(pbfs)pbfs.style.width=pct+'%';
   setLiveBtn(isManual?'manual':'live');
 }
 function hlSB(c,p){
@@ -1260,6 +1259,22 @@ function renderSB(){
 // ══════════════════════════════════════════════
 //  定期チェック・時計・電源・初期化
 // ══════════════════════════════════════════════
+// ── シークバー更新（1秒毎・実際の再生位置と連動） ──
+function updateSeekBar(){
+  if(isOff||!ytPlayer||!ytReady)return;
+  try{
+    var dur=ytPlayer.getDuration();
+    var cur=ytPlayer.getCurrentTime();
+    if(dur>0){
+      var pct=Math.min(100,Math.max(0,(cur/dur)*100));
+      var pb=document.getElementById('p-bar');
+      if(pb)pb.style.width=pct+'%';
+      var pbfs=document.getElementById('p-bar-fs');
+      if(pbfs)pbfs.style.width=pct+'%';
+    }
+  }catch(e){}
+}
+
 function periodicCheck(){
   if(isManual){refreshLive();return;}
   var pos=nowPos();
@@ -1372,12 +1387,25 @@ function init(){
   addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
+  setInterval(updateSeekBar,1000);
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
 
-  // ctrl-play: addTapでiOS確実対応（onclickの代替）
-  var cpBtn=document.getElementById('ctrl-play');
-  if(cpBtn) addTap(cpBtn, togglePlayPause);
+  // ctrl-play: click と touchend 両方登録（iPhone/iPad両対応）
+  (function(){
+    var cpBtn=document.getElementById('ctrl-play');
+    if(!cpBtn)return;
+    var lastToggle=0;
+    function safeToggle(e){
+      if(e&&e.preventDefault)e.preventDefault();
+      var now=Date.now();
+      if(now-lastToggle<300)return;
+      lastToggle=now;
+      togglePlayPause();
+    }
+    cpBtn.addEventListener('touchend',function(e){safeToggle(e);},{passive:false});
+    cpBtn.addEventListener('click',function(e){safeToggle(e);});
+  })();
 
   // fs-ctrl-bar の初期化
   addTap(document.getElementById('fs-play'), togglePlayPause);
@@ -1397,31 +1425,33 @@ function init(){
       if(isMuted)ytPlayer.mute();else ytPlayer.unMute();
     });
   }
-  // fs-seek-bg のシーク
+  // fs-seek-bg のシーク（doFsSeekはif文の外で定義→iOS対応）
+  var doFsSeek=function(clientX,barEl){
+    if(!window.ytPlayer||!window.ytPlayer.seekTo)return;
+    var rect=barEl.getBoundingClientRect();
+    var ratio=Math.min(1,Math.max(0,(clientX-rect.left)/rect.width));
+    if(!ytPlayer.getDuration)return;
+    var dur=ytPlayer.getDuration();
+    if(dur<=0)return;
+    ytPlayer.seekTo(ratio*dur,true);
+    var pb=document.getElementById('p-bar');
+    var pbfs=document.getElementById('p-bar-fs');
+    if(pb)pb.style.width=(ratio*100)+'%';
+    if(pbfs)pbfs.style.width=(ratio*100)+'%';
+  };
   var fsSeek=document.getElementById('fs-seek-bg');
   if(fsSeek){
-    function doFsSeek(clientX){
-      if(!window.ytPlayer||!window.ytPlayer.seekTo)return;
-      var rect=fsSeek.getBoundingClientRect();
-      var ratio=Math.min(1,Math.max(0,(clientX-rect.left)/rect.width));
-      var dur=(typeof vP!=='undefined'&&CYCLE&&CYCLE[vP])?CYCLE[vP].dur:0;
-      if(dur<=0)return;
-      ytPlayer.seekTo(Math.floor(ratio*dur*60),true);
-      var pb=document.getElementById('p-bar');var pbfs=document.getElementById('p-bar-fs');
-      if(pb)pb.style.width=(ratio*100)+'%';
-      if(pbfs)pbfs.style.width=(ratio*100)+'%';
-    }
-    fsSeek.addEventListener('click',function(e){e.stopPropagation();doFsSeek(e.clientX);});
+    fsSeek.addEventListener('click',function(e){e.stopPropagation();doFsSeek(e.clientX,this);});
     fsSeek.addEventListener('touchend',function(e){
       e.stopPropagation();
-      if(e.changedTouches&&e.changedTouches.length>0)doFsSeek(e.changedTouches[0].clientX);
+      if(e.changedTouches&&e.changedTouches.length>0)doFsSeek(e.changedTouches[0].clientX,this);
     },{passive:true});
   }
   // fs-ctrl-barタップでタイマーリセット
-  var fsBar=document.getElementById('fs-ctrl-bar');
-  if(fsBar){
-    fsBar.addEventListener('touchstart',function(){if(isExpanded)resetFsUiTimer();},{passive:true});
-    fsBar.addEventListener('click',function(){if(isExpanded)resetFsUiTimer();});
+  var fsBar2=document.getElementById('fs-ctrl-bar');
+  if(fsBar2){
+    fsBar2.addEventListener('touchstart',function(){if(isExpanded)resetFsUiTimer();},{passive:true});
+    fsBar2.addEventListener('click',function(){if(isExpanded)resetFsUiTimer();});
   }
 }
 init();
@@ -1476,17 +1506,17 @@ init();
     if(!barBg) return;
 
     function doSeek(clientX){
-      // ytPlayerが存在しないか再生中でない場合はスキップ
       if(!window.ytPlayer || !window.ytPlayer.seekTo) return;
       var rect = barBg.getBoundingClientRect();
       var ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-      // vP が現在の番組インデックス
-      var dur = (typeof vP !== 'undefined' && window.CYCLE && CYCLE[vP]) ? CYCLE[vP].dur : 0;
+      var dur = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
       if(dur <= 0) return;
-      var seekSec = Math.floor(ratio * dur * 60);
-      ytPlayer.seekTo(seekSec, true);
+      ytPlayer.seekTo(ratio * dur, true);
       // プログレスバーの表示を即時更新
-      document.getElementById('p-bar').style.width = (ratio * 100) + '%';
+      var pb = document.getElementById('p-bar');
+      if(pb) pb.style.width = (ratio * 100) + '%';
+      var pbfs = document.getElementById('p-bar-fs');
+      if(pbfs) pbfs.style.width = (ratio * 100) + '%';
     }
 
     // マウスクリック（PC）
