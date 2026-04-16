@@ -1361,6 +1361,15 @@ function powerOn(){
   document.getElementById('main-content').style.display='block';
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
+  // Silk/FireTVのみ: ユーザージェスチャー直後にブラウザUIを非表示にする
+  // PC・iOS版には一切影響しない（isSilkがfalseのため実行されない）
+  if(isSilk){
+    var el=document.documentElement;
+    var req=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen;
+    if(req){
+      try{req.call(el);}catch(e){}
+    }
+  }
 }
 
 function initYTPlayer(){
