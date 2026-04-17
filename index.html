@@ -666,9 +666,9 @@ body.silk-mode .viewing-bar{
 }
 body.silk-mode .player-wrap{
   padding-bottom:0 !important;
-  flex:1;
+  aspect-ratio:16/9;
+  height:auto;
   width:100%;
-  min-height:0;
 }
 body.silk-mode #yt-player-api{
   position:absolute;inset:0;width:100%;height:100%;
@@ -1103,14 +1103,6 @@ function pauseVideo(){
 
 // ── 動画終了 ──
 function onEnded(){
-  // 動画が実際に終わったかチェック（シーク直後のstate=0誤発火を防ぐ）
-  // seekInProgressは使わない（シーク後に終端到達も正常に処理すべき）
-  try{
-    var dur2=ytPlayer.getDuration();
-    var cur2=ytPlayer.getCurrentTime();
-    // 動画尺が取れていて、残り2秒より多い場合は誤発火とみなしスキップ
-    if(dur2>0 && (dur2-cur2)>2) return;
-  }catch(_){}
   clearEndTimer();isManual=false;
   var pos=nowPos();
   if(!pos){
