@@ -1497,7 +1497,35 @@ function applyCCState(){
 
 function init(){
   // Silk/FireTV判定でsilk-modeクラスを付与
-  if(isSilk){ document.body.classList.add('silk-mode'); }
+  if(isSilk){
+    document.body.classList.add('silk-mode');
+    // 実際の画面サイズに合わせてplayer-wrapの高さを動的調整
+    function adjustSilkLayout(){
+      var pw = document.getElementById('player-wrap');
+      var header = document.querySelector('.header');
+      var vb = document.querySelector('.viewing-bar');
+      var ctrl = document.getElementById('custom-ctrl');
+      var page = document.querySelector('.page');
+      if(!pw||!header||!vb||!ctrl||!page) return;
+      var totalH = window.innerHeight;
+      var headerH = header.getBoundingClientRect().height;
+      var cs = window.getComputedStyle(page);
+      var pt = parseFloat(cs.paddingTop)||0;
+      var pb = parseFloat(cs.paddingBottom)||0;
+      var vbH = vb.getBoundingClientRect().height;
+      var ctrlH = ctrl.getBoundingClientRect().height;
+      var playerH = totalH - headerH - pt - pb - vbH - ctrlH;
+      if(playerH > 0){
+        pw.style.height = playerH + 'px';
+        // 番組表の高さも合わせる
+        var sb = document.querySelector('.sidebar');
+        if(sb) sb.style.maxHeight = (totalH - headerH - pt - pb) + 'px';
+      }
+    }
+    // DOMが揃ってから実行
+    setTimeout(adjustSilkLayout, 500);
+    window.addEventListener('resize', adjustSilkLayout);
+  }
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();updateClock();
