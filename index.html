@@ -630,11 +630,20 @@ upx;
 #fs-ctrl-bar .bar-bg{flex:1;cursor:pointer;height:6px;}
 /* ══ Silk/FireTV専用レイアウト（1920×1080フルスクリーン専用） ══ */
 /* body.silk-modeが付与された時のみ適用（JS判定） */
+/* headerは44px sticky → pageの使える高さ = 100vh - 44px - padding(4+8)px = 100vh - 56px */
 body.silk-mode .page{
   grid-template-columns:1fr 232px;
   padding:4px 8px 8px;
   gap:8px;
-  align-items:start;
+  align-items:stretch;
+  height:calc(100vh - 56px);
+  box-sizing:border-box;
+}
+/* 左列：flexboxで縦に並べてplayer-wrapを残り全部使う */
+body.silk-mode .page > div:first-child{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
 }
 body.silk-mode .header{
   height:44px;
@@ -652,28 +661,31 @@ body.silk-mode .viewing-bar{
   padding:0 10px;
   height:44px;
   min-height:44px;
+  flex-shrink:0;
   align-items:center;
 }
 body.silk-mode .player-wrap{
   padding-bottom:0 !important;
-  height:calc(100vh - 144px);
+  flex:1;
   width:100%;
+  min-height:0;
 }
 body.silk-mode #yt-player-api{
   position:absolute;inset:0;width:100%;height:100%;
 }
 body.silk-mode .custom-ctrl{
   height:44px;
+  flex-shrink:0;
   padding:0 12px;
   gap:14px;
 }
 body.silk-mode .vol-slider{width:50px;}
+/* 右列：番組表を左列と同じ高さに */
 body.silk-mode .sidebar{
-  position:sticky;
-  top:48px;
-  height:calc(100vh - 56px);
-  max-height:calc(100vh - 56px);
+  height:100%;
+  max-height:100%;
   overflow-y:auto;
+  position:static;
 }
 body.silk-mode .footer{display:none;}
 body.silk-mode .expand-open-btn{display:flex !important;}
@@ -1091,16 +1103,14 @@ function pauseVideo(){
 
 // ── 動画終了 ──
 function onEnded(){
-  // シーク直後のstate=0誤発火を防ぐ
-  if(seekInProgress) return;
-  // 手動再生時: 動画の末尾付近かチェック
-  if(isManual){
-    try{
-      var dur2=ytPlayer.getDuration();
-      var cur2=ytPlayer.getCurrentTime();
-      if(dur2>0&&(dur2-cur2)>5) return; // 残り5秒以上なら誤発火とみなしスキップ
-    }catch(_){}
-  }
+  // 動画が実際に終わったかチェック（シーク直後のstate=0誤発火を防ぐ）
+  // seekInProgressは使わない（シーク後に終端到達も正常に処理すべき）
+  try{
+    var dur2=ytPlayer.getDuration();
+    var cur2=ytPlayer.getCurrentTime();
+    // 動画尺が取れていて、残り2秒より多い場合は誤発火とみなしスキップ
+    if(dur2>0 && (dur2-cur2)>2) return;
+  }catch(_){}
   clearEndTimer();isManual=false;
   var pos=nowPos();
   if(!pos){
