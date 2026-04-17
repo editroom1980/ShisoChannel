@@ -628,10 +628,10 @@ upx;
 #fs-ctrl-bar #fs-cc{margin-left:14px;}
 .fs-cc-sq.cc-on{color:#fff;border-color:#fff;}
 #fs-ctrl-bar .bar-bg{flex:1;cursor:pointer;height:6px;}
-/* ══ Silk/FireTV専用レイアウト ══ */
+/* ══ Silk/FireTV専用レイアウト（1920×1080フルスクリーン専用） ══ */
 /* body.silk-modeが付与された時のみ適用（JS判定） */
 body.silk-mode .page{
-  grid-template-columns:1fr 320px;
+  grid-template-columns:1fr 232px;
   padding:4px 8px 8px;
   gap:8px;
   align-items:start;
@@ -649,24 +649,31 @@ body.silk-mode .h-time{font-size:15px;}
 body.silk-mode .h-date{display:none;}
 body.silk-mode .onair-badge{padding:2px 6px;font-size:8px;}
 body.silk-mode .viewing-bar{
-  padding:4px 10px;
-  min-height:36px;
+  padding:0 10px;
+  height:44px;
+  min-height:44px;
+  align-items:center;
 }
 body.silk-mode .player-wrap{
   padding-bottom:0 !important;
-  aspect-ratio:16/9;
-  height:auto;
+  height:calc(100vh - 144px);
   width:100%;
 }
 body.silk-mode #yt-player-api{
   position:absolute;inset:0;width:100%;height:100%;
 }
-body.silk-mode .custom-ctrl{height:40px;padding:0 8px;gap:8px;}
+body.silk-mode .custom-ctrl{
+  height:44px;
+  padding:0 12px;
+  gap:14px;
+}
 body.silk-mode .vol-slider{width:50px;}
 body.silk-mode .sidebar{
   position:sticky;
   top:48px;
-  max-height:calc(100svh - 52px);
+  height:calc(100vh - 56px);
+  max-height:calc(100vh - 56px);
+  overflow-y:auto;
 }
 body.silk-mode .footer{display:none;}
 body.silk-mode .expand-open-btn{display:flex !important;}
@@ -858,31 +865,14 @@ function onYouTubeIframeAPIReady(){
     playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1},
     events:{
       onStateChange:function(e){
-        // 再生状態に応じてアイコン更新
-        var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-        var playPath='<path d="M8 5v14l11-7z"/>';
-        var icon=document.getElementById('ctrl-play-icon');
-        var fsIcon=document.getElementById('fs-play-icon');
-        if(e.data===1){ // 再生中
-          updatePlayIcon(true);
-          setTimeout(function(){applyCCState();}, 800);
-        }else{
-          updatePlayIcon(false);
-        }
-        // 動画終了(state=0)かつ手動再生中 → 動画が実際に末尾付近の時のみ切り替え
-        // （シーク直後のstate=0誤発火を防ぐ）
-        if(e.data===0&&isManual){
-          try{
-            var dur2=ytPlayer.getDuration();
-            var cur2=ytPlayer.getCurrentTime();
-            // 残り3秒以内の場合のみ終了とみなす
-            if(dur2>0&&(dur2-cur2)<=3){
-              isManual=false;
-              var pos=nowPos();
-              if(pos) playSchedule(pos.c,pos.p); else gotoOffAir();
-            }
-          }catch(_){}
-        }
+        var st=e.data;
+        // 再生/停止アイコン更新
+        if(st===1||st===3){ updatePlayIcon(true); setTimeout(applyCCState,800); }
+        else{ updatePlayIcon(false); }
+        // 再生開始でスピナー・終了画面を消す
+        if(st===1||st===3){ showEnded(false);showSpinner(false); }
+        // 動画終了
+        if(st===0){ onEnded(); }
       },
       onReady:function(e){
         ytReady=true;ytPlayer=e.target;
@@ -892,13 +882,6 @@ function onYouTubeIframeAPIReady(){
           e.target.loadVideoById({videoId:id,startSeconds:sec});
           clearSpinnerTimer();
           spinnerTimer=setTimeout(function(){showSpinner(false);},3000);
-        }
-      },
-      onStateChange:function(e){
-        var st=e.data;
-        if(st===YT.PlayerState.ENDED){onEnded();return;}
-        if(st===YT.PlayerState.PLAYING||st===YT.PlayerState.BUFFERING){
-          showEnded(false);showSpinner(false);
         }
       }
     }
@@ -1108,16 +1091,24 @@ function pauseVideo(){
 
 // ── 動画終了 ──
 function onEnded(){
+  // シーク直後のstate=0誤発火を防ぐ
+  if(seekInProgress) return;
+  // 手動再生時: 動画の末尾付近かチェック
+  if(isManual){
+    try{
+      var dur2=ytPlayer.getDuration();
+      var cur2=ytPlayer.getCurrentTime();
+      if(dur2>0&&(dur2-cur2)>5) return; // 残り5秒以上なら誤発火とみなしスキップ
+    }catch(_){}
+  }
   clearEndTimer();isManual=false;
   var pos=nowPos();
   if(!pos){
-    // 放送時間外：疑似全画面を解除してoffAir表示
     var wasExp=isExpanded;
     if(wasExp)closeExpand();
     setTimeout(gotoOffAir,wasExp?300:0);
     return;
   }
-  // 疑似全画面中でも expandedを維持したまま次の番組へ
   playSchedule(pos.c,pos.p);
 }
 
