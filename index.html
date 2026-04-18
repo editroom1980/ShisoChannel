@@ -665,10 +665,10 @@ body.silk-mode .viewing-bar{
   align-items:center;
 }
 body.silk-mode .player-wrap{
-  padding-bottom:0 !important;
-  aspect-ratio:16/9;
-  height:auto;
   width:100%;
+  padding-bottom:56.25% !important;
+  height:0 !important;
+  position:relative;
 }
 body.silk-mode #yt-player-api{
   position:absolute;inset:0;width:100%;height:100%;
@@ -884,7 +884,7 @@ function onYouTubeIframeAPIReady(){
         // 再生開始でスピナー・終了画面を消す
         if(st===1||st===3){ showEnded(false);showSpinner(false); }
         // 動画終了
-        if(st===0){ onEnded(); }
+        if(st===0&&!endedHandled&&!isOff){ endedHandled=true; onEnded(); }
       },
       onReady:function(e){
         ytReady=true;ytPlayer=e.target;
@@ -1073,7 +1073,8 @@ function loadVideo(ytId,sec,msg){
   clearSpinnerTimer();
   showEnded(false);
   // シークバーをリセット
-  ourPlaying=false; // 動画切替時にフラグリセット
+  ourPlaying=false;    // 動画切替時にフラグリセット
+  endedHandled=false;  // 終了フラグリセット
   var pb=document.getElementById('p-bar');if(pb)pb.style.width='0%';
   var pbfs=document.getElementById('p-bar-fs');if(pbfs)pbfs.style.width='0%';
   showSpinner(true,msg||'切り替え中...');
@@ -1327,6 +1328,11 @@ function updateSeekBar(){
       var pbfs=document.getElementById('p-bar-fs');
       if(pbfs)pbfs.style.width=pct+'%';
     }
+    // state=0(終了)ポーリング補完: controls:0でENDEDイベントが発火しない場合の対策
+    if(state===0&&!endedHandled&&!isOff){
+      endedHandled=true;
+      onEnded();
+    }
   }catch(e){}
 }
 
@@ -1383,6 +1389,7 @@ var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)&&('ontouchstart' in windo
 var iosFirstPlay=false; // iOSで最初のユーザーgestureによる再生が完了したか
 var vCurrentId=''; // 現在ロード中の動画ID
 var seekInProgress=false; // シーク中フラグ（アイコンフリッカー防止）
+var endedHandled=false;  // 動画終了処理済みフラグ（二重発火防止）
 var vCurrentSec=0; // 現在の開始秒数
 
 function togglePlayPause(){
