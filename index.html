@@ -884,8 +884,8 @@ function onYouTubeIframeAPIReady(){
         // 再生/停止アイコン更新
         if(st===1||st===3){ updatePlayIcon(true); setTimeout(applyCCState,800); }
         else{ updatePlayIcon(false); }
-        // 再生開始でスピナー・終了画面を消す
-        if(st===1||st===3){ clearSpinnerTimer();showEnded(false);showSpinner(false); }
+        // 再生開始でスピナー・終了画面を消す（放送終了中は終了画面を維持）
+        if(st===1||st===3){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
         // 動画終了
         if(st===0&&!isOff){ onEnded(); }
       },
@@ -1151,6 +1151,10 @@ function gotoOffAir(){
   clearEndTimer();closeExpand();
   isOff=true;isManual=false;
   pauseVideo();
+  // バッファリング中でも確実に停止させる遅延pause
+  setTimeout(function(){
+    if(isOff&&ytPlayer&&ytReady){try{ytPlayer.pauseVideo();}catch(_){}}
+  },800);
   showSpinner(false);showEnded(true);
   document.getElementById('viewing-title').textContent='本日の放送は終了しました';
   document.getElementById('viewing-cat').textContent='';
