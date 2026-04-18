@@ -399,7 +399,7 @@ upx;
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
   display:flex;align-items:center;
-  background:var(--white);border:1px solid var(--border);border-top:1px solid var(--border);
+  background:var(--white);border:1px solid var(--border);
   border-radius:0 0 6px 6px;
   padding:0 16px;
   height:44px;
@@ -885,7 +885,7 @@ function onYouTubeIframeAPIReady(){
         if(st===1||st===3){ updatePlayIcon(true); setTimeout(applyCCState,800); }
         else{ updatePlayIcon(false); }
         // 再生開始でスピナー・終了画面を消す
-        if(st===1||st===3){ showEnded(false);showSpinner(false); }
+        if(st===1||st===3){ clearSpinnerTimer();showEnded(false);showSpinner(false); }
         // 動画終了
         if(st===0&&!endedHandled&&!isOff){ endedHandled=true; onEnded(); }
       },
@@ -896,8 +896,8 @@ function onYouTubeIframeAPIReady(){
           pendingYtId='';pendingSec=0;
           e.target.loadVideoById({videoId:id,startSeconds:sec});
           clearSpinnerTimer();
-          // onStateChange(st=1/3)でspinnerを消す。最長5秒のフォールバック
-          spinnerTimer=setTimeout(function(){showSpinner(false);},5000);
+          // onStateChange(st=1/3)でspinnerを消す。最長1.5秒のフォールバック
+          spinnerTimer=setTimeout(function(){showSpinner(false);},1500);
         }else{
           // 動画なし（cueVideoById等）でもスピナーを消す
           showSpinner(false);
@@ -1099,7 +1099,7 @@ function loadVideo(ytId,sec,msg){
   }else{
     pendingYtId=ytId;pendingSec=sec;
   }
-  spinnerTimer=setTimeout(function(){showSpinner(false);},3000);
+  spinnerTimer=setTimeout(function(){showSpinner(false);},1500);
   // 動画切替後に字幕状態を再適用（ytPlayerのready後に実行）
   setTimeout(applyCCState, 1500);
 }
@@ -1111,6 +1111,8 @@ function pauseVideo(){
 
 // ── 動画終了 ──
 function onEnded(){
+  // まずスピナーで画面を覆う（YouTubeのエンドスクリーン＝サムネイルを隠す）
+  showSpinner(true,'切り替え中...');
   clearEndTimer();isManual=false;
   var pos=nowPos();
   if(!pos){
