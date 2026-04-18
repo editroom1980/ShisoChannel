@@ -95,7 +95,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 /* プレイヤー本体 */
 .player-wrap{
   position:relative;padding-bottom:56.25%;
-  border:1px solid var(--border);border-top:none;
+  border:1px solid var(--border);border-top:none;border-bottom:none;
   overflow:hidden;box-shadow:0 4px 20px rgba(30,58,40,0.15);background:#000;
   isolation:isolate;
 }
@@ -399,7 +399,7 @@ upx;
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
   display:flex;align-items:center;
-  background:var(--white);border:1px solid var(--border);border-top:none;
+  background:var(--white);border:1px solid var(--border);border-top:1px solid var(--border);
   border-radius:0 0 6px 6px;
   padding:0 16px;
   height:44px;
@@ -871,7 +871,10 @@ var spinnerTimer=null,endTimer=null;
 // ══════════════════════════════════════════════
 //  YouTube IFrame API
 // ══════════════════════════════════════════════
+var ytInitialized=false;
 function onYouTubeIframeAPIReady(){
+  if(ytInitialized)return; // キャッシュ等による二重呼び出しを防止
+  ytInitialized=true;
   ytPlayer=new YT.Player('yt-player-api',{
     width:'100%',height:'100%',
     playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1},
@@ -893,7 +896,11 @@ function onYouTubeIframeAPIReady(){
           pendingYtId='';pendingSec=0;
           e.target.loadVideoById({videoId:id,startSeconds:sec});
           clearSpinnerTimer();
-          spinnerTimer=setTimeout(function(){showSpinner(false);},3000);
+          // onStateChange(st=1/3)でspinnerを消す。最長5秒のフォールバック
+          spinnerTimer=setTimeout(function(){showSpinner(false);},5000);
+        }else{
+          // 動画なし（cueVideoById等）でもスピナーを消す
+          showSpinner(false);
         }
       }
     }
