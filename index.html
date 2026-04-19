@@ -881,11 +881,11 @@ function onYouTubeIframeAPIReady(){
     events:{
       onStateChange:function(e){
         var st=e.data;
-        // 再生/停止アイコン更新
+        // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
         if(st===1||st===3){ updatePlayIcon(true); setTimeout(applyCCState,800); }
         else{ updatePlayIcon(false); }
-        // 再生開始でスピナー・終了画面を消す（放送終了中は終了画面を維持）
-        if(st===1||st===3){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
+        if(st===1){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
+        if(st===3&&!isOff){ showEnded(false); } // バッファ中は終了画面だけ消す
         // 動画終了
         if(st===0&&!isOff){ showSpinner(true,'切り替え中...'); onEnded(); }
       },
@@ -1323,8 +1323,9 @@ function updateSeekBar(){
     var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
     var playPath='<path d="M8 5v14l11-7z"/>';
     var isPlay=(state===1||state===3);
-    // 再生中・バッファ中なのにスピナーが表示されていたら強制的に消す
-    if(isPlay&&!isOff){
+    // 実際に再生中(state=1)なのにスピナーが表示されていたら消す
+    // state=3(バッファ中)では消さない（映像が実際に見える前にスピナーが消えるのを防ぐ）
+    if(state===1&&!isOff){
       var swEl=document.getElementById('sw-ov');
       if(swEl&&swEl.style.display!=='none'){ clearSpinnerTimer();showSpinner(false); }
     }
