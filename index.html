@@ -1355,7 +1355,7 @@ function updateSeekBar(){
       var pbfs=document.getElementById('p-bar-fs');
       if(pbfs)pbfs.style.width=pct+'%';
       // 終了2秒前にスピナーを先出し（YouTubeエンドスクリーンを隠す）
-      if(!isOff&&(dur-cur)<2&&dur>5){
+      if(!isOff&&(dur-cur)<0.1&&dur>5){
         var swEl2=document.getElementById('sw-ov');
         if(swEl2&&swEl2.style.display==='none'){showSpinner(true,'切り替え中...');}
       }
@@ -1567,7 +1567,7 @@ function init(){
   addTap(document.getElementById('ps-btn'),powerOn);
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
-  setInterval(updateSeekBar,250);
+  setInterval(updateSeekBar,100);
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
 
