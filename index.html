@@ -941,10 +941,8 @@ function openExpand(){
       req.call(wrap);
       // 全画面になったらAPIに通知してUIを表示
       updateExpandTitle();showFsUi();
-      // PC全画面: mousemoveでコントロールバーを表示
-      var _mmHandler=function(){if(isExpanded)showFsUi();};
-      wrap.addEventListener('mousemove',_mmHandler);
-      wrap._mmHandler=_mmHandler;
+      // PC全画面: mousemoveはdocumentレベルで一元管理するためここでは登録しない
+      wrap._mmHandler=null;
       return;
     }
   }
@@ -1572,16 +1570,20 @@ function init(){
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
 
-  // カーソル自動非表示（PC全画面・FireTV全画面共通）
-  // マウスが動いたら表示、2秒後に非表示
+  // カーソル自動非表示（PC全画面）
+  // マウスが動いたらカーソル＋コントロールバーを表示、2秒後に両方非表示
   var _globalCursorTimer=null;
   document.addEventListener('mousemove',function(){
     document.body.classList.remove('cursor-hidden');
     if(_globalCursorTimer)clearTimeout(_globalCursorTimer);
+    // PC全画面中はコントロールバーも同時に表示（fsUiTimerはここで一元管理）
+    if(isExpanded){ clearFsUiTimer(); showFsUi(); }
     _globalCursorTimer=setTimeout(function(){
-      // 全画面状態（PC拡大 or FireTV requestFullscreen）のときだけ隠す
       var inFs=!!(document.fullscreenElement||document.webkitFullscreenElement)||isExpanded||isSilk;
-      if(inFs)document.body.classList.add('cursor-hidden');
+      if(inFs){
+        document.body.classList.add('cursor-hidden');
+        if(isExpanded) hideFsUi(); // コントロールバーも同時に非表示
+      }
     },2000);
   });
 
