@@ -887,7 +887,7 @@ function onYouTubeIframeAPIReady(){
         // 再生開始でスピナー・終了画面を消す（放送終了中は終了画面を維持）
         if(st===1||st===3){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
         // 動画終了
-        if(st===0&&!isOff){ onEnded(); }
+        if(st===0&&!isOff){ showSpinner(true,'切り替え中...'); onEnded(); }
       },
       onReady:function(e){
         ytReady=true;ytPlayer=e.target;
@@ -1330,6 +1330,7 @@ function updateSeekBar(){
     }
     // state=0(終了)のバックアップ検知（onStateChangeが発火しない場合の対策）
     if(state===0&&!isOff&&!window._onEndedPending){
+      showSpinner(true,'切り替え中...'); // 即座にエンドスクリーンを隠す
       window._onEndedPending=true;
       setTimeout(function(){
         window._onEndedPending=false;
