@@ -689,6 +689,8 @@ body.silk-mode .sidebar{
 }
 body.silk-mode .footer{display:none;}
 body.silk-mode .expand-open-btn{display:flex !important;}
+/* 全画面時のカーソル自動非表示 */
+body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 </style>
 </head>
 <body>
@@ -939,23 +941,10 @@ function openExpand(){
       req.call(wrap);
       // 全画面になったらAPIに通知してUIを表示
       updateExpandTitle();showFsUi();
-      // PC全画面: mousemoveでコントロールバーを表示＋カーソル自動消去
-      var _cursorTimer=null;
-      var _mmHandler=function(){
-        if(!isExpanded)return;
-        // カーソルを表示してタイマーをリセット
-        wrap.style.cursor='';
-        if(_cursorTimer)clearTimeout(_cursorTimer);
-        _cursorTimer=setTimeout(function(){
-          if(isExpanded)wrap.style.cursor='none';
-        },2000);
-        showFsUi();
-      };
+      // PC全画面: mousemoveでコントロールバーを表示
+      var _mmHandler=function(){if(isExpanded)showFsUi();};
       wrap.addEventListener('mousemove',_mmHandler);
       wrap._mmHandler=_mmHandler;
-      wrap._cursorTimer=_cursorTimer;
-      // 全画面開始時はカーソルをすぐ隠す
-      _cursorTimer=setTimeout(function(){if(isExpanded)wrap.style.cursor='none';},2000);
       return;
     }
   }
@@ -993,10 +982,8 @@ function closeExpand(){
     // fs-ctrl-barを非表示
     var fsBar=document.getElementById('fs-ctrl-bar');
     if(fsBar)fsBar.style.display='none';
-    // mousemoveリスナー削除・カーソル復元
+    // mousemoveリスナー削除
     if(wrap._mmHandler){wrap.removeEventListener('mousemove',wrap._mmHandler);wrap._mmHandler=null;}
-    wrap.style.cursor='';
-    if(wrap._cursorTimer){clearTimeout(wrap._cursorTimer);wrap._cursorTimer=null;}
     // PC：解除後に再生を維持
     if(!isOff&&ytPlayer&&ytReady){
       setTimeout(function(){
@@ -1584,6 +1571,19 @@ function init(){
   setInterval(updateSeekBar,100);
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
+
+  // カーソル自動非表示（PC全画面・FireTV全画面共通）
+  // マウスが動いたら表示、2秒後に非表示
+  var _globalCursorTimer=null;
+  document.addEventListener('mousemove',function(){
+    document.body.classList.remove('cursor-hidden');
+    if(_globalCursorTimer)clearTimeout(_globalCursorTimer);
+    _globalCursorTimer=setTimeout(function(){
+      // 全画面状態（PC拡大 or FireTV requestFullscreen）のときだけ隠す
+      var inFs=!!(document.fullscreenElement||document.webkitFullscreenElement)||isExpanded||isSilk;
+      if(inFs)document.body.classList.add('cursor-hidden');
+    },2000);
+  });
 
   // ctrl-play: onclick属性のみ使用（addTapのtouchend+preventDefaultがiOSで
   // ytPlayer.playVideo()のジェスチャーチェーンを切る可能性があるため除外）
