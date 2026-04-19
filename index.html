@@ -1197,7 +1197,7 @@ function setViewUI(c,p){
 }
 function refreshLive(){
   if(isOff)return;
-  var pos=nowPos();if(!pos){gotoOffAir();return;}
+  var pos=nowPos();if(!pos){if(!isManual)gotoOffAir();return;}
   var c=pos.c,p=pos.p;lC=c;lP=p;
   document.getElementById('onair-badge').classList.remove('off');
   document.getElementById('bdot').className='bdot';
