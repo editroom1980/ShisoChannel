@@ -689,10 +689,11 @@ body.silk-mode .sidebar{
 }
 body.silk-mode .footer{display:none;}
 body.silk-mode .expand-open-btn{display:flex !important;}
-/* iOS(iPhone・iPad): 音量スライダー非表示（iOSのsetVolume制限対応） */
+/* iOS(iPhone・iPad): 音量スライダー非表示・CC間隔を半分に */
 @media(pointer:coarse){
   .vol-slider{ display:none !important; }
   #fs-vol-slider{ display:none !important; }
+  .ctrl-btn.ctrl-cc{ margin-left:0 !important; }
 }
 /* 全画面時のカーソル自動非表示 */
 body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
@@ -1095,6 +1096,10 @@ function loadVideo(ytId,sec,msg){
     if(isIOS&&!iosFirstPlay){
       // iOS初回: cueVideoById（再生なし）→ユーザーgestureで再生
       try{ytPlayer.cueVideoById({videoId:ytId,startSeconds:sec});}catch(_){}
+      // st=5が発火しない場合のフォールバック：3秒後にスピナーを消す
+      setTimeout(function(){
+        if(!iosFirstPlay){ clearSpinnerTimer(); showSpinner(false); }
+      },3000);
     }else{
       ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
       setTimeout(function(){
