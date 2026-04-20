@@ -950,6 +950,10 @@ function onYouTubeIframeAPIReady(){
         if(st===5&&isIOS){ clearSpinnerTimer();showSpinner(false); }
         // 動画終了
         if(st===0&&!isOff){ showSpinner(true,'切り替え中...'); onEnded(); }
+        // Now Playingインジケーター抑制（Dynamic Island非表示の試み）
+        if('mediaSession' in navigator){
+          navigator.mediaSession.playbackState='none';
+        }
       },
       onReady:function(e){
         ytReady=true;ytPlayer=e.target;
@@ -1597,6 +1601,12 @@ function init(){
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
   setInterval(updateSeekBar,100);
+  // Now Playingセッション抑制（Dynamic Islandインジケーター非表示の試み）
+  if('mediaSession' in navigator){
+    navigator.mediaSession.playbackState='none';
+    navigator.mediaSession.metadata=null;
+  }
+
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
 
