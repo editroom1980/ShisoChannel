@@ -431,7 +431,7 @@ upx;
   display:flex;align-items:center;justify-content:center;
   border:1px solid var(--border);border-radius:3px;flex-shrink:0;}
 /* ctrl-btnクラスのmin-width/heightを正方形で上書き */
-.ctrl-btn.ctrl-cc{width:36px !important;height:36px !important;min-width:36px !important;padding:0 !important;margin-left:14px !important;}
+.ctrl-btn.ctrl-cc{width:28px !important;height:28px !important;min-width:28px !important;padding:0 !important;margin-left:14px !important;font-size:11px !important;}
 .ctrl-cc.cc-on{color:var(--green2);border-color:var(--green2);background:var(--green5);}
 .ctrl-cc.cc-off{color:var(--text3);}
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
@@ -702,6 +702,16 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   .vol-slider{ display:none !important; }
   #fs-vol-slider{ display:none !important; }
   .ctrl-btn.ctrl-cc{ margin-left:0 !important; }
+  /* iPhone・iPad全画面: CCボタンの音量↔字幕間隔を通常と同じに */
+  #fs-ctrl-bar #fs-cc{ margin-left:0 !important; }
+}
+/* iPhoneの丸角対策: 全画面時コントロールバーを中央に寄せる */
+body.iphone-mode #fs-ctrl-bar{
+  padding:0 28px;
+}
+body.iphone-mode .player-wrap.expanded .custom-ctrl,
+body.iphone-mode .player-wrap.expanded ~ * .custom-ctrl{
+  padding:0 28px;
 }
 /* 全画面時のカーソル自動非表示 */
 body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
@@ -1548,6 +1558,9 @@ function init(){
   // Silk/FireTV判定でsilk-modeクラスを付与
   if(isSilk){
     document.body.classList.add('silk-mode');
+  }
+  // iPhone判定でiphone-modeクラスを付与（全画面時の丸角対策）
+  if(isIOS){ document.body.classList.add('iphone-mode'); }
     // 実際の画面サイズに合わせてplayer-wrapの高さを動的調整
     function adjustSilkLayout(){
       var pw = document.getElementById('player-wrap');
