@@ -427,13 +427,11 @@ upx;
   width:18px;height:18px;border-radius:50%;
   background:var(--green2);cursor:pointer;
 }
-.ctrl-cc{font-size:13px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--border);border-radius:3px;flex-shrink:0;}
+
 /* ctrl-btnクラスのmin-width/heightを正方形で上書き */
-.ctrl-btn.ctrl-cc{width:28px !important;height:28px !important;min-width:28px !important;padding:0 !important;margin-left:14px !important;font-size:11px !important;}
-.ctrl-cc.cc-on{color:var(--green2);border-color:var(--green2);background:var(--green5);}
-.ctrl-cc.cc-off{color:var(--text3);}
+
+
+
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;
@@ -519,7 +517,7 @@ upx;
   .custom-ctrl{height:40px;padding:0 8px;gap:5px;}
   .ctrl-btn{min-width:34px;height:34px;}
   .vol-slider{width:50px;}
-  .ctrl-cc{font-size:11px;padding:1px 5px;}
+
   .custom-ctrl .expand-open-btn{padding:0 7px;}
 
   .page{
@@ -625,16 +623,7 @@ upx;
   -webkit-tap-highlight-color:transparent;font-family:inherit;
 }
 .fs-ctrl-btn:hover,.fs-ctrl-btn:active{background:rgba(255,255,255,0.15);}
-.fs-cc-sq{
-  font-size:12px;font-weight:700;
-  width:28px;height:28px;
-  display:flex;align-items:center;justify-content:center;
-  border:1.5px solid rgba(255,255,255,0.5);border-radius:3px;
-  color:rgba(255,255,255,0.5);
-}
-/* 全画面CCボタン：音量バーとの間隔を通常バー（iOS:14px）と同じに */
-#fs-ctrl-bar #fs-cc{margin-left:0;}
-.fs-cc-sq.cc-on{color:#fff;border-color:#fff;}
+
 #fs-ctrl-bar .bar-bg{flex:1;cursor:pointer;height:6px;}
 /* ══ Silk/FireTV専用レイアウト（1920×1080フルスクリーン専用） ══ */
 /* body.silk-modeが付与された時のみ適用（JS判定） */
@@ -701,9 +690,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
 @media(pointer:coarse){
   .vol-slider{ display:none !important; }
   #fs-vol-slider{ display:none !important; }
-  .ctrl-btn.ctrl-cc{ margin-left:0 !important; }
-  /* iPhone・iPad全画面: CCボタンの音量↔字幕間隔を通常と同じに */
-  #fs-ctrl-bar #fs-cc{ margin-left:0 !important; }
+
 }
 
 /* iPad縦向き専用レイアウト
@@ -829,7 +816,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
             <svg id="fs-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
           </button>
           <input type="range" class="vol-slider" id="fs-vol-slider" min="0" max="100" value="100">
-          <button class="fs-ctrl-btn" id="fs-cc" title="字幕"><span class="fs-cc-sq cc-off" id="fs-cc-sq">CC</span></button>
           <button class="fs-ctrl-btn" id="fs-close" title="解除">
             <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
           </button>
@@ -849,8 +835,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
           <svg id="ctrl-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
         </button>
         <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="100" oninput="onVolSlider()">
-        <!-- 字幕 -->
-        <button class="ctrl-btn ctrl-cc cc-off" id="ctrl-cc" onclick="toggleCC()" title="字幕">CC</button>
         <!-- 拡大 -->
         <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()" title="拡大"><svg viewBox="0 0 24 24" width="31" height="31" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
       </div>
@@ -942,7 +926,7 @@ function onYouTubeIframeAPIReady(){
       onStateChange:function(e){
         var st=e.data;
         // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
-        if(st===1||st===3){ updatePlayIcon(true); setTimeout(applyCCState,800); }
+        if(st===1||st===3){ updatePlayIcon(true); }
         else{ updatePlayIcon(false); }
         if(st===1){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
         if(st===3&&!isOff){ showEnded(false); } // バッファ中は終了画面だけ消す
@@ -1153,8 +1137,6 @@ function loadVideo(ytId,sec,msg){
     pendingYtId=ytId;pendingSec=sec;
   }
   spinnerTimer=setTimeout(function(){showSpinner(false);},60000);
-  // 動画切替後に字幕状態を再適用（ytPlayerのready後に実行）
-  setTimeout(applyCCState, 1500);
 }
 
 function pauseVideo(){
@@ -1466,7 +1448,6 @@ function initYTPlayer(){
 var isSilk=navigator.userAgent.indexOf('Silk')!==-1||navigator.userAgent.indexOf('AFT')!==-1;
 
 // ══ カスタムコントロール関数 ══
-var ccActive=false;
 var isMuted=false;
 var lastVol=100;
 var ourPlaying=false; // 再生状態フラグ（iOS対応）
@@ -1557,36 +1538,8 @@ function onVolSlider(){
   if(fvs&&fvs!==v)fvs.value=val;
 }
 
-function toggleCC(){
-  if(!ytPlayer)return;
-  ccActive=!ccActive;
-  var btn=document.getElementById('ctrl-cc');
-  var fsSq=document.getElementById('fs-cc-sq');
-  if(ccActive){
-    try{
-      ytPlayer.loadModule('captions');
-      ytPlayer.setOption('captions','track',{languageCode:'ja'});
-    }catch(e){}
-    if(btn){btn.classList.add('cc-on');btn.classList.remove('cc-off');}
-    if(fsSq){fsSq.classList.add('cc-on');fsSq.classList.remove('cc-off');}
-  }else{
-    try{
-      ytPlayer.setOption('captions','track',{});
-      ytPlayer.unloadModule('captions');
-    }catch(e){}
-    if(btn){btn.classList.add('cc-off');btn.classList.remove('cc-on');}
-    if(fsSq){fsSq.classList.add('cc-off');fsSq.classList.remove('cc-on');}
-  }
-}
-// 字幕状態を現在のccActiveに合わせて再適用（動画切替後に呼ぶ）
-function applyCCState(){
-  if(!ytPlayer)return;
-  if(ccActive){
-    try{ytPlayer.loadModule('captions');ytPlayer.setOption('captions','track',{languageCode:'ja'});}catch(e){}
-  }else{
-    try{ytPlayer.setOption('captions','track',{});ytPlayer.unloadModule('captions');}catch(e){}
-  }
-}
+
+
 
 function init(){
   // Silk/FireTV判定でsilk-modeクラスを付与
@@ -1654,7 +1607,6 @@ function init(){
   // fs-ctrl-bar の初期化
   addTap(document.getElementById('fs-play'), togglePlayPause);
   addTap(document.getElementById('fs-mute'), toggleMute);
-  addTap(document.getElementById('fs-cc'), toggleCC);
   addTap(document.getElementById('fs-close'), closeExpand);
   // fs-vol-slider
   var fsVol=document.getElementById('fs-vol-slider');
