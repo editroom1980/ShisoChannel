@@ -689,6 +689,11 @@ body.silk-mode .sidebar{
 }
 body.silk-mode .footer{display:none;}
 body.silk-mode .expand-open-btn{display:flex !important;}
+/* iOS(iPhone・iPad): 音量スライダー非表示（iOSのsetVolume制限対応） */
+@media(pointer:coarse){
+  .vol-slider{ display:none !important; }
+  #fs-vol-slider{ display:none !important; }
+}
 /* 全画面時のカーソル自動非表示 */
 body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 </style>
@@ -888,6 +893,8 @@ function onYouTubeIframeAPIReady(){
         else{ updatePlayIcon(false); }
         if(st===1){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
         if(st===3&&!isOff){ showEnded(false); } // バッファ中は終了画面だけ消す
+        // iOS: st=5(cued)でスピナーを消す（cueVideoById後は自動再生されないため）
+        if(st===5&&isIOS){ clearSpinnerTimer();showSpinner(false); }
         // 動画終了
         if(st===0&&!isOff){ showSpinner(true,'切り替え中...'); onEnded(); }
       },
