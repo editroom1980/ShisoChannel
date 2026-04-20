@@ -1558,9 +1558,6 @@ function init(){
   // Silk/FireTV判定でsilk-modeクラスを付与
   if(isSilk){
     document.body.classList.add('silk-mode');
-  }
-  // iPhone判定でiphone-modeクラスを付与（全画面時の丸角対策）
-  if(isIOS){ document.body.classList.add('iphone-mode'); }
     // 実際の画面サイズに合わせてplayer-wrapの高さを動的調整
     function adjustSilkLayout(){
       var pw = document.getElementById('player-wrap');
@@ -1588,6 +1585,8 @@ function init(){
     setTimeout(adjustSilkLayout, 500);
     window.addEventListener('resize', adjustSilkLayout);
   }
+  // iPhone判定でiphone-modeクラスを付与（全画面時の丸角対策）
+  if(isIOS){ document.body.classList.add('iphone-mode'); }
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();updateClock();
