@@ -723,10 +723,10 @@ body.silk-mode .expand-open-btn{display:flex !important;}
     min-height:240px;
     overflow-y:auto;
   }
-  /* ヘッダー */
+  /* ヘッダー：safe-area対応（iPadのステータスバーと被らないように） */
   .header{
-    height:56px;
-    padding:0 16px;
+    height:calc(56px + env(safe-area-inset-top));
+    padding:env(safe-area-inset-top) 16px 0;
   }
   .h-date{display:none;}
   .h-time{font-size:20px;}
