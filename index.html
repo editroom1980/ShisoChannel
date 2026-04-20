@@ -723,10 +723,11 @@ body.silk-mode .expand-open-btn{display:flex !important;}
     min-height:240px;
     overflow-y:auto;
   }
-  /* ヘッダー：safe-area対応（iPadのステータスバーと被らないように） */
+  /* ヘッダー：safe-area対応（iPadのステータスバーと被らないように）
+     safe-area-inset-topが取得できない場合は固定24pxを使用 */
   .header{
-    height:calc(56px + env(safe-area-inset-top));
-    padding:env(safe-area-inset-top) 16px 0;
+    height:calc(56px + max(24px, env(safe-area-inset-top)));
+    padding:max(24px, env(safe-area-inset-top)) 16px 0;
   }
   .h-date{display:none;}
   .h-time{font-size:20px;}
