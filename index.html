@@ -1396,6 +1396,8 @@ function updateClock(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
+  // iPhoneのみ: ジェスチャーチェーン内でloadVideoByIdを使うためフラグを立てる
+  if(isIOS) iosFirstPlay=true;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
   // Silk/FireTVのみ: ユーザージェスチャー直後にブラウザUIを非表示にする
