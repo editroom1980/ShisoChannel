@@ -705,6 +705,39 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   /* iPhone・iPad全画面: CCボタンの音量↔字幕間隔を通常と同じに */
   #fs-ctrl-bar #fs-cc{ margin-left:0 !important; }
 }
+
+/* iPad縦向き専用レイアウト
+   pointer:coarse（タッチ）かつ縦向きかつ幅600px以上（iPhone除外）
+   iPadは横向き時はこのクエリに入らないため変更なし */
+@media(pointer:coarse) and (orientation:portrait) and (min-width:600px){
+  /* 動画と番組表を縦に積む（iPhone縦向きと同様の構造） */
+  .page{
+    grid-template-columns:1fr;
+    padding:10px 14px 20px;
+    gap:12px;
+  }
+  /* 番組表：スクロール可能な高さで表示 */
+  .sidebar{
+    position:static;
+    max-height:calc(100vh - 56px - 44px - 44px - 56.25vw - 60px);
+    min-height:240px;
+    overflow-y:auto;
+  }
+  /* ヘッダー */
+  .header{
+    height:56px;
+    padding:0 16px;
+  }
+  .h-date{display:none;}
+  .h-time{font-size:20px;}
+  /* viewing-barとcontrolを表示（iPhoneと同様） */
+  .viewing-bar{padding:8px 14px;min-height:44px;}
+  #viewing-title{font-size:14px;}
+  .custom-ctrl{height:44px;padding:0 14px;gap:10px;}
+  .ctrl-btn{min-width:36px;height:36px;}
+  /* フッター */
+  .footer{font-size:11px;padding:10px 0;}
+}
 /* iPhoneの丸角対策: 全画面時コントロールバーを中央に寄せる */
 body.iphone-mode #fs-ctrl-bar{
   padding:0 28px;
