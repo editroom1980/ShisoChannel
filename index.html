@@ -65,7 +65,6 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .onair-badge{display:flex;align-items:center;gap:6px;border:1px solid var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:2px;letter-spacing:2px;background:rgba(184,48,48,0.2);}
 .onair-badge.off{border-color:var(--text3);background:rgba(100,100,100,0.15);}
 .bdot{width:6px;height:6px;background:#ff6060;border-radius:50%;animation:blink 1.4s infinite;}
-.bdot.grey{background:var(--text3);animation:none;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 
 /* ══ ページレイアウト（PC/Mac） ══ */
@@ -124,31 +123,14 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 /* 疑似全画面タイトルバー */
 
 
-
 /* 疑似全画面ボタン（スマホのみ・YT全画面ボタンに重なる透明ボタン） */
 /* 疑似全画面ボタン（拡大・閉じる）
    player-wrap内に position:absolute で配置
    YouTubeのiframeの全画面ボタンと同じ右下位置に重ねる
    スマホのみ表示 */
 /* ══ live-bar（LIVEバー + 拡大ボタンのコンテナ） ══ */
-.live-bar{
-  display:flex;
-  align-items:stretch;
-  border:1px solid var(--border);
-  border-top:none;
-  border-radius:0 0 6px 6px;
-  background:var(--white);
-  overflow:hidden;
-}
 /* LIVEボタン：flex-grow で残りスペースを埋める */
-.live-bar .live-btn{
-  flex:1;
-  border:none;
-  border-radius:0;
-  padding:12px 16px;
-  min-height:48px;
-}
-/* 拡大ボタン：右端に固定・スマホのみ表示 */
+.live-bar /* 拡大ボタン：右端に固定・スマホのみ表示 */
 .expand-open-btn{
   display:none; /* デフォルト非表示 */
   align-items:center;
@@ -325,10 +307,7 @@ upx;
   width:100vw;height:100vh;
   margin:0;border:none;box-shadow:none;border-radius:0;
 }
-.player-wrap:-webkit-full-screen{
-  padding-bottom:0;background:#000;
-  width:100vw;height:100vh;
-}
+
 .player-wrap:fullscreen #yt-player-api{position:absolute;inset:0;}
 .player-wrap:fullscreen #yt-player-api iframe{width:100%;height:100%;}
 /* 全画面中のUIボタン */
@@ -355,47 +334,15 @@ upx;
 }
 
 /* ══ LIVEボタン（タイトルバーと同じ高さ・同じパディング） ══ */
-.live-btn{
-  display:flex;align-items:center;gap:8px;
-  background:var(--white);border:1px solid var(--border);border-top:none;
-  border-radius:0 0 6px 6px;
-  padding:12px 16px; /* viewing-barと同じpadding */
-  min-height:48px;   /* viewing-barと同じ高さ */
-  width:100%;text-align:left;font-family:inherit;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-}
-.live-btn.no-click{cursor:default;}
 .ldot{width:7px;height:7px;background:var(--red);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;}
-.ldot.g{background:var(--text3);animation:none;}
 .llbl{font-size:10px;font-weight:700;letter-spacing:2px;flex-shrink:0;}
 .llbl.r{color:var(--red);}
-.llbl.g{color:var(--text3);}
 .ldiv{width:1px;height:14px;background:var(--border);flex-shrink:0;}
-#live-name{font-size:13px;color:var(--text2);line-height:1.4;flex:1;}
-#live-hint{font-size:10px;color:var(--green2);white-space:nowrap;flex-shrink:0;font-weight:700;display:none;}
-
 /* ══ プログレスバー（タイトルバーと同じ高さ） ══ */
-.prog-row{
-  background:var(--white);border:1px solid var(--border);border-radius:6px;
-  padding:12px 16px; /* viewing-barと同じpadding */
-  min-height:48px;   /* 高さを揃える */
-  margin-top:10px;
-  display:flex;align-items:center;gap:12px;
-}
 .pt{font-size:12px;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
 .bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;cursor:pointer;}
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
-.cycle-tag{font-size:10px;font-weight:700;color:var(--green2);background:var(--green5);border:1px solid var(--border);padding:3px 9px;border-radius:20px;white-space:nowrap;}
-
 /* ══ 次の番組（タイトルバーと同じ高さ） ══ */
-.next-row{
-  background:var(--white);border:1px solid var(--border);border-radius:6px;
-  padding:12px 16px; /* viewing-barと同じpadding */
-  min-height:48px;   /* 高さを揃える */
-  margin-top:8px;
-  display:flex;align-items:center;gap:10px;
-}
-
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
   display:flex;align-items:center;
@@ -431,7 +378,6 @@ upx;
 /* ctrl-btnクラスのmin-width/heightを正方形で上書き */
 
 
-
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;
@@ -441,10 +387,6 @@ upx;
   align-items:center;justify-content:center;
   min-width:auto;
 }
-.next-pill{font-size:10px;font-weight:700;color:var(--white);background:var(--green2);padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
-#next-title{font-size:13px;color:var(--text2);line-height:1.4;flex:1;}
-#next-time{font-size:12px;color:var(--text3);white-space:nowrap;padding-left:8px;flex-shrink:0;}
-
 /* ══ 番組表サイドバー ══ */
 .sidebar{
   background:var(--white);border:1px solid var(--border);border-radius:6px;
@@ -545,12 +487,7 @@ upx;
   /* スマホはUI要素をやや小さく */
   .viewing-bar{padding:9px 12px;min-height:42px;}
   #viewing-title{font-size:13px;}
-  .live-btn{padding:9px 12px;min-height:42px;}
-  #live-name{font-size:12px;}
-  .prog-row{padding:8px 12px;min-height:40px;margin-top:6px;}
-  .next-row{padding:8px 12px;min-height:40px;margin-top:6px;}
-  #next-title{font-size:12px;}
-}
+  }
 
 /* スマホ横画面：動画(左) ＋ 番組表(右) */
 @media(orientation:landscape) and (max-height:500px){
@@ -869,10 +806,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　秘書広報課　TEL 0790-63-3115</footer>
 </div>
 
-<script>
-// YouTube IFrame API が既にロード済みの場合（再読み込み時）に対応
-window.onYouTubeIframeAPIReadyCallbacks = window.onYouTubeIframeAPIReadyCallbacks || [];
-</script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ══════════════════════════════════════════════
@@ -942,8 +875,15 @@ function onYouTubeIframeAPIReady(){
       onStateChange:function(e){
         var st=e.data;
         // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
-        if(st===1||st===3){ updatePlayIcon(true); }
-        else{ updatePlayIcon(false); }
+        var _isPlay=(st===1||st===3);
+        (function(){
+          var _pp='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+          var _pl='<path d="M8 5v14l11-7z"/>';
+          var _ic=document.getElementById('ctrl-play-icon');
+          var _fi=document.getElementById('fs-play-icon');
+          if(_ic)_ic.innerHTML=_isPlay?_pp:_pl;
+          if(_fi)_fi.innerHTML=_isPlay?_pp:_pl;
+        })();
         if(st===1){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
         if(st===3&&!isOff){ showEnded(false); } // バッファ中は終了画面だけ消す
         // iOS: st=5(cued)でスピナーを消す（cueVideoById後は自動再生されないため）
@@ -1015,7 +955,6 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  // タッチで再表示（_fs_tl廃止の代替）
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
@@ -1039,8 +978,6 @@ function closeExpand(){
     }catch(_){}
     var btn=document.getElementById('expand-close-btn');
     if(btn){btn.style.opacity='0';btn.style.pointerEvents='none';}
-    var tl=document.getElementById('_fs_tl');
-    if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
     // fs-ctrl-barを非表示
     var fsBar=document.getElementById('fs-ctrl-bar');
     if(fsBar)fsBar.style.display='none';
@@ -1065,9 +1002,6 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   var bar=document.getElementById('fs-ui-bar');
   if(bar)bar.classList.remove('hidden');
-  var tl=document.getElementById('_fs_tl');
-  if(tl&&tl.parentNode)tl.parentNode.removeChild(tl);
-
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
@@ -1097,8 +1031,6 @@ function hideFsUi(){
   if(cb){cb.style.opacity='0';cb.style.pointerEvents='none';}
   var fsBar=document.getElementById('fs-ctrl-bar');
   if(fsBar)fsBar.style.display='none';
-  // _fs_tlは使用しない（z-index干渉でボタンが効かなくなるため廃止）
-  // タッチ再表示はplayer-wrapのtouchstartで対応（openExpand内で登録）
 }
 function resetFsUiTimer(){clearFsUiTimer();fsUiTimer=setTimeout(hideFsUi,3000);}
 function clearFsUiTimer(){if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}}
@@ -1227,16 +1159,9 @@ function gotoOffAir(){
 function setLiveBtn(mode){
   var dot=document.getElementById('ldot');
   var lbl=document.getElementById('llbl');
-  if(mode==='live'){
-    if(dot)dot.className='ldot';
-    if(lbl)lbl.className='llbl r';
-  }else if(mode==='manual'){
-    if(dot)dot.className='ldot g';
-    if(lbl)lbl.className='llbl g';
-  }else{
-    if(dot)dot.className='ldot g';
-    if(lbl)lbl.className='llbl g';
-  }
+  var live=(mode==='live');
+  if(dot)dot.className=live?'ldot':'ldot g';
+  if(lbl)lbl.className=live?'llbl r':'llbl g';
 }
 function onLiveClick(){
   // isManualに関係なく常に現在放送中の番組の該当時間にジャンプ
@@ -1376,8 +1301,6 @@ function updateSeekBar(){
   try{
     var state=ytPlayer.getPlayerState();
     // 再生アイコンを状態に応じて更新（1秒毎に必ずポーリング）
-    var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-    var playPath='<path d="M8 5v14l11-7z"/>';
     var isPlay=(state===1||state===3);
     // 実際に再生中(state=1)なのにスピナーが表示されていたら消す
     // state=3(バッファ中)では消さない（映像が実際に見える前にスピナーが消えるのを防ぐ）
@@ -1482,10 +1405,10 @@ function togglePlayPause(){
   var playing=false;
   try{var s=ytPlayer.getPlayerState();playing=(s===1||s===3);}catch(_){playing=ourPlaying;}
   // アイコンを即座に更新（APIの応答を待たない）
-  var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-  var playPath='<path d="M8 5v14l11-7z"/>';
   var icon=document.getElementById('ctrl-play-icon');
   var fsIcon=document.getElementById('fs-play-icon');
+  var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  var playPath='<path d="M8 5v14l11-7z"/>';
   if(playing){
     // 停止マーク→再生マークに即座に切替
     if(icon)icon.innerHTML=playPath;
@@ -1557,8 +1480,6 @@ function onVolSlider(){
   var fvs=document.getElementById('fs-vol-slider');
   if(fvs&&fvs!==v)fvs.value=val;
 }
-
-
 
 
 function init(){
