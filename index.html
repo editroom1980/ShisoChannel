@@ -1093,19 +1093,10 @@ function loadVideo(ytId,sec,msg){
   showSpinner(true,msg||'切り替え中...');
   vCurrentId=ytId; vCurrentSec=sec; // 現在の動画情報を保存
   if(ytReady&&ytPlayer){
-    if(isIOS&&!iosFirstPlay){
-      // iOS初回: cueVideoById（再生なし）→ユーザーgestureで再生
-      try{ytPlayer.cueVideoById({videoId:ytId,startSeconds:sec});}catch(_){}
-      // st=5が発火しない場合のフォールバック：3秒後にスピナーを消す
-      setTimeout(function(){
-        if(!iosFirstPlay){ clearSpinnerTimer(); showSpinner(false); }
-      },3000);
-    }else{
-      ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
-      setTimeout(function(){
-        try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
-      },500);
-    }
+    ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
+    setTimeout(function(){
+      try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
+    },500);
   }else{
     pendingYtId=ytId;pendingSec=sec;
   }
@@ -1396,10 +1387,12 @@ function updateClock(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
-  // iPhoneのみ: ジェスチャーチェーン内でloadVideoByIdを使うためフラグを立てる
-  if(isIOS) iosFirstPlay=true;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
+  // iPhoneのみ: ジェスチャーチェーン内でplayVideoを直接呼ぶ
+  if(isIOS&&ytPlayer&&ytReady){
+    try{ytPlayer.playVideo();}catch(_){}
+  }
   // Silk/FireTVのみ: ユーザージェスチャー直後にブラウザUIを非表示にする
   // PC・iOS版には一切影響しない（isSilkがfalseのため実行されない）
   if(isSilk){
