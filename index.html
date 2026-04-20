@@ -65,6 +65,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 .onair-badge{display:flex;align-items:center;gap:6px;border:1px solid var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:2px;letter-spacing:2px;background:rgba(184,48,48,0.2);}
 .onair-badge.off{border-color:var(--text3);background:rgba(100,100,100,0.15);}
 .bdot{width:6px;height:6px;background:#ff6060;border-radius:50%;animation:blink 1.4s infinite;}
+.bdot.grey{background:var(--text3);animation:none;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 
 /* ══ ページレイアウト（PC/Mac） ══ */
@@ -342,6 +343,7 @@ upx;
 .pt{font-size:12px;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
 .bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;cursor:pointer;}
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
+.bar-fill.no-transition{transition:none !important;}
 /* ══ 次の番組（タイトルバーと同じ高さ） ══ */
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
@@ -381,7 +383,7 @@ upx;
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;
-  border-radius:4px;padding:0;
+  padding:0;
   width:36px;height:36px;
   display:flex !important;
   align-items:center;justify-content:center;
@@ -1076,8 +1078,15 @@ function loadVideo(ytId,sec,msg){
   showEnded(false);
   // シークバーをリセット
   ourPlaying=false;    // 動画切替時にフラグリセット
-  var pb=document.getElementById('p-bar');if(pb)pb.style.width='0%';
-  var pbfs=document.getElementById('p-bar-fs');if(pbfs)pbfs.style.width='0%';
+  var pb=document.getElementById('p-bar');
+  var pbfs=document.getElementById('p-bar-fs');
+  if(pb){pb.classList.add('no-transition');pb.style.width='0%';}
+  if(pbfs){pbfs.classList.add('no-transition');pbfs.style.width='0%';}
+  // 次フレームでtransitionを戻す
+  requestAnimationFrame(function(){
+    if(pb)pb.classList.remove('no-transition');
+    if(pbfs)pbfs.classList.remove('no-transition');
+  });
   showSpinner(true,msg||'切り替え中...');
   vCurrentId=ytId; vCurrentSec=sec; // 現在の動画情報を保存
   if(ytReady&&ytPlayer){
@@ -1150,7 +1159,7 @@ function gotoOffAir(){
   document.getElementById('bdot').className='bdot grey';
   setLiveBtn('off');
   var pb=document.getElementById('p-bar');
-  if(pb)pb.style.width='100%';
+  if(pb){pb.classList.add('no-transition');pb.style.width='100%';requestAnimationFrame(function(){pb.classList.remove('no-transition');});}
   document.querySelectorAll('.prow').forEach(function(r){r.classList.remove('active');});
   document.querySelectorAll('.time-chip-item').forEach(function(c){c.classList.remove('on');});
 }
@@ -1676,9 +1685,10 @@ init();
       var seekPos = ratio * dur;
       // プログレスバーの表示を即時更新
       var pb = document.getElementById('p-bar');
-      if(pb) pb.style.width = (ratio * 100) + '%';
       var pbfs = document.getElementById('p-bar-fs');
-      if(pbfs) pbfs.style.width = (ratio * 100) + '%';
+      if(pb){pb.classList.add('no-transition');pb.style.width=(ratio*100)+'%';}
+      if(pbfs){pbfs.classList.add('no-transition');pbfs.style.width=(ratio*100)+'%';}
+      requestAnimationFrame(function(){if(pb)pb.classList.remove('no-transition');if(pbfs)pbfs.classList.remove('no-transition');});
       if(isIOS&&vCurrentId){
         iosFirstPlay=true;
         try{ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:Math.floor(seekPos)});}catch(_){}
