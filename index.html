@@ -385,6 +385,7 @@ upx;
 .custom-ctrl .expand-open-btn{
   border:none;
   background:var(--white);
+  color:var(--green2);
   padding:0;
   width:36px;height:36px;
   display:flex !important;
@@ -1359,7 +1360,8 @@ function periodicCheck(){
   if(!pos){if(!isOff)gotoOffAir();return;}
   var c=pos.c,p=pos.p;
   refreshLive();
-  if(!isOff&&(c!==lC||p!==lP))playSchedule(c,p);
+  // isOff中（放送終了状態）でも放送開始時刻になったら自動再生
+  if(isOff||c!==lC||p!==lP)playSchedule(c,p);
 }
 function updateClock(){
   var d=new Date();
