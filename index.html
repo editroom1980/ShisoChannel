@@ -150,7 +150,7 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   -webkit-tap-highlight-color:transparent;
   flex-shrink:0;
 }
-.expand-open-btn:active{background:var(--green5);}
+.expand-open-btn:active{background:transparent;}
 /* 全デバイスで拡大ボタンを表示 */
 @media(pointer:coarse),
 (pointer:fine){
@@ -364,7 +364,7 @@ upx;
   color:var(--green2);cursor:pointer;flex-shrink:0;
   -webkit-tap-highlight-color:transparent;font-family:inherit;
 }
-.ctrl-btn:hover,.ctrl-btn:active{background:var(--green5);}
+.ctrl-btn:hover,.ctrl-btn:active{background:transparent;}
 .vol-slider{
   width:50px;height:4px;
   -webkit-appearance:none;appearance:none;
@@ -383,6 +383,7 @@ upx;
 .custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;
+  background:var(--white);
   padding:0;
   width:36px;height:36px;
   display:flex !important;
