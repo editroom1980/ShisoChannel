@@ -738,46 +738,51 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   left:16px;
   z-index:30;
   display:none; /* 全画面時のみ表示 */
-  flex-direction:column;
-  width:180px;
+  flex-direction:row;
+  align-items:stretch;
   font-family:inherit;
   pointer-events:auto;
   cursor:pointer;
+  border-radius:6px;
+  overflow:hidden;
+  box-shadow:0 2px 10px rgba(0,0,0,0.3);
 }
-.fs-sponsor-head{
-  background:rgba(30,58,40,0.88);
-  border-radius:6px 6px 0 0;
-  padding:5px 10px;
+/* 左側：しそうチャンネル sponsored（2行） */
+.fs-sponsor-label{
+  background:rgba(30,58,40,0.9);
+  padding:6px 10px;
   display:flex;
-  align-items:baseline;
-  gap:5px;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:1px;
 }
 .fs-sponsor-logo{
-  font-size:12px;
+  font-size:11px;
   font-weight:700;
   color:var(--white);
   white-space:nowrap;
+  line-height:1.2;
 }
 .fs-sponsor-logo .gold{color:var(--gold2);}
 .fs-sponsor-sub{
-  font-size:8px;
-  color:rgba(255,255,255,0.7);
+  font-size:11px;
+  color:rgba(255,255,255,0.75);
   font-weight:600;
   letter-spacing:0.5px;
+  line-height:1.2;
 }
+/* 右側：スポンサー名 */
 .fs-sponsor-body{
   background:rgba(255,255,255,0.95);
-  border:1.5px solid rgba(30,58,40,0.88);
-  border-top:none;
-  border-radius:0 0 6px 6px;
-  padding:6px 10px;
+  padding:6px 14px;
   display:flex;
   align-items:center;
   justify-content:center;
-  min-height:28px;
+  min-width:90px;
 }
 .fs-sponsor-name{
-  font-size:14px;
+  font-size:15px;
   font-weight:700;
   color:var(--forest);
   white-space:nowrap;
@@ -788,6 +793,23 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 .player-wrap:-webkit-full-screen .fs-sponsor{
   display:flex;
 }
+/* iPhone縦画面の全画面: ノッチ/時計と被らないよう下げ、画面幅に合わせる */
+@media(orientation:portrait){
+  body.iphone-mode .player-wrap.expanded .fs-sponsor{
+    top:calc(env(safe-area-inset-top) + 16px);
+    left:10px;
+    right:10px;
+  }
+  body.iphone-mode .player-wrap.expanded .fs-sponsor .fs-sponsor-body{
+    flex:1;
+  }
+}
+/* iPhone横画面の全画面: 画面端の湾曲を避けてやや右へ */
+@media(orientation:landscape){
+  body.iphone-mode .player-wrap.expanded .fs-sponsor{
+    left:max(16px, calc(env(safe-area-inset-left) + 14px));
+  }
+}
 </style>
 </head>
 <body>
@@ -797,7 +819,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそう<em>チャンネル</em></div>
     <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
-    <div class="ps-version">version 1.3</div>
+    <div class="ps-version">version 1.4</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -843,12 +865,12 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
       <div class="player-wrap" id="player-wrap">
         <!-- 全画面時スポンサー小ウインドウ（左上） -->
         <div class="fs-sponsor" id="fs-sponsor" onclick="openSponsorLink()">
-          <div class="fs-sponsor-head">
+          <div class="fs-sponsor-label">
             <span class="fs-sponsor-logo">しそう<span class="gold">チャンネル</span></span>
             <span class="fs-sponsor-sub">sponsored</span>
           </div>
           <div class="fs-sponsor-body">
-            <span class="fs-sponsor-name" id="fs-sponsor-name">A社</span>
+            <span class="fs-sponsor-name" id="fs-sponsor-name">さくら建設株式会社</span>
           </div>
         </div>
         <div id="ended-ov">
@@ -929,9 +951,10 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 //  スポンサー定義（仮データ・将来スプレッドシート化）
 // ══════════════════════════════════════════════
 var SPONSORS=[
-  {name:'A社', url:'sponsor-a.html'},
-  {name:'B社', url:'https://example.com/b'},
-  {name:'宍粟ふるさと物産センター', url:'https://example.com/c'}
+  {name:'さくら建設株式会社', url:'sponsor-1.html'},
+  {name:'山田電機産業',       url:'sponsor-2.html'},
+  {name:'みどり food', url:'sponsor-3.html'},
+  {name:'宍粟リフォーム工業株式会社', url:'sponsor-4.html'}
 ];
 var sponsorIndex=0;
 
@@ -939,12 +962,12 @@ var sponsorIndex=0;
 function updateSponsorDisplay(){
   var s=SPONSORS[sponsorIndex];
   if(!s)return;
-  // 通常バナー
+  // 通常バナー（幅固定のためフォント調整）
   var nm=document.getElementById('sponsor-banner-name');
-  if(nm){ nm.textContent=s.name; fitSponsorFont(nm, 16, 11); }
-  // 全画面バナー
+  if(nm){ nm.textContent=s.name; fitSponsorFont(nm, 16, 10); }
+  // 全画面バナー（幅可変のためテキスト設定のみ）
   var fnm=document.getElementById('fs-sponsor-name');
-  if(fnm){ fnm.textContent=s.name; fitSponsorFont(fnm, 14, 9); }
+  if(fnm){ fnm.textContent=s.name; }
 }
 
 // 名前の長さに応じてフォントサイズを縮小（ウインドウ幅に収める）
@@ -954,8 +977,9 @@ function fitSponsorFont(el, maxPx, minPx){
   if(!parent)return;
   var size=maxPx;
   // 親要素の幅をはみ出す間、1pxずつ縮小
-  while(el.scrollWidth>parent.clientWidth-4 && size>minPx){
-    size--;
+  var guard=0;
+  while(el.scrollWidth>parent.clientWidth-4 && size>minPx && guard<40){
+    size--;guard++;
     el.style.fontSize=size+'px';
   }
 }
@@ -1694,9 +1718,15 @@ function init(){
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
   setInterval(updateSeekBar,100);
-  // スポンサーバナー初期表示＋30秒ごと切り替え
+  // スポンサーバナー初期表示＋10秒ごと切り替え
   updateSponsorDisplay();
-  setInterval(rotateSponsor,30000);
+  setInterval(rotateSponsor,10000);
+  // スポンサーリンクから戻った時に再生を再開（タブ復帰時）
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden && ytPlayer && ytReady && !isOff && ourPlaying){
+      try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
+    }
+  });
   // Now Playingセッション抑制（Dynamic Islandインジケーター非表示の試み）
   if('mediaSession' in navigator){
     navigator.mediaSession.playbackState='none';
