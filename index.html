@@ -75,8 +75,15 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   padding:16px 16px 40px;
   display:grid;
   grid-template-columns:1fr 300px;
+  grid-template-rows:auto 1fr;
+  grid-template-areas:
+    "player banner"
+    "player guide";
   gap:16px;
 }
+.player-col{grid-area:player;min-width:0;}
+.sponsor-banner{grid-area:banner;}
+.sidebar{grid-area:guide;}
 
 /* ══ 左カラム：プレイヤーエリア ══ */
 
@@ -471,6 +478,11 @@ upx;
 
   .page{
     grid-template-columns:1fr;
+    grid-template-rows:auto auto auto;
+    grid-template-areas:
+      "player"
+      "banner"
+      "guide";
     padding:10px 10px 36px;
     gap:10px;
   }
@@ -481,18 +493,24 @@ upx;
     min-height:200px;
   }
   .header{
-    height:calc(54px + max(0px, calc(env(safe-area-inset-top) - 8px)));
+    height:calc(48px + max(0px, calc(env(safe-area-inset-top) - 8px)));
     padding:0 14px;
     padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
-  .h-logo-main{font-size:16px;}
+  .h-logo-main{font-size:15px;}
   .h-logo-sub{font-size:8px;}
-  .h-time{font-size:18px;}
-  .onair-badge{padding:3px 8px;font-size:9px;}
+  .h-time{font-size:17px;}
+  .onair-badge{padding:2px 7px;font-size:9px;}
   .h-date{display:none;}
-  /* スマホはUI要素をやや小さく */
-  .viewing-bar{padding:9px 12px;min-height:42px;}
-  #viewing-title{font-size:13px;}
+  /* スマホはUI要素をコンパクトに（縦幅を詰めて情報量を増やす） */
+  .viewing-bar{padding:6px 12px;min-height:34px;}
+  #viewing-title{font-size:12px;}
+  /* 番組表を圧縮して一画面に多く表示 */
+  .sb-head{padding:8px 14px;}
+  .time-bar{padding:3px 10px 2px;}
+  .pinfo{padding:4px 10px 6px;gap:2px;}
+  .pname{font-size:12px;line-height:1.35;}
+  .sponsor-tag{font-size:8px;padding:2px 7px;}
   }
 
 /* スマホ横画面：動画(左) ＋ 番組表(右) */
@@ -502,6 +520,10 @@ upx;
   /* 動画幅 = 動画高さ × 16/9 */
   .page{
     grid-template-columns:calc((100vh - 114px) * 16 / 9) 1fr;
+    grid-template-rows:auto 1fr;
+    grid-template-areas:
+      "player banner"
+      "player guide";
     padding:4px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
     gap:6px;
     align-items:start;
@@ -536,12 +558,19 @@ upx;
   .custom-ctrl{height:34px;padding:0 8px;gap:5px;}
   .custom-ctrl .expand-open-btn{margin-left:-3px;}
   .ctrl-btn{min-width:28px;height:28px;}
-  /* 番組表 */
+  /* 番組表：グリッドの番組表エリアに収める */
   .sidebar{
-    position:sticky;top:42px;
-    max-height:calc(100vh - 46px);
+    height:100%;
+    min-height:0;
+    max-height:100%;
     overflow-y:auto;
   }
+  /* 番組表を圧縮して横向きでも多く表示 */
+  .sb-head{padding:6px 12px;}
+  .time-bar{padding:2px 10px 2px;}
+  .pinfo{padding:3px 10px 5px;gap:2px;}
+  .pname{font-size:11px;line-height:1.3;}
+  .sponsor-tag{font-size:8px;padding:1px 6px;}
   /* フッター非表示 */
   .footer{display:none;}
 }
@@ -575,6 +604,10 @@ upx;
 /* headerは44px sticky → pageの使える高さ = 100vh - 44px - padding(4+8)px = 100vh - 56px */
 body.silk-mode .page{
   grid-template-columns:1fr 232px;
+  grid-template-rows:auto 1fr;
+  grid-template-areas:
+    "player banner"
+    "player guide";
   padding:4px 8px 8px;
   gap:8px;
   align-items:stretch;
@@ -651,6 +684,11 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   /* 動画と番組表を縦に積む（iPhone縦向きと同様の構造） */
   .page{
     grid-template-columns:1fr;
+    grid-template-rows:auto auto auto;
+    grid-template-areas:
+      "player"
+      "banner"
+      "guide";
     padding:10px 14px 20px;
     gap:12px;
   }
@@ -696,118 +734,60 @@ body.iphone-mode #fs-mute{
 /* 全画面時のカーソル自動非表示 */
 body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
-/* ══ スポンサーバナー（通常時：動画ウインドウ下） ══ */
+/* ══ スポンサーバナー（画像・通常時／全画面共通） ══ */
 .sponsor-banner{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  background:var(--white);
+  position:relative;
   border:1px solid var(--border);
-  border-radius:6px;
-  padding:8px 16px;
-  margin-top:8px;
+  border-radius:8px;
+  overflow:hidden;
   cursor:pointer;
-  transition:background .15s;
-  min-height:44px;
+  background:var(--white);
+  box-shadow:0 3px 12px rgba(30,58,40,0.18);
+  -webkit-tap-highlight-color:transparent;
+  align-self:start;
 }
-.sponsor-banner:hover{background:var(--green5);}
-.sponsor-banner-label{
-  font-size:11px;
-  color:var(--text3);
-  font-weight:600;
+.sponsor-tag{
+  position:absolute;top:0;left:0;
+  background:var(--gold);
+  color:#fff;
+  font-size:9px;font-weight:700;
   letter-spacing:0.5px;
-  white-space:nowrap;
+  padding:2px 9px;
+  border-radius:0 0 7px 0;
+  z-index:2;
+  pointer-events:none;
 }
-.sponsor-banner-name{
-  font-size:16px;
-  font-weight:700;
-  color:var(--forest);
-  white-space:nowrap;
-}
-.sponsor-banner-divider{
-  width:1px;
-  height:20px;
-  background:var(--border);
-}
+.sponsor-img{width:100%;line-height:0;}
+.sponsor-img svg{width:100%;height:auto;display:block;}
 
-/* ══ 全画面時のスポンサー小ウインドウ（左上） ══ */
+/* ══ 全画面時のスポンサー（通常バナーと同一デザイン・縦向きのみ） ══ */
 .fs-sponsor{
   position:absolute;
-  top:16px;
-  left:16px;
+  top:14px;
+  left:14px;
+  width:280px;
   z-index:30;
-  display:none; /* 全画面時のみ表示 */
-  flex-direction:row;
-  align-items:stretch;
-  font-family:inherit;
-  pointer-events:auto;
-  cursor:pointer;
-  border-radius:6px;
-  overflow:hidden;
-  box-shadow:0 2px 10px rgba(0,0,0,0.3);
+  display:none; /* 既定は非表示。全画面・縦向きのみ表示 */
 }
-/* 左側：しそうチャンネル sponsored（2行） */
-.fs-sponsor-label{
-  background:rgba(30,58,40,0.9);
-  padding:6px 10px;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  justify-content:center;
-  gap:1px;
-}
-.fs-sponsor-logo{
-  font-size:11px;
-  font-weight:700;
-  color:var(--white);
-  white-space:nowrap;
-  line-height:1.2;
-}
-.fs-sponsor-logo .gold{color:var(--gold2);}
-.fs-sponsor-sub{
-  font-size:11px;
-  color:rgba(255,255,255,0.75);
-  font-weight:600;
-  letter-spacing:0.5px;
-  line-height:1.2;
-}
-/* 右側：スポンサー名 */
-.fs-sponsor-body{
-  background:rgba(255,255,255,0.95);
-  padding:6px 14px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-width:90px;
-}
-.fs-sponsor-name{
-  font-size:15px;
-  font-weight:700;
-  color:var(--forest);
-  white-space:nowrap;
-}
-/* 全画面時のみ表示する制御（PC全画面・拡大状態） */
-.player-wrap.expanded .fs-sponsor,
-.player-wrap:fullscreen .fs-sponsor,
-.player-wrap:-webkit-full-screen .fs-sponsor{
-  display:flex;
-}
-/* iPhone縦画面の全画面: ノッチ/時計と被らないよう下げ、画面幅に合わせる */
+/* 全画面・縦向き: 表示（横向きは表示しない＝動画内文字と干渉回避） */
 @media(orientation:portrait){
-  body.iphone-mode .player-wrap.expanded .fs-sponsor{
-    top:calc(env(safe-area-inset-top) + 16px);
-    left:10px;
-    right:10px;
+  .player-wrap.expanded .fs-sponsor,
+  .player-wrap:fullscreen .fs-sponsor,
+  .player-wrap:-webkit-full-screen .fs-sponsor{
+    display:block;
   }
-  body.iphone-mode .player-wrap.expanded .fs-sponsor .fs-sponsor-body{
-    flex:1;
+  /* iPhone縦: ノッチ/時計を避けて下げる */
+  body.iphone-mode .player-wrap.expanded .fs-sponsor{
+    top:calc(env(safe-area-inset-top) + 14px);
+    left:14px;
   }
 }
-/* iPhone横画面の全画面: 画面端の湾曲を避けてやや右へ */
+/* 全画面・横向き: 非表示（B-2） */
 @media(orientation:landscape){
-  body.iphone-mode .player-wrap.expanded .fs-sponsor{
-    left:max(16px, calc(env(safe-area-inset-left) + 14px));
+  .player-wrap.expanded .fs-sponsor,
+  .player-wrap:fullscreen .fs-sponsor,
+  .player-wrap:-webkit-full-screen .fs-sponsor{
+    display:none !important;
   }
 }
 </style>
@@ -819,7 +799,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそう<em>チャンネル</em></div>
     <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
-    <div class="ps-version">version 1.4</div>
+    <div class="ps-version">version 1.5</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -851,7 +831,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
   <div class="page">
     <!-- 左：プレイヤー -->
-    <div>
+    <div class="player-col">
       <div class="viewing-bar">
         <span class="live-tap" onclick="onLiveClick()">
           <div class="ldot g" id="ldot"></div>
@@ -863,15 +843,10 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
       </div>
 
       <div class="player-wrap" id="player-wrap">
-        <!-- 全画面時スポンサー小ウインドウ（左上） -->
-        <div class="fs-sponsor" id="fs-sponsor" onclick="openSponsorLink()">
-          <div class="fs-sponsor-label">
-            <span class="fs-sponsor-logo">しそう<span class="gold">チャンネル</span></span>
-            <span class="fs-sponsor-sub">sponsored</span>
-          </div>
-          <div class="fs-sponsor-body">
-            <span class="fs-sponsor-name" id="fs-sponsor-name">さくら建設株式会社</span>
-          </div>
+        <!-- 全画面時スポンサー（通常バナーと同一デザイン・縦向きのみ表示） -->
+        <div class="fs-sponsor sponsor-banner" id="fs-sponsor" onclick="openSponsorLink()">
+          <span class="sponsor-tag">sponsored</span>
+          <div class="sponsor-img" id="fs-sponsor-img"></div>
         </div>
         <div id="ended-ov">
           <div class="ended-icon">📺</div>
@@ -924,12 +899,12 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
         <button class="expand-open-btn" id="expand-open-btn" onclick="openExpand()" title="拡大"><svg viewBox="0 0 24 24" width="31" height="31" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
       </div>
 
-      <!-- スポンサーバナー（通常時） -->
-      <div class="sponsor-banner" id="sponsor-banner" onclick="openSponsorLink()">
-        <span class="sponsor-banner-label">SPONSORED</span>
-        <span class="sponsor-banner-divider"></span>
-        <span class="sponsor-banner-name" id="sponsor-banner-name">A社</span>
-      </div>
+    </div>
+
+    <!-- スポンサーバナー -->
+    <div class="sponsor-banner" id="sponsor-banner" onclick="openSponsorLink()">
+      <span class="sponsor-tag">sponsored</span>
+      <div class="sponsor-img" id="sponsor-img"></div>
     </div>
 
     <!-- 右：番組表 -->
@@ -950,50 +925,82 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 // ══════════════════════════════════════════════
 //  スポンサー定義（仮データ・将来スプレッドシート化）
 // ══════════════════════════════════════════════
+// 各社のテーマ色に合わせた仮バナー画像（SVG）を生成
+function makeBanner(name, tagline, bg, accent, icon){
+  var safe=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  // 社名が長い場合はフォントを縮小（13文字以上で縮小）
+  var nlen=name.length;
+  var nameSize = nlen>=12 ? 26 : (nlen>=9 ? 30 : 34);
+  return '<svg viewBox="0 0 600 96" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'
+    + '<rect width="600" height="96" fill="'+bg+'"/>'
+    + '<rect x="0" y="0" width="12" height="96" fill="'+accent+'"/>'
+    + '<circle cx="548" cy="48" r="70" fill="'+accent+'" opacity="0.16"/>'
+    + '<circle cx="600" cy="20" r="40" fill="#ffffff" opacity="0.08"/>'
+    + '<text x="500" y="62" font-family="sans-serif" font-size="46" text-anchor="middle" opacity="0.9">'+icon+'</text>'
+    + '<text x="36" y="46" font-family="-apple-system,sans-serif" font-size="'+nameSize+'" font-weight="800" fill="#ffffff">'+safe(name)+'</text>'
+    + '<text x="38" y="74" font-family="-apple-system,sans-serif" font-size="17" fill="#ffffff" opacity="0.88">'+safe(tagline)+'</text>'
+    + '</svg>';
+}
+
 var SPONSORS=[
-  {name:'さくら建設株式会社', url:'sponsor-1.html'},
-  {name:'山田電機産業',       url:'sponsor-2.html'},
-  {name:'みどり food', url:'sponsor-3.html'},
-  {name:'宍粟リフォーム工業株式会社', url:'sponsor-4.html'}
+  {name:'さくら建設株式会社', url:'sponsor-1.html',
+   banner:makeBanner('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️')},
+  {name:'山田電機産業', url:'sponsor-2.html',
+   banner:makeBanner('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡')},
+  {name:'みどり food', url:'sponsor-3.html',
+   banner:makeBanner('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅')},
+  {name:'宍粟リフォーム工業株式会社', url:'sponsor-4.html',
+   banner:makeBanner('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠')}
 ];
 var sponsorIndex=0;
+var _sponsorTimer=null;
+var _swipeSuppressClick=false;
 
-// バナーのスポンサー名を更新（フォントサイズ自動調整）
+// バナー画像を更新（通常バナー＋全画面バナー両方）
 function updateSponsorDisplay(){
   var s=SPONSORS[sponsorIndex];
   if(!s)return;
-  // 通常バナー（幅固定のためフォント調整）
-  var nm=document.getElementById('sponsor-banner-name');
-  if(nm){ nm.textContent=s.name; fitSponsorFont(nm, 16, 10); }
-  // 全画面バナー（幅可変のためテキスト設定のみ）
-  var fnm=document.getElementById('fs-sponsor-name');
-  if(fnm){ fnm.textContent=s.name; }
+  var img=document.getElementById('sponsor-img');
+  if(img){ img.innerHTML=s.banner; }
+  var fimg=document.getElementById('fs-sponsor-img');
+  if(fimg){ fimg.innerHTML=s.banner; }
 }
 
-// 名前の長さに応じてフォントサイズを縮小（ウインドウ幅に収める）
-function fitSponsorFont(el, maxPx, minPx){
-  el.style.fontSize=maxPx+'px';
-  var parent=el.parentElement;
-  if(!parent)return;
-  var size=maxPx;
-  // 親要素の幅をはみ出す間、1pxずつ縮小
-  var guard=0;
-  while(el.scrollWidth>parent.clientWidth-4 && size>minPx && guard<40){
-    size--;guard++;
-    el.style.fontSize=size+'px';
-  }
-}
-
-// バナークリックでスポンサーのサイトへ
+// バナークリックでスポンサーのサイトへ（同一タブ遷移→戻った時にbfキャッシュ復元で再生再開）
 function openSponsorLink(){
+  if(_swipeSuppressClick){ _swipeSuppressClick=false; return; }
   var s=SPONSORS[sponsorIndex];
-  if(s&&s.url){ window.open(s.url, '_blank'); }
+  if(s&&s.url){ location.href=s.url; }
 }
 
-// 30秒ごとにスポンサーを切り替え
-function rotateSponsor(){
-  sponsorIndex=(sponsorIndex+1)%SPONSORS.length;
-  updateSponsorDisplay();
+// 次／前のスポンサーへ
+function nextSponsor(){ sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); resetSponsorTimer(); }
+function prevSponsor(){ sponsorIndex=(sponsorIndex-1+SPONSORS.length)%SPONSORS.length; updateSponsorDisplay(); resetSponsorTimer(); }
+
+// 10秒ごとに自動切り替え（手動操作でリセット）
+function rotateSponsor(){ sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); }
+function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,10000); }
+
+// フリック（スワイプ）で手動切り替え。タップはクリックで開く
+function attachSponsorSwipe(el){
+  if(!el||el._swipeBound)return;
+  el._swipeBound=true;
+  var x0=null,y0=null,moved=false;
+  el.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX;y0=e.touches[0].clientY;moved=false; },{passive:true});
+  el.addEventListener('touchmove',function(e){
+    if(x0===null)return;
+    var dx=e.touches[0].clientX-x0, dy=e.touches[0].clientY-y0;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10) moved=true;
+  },{passive:true});
+  el.addEventListener('touchend',function(e){
+    if(x0===null)return;
+    var dx=e.changedTouches[0].clientX-x0;
+    if(moved&&Math.abs(dx)>40){
+      _swipeSuppressClick=true;
+      if(dx<0) nextSponsor(); else prevSponsor();
+    }
+    x0=null;
+  },{passive:true});
 }
 
 // ══════════════════════════════════════════════
@@ -1718,12 +1725,19 @@ function init(){
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
   setInterval(updateSeekBar,100);
-  // スポンサーバナー初期表示＋10秒ごと切り替え
+  // スポンサーバナー初期表示＋10秒ごと切り替え＋フリック切替
   updateSponsorDisplay();
-  setInterval(rotateSponsor,10000);
-  // スポンサーリンクから戻った時に再生を再開（タブ復帰時）
+  resetSponsorTimer();
+  attachSponsorSwipe(document.getElementById('sponsor-banner'));
+  attachSponsorSwipe(document.getElementById('fs-sponsor'));
+  // スポンサーリンクから戻った時に再生を再開（タブ復帰・bfキャッシュ復元）
   document.addEventListener('visibilitychange',function(){
     if(!document.hidden && ytPlayer && ytReady && !isOff && ourPlaying){
+      try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
+    }
+  });
+  window.addEventListener('pageshow',function(e){
+    if(ytPlayer && ytReady && !isOff && ourPlaying){
       try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
     }
   });
