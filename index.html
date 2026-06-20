@@ -419,7 +419,7 @@ upx;
 
 /* 番組リスト：スクロール可能 */
 .sb-list{
-  overflow-y:auto;flex:1;
+  overflow-y:auto;flex:1;min-height:0;
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
 }
@@ -483,38 +483,41 @@ upx;
       "player"
       "banner"
       "guide";
-    padding:10px 10px 36px;
-    gap:10px;
+    padding:6px 8px 24px;
+    gap:6px;
   }
   .sidebar{
     position:static;
     /* 画面の残りの高さに合わせて番組表の高さを決める */
-    max-height:calc(100vh - 380px);
-    min-height:200px;
+    max-height:calc(100vh - 330px);
+    min-height:220px;
   }
   .header{
-    height:calc(48px + max(0px, calc(env(safe-area-inset-top) - 8px)));
+    height:calc(44px + max(0px, calc(env(safe-area-inset-top) - 8px)));
     padding:0 14px;
     padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
   .h-logo-main{font-size:15px;}
   .h-logo-sub{font-size:8px;}
-  .h-time{font-size:17px;}
+  .h-time{font-size:16px;}
   .onair-badge{padding:2px 7px;font-size:9px;}
   .h-date{display:none;}
   /* スマホはUI要素をコンパクトに（縦幅を詰めて情報量を増やす） */
-  .viewing-bar{padding:6px 12px;min-height:34px;}
+  .viewing-bar{padding:5px 12px;min-height:30px;}
   #viewing-title{font-size:12px;}
+  /* バナーを半分程度の高さに（縦スペース確保） */
+  .sponsor-img svg{height:42px;width:100%;}
   /* 番組表を圧縮して一画面に多く表示 */
   .sb-head{padding:8px 14px;}
   .time-bar{padding:3px 10px 2px;}
   .pinfo{padding:4px 10px 6px;gap:2px;}
   .pname{font-size:12px;line-height:1.35;}
-  .sponsor-tag{font-size:8px;padding:2px 7px;}
   }
 
 /* スマホ横画面：動画(左) ＋ 番組表(右) */
 @media(orientation:landscape) and (max-height:500px){
+  /* 横向きは画面全体をスクロールさせない（番組表内だけスクロール） */
+  html,body{overflow:hidden;height:100%;}
   /* ページ全体: 動画幅を正確に計算して余白なし */
   /* 動画高さ = 100vh - header38 - viewing-bar34 - ctrl34 - padding8 = 100vh - 114px */
   /* 動画幅 = 動画高さ × 16/9 */
@@ -527,6 +530,9 @@ upx;
     padding:4px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
     gap:6px;
     align-items:start;
+    height:calc(100vh - 38px);
+    overflow:hidden;
+    box-sizing:border-box;
   }
   /* ヘッダー: safe-area対応（「し」と時間の見切れ防止） */
   .header{
@@ -558,19 +564,18 @@ upx;
   .custom-ctrl{height:34px;padding:0 8px;gap:5px;}
   .custom-ctrl .expand-open-btn{margin-left:-3px;}
   .ctrl-btn{min-width:28px;height:28px;}
-  /* 番組表：グリッドの番組表エリアに収める */
+  /* 番組表：グリッドの番組表エリアに収める（内側のsb-listだけスクロール） */
   .sidebar{
     height:100%;
     min-height:0;
     max-height:100%;
-    overflow-y:auto;
+    overflow:hidden;
   }
   /* 番組表を圧縮して横向きでも多く表示 */
   .sb-head{padding:6px 12px;}
   .time-bar{padding:2px 10px 2px;}
   .pinfo{padding:3px 10px 5px;gap:2px;}
   .pname{font-size:11px;line-height:1.3;}
-  .sponsor-tag{font-size:8px;padding:1px 6px;}
   /* フッター非表示 */
   .footer{display:none;}
 }
@@ -746,17 +751,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   -webkit-tap-highlight-color:transparent;
   align-self:start;
 }
-.sponsor-tag{
-  position:absolute;top:0;left:0;
-  background:var(--gold);
-  color:#fff;
-  font-size:9px;font-weight:700;
-  letter-spacing:0.5px;
-  padding:2px 9px;
-  border-radius:0 0 7px 0;
-  z-index:2;
-  pointer-events:none;
-}
 .sponsor-img{width:100%;line-height:0;}
 .sponsor-img svg{width:100%;height:auto;display:block;}
 
@@ -764,7 +758,8 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 .fs-sponsor{
   position:absolute;
   top:14px;
-  left:14px;
+  left:50%;
+  transform:translateX(-50%);
   width:280px;
   z-index:30;
   display:none; /* 既定は非表示。全画面・縦向きのみ表示 */
@@ -776,10 +771,9 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   .player-wrap:-webkit-full-screen .fs-sponsor{
     display:block;
   }
-  /* iPhone縦: ノッチ/時計を避けて下げる */
+  /* iPhone縦: ノッチ/時計を避けて下げる（中央配置は維持） */
   body.iphone-mode .player-wrap.expanded .fs-sponsor{
     top:calc(env(safe-area-inset-top) + 14px);
-    left:14px;
   }
 }
 /* 全画面・横向き: 非表示（B-2） */
@@ -799,7 +793,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそう<em>チャンネル</em></div>
     <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
-    <div class="ps-version">version 1.5</div>
+    <div class="ps-version">version 1.6</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -845,7 +839,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
       <div class="player-wrap" id="player-wrap">
         <!-- 全画面時スポンサー（通常バナーと同一デザイン・縦向きのみ表示） -->
         <div class="fs-sponsor sponsor-banner" id="fs-sponsor" onclick="openSponsorLink()">
-          <span class="sponsor-tag">sponsored</span>
           <div class="sponsor-img" id="fs-sponsor-img"></div>
         </div>
         <div id="ended-ov">
@@ -903,7 +896,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
     <!-- スポンサーバナー -->
     <div class="sponsor-banner" id="sponsor-banner" onclick="openSponsorLink()">
-      <span class="sponsor-tag">sponsored</span>
       <div class="sponsor-img" id="sponsor-img"></div>
     </div>
 
@@ -928,17 +920,22 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 // 各社のテーマ色に合わせた仮バナー画像（SVG）を生成
 function makeBanner(name, tagline, bg, accent, icon){
   var safe=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  // 社名が長い場合はフォントを縮小（13文字以上で縮小）
+  // 社名の長さに応じてフォント調整（中央配置・はみ出し防止）
   var nlen=name.length;
-  var nameSize = nlen>=12 ? 26 : (nlen>=9 ? 30 : 34);
-  return '<svg viewBox="0 0 600 96" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'
-    + '<rect width="600" height="96" fill="'+bg+'"/>'
-    + '<rect x="0" y="0" width="12" height="96" fill="'+accent+'"/>'
-    + '<circle cx="548" cy="48" r="70" fill="'+accent+'" opacity="0.16"/>'
-    + '<circle cx="600" cy="20" r="40" fill="#ffffff" opacity="0.08"/>'
-    + '<text x="500" y="62" font-family="sans-serif" font-size="46" text-anchor="middle" opacity="0.9">'+icon+'</text>'
-    + '<text x="36" y="46" font-family="-apple-system,sans-serif" font-size="'+nameSize+'" font-weight="800" fill="#ffffff">'+safe(name)+'</text>'
-    + '<text x="38" y="74" font-family="-apple-system,sans-serif" font-size="17" fill="#ffffff" opacity="0.88">'+safe(tagline)+'</text>'
+  var nameSize = nlen>=12 ? 34 : (nlen>=9 ? 40 : 46);
+  return '<svg viewBox="0 0 640 132" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'
+    + '<rect width="640" height="132" fill="'+bg+'"/>'
+    + '<rect x="0" y="0" width="12" height="132" fill="'+accent+'"/>'
+    + '<circle cx="588" cy="66" r="92" fill="'+accent+'" opacity="0.15"/>'
+    + '<circle cx="640" cy="24" r="52" fill="#ffffff" opacity="0.07"/>'
+    + '<text x="568" y="84" font-family="sans-serif" font-size="58" text-anchor="middle" opacity="0.9">'+icon+'</text>'
+    // 上段左: sponsoredバッジ
+    + '<rect x="28" y="22" width="118" height="30" rx="5" fill="#c8992a"/>'
+    + '<text x="87" y="43" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">sponsored</text>'
+    // 上段右: タグライン（sponsoredの右）
+    + '<text x="160" y="44" font-family="-apple-system,sans-serif" font-size="21" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
+    // 下段: 社名（中央配置）
+    + '<text x="320" y="104" font-family="-apple-system,sans-serif" font-size="'+nameSize+'" font-weight="800" fill="#ffffff" text-anchor="middle">'+safe(name)+'</text>'
     + '</svg>';
 }
 
@@ -970,7 +967,10 @@ function updateSponsorDisplay(){
 function openSponsorLink(){
   if(_swipeSuppressClick){ _swipeSuppressClick=false; return; }
   var s=SPONSORS[sponsorIndex];
-  if(s&&s.url){ location.href=s.url; }
+  if(s&&s.url){
+    try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+    location.href=s.url;
+  }
 }
 
 // 次／前のスポンサーへ
@@ -1317,7 +1317,7 @@ function onEnded(){
 //  再生モード
 // ══════════════════════════════════════════════
 function playSchedule(c,p){
-  clearEndTimer();isManual=false;isOff=false;
+  clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;
   vC=c;vP=p;
   var sec=esOf(c,p);
   loadVideo(CYCLE[p].ytId,sec,'放送中の番組に切り替えています...');
@@ -1328,7 +1328,7 @@ function playSchedule(c,p){
 
 // ★ Safari対策：ユーザータップのコールチェーン内で直接呼ぶ
 function playManual(pIdx){
-  clearEndTimer();isManual=true;isOff=false;
+  clearEndTimer();isManual=true;isOff=false;userWantsPlay=true;
   showEnded(false);
   var pos=nowPos();var c=pos?pos.c:0;
   vC=c;vP=pIdx;
@@ -1339,7 +1339,7 @@ function playManual(pIdx){
 
 function gotoOffAir(){
   clearEndTimer();closeExpand();
-  isOff=true;isManual=false;
+  isOff=true;isManual=false;userWantsPlay=false;
   pauseVideo();
   // バッファリング中でも確実に停止させる遅延pause
   setTimeout(function(){
@@ -1567,6 +1567,7 @@ function updateClock(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
+  userWantsPlay=true;
   var pos=nowPos();
   if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
   // iPhoneのみ: ジェスチャーチェーン内でplayVideoを直接呼ぶ
@@ -1597,6 +1598,7 @@ var isSilk=navigator.userAgent.indexOf('Silk')!==-1||navigator.userAgent.indexOf
 var isMuted=false;
 var lastVol=100;
 var ourPlaying=false; // 再生状態フラグ（iOS対応）
+var userWantsPlay=false; // ユーザーの再生意図（iOS自動一時停止では変えない・復帰判定に使用）
 var isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)&&('ontouchstart' in window);
 var iosFirstPlay=false; // iOSで最初のユーザーgestureによる再生が完了したか
 var vCurrentId=''; // 現在ロード中の動画ID
@@ -1617,12 +1619,14 @@ function togglePlayPause(){
     if(icon)icon.innerHTML=playPath;
     if(fsIcon)fsIcon.innerHTML=playPath;
     ourPlaying=false;
+    userWantsPlay=false;
     try{ytPlayer.pauseVideo();}catch(_){}
   }else{
     // 再生マーク→停止マークに即座に切替
     if(icon)icon.innerHTML=pausePath;
     if(fsIcon)fsIcon.innerHTML=pausePath;
     ourPlaying=true;
+    userWantsPlay=true;
     if(isIOS&&!iosFirstPlay&&vCurrentId){
       iosFirstPlay=true;
       try{ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:vCurrentSec});}catch(_){}
@@ -1731,16 +1735,23 @@ function init(){
   attachSponsorSwipe(document.getElementById('sponsor-banner'));
   attachSponsorSwipe(document.getElementById('fs-sponsor'));
   // スポンサーリンクから戻った時に再生を再開（タブ復帰・bfキャッシュ復元）
+  // userWantsPlay基準: iOSが自動一時停止してもユーザーの再生意図があれば再開
+  function resumeIfWanted(){
+    if(ytPlayer && ytReady && !isOff && userWantsPlay){
+      try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
+      // iOSは一度で再生されないことがあるため少し遅延して再試行
+      setTimeout(function(){
+        if(ytPlayer && ytReady && !isOff && userWantsPlay){
+          try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
+        }
+      },350);
+    }
+  }
   document.addEventListener('visibilitychange',function(){
-    if(!document.hidden && ytPlayer && ytReady && !isOff && ourPlaying){
-      try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
-    }
+    if(!document.hidden) resumeIfWanted();
   });
-  window.addEventListener('pageshow',function(e){
-    if(ytPlayer && ytReady && !isOff && ourPlaying){
-      try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
-    }
-  });
+  window.addEventListener('pageshow',function(e){ resumeIfWanted(); });
+  window.addEventListener('focus',function(){ resumeIfWanted(); });
   // Now Playingセッション抑制（Dynamic Islandインジケーター非表示の試み）
   if('mediaSession' in navigator){
     navigator.mediaSession.playbackState='none';
@@ -1749,6 +1760,19 @@ function init(){
 
   // 再読み込み時にYT APIが既にロード済みの場合の対応
   setTimeout(initYTPlayer, 100);
+
+  // スポンサーページから戻って再読込された場合: 電源画面をスキップして放送再開
+  // （bfキャッシュが効けばpageshowで復元、効かない場合のフォールバック）
+  try{
+    if(sessionStorage.getItem('shiso_resume')==='1'){
+      sessionStorage.removeItem('shiso_resume');
+      var _resumeWait=function(){
+        if(ytReady){ powerOn(); }
+        else setTimeout(_resumeWait,150);
+      };
+      setTimeout(_resumeWait,200);
+    }
+  }catch(_){}
 
   // カーソル自動非表示（PC全画面）
   // マウスが動いたらカーソル＋コントロールバーを表示、2秒後に両方非表示
