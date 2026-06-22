@@ -422,6 +422,7 @@ upx;
   overflow-y:auto;flex:1;min-height:0;
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
+  overscroll-behavior:contain;
 }
 
 /* 番組行 */
@@ -505,8 +506,7 @@ upx;
   /* スマホはUI要素をコンパクトに（縦幅を詰めて情報量を増やす） */
   .viewing-bar{padding:5px 12px;min-height:30px;}
   #viewing-title{font-size:12px;}
-  /* バナーを半分程度の高さに（縦スペース確保） */
-  .sponsor-img svg{height:42px;width:100%;}
+  /* バナーはコンパクト版SVG（viewBox 720x76）で自然に低背になる */
   /* 番組表を圧縮して一画面に多く表示 */
   .sb-head{padding:8px 14px;}
   .time-bar{padding:3px 10px 2px;}
@@ -562,7 +562,7 @@ upx;
   }
   /* コントロールバー：コンパクト */
   .custom-ctrl{height:34px;padding:0 8px;gap:5px;}
-  .custom-ctrl .expand-open-btn{margin-left:-3px;}
+  .custom-ctrl .expand-open-btn{margin-left:-3px;width:30px;height:30px;}
   .ctrl-btn{min-width:28px;height:28px;}
   /* 番組表：グリッドの番組表エリアに収める（内側のsb-listだけスクロール） */
   .sidebar{
@@ -793,7 +793,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそう<em>チャンネル</em></div>
     <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
-    <div class="ps-version">version 1.6</div>
+    <div class="ps-version">version 1.7</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -939,15 +939,39 @@ function makeBanner(name, tagline, bg, accent, icon){
     + '</svg>';
 }
 
+// iPhone縦向き専用: 横長・低背バナー（アスペクト比を変えて高さを約半分に・見切れ防止）
+function makeBannerCompact(name, tagline, bg, accent, icon){
+  var safe=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var nlen=name.length;
+  var nameSize = nlen>=12 ? 28 : (nlen>=9 ? 32 : 36);
+  return '<svg viewBox="0 0 720 76" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'
+    + '<rect width="720" height="76" fill="'+bg+'"/>'
+    + '<rect x="0" y="0" width="10" height="76" fill="'+accent+'"/>'
+    + '<circle cx="676" cy="38" r="56" fill="'+accent+'" opacity="0.15"/>'
+    + '<text x="660" y="50" font-family="sans-serif" font-size="38" text-anchor="middle" opacity="0.9">'+icon+'</text>'
+    // 上段左: sponsoredバッジ（小）
+    + '<rect x="16" y="11" width="92" height="23" rx="4" fill="#c8992a"/>'
+    + '<text x="62" y="27" font-family="-apple-system,sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">sponsored</text>'
+    // 上段右: タグライン
+    + '<text x="120" y="28" font-family="-apple-system,sans-serif" font-size="16" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
+    // 下段: 社名（中央配置）
+    + '<text x="360" y="62" font-family="-apple-system,sans-serif" font-size="'+nameSize+'" font-weight="800" fill="#ffffff" text-anchor="middle">'+safe(name)+'</text>'
+    + '</svg>';
+}
+
 var SPONSORS=[
   {name:'さくら建設株式会社', url:'sponsor-1.html',
-   banner:makeBanner('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️')},
+   banner:makeBanner('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️'),
+   bannerC:makeBannerCompact('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️')},
   {name:'山田電機産業', url:'sponsor-2.html',
-   banner:makeBanner('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡')},
+   banner:makeBanner('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡'),
+   bannerC:makeBannerCompact('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡')},
   {name:'みどり food', url:'sponsor-3.html',
-   banner:makeBanner('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅')},
+   banner:makeBanner('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅'),
+   bannerC:makeBannerCompact('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅')},
   {name:'宍粟リフォーム工業株式会社', url:'sponsor-4.html',
-   banner:makeBanner('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠')}
+   banner:makeBanner('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠'),
+   bannerC:makeBannerCompact('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠')}
 ];
 var sponsorIndex=0;
 var _sponsorTimer=null;
@@ -957,8 +981,11 @@ var _swipeSuppressClick=false;
 function updateSponsorDisplay(){
   var s=SPONSORS[sponsorIndex];
   if(!s)return;
+  // iPhone縦向き(幅840px以下かつ縦)はコンパクトバナー（低背）を使用
+  var useCompact = window.matchMedia && window.matchMedia('(max-width:840px) and (orientation:portrait)').matches;
   var img=document.getElementById('sponsor-img');
-  if(img){ img.innerHTML=s.banner; }
+  if(img){ img.innerHTML = useCompact ? s.bannerC : s.banner; }
+  // 全画面オーバーレイは通常バナーを使用（縦向き全画面で表示）
   var fimg=document.getElementById('fs-sponsor-img');
   if(fimg){ fimg.innerHTML=s.banner; }
 }
@@ -1357,6 +1384,20 @@ function gotoOffAir(){
   document.querySelectorAll('.time-chip-item').forEach(function(c){c.classList.remove('on');});
 }
 
+// 復旧用: 再生が始まらず固まった場合（特にPCのbfキャッシュ復元時の黒画面）に
+// 現在の番組を正しい位置で再ロードする
+function forceResync(){
+  if(isOff || !userWantsPlay) return;
+  if(isManual){
+    if(typeof vCurrentId!=='undefined' && vCurrentId){
+      loadVideo(vCurrentId, (typeof vCurrentSec!=='undefined'?vCurrentSec:0)||0, '読み込み中...');
+    }
+  }else{
+    var pos=nowPos();
+    if(pos){ playSchedule(pos.c,pos.p); }
+  }
+}
+
 // ── LIVEボタン ──
 function setLiveBtn(mode){
   var dot=document.getElementById('ldot');
@@ -1734,18 +1775,27 @@ function init(){
   resetSponsorTimer();
   attachSponsorSwipe(document.getElementById('sponsor-banner'));
   attachSponsorSwipe(document.getElementById('fs-sponsor'));
+  // 画面回転・リサイズ時にバナーを再描画（縦↔横でコンパクト版を切替）
+  window.addEventListener('resize', updateSponsorDisplay);
+  window.addEventListener('orientationchange', function(){ setTimeout(updateSponsorDisplay,100); });
   // スポンサーリンクから戻った時に再生を再開（タブ復帰・bfキャッシュ復元）
   // userWantsPlay基準: iOSが自動一時停止してもユーザーの再生意図があれば再開
   function resumeIfWanted(){
-    if(ytPlayer && ytReady && !isOff && userWantsPlay){
-      try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
-      // iOSは一度で再生されないことがあるため少し遅延して再試行
-      setTimeout(function(){
-        if(ytPlayer && ytReady && !isOff && userWantsPlay){
-          try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
-        }
-      },350);
-    }
+    if(!(ytPlayer && ytReady && !isOff && userWantsPlay)) return;
+    try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
+    // iOSは一度で再生されないことがあるため少し遅延して再試行
+    setTimeout(function(){
+      if(!(ytPlayer && ytReady && !isOff && userWantsPlay)) return;
+      var st=-99; try{ st=ytPlayer.getPlayerState(); }catch(_){}
+      if(st!==1){ try{ ytPlayer.playVideo(); }catch(_){} }
+    },350);
+    // PCのbfキャッシュ復元で黒画面のまま固まる場合の復旧:
+    // 一定時間後も再生(1)でもバッファリング(3)でもなければ現在番組を再ロード
+    setTimeout(function(){
+      if(!(ytPlayer && ytReady && !isOff && userWantsPlay)) return;
+      var st=-99; try{ st=ytPlayer.getPlayerState(); }catch(_){}
+      if(st!==1 && st!==3){ forceResync(); }
+    },900);
   }
   document.addEventListener('visibilitychange',function(){
     if(!document.hidden) resumeIfWanted();
