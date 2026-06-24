@@ -779,7 +779,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそう<em>チャンネル</em></div>
     <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
-    <div class="ps-version">version 1.9</div>
+    <div class="ps-version">version 1.10</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -925,24 +925,46 @@ function makeBanner(name, tagline, bg, accent, icon){
     + '</svg>';
 }
 
-// iPhone縦向き専用: 単列・低背バナー（sponsored｜キャッチ｜社名を横一列、アイコン右端）
+// iPhone縦向き専用: sponsored(左固定)＋[キャッチ＋社名](表示エリア中央)＋アイコン(右)。緑バー相当の高さ・社名は縦幅最大
 function makeBannerCompact(name, tagline, bg, accent, icon){
   var safe=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  // 文字幅推定(em): CJK全角=1.0 / 半角空白=0.30 / その他=0.55
+  var chW=function(s){var w=0;for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);
+    if((c>=0x3000&&c<=0x9fff)||(c>=0xff00&&c<=0xffef)) w+=1.0;
+    else if(s.charAt(i)===' ') w+=0.30; else w+=0.55;} return w;};
+  var cy=30, areaL=106, areaR=674, gap=16, areaW=areaR-areaL; // sponsoredとアイコンの間が表示エリア
   var nlen=name.length;
-  var nameSize = nlen>=10 ? 16 : (nlen>=8 ? 18 : 20);
-  return '<svg viewBox="0 0 720 42" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'
-    + '<rect width="720" height="42" fill="'+bg+'"/>'
-    + '<rect x="0" y="0" width="8" height="42" fill="'+accent+'"/>'
-    + '<circle cx="700" cy="21" r="30" fill="'+accent+'" opacity="0.15"/>'
-    // 右端アイコン（右端ギリギリ）
-    + '<text x="700" y="29" font-family="sans-serif" font-size="24" text-anchor="middle" opacity="0.9">'+icon+'</text>'
-    // sponsoredバッジ（左）
-    + '<rect x="14" y="10" width="82" height="22" rx="4" fill="#c8992a"/>'
-    + '<text x="55" y="25" font-family="-apple-system,sans-serif" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">sponsored</text>'
-    // キャッチフレーズ（バッジの右・左寄せ）
-    + '<text x="104" y="26" font-family="-apple-system,sans-serif" font-size="15" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
-    // 社名（右寄せ・アイコンの手前）
-    + '<text x="672" y="26" font-family="-apple-system,sans-serif" font-size="'+nameSize+'" font-weight="800" fill="#ffffff" text-anchor="end">'+safe(name)+'</text>'
+  var nameFont = nlen>=9 ? 38 : (nlen>=7 ? 42 : 46); // 社名は縦幅いっぱい
+  var nEm=chW(name), tEm=chW(tagline);
+  var Wn=nEm*nameFont;
+  // キャッチは残り幅に収まる最大サイズ（上限22・下限11）
+  var catchFont=Math.min(22, Math.floor((areaW-Wn-gap)/Math.max(tEm,0.1)));
+  if(catchFont<11) catchFont=11;
+  var Wc=tEm*catchFont, groupW=Wc+gap+Wn;
+  // それでも収まらなければ社名を縮小して表示エリア内に収める（はみ出し防止）
+  while(groupW>areaW && nameFont>26){
+    nameFont-=2; Wn=nEm*nameFont;
+    catchFont=Math.min(22, Math.floor((areaW-Wn-gap)/Math.max(tEm,0.1)));
+    if(catchFont<11) catchFont=11;
+    Wc=tEm*catchFont; groupW=Wc+gap+Wn;
+  }
+  var gStart=(areaL+areaR)/2 - groupW/2;            // [キャッチ＋社名]を表示エリア中央に
+  var catchX=gStart, nameX=gStart+Wc+gap;
+  var baseC=(cy + catchFont*0.35).toFixed(1);
+  var baseN=(cy + nameFont*0.35).toFixed(1);
+  return '<svg viewBox="0 0 720 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'
+    + '<rect width="720" height="60" fill="'+bg+'"/>'
+    + '<rect x="0" y="0" width="9" height="60" fill="'+accent+'"/>'
+    + '<circle cx="700" cy="30" r="36" fill="'+accent+'" opacity="0.15"/>'
+    // アイコン（右端）
+    + '<text x="700" y="41" font-family="sans-serif" font-size="32" text-anchor="middle" opacity="0.9">'+icon+'</text>'
+    // sponsoredバッジ（左・位置そのまま）
+    + '<rect x="14" y="18" width="84" height="24" rx="4" fill="#c8992a"/>'
+    + '<text x="56" y="35" font-family="-apple-system,sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">sponsored</text>'
+    // キャッチフレーズ（中央グループ・左寄せ開始）
+    + '<text x="'+catchX.toFixed(1)+'" y="'+baseC+'" font-family="-apple-system,sans-serif" font-size="'+catchFont+'" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
+    // 社名（中央グループ・縦幅最大）
+    + '<text x="'+nameX.toFixed(1)+'" y="'+baseN+'" font-family="-apple-system,sans-serif" font-size="'+nameFont+'" font-weight="800" fill="#ffffff">'+safe(name)+'</text>'
     + '</svg>';
 }
 
