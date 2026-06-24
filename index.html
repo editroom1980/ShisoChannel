@@ -228,12 +228,6 @@ body.fs-open .player-wrap.expanded{
   width:177px;
   height:64px;
 }
-/* 左端：共有ボタン領域 */
-tpx;
-}
-/* 右端：YouTubeロゴ領域 */
-tpx;
-}
 /* 上部タイトルバーブロック（左側のチャンネル名・アイコンのみ） */
 #yt-block-top{
   position:absolute;
@@ -241,38 +235,6 @@ tpx;
   width:100%;
   height:80px;
   z-index:2147483647;
-  background:transparent;
-  cursor:default;
-  pointer-events:auto;
-  -webkit-tap-highlight-color:transparent;
-}
-/* 設定ボタン（⚙️）をブロック：右上の一番右端
-   PCや横画面では動画が大きくなるがボタンのpx位置は変わらないため
-   幅を広めに設定して確実にカバー */
-upx;
-  z-index:10;
-  background:transparent;
-  cursor:default;
-  pointer-events:auto;
-  -webkit-tap-highlight-color:transparent;
-}
-/* PC・横画面：動画が大きくなるとYouTubeがUIを拡大するため幅を広げる */
-@media(min-width:841px){
-  upx;
-  }
-}
-@media(orientation:landscape) and (max-height:500px){
-  upx;
-  }
-}
-/* 全画面ボタン専用ブロック（設定ボタンの左隣・上部） */
-#yt-block-fs{
-  position:absolute;
-  bottom:81px;
-  right:0;
-  width:75px;
-  height:50px;
-  z-index:10;
   background:transparent;
   cursor:default;
   pointer-events:auto;
@@ -793,7 +755,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそう<em>チャンネル</em></div>
     <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
-    <div class="ps-version">version 1.7</div>
+    <div class="ps-version">version 1.8</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
