@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>しそうチャンネル</title>
+<title>しそチャンNET</title>
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="しそうチャンネル">
+<meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<meta name="apple-mobile-web-app-title" content="しそうチャンネル">
+<meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
 :root{
@@ -33,14 +33,14 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
 
 /* ══ 電源画面 ══ */
 #power-screen{position:fixed;inset:0;z-index:999;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
-.ps-logo-main{font-size:26px;font-weight:700;color:var(--white);letter-spacing:4px;}
+.ps-logo-main{font-size:32px;font-weight:700;color:var(--white);letter-spacing:4px;}
 .ps-logo-main em{color:var(--gold2);font-style:normal;}
-.ps-logo-sub{font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:3px;margin-top:4px;}
-.ps-version{font-size:11px;color:var(--gold2);letter-spacing:2px;margin-top:8px;font-weight:600;}
+.ps-version{font-size:11px;color:var(--gold2);letter-spacing:2px;margin-top:12px;font-weight:600;}
 .ps-clock{font-size:52px;font-weight:200;color:var(--white);letter-spacing:4px;font-variant-numeric:tabular-nums;}
 .ps-date-str{font-size:22px;font-weight:300;color:rgba(255,255,255,0.65);letter-spacing:2px;margin-bottom:-6px;}
 .ps-btn{margin-top:8px;background:var(--gold);color:var(--forest);border:none;cursor:pointer;font-size:16px;font-weight:700;padding:16px 52px;border-radius:4px;letter-spacing:3px;font-family:inherit;-webkit-tap-highlight-color:transparent;user-select:none;}
 .ps-btn:active{opacity:0.85;}
+.ps-btn.loading{opacity:0.55;pointer-events:none;cursor:default;letter-spacing:2px;}
 .ps-hint{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;}
 
 /* ══ ヘッダー ══ */
@@ -56,9 +56,8 @@ body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','
   box-shadow:0 2px 10px rgba(0,0,0,0.2);
 }
 .h-logo{display:flex;flex-direction:column;}
-.h-logo-main{font-size:19px;font-weight:700;color:var(--white);letter-spacing:2px;}
+.h-logo-main{font-size:20px;font-weight:700;color:var(--white);letter-spacing:2px;}
 .h-logo-main em{color:var(--gold2);font-style:normal;}
-.h-logo-sub{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2px;margin-top:3px;}
 .h-right{display:flex;align-items:center;gap:14px;}
 .h-datetime{display:flex;flex-direction:column;align-items:flex-end;}
 .h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
@@ -460,8 +459,7 @@ body.fs-open .player-wrap.expanded{
     padding:0 14px;
     padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
-  .h-logo-main{font-size:15px;}
-  .h-logo-sub{font-size:8px;}
+  .h-logo-main{font-size:16px;}
   .h-time{font-size:16px;}
   .onair-badge{padding:2px 7px;font-size:9px;}
   .h-date{display:none;}
@@ -526,7 +524,7 @@ body.fs-open .player-wrap.expanded{
     padding-left:max(10px, env(safe-area-inset-left));
     padding-right:max(10px, env(safe-area-inset-right));
   }
-  .h-logo-sub,.h-date{display:none;}
+  .h-date{display:none;}
   .h-logo-main{font-size:13px;letter-spacing:1px;}
   .h-time{font-size:14px;}
   .onair-badge{padding:2px 6px;font-size:8px;}
@@ -617,7 +615,6 @@ body.silk-mode .header{
   padding-top:0;
   position:sticky;top:0;z-index:300;
 }
-body.silk-mode .h-logo-sub{display:none;}
 body.silk-mode .h-logo{flex-direction:row;align-items:baseline;gap:6px;}
 body.silk-mode .h-logo-main{font-size:14px;}
 body.silk-mode .h-time{font-size:15px;}
@@ -777,9 +774,8 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <!-- 電源画面 -->
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
-    <div class="ps-logo-main">しそう<em>チャンネル</em></div>
-    <div class="ps-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
-    <div class="ps-version">version 1.10</div>
+    <div class="ps-logo-main">しそチャン<em>NET</em></div>
+    <div class="ps-version">version 1.11</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -794,8 +790,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="main-content">
   <header class="header">
     <div class="h-logo">
-      <div class="h-logo-main">しそう<em>チャンネル</em></div>
-      <div class="h-logo-sub">SHISO CITY COMMUNITY CHANNEL</div>
+      <div class="h-logo-main">しそチャン<em>NET</em></div>
     </div>
     <div class="h-right">
       <div class="h-datetime">
@@ -895,7 +890,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
     </div>
   </div>
 
-  <footer class="footer">© 宍粟市　しそうチャンネル　プロトタイプ版　｜　秘書広報課　TEL 0790-63-3115</footer>
+  <footer class="footer">© 宍粟市　しそチャンNET　プロトタイプ版　｜　秘書広報課　TEL 0790-63-3115</footer>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -1101,10 +1096,11 @@ function onYouTubeIframeAPIReady(){
   ytInitialized=true;
   ytPlayer=new YT.Player('yt-player-api',{
     width:'100%',height:'100%',
-    playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1},
+    playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1,cc_load_policy:0},
     events:{
       onStateChange:function(e){
         var st=e.data;
+        if(st===1||st===5){ killCaptions(); } // 再生開始/キュー時に字幕を無効化
         // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
         var _isPlay=(st===1||st===3);
         (function(){
@@ -1128,15 +1124,17 @@ function onYouTubeIframeAPIReady(){
       },
       onReady:function(e){
         ytReady=true;ytPlayer=e.target;
+        armStartBtn();   // API準備完了 → 放送開始ボタンを有効化
+        killCaptions();  // 字幕を無効化
         if(pendingYtId){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
           e.target.loadVideoById({videoId:id,startSeconds:sec});
+          try{ e.target.playVideo(); }catch(_){} // 遅延ロード時も再生を試みる
           clearSpinnerTimer();
-          // onStateChange(st=1/3)でspinnerを消す。最長1.5秒のフォールバック
           spinnerTimer=setTimeout(function(){showSpinner(false);},60000);
+          setTimeout(killCaptions,600); // ロード後に再度字幕を無効化
         }else{
-          // 動画なし（cueVideoById等）でもスピナーを消す
           showSpinner(false);
         }
       }
@@ -1302,6 +1300,16 @@ function setEndTimer(c,p){
 }
 
 // ── 動画ロード（ユーザー操作チェーン内で呼ぶこと・Safari対策） ──
+// 字幕(YouTube CC)を強制無効化。端末の字幕設定で勝手に表示される問題への対処。
+// 動画ロード毎に再表示され得るため、onReady・再生開始・ロード後に都度呼ぶ。
+function killCaptions(){
+  if(!ytPlayer) return;
+  try{ ytPlayer.unloadModule('captions'); }catch(_){}
+  try{ ytPlayer.unloadModule('cc'); }catch(_){}
+  try{ ytPlayer.setOption('captions','track',{}); }catch(_){}
+  try{ ytPlayer.setOption('cc','track',{}); }catch(_){}
+}
+
 function loadVideo(ytId,sec,msg){
   clearSpinnerTimer();
   showEnded(false);
@@ -1323,6 +1331,7 @@ function loadVideo(ytId,sec,msg){
     setTimeout(function(){
       try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
     },500);
+    setTimeout(killCaptions,300); setTimeout(killCaptions,1200); // 動画ロード毎に字幕を無効化
   }else{
     pendingYtId=ytId;pendingSec=sec;
   }
@@ -1614,6 +1623,12 @@ function updateClock(){
   el=document.getElementById('h-time');if(el)el.textContent=t;
   el=document.getElementById('h-date');if(el)el.textContent=ds;
 }
+// 放送開始ボタンを有効化（YT API準備完了で呼ぶ）
+function armStartBtn(){
+  var b=document.getElementById('ps-btn');
+  if(b){ b.classList.remove('loading'); b.textContent='▶ 放送開始'; }
+}
+
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
@@ -1623,6 +1638,18 @@ function powerOn(){
   // iPhoneのみ: ジェスチャーチェーン内でplayVideoを直接呼ぶ
   if(isIOS&&ytPlayer&&ytReady){
     try{ytPlayer.playVideo();}catch(_){}
+  }
+  if(isIOS&&ytReady){ iosFirstPlay=true; } // powerOnのloadVideoByIdが最初のiOS再生
+  // 放送開始後に再生が始まらない場合のリトライ（初期化直後/黒画面/自動一時停止対策）
+  if(pos){
+    [500,1000,1800].forEach(function(ms){
+      setTimeout(function(){
+        if(isOff||!userWantsPlay||!ytPlayer||!ytReady) return;
+        var st=-99; try{ st=ytPlayer.getPlayerState(); }catch(_){}
+        if(st===1||st===3) return; // 再生中/バッファ中ならOK
+        if(ms>=1800){ forceResync(); } else { try{ ytPlayer.playVideo(); }catch(_){} }
+      }, ms);
+    });
   }
   // Silk/FireTVのみ: ユーザージェスチャー直後にブラウザUIを非表示にする
   // PC・iOS版には一切影響しない（isSilkがfalseのため実行されない）
@@ -1776,6 +1803,9 @@ function init(){
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();updateClock();
   addTap(document.getElementById('ps-btn'),powerOn);
+  // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
+  (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
+  setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
   setInterval(updateSeekBar,100);
