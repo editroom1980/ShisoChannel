@@ -12,7 +12,6 @@
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
 :root{
@@ -775,7 +774,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.11</div>
+    <div class="ps-version">version 1.12</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -1172,8 +1171,8 @@ function openExpand(){
     if(req){
       isExpanded=true;
       req.call(wrap);
-      // 全画面になったらAPIに通知してUIを表示
-      updateExpandTitle();showFsUi();
+      // 全画面になったらUIを表示
+      showFsUi();
       // PC全画面: mousemoveはdocumentレベルで一元管理するためここでは登録しない
       wrap._mmHandler=null;
       return;
@@ -1188,7 +1187,7 @@ function openExpand(){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
   }
-  updateExpandTitle();showFsUi();
+  showFsUi();
 }
 
 function closeExpand(){
@@ -1229,8 +1228,6 @@ function closeExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
-  var bar=document.getElementById('fs-ui-bar');
-  if(bar)bar.classList.remove('hidden');
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
@@ -1264,11 +1261,6 @@ function hideFsUi(){
 function resetFsUiTimer(){clearFsUiTimer();fsUiTimer=setTimeout(hideFsUi,3000);}
 function clearFsUiTimer(){if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}}
 function onFsTap(){if(!isExpanded)return;showFsUi();}
-function updateExpandTitle(){
-  var t=document.getElementById('viewing-title').textContent;
-  var el=document.getElementById('fs-ui-title');
-  if(el)el.textContent=t;
-}
 
 // ── オーバーレイ ──
 function showEnded(v){document.getElementById('ended-ov').style.display=v?'flex':'none';}
@@ -1435,7 +1427,7 @@ function onLiveClick(){
 function setViewUI(c,p){
   document.getElementById('viewing-title').textContent=CYCLE[p].title;
   document.getElementById('viewing-cat').textContent=CYCLE[p].cat;
-  updateExpandTitle();hlSB(c,p);
+  hlSB(c,p);
 }
 function refreshLive(){
   if(isOff)return;
@@ -1608,9 +1600,11 @@ function periodicCheck(){
   var pos=nowPos();
   if(!pos){if(!isOff)gotoOffAir();return;}
   var c=pos.c,p=pos.p;
+  // 変化検知はrefreshLive()より前に行う（refreshLive内でlC/lPが更新されるため）
+  var changed=(isOff||c!==lC||p!==lP);
   refreshLive();
   // isOff中（放送終了状態）でも放送開始時刻になったら自動再生
-  if(isOff||c!==lC||p!==lP)playSchedule(c,p);
+  if(changed)playSchedule(c,p);
 }
 function updateClock(){
   var d=new Date();
