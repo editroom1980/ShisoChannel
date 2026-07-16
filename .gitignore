@@ -1,0 +1,22 @@
+# このリポジトリはGitHub Pagesで一般公開されます（https://shisochan.net）。
+# 公開して困るもの・アプリの動作に不要なものは、ここで除外します。
+
+# Macが自動生成するゴミファイル
+.DS_Store
+
+# Claude Code の作業用設定
+.claude/
+
+# バックアップ（手元だけで保管。公開不要・リポジトリが重くなるため）
+backup/
+index_v*.html
+
+# 手元専用ツール（手順書に沿ってダブルクリックで開く運用。
+# 公開すると誰でもFirestoreに書き込める状態になり得るため上げない）
+setup.html
+
+# 開発・運用の内部資料（事業計画の数字を含むため非公開）
+CLAUDE.md
+引き継ぎ_しそチャンNET.md
+Firebase設定手順書.md
+ClaudeCode移行手順.md

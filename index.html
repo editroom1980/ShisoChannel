@@ -774,7 +774,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.12</div>
+    <div class="ps-version">version 1.14</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -984,6 +984,7 @@ var _swipeSuppressClick=false;
 function updateSponsorDisplay(){
   var s=SPONSORS[sponsorIndex];
   if(!s)return;
+  try{statsBannerImp(s.name);}catch(_){}
   // iPhone縦向き(幅840px以下かつ縦)はコンパクトバナー（低背）を使用
   var useCompact = window.matchMedia && window.matchMedia('(max-width:840px) and (orientation:portrait)').matches;
   var img=document.getElementById('sponsor-img');
@@ -998,6 +999,7 @@ function openSponsorLink(){
   if(_swipeSuppressClick){ _swipeSuppressClick=false; return; }
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
+    try{statsBannerClick(s.name);statsFlush(true);}catch(_){}
     try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
     location.href=s.url;
   }
@@ -1052,6 +1054,254 @@ var S=6,E=24,CM=180,NC=(E-S)*60/CM;
 var CS=[];for(var i=0;i<NC;i++)CS.push(S*60+i*CM);
 var CO=[];var _a=0;for(var i=0;i<CYCLE.length;i++){CO.push(_a);_a+=CYCLE[i].dur;}
 
+// ══════════════════════════════════════════════
+//  Firestoreからの番組表取得（Step1: 番組表の外部化）
+//  下の2つの値を手順書に従って貼り付けると有効になる。
+//  空のままなら従来どおり内蔵番組表で動作（動作は完全に同一）。
+//  取得失敗・データ不正時も内蔵番組表に自動フォールバックし放送は止まらない。
+// ══════════════════════════════════════════════
+var FIREBASE={
+  projectId:'',  // ← 手順書で取得した「プロジェクトID」を''の間に貼る
+  apiKey:''      // ← 手順書で取得した「ウェブAPIキー」を''の間に貼る
+};
+
+// Firestore RESTの型付き値 → 素のJS値
+function fsVal(v){
+  if(v==null)return null;
+  if('stringValue' in v)return v.stringValue;
+  if('integerValue' in v)return parseInt(v.integerValue,10);
+  if('doubleValue' in v)return v.doubleValue;
+  if('booleanValue' in v)return v.booleanValue;
+  if('nullValue' in v)return null;
+  if('timestampValue' in v)return v.timestampValue;
+  if('mapValue' in v){var o={},f=(v.mapValue&&v.mapValue.fields)||{};for(var k in f)o[k]=fsVal(f[k]);return o;}
+  if('arrayValue' in v){var a=(v.arrayValue&&v.arrayValue.values)||[];var r=[];for(var i=0;i<a.length;i++)r.push(fsVal(a[i]));return r;}
+  return null;
+}
+
+// 番組表データの検証。問題なければ''、問題があれば理由を返す
+function validSchedule(d){
+  if(!d||Object.prototype.toString.call(d.cycle)!=='[object Array]'||d.cycle.length<1)return '番組リストが空か形式不正';
+  var s=(d.airStart!=null?d.airStart:S),e=(d.airEnd!=null?d.airEnd:E),cm=(d.cycleMinutes!=null?d.cycleMinutes:CM);
+  if(typeof s!=='number'||typeof e!=='number'||typeof cm!=='number'||s>=e||cm<=0)return '放送時間の設定が不正';
+  if(((e-s)*60)%cm!==0)return '放送時間('+((e-s)*60)+'分)がサイクル('+cm+'分)で割り切れない';
+  var tot=0;
+  for(var i=0;i<d.cycle.length;i++){
+    var p=d.cycle[i];
+    if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string'||typeof p.dur!=='number'||p.dur<=0)return (i+1)+'番目の番組データが不正';
+    tot+=p.dur;
+  }
+  if(tot!==cm)return '番組の合計尺('+tot+'分)がサイクル('+cm+'分)と不一致';
+  return '';
+}
+
+// 検証済みデータを適用して番組表を再構築（放送中なら現在番組に同期し直す）
+function applySchedule(d){
+  CYCLE=d.cycle;
+  if(d.airStart!=null)S=d.airStart;
+  if(d.airEnd!=null)E=d.airEnd;
+  if(d.cycleMinutes!=null)CM=d.cycleMinutes;
+  NC=(E-S)*60/CM;
+  CS=[];for(var i=0;i<NC;i++)CS.push(S*60+i*CM);
+  CO=[];var a=0;for(var j=0;j<CYCLE.length;j++){CO.push(a);a+=CYCLE[j].dur;}
+  try{renderSB();}catch(_){}
+  if(userWantsPlay&&!isManual&&!isOff){var pos=nowPos();if(pos)playSchedule(pos.c,pos.p);}
+}
+
+// 取得本体：当日キャッシュ→Firestore→期限切れキャッシュ→内蔵、の順で安全に選ぶ
+function loadRemoteSchedule(){
+  if(!FIREBASE.projectId||!FIREBASE.apiKey)return; // 未設定＝内蔵番組表で従来どおり
+  var KEY='shisochan_schedule_cache_v1';
+  var d0=new Date();
+  var today=d0.getFullYear()+'-'+(d0.getMonth()+1)+'-'+d0.getDate();
+  var force=/[?&]fresh=1/.test(location.search); // 動作確認用: ?fresh=1 でキャッシュ無視
+  var cached=null;
+  try{cached=JSON.parse(localStorage.getItem(KEY)||'null');}catch(_){}
+  if(!force&&cached&&cached.day===today&&cached.data&&validSchedule(cached.data)===''){
+    applySchedule(cached.data);return; // 当日キャッシュで完結（費用節約: 1日1回取得）
+  }
+  var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/schedule?key='+encodeURIComponent(FIREBASE.apiKey);
+  fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(doc){
+    var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
+    var err=validSchedule(d);
+    if(err){console.warn('[番組表] データ不正: '+err+' → 内蔵番組表で継続');return;}
+    try{localStorage.setItem(KEY,JSON.stringify({day:today,data:d}));}catch(_){}
+    applySchedule(d);
+  })
+  .catch(function(e){
+    console.warn('[番組表] 取得失敗('+e.message+') → キャッシュ/内蔵で継続');
+    if(cached&&cached.data&&validSchedule(cached.data)==='')applySchedule(cached.data);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  視聴計測（アナリティクス）v1.14
+//  ・1視聴＝1番組セッションで実再生が累計30秒に達した時に1回だけ
+//  ・端末はランダムUUIDのみで識別（個人情報ゼロ）
+//  ・イベントはローカルに集約し、10分毎＋離脱時にまとめて送信（書込最小化）
+//  ・全処理はtry/catchで隔離。計測が失敗しても再生には一切影響しない
+//  ・FIREBASE未設定時は完全に何もしない
+// ══════════════════════════════════════════════
+var _stQKEY='shisochan_stats_queue_v1';
+var _stDevKEY='shisochan_device_id';
+var _stPingKEY='shisochan_dev_ping';
+var _stSes={id:'',playing:false,t0:0,acc:0,sent:0,counted:false}; // 番組セッション
+var _stImpLast={idx:-1,ts:0};
+var _stFlushing=false;
+function _stEnabled(){return !!(FIREBASE.projectId&&FIREBASE.apiKey);}
+function _stDay(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function _stDevId(){
+  var id='';
+  try{id=localStorage.getItem(_stDevKEY)||'';}catch(_){}
+  if(!id){
+    try{id=(crypto&&crypto.randomUUID)?crypto.randomUUID():'';}catch(_){}
+    if(!id){id='d';for(var i=0;i<24;i++)id+='abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random()*36));}
+    try{localStorage.setItem(_stDevKEY,id);}catch(_){}
+  }
+  return id;
+}
+function _stQ(){ // キュー取得（壊れていたら初期化）
+  var q=null;
+  try{q=JSON.parse(localStorage.getItem(_stQKEY)||'null');}catch(_){}
+  if(!q||typeof q!=='object')q={v:{},s:{},hours:{},imp:{},clk:{},titles:{}};
+  q.v=q.v||{};q.s=q.s||{};q.hours=q.hours||{};q.imp=q.imp||{};q.clk=q.clk||{};q.titles=q.titles||{};
+  return q;
+}
+function _stQSave(q){try{localStorage.setItem(_stQKEY,JSON.stringify(q));}catch(_){}}
+function _stTitleOf(ytId){for(var i=0;i<CYCLE.length;i++)if(CYCLE[i].ytId===ytId)return CYCLE[i].title;return '';}
+// 再生秒の締め（playing中なら現在までを加算）
+function _stCloseSeg(){
+  if(_stSes.playing){_stSes.acc+=(Date.now()-_stSes.t0)/1000;_stSes.playing=false;}
+}
+// 30秒到達チェック（1セッション1回のみ）
+function _stCheckView(){
+  if(_stSes.counted||!_stSes.id||_stSes.acc<30)return;
+  _stSes.counted=true;
+  var q=_stQ();
+  q.v[_stSes.id]=(q.v[_stSes.id]||0)+1;
+  var h='h'+new Date().getHours();
+  q.hours[h]=(q.hours[h]||0)+1;
+  var t=_stTitleOf(_stSes.id);if(t)q.titles[_stSes.id]=t;
+  _stQSave(q);
+}
+// 確定済み秒数をキューへ（差分方式・多重計上なし）
+function _stCommitSecs(){
+  var d=Math.floor(_stSes.acc-_stSes.sent);
+  if(d<=0||!_stSes.id)return;
+  var q=_stQ();
+  q.s[_stSes.id]=(q.s[_stSes.id]||0)+d;
+  _stQSave(q);
+  _stSes.sent+=d;
+}
+// ── フック用の公開関数（各既存関数から1行で呼ばれる）──
+function statsSessionStart(ytId){
+  if(!_stEnabled())return;
+  if(_stSes.id===ytId)return; // forceResync等の同一番組再ロードはセッション継続
+  statsSessionEnd();
+  _stSes={id:ytId,playing:false,t0:0,acc:0,sent:0,counted:false};
+}
+function statsSessionEnd(){
+  if(!_stEnabled()||!_stSes.id)return;
+  _stCloseSeg();_stCheckView();_stCommitSecs();
+  _stSes={id:'',playing:false,t0:0,acc:0,sent:0,counted:false};
+}
+function statsOnState(st){
+  if(!_stEnabled()||!_stSes.id)return;
+  if(st===1){ if(!_stSes.playing){_stSes.playing=true;_stSes.t0=Date.now();} }
+  else{ _stCloseSeg();_stCheckView();_stCommitSecs(); }
+}
+function statsBannerImp(name){
+  if(!_stEnabled())return;
+  // 見えていない表示は数えない：電源画面中・タブ非表示中は除外
+  var ps=document.getElementById('power-screen');
+  if(ps&&ps.style.display!=='none')return;
+  if(document.hidden)return;
+  // resize連打等での水増し防止：同一スポンサーは9秒以内の再注入をノーカウント
+  var now=Date.now();
+  if(_stImpLast.idx===sponsorIndex&&now-_stImpLast.ts<9000)return;
+  _stImpLast={idx:sponsorIndex,ts:now};
+  var q=_stQ();q.imp[name]=(q.imp[name]||0)+1;_stQSave(q);
+}
+function statsBannerClick(name){
+  if(!_stEnabled())return;
+  var q=_stQ();q.clk[name]=(q.clk[name]||0)+1;_stQSave(q);
+}
+// Firestoreのフィールドパス用（数字始まり・記号・日本語もバッククォートで安全に）
+function _stFP(seg){return '`'+String(seg).replace(/\\/g,'\\\\').replace(/`/g,'\\`')+'`';}
+// commit リクエストJSONを組み立て（テスト可能な純関数）
+function statsBuildCommit(q,day,devId,pingNeeded){
+  var docBase='projects/'+FIREBASE.projectId+'/databases/(default)/documents/';
+  var writes=[];var k;
+  // stats_daily/{day}: 全カウンタをincrementで
+  var tf=[];
+  for(k in q.v)tf.push({fieldPath:'programs.'+_stFP(k)+'.v',increment:{integerValue:String(q.v[k])}});
+  for(k in q.s)tf.push({fieldPath:'programs.'+_stFP(k)+'.s',increment:{integerValue:String(q.s[k])}});
+  for(k in q.hours)tf.push({fieldPath:'hours.'+_stFP(k),increment:{integerValue:String(q.hours[k])}});
+  for(k in q.imp)tf.push({fieldPath:'banners.'+_stFP(k)+'.imp',increment:{integerValue:String(q.imp[k])}});
+  for(k in q.clk)tf.push({fieldPath:'banners.'+_stFP(k)+'.clk',increment:{integerValue:String(q.clk[k])}});
+  if(tf.length){
+    writes.push({update:{name:docBase+'stats_daily/'+day,fields:{d:{stringValue:day}}},
+                 updateMask:{fieldPaths:['d']},updateTransforms:tf});
+  }
+  // stats_programs/{ytId}: 累計views/seconds + title
+  var ids={};for(k in q.v)ids[k]=1;for(k in q.s)ids[k]=1;
+  for(k in ids){
+    var tr=[];
+    if(q.v[k])tr.push({fieldPath:'views',increment:{integerValue:String(q.v[k])}});
+    if(q.s[k])tr.push({fieldPath:'seconds',increment:{integerValue:String(q.s[k])}});
+    var fields={},mask=[];
+    if(q.titles[k]){fields.title={stringValue:q.titles[k]};mask.push('title');}
+    else{fields.d={stringValue:day};mask.push('d');}
+    writes.push({update:{name:docBase+'stats_programs/'+k,fields:fields},
+                 updateMask:{fieldPaths:mask},updateTransforms:tr});
+  }
+  // stats_devices/{uuid}: 1日1回だけlastSeen更新（DAU用）
+  if(pingNeeded){
+    writes.push({update:{name:docBase+'stats_devices/'+devId,fields:{lastSeen:{stringValue:day}}},
+                 updateMask:{fieldPaths:['lastSeen']},
+                 updateTransforms:[{fieldPath:'daysSeen',increment:{integerValue:'1'}}]});
+  }
+  return writes.length?{writes:writes}:null;
+}
+function statsFlush(useBeacon){
+  if(!_stEnabled()||_stFlushing)return;
+  try{
+    // 再生中でも計時を止めずに現時点までを確定（スナップショット）
+    if(_stSes.playing){_stSes.acc+=(Date.now()-_stSes.t0)/1000;_stSes.t0=Date.now();}
+    _stCheckView();_stCommitSecs();
+    var q=_stQ();var day=_stDay();var dev=_stDevId();
+    var ping=false;
+    try{ping=(localStorage.getItem(_stPingKEY)!==day);}catch(_){ping=true;}
+    var body=statsBuildCommit(q,day,dev,ping);
+    if(!body)return;
+    var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents:commit?key='+encodeURIComponent(FIREBASE.apiKey);
+    var json=JSON.stringify(body);
+    var sent=false;
+    if(useBeacon&&navigator.sendBeacon){
+      try{sent=navigator.sendBeacon(url,new Blob([json],{type:'application/json'}));}catch(_){sent=false;}
+      if(sent){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
+      return;
+    }
+    _stFlushing=true;
+    fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:json,keepalive:!!useBeacon})
+    .then(function(r){
+      _stFlushing=false;
+      if(r.ok){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
+    })
+    .catch(function(){_stFlushing=false;}); // 失敗時はキュー保持→次回再送
+  }catch(_){_stFlushing=false;}
+}
+function statsInit(){
+  if(!_stEnabled())return;
+  try{
+    _stDevId();
+    setInterval(function(){try{statsFlush(false);}catch(_){}},600000); // 10分毎
+    document.addEventListener('visibilitychange',function(){if(document.hidden){try{statsSessionEnd();statsFlush(true);}catch(_){}}});
+    window.addEventListener('pagehide',function(){try{statsSessionEnd();statsFlush(true);}catch(_){}});
+  }catch(_){}
+}
+
 var f2=function(n){return String(n).padStart(2,'0');};
 var hm=function(m){return f2(Math.floor(m/60))+':'+f2(m%60);};
 var nowF=function(){var d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;};
@@ -1099,6 +1349,7 @@ function onYouTubeIframeAPIReady(){
     events:{
       onStateChange:function(e){
         var st=e.data;
+        try{statsOnState(st);}catch(_){}
         if(st===1||st===5){ killCaptions(); } // 再生開始/キュー時に字幕を無効化
         // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
         var _isPlay=(st===1||st===3);
@@ -1303,6 +1554,7 @@ function killCaptions(){
 }
 
 function loadVideo(ytId,sec,msg){
+  try{statsSessionStart(ytId);}catch(_){}
   clearSpinnerTimer();
   showEnded(false);
   // シークバーをリセット
@@ -1375,6 +1627,7 @@ function playManual(pIdx){
 }
 
 function gotoOffAir(){
+  try{statsSessionEnd();}catch(_){}
   clearEndTimer();closeExpand();
   isOff=true;isManual=false;userWantsPlay=false;
   pauseVideo();
@@ -1796,6 +2049,8 @@ function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();updateClock();
+  loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
+  statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),powerOn);
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
   (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
