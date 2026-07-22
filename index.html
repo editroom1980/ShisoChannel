@@ -29,9 +29,8 @@ body{
   -webkit-touch-callout:none;
 }
 html{background:var(--forest);}
-body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;font-size:14px;min-height:100vh;}
-/* iPhoneホーム画面追加(standalone)時、画面最下部の安全領域(ホームバー)に出る白い帯を深緑で塗る。Safariでは安全領域=0のため0pxで不可視 */
-body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-area-inset-bottom,0px);background:var(--forest);z-index:2147483646;pointer-events:none;}
+/* bodyの背景を深緑に。iOS standaloneは最下部の安全領域をbody背景色で塗るため、これで白帯が消える。本編の明るい背景は#main-contentに持たせる */
+body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;font-size:14px;min-height:100vh;}
 
 /* ══ 電源画面 ══ */
 #power-screen{position:fixed;inset:0;z-index:999;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
@@ -46,7 +45,7 @@ body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:env(safe-ar
 .ps-hint{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;}
 
 /* ══ ヘッダー ══ */
-#main-content{display:none;}
+#main-content{display:none;background:var(--off);}
 .header{
   background:var(--forest);
   padding:0 24px;
@@ -777,7 +776,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.18</div>
+    <div class="ps-version">version 1.19</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -892,7 +891,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
     </div>
   </div>
 
-  <footer class="footer">© 宍粟市　しそチャンNET　プロトタイプ版　｜　秘書広報課　TEL 0790-63-3115</footer>
+  <footer class="footer">© 宍粟市　しそチャンNET　プロトタイプ版</footer>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
