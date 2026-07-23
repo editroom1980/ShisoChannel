@@ -56,7 +56,11 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   position:sticky;top:0;z-index:300;
   box-shadow:0 2px 10px rgba(0,0,0,0.2);
 }
-.h-logo{display:flex;flex-direction:column;}
+.h-logo{display:flex;flex-direction:row;align-items:center;gap:8px;}
+/* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
+.test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
+.ps-test-badge{display:inline-block;border:2px solid var(--gold2);color:var(--gold2);font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 16px;border-radius:6px;margin-top:16px;}
+.time-bar{display:none;}
 .h-logo-main{font-size:20px;font-weight:700;color:var(--white);letter-spacing:2px;}
 .h-logo-main em{color:var(--gold2);font-style:normal;}
 .h-right{display:flex;align-items:center;gap:14px;}
@@ -776,7 +780,8 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.20</div>
+    <div class="ps-version">version 1.21</div>
+    <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -792,6 +797,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <header class="header">
     <div class="h-logo">
       <div class="h-logo-main">しそチャン<em>NET</em></div>
+      <span class="test-badge">試験放送中</span>
     </div>
     <div class="h-right">
       <div class="h-datetime">
@@ -912,8 +918,8 @@ function makeBanner(name, tagline, bg, accent, icon){
     + '<circle cx="640" cy="14" r="34" fill="#ffffff" opacity="0.07"/>'
     + '<text x="572" y="56" font-family="sans-serif" font-size="42" text-anchor="middle" opacity="0.9">'+icon+'</text>'
     // 上段左: sponsoredバッジ
-    + '<rect x="26" y="11" width="106" height="26" rx="5" fill="#c8992a"/>'
-    + '<text x="79" y="29" font-family="-apple-system,sans-serif" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">sponsored</text>'
+    + '<rect x="26" y="11" width="62" height="26" rx="5" fill="#c8992a"/>'
+    + '<text x="57" y="30" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#ffffff" text-anchor="middle">広告</text>'
     // 上段右: タグライン（sponsoredの右）
     + '<text x="146" y="30" font-family="-apple-system,sans-serif" font-size="19" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
     // 下段: 社名（中央配置・上段に寄せて縦間隔を短縮）
@@ -955,8 +961,8 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
     // アイコン（右端）
     + '<text x="700" y="41" font-family="sans-serif" font-size="32" text-anchor="middle" opacity="0.9">'+icon+'</text>'
     // sponsoredバッジ（左・位置そのまま）
-    + '<rect x="14" y="18" width="84" height="24" rx="4" fill="#c8992a"/>'
-    + '<text x="56" y="35" font-family="-apple-system,sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">sponsored</text>'
+    + '<rect x="14" y="18" width="52" height="24" rx="4" fill="#c8992a"/>'
+    + '<text x="40" y="36" font-family="-apple-system,sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">広告</text>'
     // キャッチフレーズ（中央グループ・左寄せ開始）
     + '<text x="'+catchX.toFixed(1)+'" y="'+baseC+'" font-family="-apple-system,sans-serif" font-size="'+catchFont+'" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
     // 社名（中央グループ・縦幅最大）
@@ -964,19 +970,15 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
     + '</svg>';
 }
 
+// 画像バナーをHTMLに（縦=bannerC/横=banner）。?v=でキャッシュ更新
+function imgBanner(src){return '<img src="'+src+'?v=121" alt="" style="width:100%;display:block;border:0">';}
 var SPONSORS=[
-  {name:'さくら建設株式会社', url:'sponsor-1.html',
-   banner:makeBanner('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️'),
-   bannerC:makeBannerCompact('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️')},
-  {name:'山田電機産業', url:'sponsor-2.html',
-   banner:makeBanner('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡'),
-   bannerC:makeBannerCompact('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡')},
-  {name:'みどり food', url:'sponsor-3.html',
-   banner:makeBanner('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅'),
-   bannerC:makeBannerCompact('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅')},
-  {name:'宍粟リフォーム工業株式会社', url:'sponsor-4.html',
-   banner:makeBanner('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠'),
-   bannerC:makeBannerCompact('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠')}
+  {name:'町家cafe＆ギャラリーさんしょう', url:'https://cafesansyo.com',
+   banner:imgBanner('_banner_sansho_land.jpg'),   // 横向き=2行(写真＋広告＋2行)
+   bannerC:imgBanner('_banner_view.jpg')},        // 縦向き=1行(提供画像)
+  {name:'クラウドファンディング実施中', url:'https://readyfor.jp/projects/shiso-chan',
+   banner:imgBanner('_banner_cf_land.png'),        // 横向き=2行
+   bannerC:imgBanner('_banner_cf_port.png')}       // 縦向き=1行
 ];
 var sponsorIndex=0;
 var _sponsorTimer=null;
