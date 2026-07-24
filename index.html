@@ -789,7 +789,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.30</div>
+    <div class="ps-version">version 1.31</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1390,6 +1390,7 @@ var allT=function(pIdx){var r=[];for(var i=0;i<CS.length;i++)r.push(CS[i]+CO[pId
 
 // ── 状態管理 ──
 var isManual=false,isOff=false;
+var hasPoweredOn=false; // 放送開始ボタンを一度でも押したか（未操作での自動再生を防ぐ）
 var vC=0,vP=0,lC=0,lP=0;
 var ytPlayer=null,ytReady=false;
 var pendingYtId='',pendingSec=0;
@@ -1915,6 +1916,7 @@ function updateSeekBar(){
 }
 
 function periodicCheck(){
+  if(!hasPoweredOn)return; // 放送開始前は一切の自動再生・状態変更をしない（PCで裏面音声再生になる不具合対策）
   if(isManual){refreshLive();return;}
   var pos=nowPos();
   if(!pos){if(!isOff)gotoOffAir();return;}
@@ -1945,6 +1947,7 @@ function armStartBtn(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
+  hasPoweredOn=true;
   userWantsPlay=true;
   var pos = CYCLE.length ? nowPos() : null;
   if(!CYCLE.length){ showLoadErr(scheduleFailed?'error':'loading'); } // 番組表未取得:読み込み中/エラー（届き次第applyScheduleで自動再生）
