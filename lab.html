@@ -5,18 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>しそチャンNET LAB(v1.30検証)</title>
-<link rel="apple-touch-icon" href="icon-180.png?v=130">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=130">
+<title>しそチャンNET LAB(v1.14検証)</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
-<link rel="apple-touch-icon" href="icon-180.png?v=130">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=130">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
-/* タイトル用フォント コーポレートロゴB（Corporate Logo Bold・OFLベース）。タイトル文字だけにサブセット済(約1KB) */
-@font-face{font-family:'CorpLogoB';src:url('corp-logo-b.woff2?v=1') format('woff2');font-weight:700;font-display:swap;}
 :root{
   --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;--green3:#52a070;
   --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
@@ -31,15 +29,12 @@ body{
   user-select:none;
   -webkit-touch-callout:none;
 }
-html{background:var(--forest);}
-/* bodyの背景を深緑に。iOS standaloneは最下部の安全領域をbody背景色で塗るため、これで白帯が消える。本編の明るい背景は#main-contentに持たせる */
-body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;font-size:14px;min-height:100vh;}
+body{background:var(--off);color:var(--text);font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;font-size:14px;min-height:100vh;}
 
 /* ══ 電源画面 ══ */
 #power-screen{position:fixed;inset:0;z-index:999;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
-.ps-logo-main{font-family:'CorpLogoB','Zen Kaku Gothic New',sans-serif;font-size:32px;font-weight:700;color:var(--white);letter-spacing:0.077em;}
-/* NET(英字)はこの書体だとカナより小さく見えるので1.125倍。ベースライン-0.062em下げてカナと高さ(中心)を合わせる */
-.ps-logo-main em{color:var(--gold2);font-style:normal;font-size:1.125em;vertical-align:-0.062em;}
+.ps-logo-main{font-size:32px;font-weight:700;color:var(--white);letter-spacing:4px;}
+.ps-logo-main em{color:var(--gold2);font-style:normal;}
 .ps-version{font-size:11px;color:var(--gold2);letter-spacing:2px;margin-top:12px;font-weight:600;}
 .ps-clock{font-size:52px;font-weight:200;color:var(--white);letter-spacing:4px;font-variant-numeric:tabular-nums;}
 .ps-date-str{font-size:22px;font-weight:300;color:rgba(255,255,255,0.65);letter-spacing:2px;margin-bottom:-6px;}
@@ -49,7 +44,7 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .ps-hint{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;}
 
 /* ══ ヘッダー ══ */
-#main-content{display:none;background:var(--off);}
+#main-content{display:none;}
 .header{
   background:var(--forest);
   padding:0 24px;
@@ -60,13 +55,9 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   position:sticky;top:0;z-index:300;
   box-shadow:0 2px 10px rgba(0,0,0,0.2);
 }
-.h-logo{display:flex;flex-direction:row;align-items:center;gap:8px;}
-/* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
-.test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
-.ps-test-badge{display:inline-block;border:2px solid var(--gold2);color:var(--gold2);font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 16px;border-radius:6px;margin-top:16px;}
-.time-bar{display:none;}
-.h-logo-main{font-family:'CorpLogoB','Zen Kaku Gothic New',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:0.077em;}
-.h-logo-main em{color:var(--gold2);font-style:normal;font-size:1.125em;vertical-align:-0.062em;}
+.h-logo{display:flex;flex-direction:column;}
+.h-logo-main{font-size:20px;font-weight:700;color:var(--white);letter-spacing:2px;}
+.h-logo-main em{color:var(--gold2);font-style:normal;}
 .h-right{display:flex;align-items:center;gap:14px;}
 .h-datetime{display:flex;flex-direction:column;align-items:flex-end;}
 .h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
@@ -133,11 +124,6 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .ended-icon{font-size:38px;opacity:0.5;}
 .ended-ttl{font-size:17px;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:2px;text-align:center;padding:0 20px;}
 .ended-sub{font-size:12px;color:rgba(255,255,255,0.35);letter-spacing:1px;}
-/* 番組表の読み込み中/失敗オーバーレイ＋再読み込みボタン */
-#loaderr-ov{position:absolute;inset:0;z-index:36;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 20px;text-align:center;}
-#loaderr-sub{max-width:340px;line-height:1.7;}
-.reload-btn{margin-top:6px;display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:var(--forest);border:none;cursor:pointer;font-size:16px;font-weight:700;padding:13px 30px;border-radius:6px;font-family:inherit;-webkit-tap-highlight-color:transparent;}
-.reload-btn:active{opacity:0.85;}
 .sw-spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sw-lbl{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;}
@@ -199,9 +185,8 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
   padding-bottom:0;border-radius:0;border:none;box-shadow:none;
-  /* PC全画面(:fullscreen)と同じ物理画面基準に揃える。iOSで100%だと横向きにセーフエリア基準で右へずれるため */
-  width:100vw !important;
-  height:100vh !important;
+  height:100% !important;
+  width:100% !important;
   margin:0 !important;
 }
 .player-wrap.expanded #yt-player-api{position:absolute;inset:0;}
@@ -540,7 +525,7 @@ body.fs-open .player-wrap.expanded{
     padding-right:max(10px, env(safe-area-inset-right));
   }
   .h-date{display:none;}
-  .h-logo-main{font-size:13px;}
+  .h-logo-main{font-size:13px;letter-spacing:1px;}
   .h-time{font-size:14px;}
   .onair-badge{padding:2px 6px;font-size:8px;}
   /* ●LIVEと番組タイトルバー：コンパクト表示 */
@@ -790,8 +775,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.30-orig（検証）</div>
-    <div class="ps-test-badge">試験放送中</div>
+    <div class="ps-version">version 1.14-orig（検証）</div>
   </div>
   <div style="height:18px"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -807,7 +791,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   <header class="header">
     <div class="h-logo">
       <div class="h-logo-main">しそチャン<em>NET</em></div>
-      <span class="test-badge">試験放送中</span>
     </div>
     <div class="h-right">
       <div class="h-datetime">
@@ -843,11 +826,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
           <div class="ended-icon">📺</div>
           <div class="ended-ttl">本日の放送は終了しました</div>
           <div class="ended-sub">次の放送は 06:00 から始まります</div>
-        </div>
-        <div id="loaderr-ov">
-          <div class="ended-ttl" id="loaderr-ttl">番組表を読み込み中…</div>
-          <div class="ended-sub" id="loaderr-sub"></div>
-          <button class="reload-btn" id="reload-btn" onclick="location.reload()" style="display:none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.65 6.35A7.96 7.96 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L13 11h7V4z"/></svg>再読み込み</button>
         </div>
         <div id="sw-ov">
           <div class="sw-spinner"></div>
@@ -912,7 +890,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
     </div>
   </div>
 
-  <footer class="footer">© 宍粟市　しそチャンNET　プロトタイプ版</footer>
+  <footer class="footer">© 宍粟市　しそチャンNET　プロトタイプ版　｜　秘書広報課　TEL 0790-63-3115</footer>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -933,8 +911,8 @@ function makeBanner(name, tagline, bg, accent, icon){
     + '<circle cx="640" cy="14" r="34" fill="#ffffff" opacity="0.07"/>'
     + '<text x="572" y="56" font-family="sans-serif" font-size="42" text-anchor="middle" opacity="0.9">'+icon+'</text>'
     // 上段左: sponsoredバッジ
-    + '<rect x="26" y="11" width="62" height="26" rx="5" fill="#c8992a"/>'
-    + '<text x="57" y="30" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#ffffff" text-anchor="middle">広告</text>'
+    + '<rect x="26" y="11" width="106" height="26" rx="5" fill="#c8992a"/>'
+    + '<text x="79" y="29" font-family="-apple-system,sans-serif" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">sponsored</text>'
     // 上段右: タグライン（sponsoredの右）
     + '<text x="146" y="30" font-family="-apple-system,sans-serif" font-size="19" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
     // 下段: 社名（中央配置・上段に寄せて縦間隔を短縮）
@@ -976,8 +954,8 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
     // アイコン（右端）
     + '<text x="700" y="41" font-family="sans-serif" font-size="32" text-anchor="middle" opacity="0.9">'+icon+'</text>'
     // sponsoredバッジ（左・位置そのまま）
-    + '<rect x="14" y="18" width="52" height="24" rx="4" fill="#c8992a"/>'
-    + '<text x="40" y="36" font-family="-apple-system,sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">広告</text>'
+    + '<rect x="14" y="18" width="84" height="24" rx="4" fill="#c8992a"/>'
+    + '<text x="56" y="35" font-family="-apple-system,sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">sponsored</text>'
     // キャッチフレーズ（中央グループ・左寄せ開始）
     + '<text x="'+catchX.toFixed(1)+'" y="'+baseC+'" font-family="-apple-system,sans-serif" font-size="'+catchFont+'" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
     // 社名（中央グループ・縦幅最大）
@@ -985,18 +963,19 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
     + '</svg>';
 }
 
-// 画像バナーをHTMLに（縦=bannerC/横=banner）。?v=でキャッシュ更新
-function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="width:100%;display:block;border:0">';}
 var SPONSORS=[
-  {name:'町家cafe＆ギャラリーさんしょう', url:'https://cafesansyo.com',
-   banner:imgBanner('_banner_sansho_land.jpg'),   // 横向き(1400x320)
-   bannerC:imgBanner('_banner_view.jpg')},        // 縦向き(2300x210・提供画像)
-  {name:'クラウドファンディング実施中', url:'https://readyfor.jp/projects/shiso-chan',
-   banner:imgBanner('_banner_cf_land.png'),        // 横向き(1400x320)
-   bannerC:imgBanner('_banner_cf_port.png')},      // 縦向き(2300x210)
-  {name:'バナー広告募集中', url:'',                 // リンク先は未設定（クリックで遷移しない）
-   banner:imgBanner('_banner_recruit_land.jpg'),   // 横向き(1400x320)
-   bannerC:imgBanner('_banner_recruit_port.jpg')}  // 縦向き(2300x210)
+  {name:'さくら建設株式会社', url:'sponsor-1.html',
+   banner:makeBanner('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️'),
+   bannerC:makeBannerCompact('さくら建設株式会社','地域の未来を、たしかな技術で','#0a3d62','#e84118','🏗️')},
+  {name:'山田電機産業', url:'sponsor-2.html',
+   banner:makeBanner('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡'),
+   bannerC:makeBannerCompact('山田電機産業','電気の力で暮らしと産業を支える','#d35400','#ffd32a','⚡')},
+  {name:'みどり food', url:'sponsor-3.html',
+   banner:makeBanner('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅'),
+   bannerC:makeBannerCompact('みどり food','宍粟の恵みを、食卓へ','#5c8a3a','#d35400','🍅')},
+  {name:'宍粟リフォーム工業株式会社', url:'sponsor-4.html',
+   banner:makeBanner('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠'),
+   bannerC:makeBannerCompact('宍粟リフォーム工業','住まいの困ったを解決します','#8e44ad','#16a085','🏠')}
 ];
 var sponsorIndex=0;
 var _sponsorTimer=null;
@@ -1060,22 +1039,19 @@ function attachSponsorSwipe(el){
 // ══════════════════════════════════════════════
 //  番組定義
 // ══════════════════════════════════════════════
-// 番組表はFirestoreで一元管理し、コード側に固定番組表は持たない（番組変更時にコードを触らないため）。
-// 起動時は前回正常取得できたキャッシュから復元。無ければ空＝「読み込み中」表示のまま取得を待つ。
-var S=6,E=24,CM=120;
-var CYCLE=[];
-(function initScheduleFromCache(){
-  try{
-    var c=JSON.parse(localStorage.getItem('shisochan_schedule_cache_v1')||'null');
-    if(c&&c.data&&validSchedule(c.data)===''){
-      CYCLE=c.data.cycle;
-      if(c.data.airStart!=null)S=c.data.airStart;
-      if(c.data.airEnd!=null)E=c.data.airEnd;
-      if(c.data.cycleMinutes!=null)CM=c.data.cycleMinutes;
-    }
-  }catch(_){}
-})();
-var NC=(E-S)*60/CM;
+var CYCLE=[
+  {title:'市政20周年記念映像「宍粟市20年のあゆみ」',               cat:'市政情報',       ytId:'dbsj3CWSLiE',dur:10},
+  {title:'綾瀬はるかさん主演映画「ルート29」宍粟市ロケ地めぐり',   cat:'観光・文化',     ytId:'Qp0Tx46GBY0',dur:20},
+  {title:'宍粟を歩いて制覇「市役所～山崎西小」',                    cat:'スポーツ・健康', ytId:'XbXiujutzMk',dur:30},
+  {title:'歴史小説『風奔る』〜物語の生まれた風景を訪ねて〜',        cat:'歴史・文化',     ytId:'2ChiZEqM3HQ',dur:30},
+  {title:'宍粟を歩いて制覇（再）「山崎西小学校～八重谷峠」',        cat:'スポーツ・健康', ytId:'KYgGtYHDA3I',dur:30},
+  {title:'グラウンドゴルフで挑戦状「VS伊和グラウンドゴルフクラブ」',cat:'スポーツ・健康', ytId:'34qaae2COfo',dur:15},
+  {title:'やるで！YTS「田植え体験」',                               cat:'産業・農業',     ytId:'qNTiySv0QMc',dur:13},
+  {title:'宍粟市職員募集動画１',                                     cat:'市政情報',       ytId:'Uj8V8s2Mt7M',dur:2},
+  {title:'しそうトピックス「雪害対処訓練」',                         cat:'市政情報',       ytId:'4zrqPyh6DO8',dur:15},
+  {title:'360年以上に亘る伝承「宇原獅子舞」',                       cat:'歴史・伝統',     ytId:'cmHAVfNYqLU',dur:15},
+];
+var S=6,E=24,CM=180,NC=(E-S)*60/CM;
 var CS=[];for(var i=0;i<NC;i++)CS.push(S*60+i*CM);
 var CO=[];var _a=0;for(var i=0;i<CYCLE.length;i++){CO.push(_a);_a+=CYCLE[i].dur;}
 
@@ -1086,8 +1062,8 @@ var CO=[];var _a=0;for(var i=0;i<CYCLE.length;i++){CO.push(_a);_a+=CYCLE[i].dur;
 //  取得失敗・データ不正時も内蔵番組表に自動フォールバックし放送は止まらない。
 // ══════════════════════════════════════════════
 var FIREBASE={
-  projectId:'shisochan-net',  // ← 手順書で取得した「プロジェクトID」を''の間に貼る
-  apiKey:'AIzaSyCrgNeYr8vLUHzEJMFIgSDm-WheRCPVS3Q'      // ← 手順書で取得した「ウェブAPIキー」を''の間に貼る
+  projectId:'shisochan-net',  // LAB: 現行設定を注入して新動画で比較
+  apiKey:'AIzaSyCrgNeYr8vLUHzEJMFIgSDm-WheRCPVS3Q'
 };
 
 // Firestore RESTの型付き値 → 素のJS値
@@ -1130,36 +1106,14 @@ function applySchedule(d){
   CS=[];for(var i=0;i<NC;i++)CS.push(S*60+i*CM);
   CO=[];var a=0;for(var j=0;j<CYCLE.length;j++){CO.push(a);a+=CYCLE[j].dur;}
   try{renderSB();}catch(_){}
-  scheduleFailed=false; try{showLoadErr('hide');}catch(_){}
-  // 視聴意思がある場合は現在番組へ同期。番組表が未取得のまま放送開始→off-air表示になっていた時も、
-  // 番組表が届いた時点で放送時間内なら再生へ復帰する（isOffを解除）。
-  if(userWantsPlay&&!isManual){var pos=nowPos();if(pos){isOff=false;playSchedule(pos.c,pos.p);}}
+  if(userWantsPlay&&!isManual&&!isOff){var pos=nowPos();if(pos)playSchedule(pos.c,pos.p);}
 }
 
-// 番組表の読み込み中/失敗オーバーレイ表示（映像エリア）。state: 'loading'|'error'|'hide'
-var scheduleFailed=false;
-function showLoadErr(state){
-  var ov=document.getElementById('loaderr-ov'); if(!ov)return;
-  if(state==='hide'){ ov.style.display='none'; return; }
-  var eo=document.getElementById('ended-ov'); if(eo)eo.style.display='none';
-  var ttl=document.getElementById('loaderr-ttl'), sub=document.getElementById('loaderr-sub'), btn=document.getElementById('reload-btn');
-  if(state==='error'){
-    ttl.textContent='番組表を読み込めませんでした';
-    sub.textContent='通信環境をご確認のうえ、下のボタンを押すか、アプリを一度終了して再起動してください。';
-    btn.style.display='inline-flex';
-  }else{
-    ttl.textContent='番組表を読み込み中…';
-    sub.textContent=''; btn.style.display='none';
-  }
-  ov.style.display='flex';
-}
-// 取得本体：当日キャッシュ→Firestore(数回リトライ)→期限切れキャッシュ→読み込み中(自動再試行)
-// 番組表は常にFirestoreが正。コード側に固定番組表は持たない。
+// 取得本体：当日キャッシュ→Firestore→期限切れキャッシュ→内蔵、の順で安全に選ぶ
 function loadRemoteSchedule(){
-  if(!FIREBASE.projectId||!FIREBASE.apiKey)return; // 未設定なら何もしない
+  if(!FIREBASE.projectId||!FIREBASE.apiKey)return; // 未設定＝内蔵番組表で従来どおり
   var KEY='shisochan_schedule_cache_v1';
-  // 放送日は6:00始まり：6時前は前日扱い→6:00の初回起動で当日分を取り直す（＝更新は放送開始6時基準）
-  var d0=new Date(Date.now()-6*3600*1000);
+  var d0=new Date();
   var today=d0.getFullYear()+'-'+(d0.getMonth()+1)+'-'+d0.getDate();
   var force=/[?&]fresh=1/.test(location.search); // 動作確認用: ?fresh=1 でキャッシュ無視
   var cached=null;
@@ -1168,30 +1122,18 @@ function loadRemoteSchedule(){
     applySchedule(cached.data);return; // 当日キャッシュで完結（費用節約: 1日1回取得）
   }
   var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/schedule?key='+encodeURIComponent(FIREBASE.apiKey);
-  var attempt=0, MAX=4;
-  function useCacheOrWait(){
-    // 期限切れでも前回の番組表があればそれを使う（オフライン等）。無ければ読み込み中のまま自動再試行。
-    if(cached&&cached.data&&validSchedule(cached.data)===''){ applySchedule(cached.data); }
-    else { scheduleFailed=true; try{renderSB();}catch(_){}  try{showLoadErr('error');}catch(_){}
-           setTimeout(function(){ scheduleFailed=false; try{showLoadErr('loading');}catch(_){} attempt=0; tryFetch(); }, 15000); }
-  }
-  function tryFetch(){
-    attempt++;
-    fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-    .then(function(doc){
-      var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
-      var err=validSchedule(d);
-      if(err){console.warn('[番組表] データ不正: '+err);throw new Error('invalid-data');}
-      try{localStorage.setItem(KEY,JSON.stringify({day:today,data:d}));}catch(_){}
-      applySchedule(d);
-    })
-    .catch(function(e){
-      console.warn('[番組表] 取得失敗('+e.message+') 試行'+attempt+'/'+MAX);
-      if(attempt<MAX){ setTimeout(tryFetch, attempt*2000); } // 2s,4s,6s とリトライ
-      else { useCacheOrWait(); }
-    });
-  }
-  tryFetch();
+  fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(doc){
+    var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
+    var err=validSchedule(d);
+    if(err){console.warn('[番組表] データ不正: '+err+' → 内蔵番組表で継続');return;}
+    try{localStorage.setItem(KEY,JSON.stringify({day:today,data:d}));}catch(_){}
+    applySchedule(d);
+  })
+  .catch(function(e){
+    console.warn('[番組表] 取得失敗('+e.message+') → キャッシュ/内蔵で継続');
+    if(cached&&cached.data&&validSchedule(cached.data)==='')applySchedule(cached.data);
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -1367,7 +1309,6 @@ var nowF=function(){var d=new Date();return d.getHours()*60+d.getMinutes()+d.get
 var inAir=function(){var n=nowF();return n>=S*60&&n<E*60;};
 
 function nowPos(){
-  if(!CYCLE.length)return null; // 番組表未取得（読み込み中）は現在番組なし扱い
   if(!inAir())return null;
   var n=nowF();
   for(var c=NC-1;c>=0;c--){
@@ -1809,13 +1750,6 @@ function addTap(el,onTap){
 function renderSB(){
   var list=document.getElementById('sb-list');
   list.innerHTML='';
-  if(!CYCLE.length){ // 番組表がまだ取得できていない（初回起動＋通信待ち等）
-    var m=document.createElement('div');
-    m.style.cssText='padding:26px 16px;color:var(--text3);font-size:13px;text-align:center;line-height:1.7;';
-    m.textContent='番組表を読み込み中…';
-    list.appendChild(m);
-    return;
-  }
   for(var pIdx=0;pIdx<CYCLE.length;pIdx++){
     (function(pIdx){
       var prog=CYCLE[pIdx];
@@ -1947,10 +1881,8 @@ function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
   userWantsPlay=true;
-  var pos = CYCLE.length ? nowPos() : null;
-  if(!CYCLE.length){ showLoadErr(scheduleFailed?'error':'loading'); } // 番組表未取得:読み込み中/エラー（届き次第applyScheduleで自動再生）
-  else if(pos){ playSchedule(pos.c,pos.p); }
-  else { gotoOffAir(); }
+  var pos=nowPos();
+  if(pos)playSchedule(pos.c,pos.p);else gotoOffAir();
   // iPhoneのみ: ジェスチャーチェーン内でplayVideoを直接呼ぶ
   if(isIOS&&ytPlayer&&ytReady){
     try{ytPlayer.playVideo();}catch(_){}
@@ -2369,7 +2301,7 @@ document.addEventListener('contextmenu', function(e){e.preventDefault();});
 document.addEventListener('touchstart', function(){}, {passive:true});
 </script>
 <script>
-// LAB計測表示（v1.30素の状態にズレが出るか切り分ける用）
+// LAB計測表示（v1.14素の状態＋新動画で、ズレるか切り分ける用）
 (function(){
   function add(){
     if(!document.body) return setTimeout(add,50);
@@ -2390,7 +2322,7 @@ document.addEventListener('touchstart', function(){}, {passive:true});
       var yt=document.getElementById('yt-player-api');
       var pr=pw?pw.getBoundingClientRect():null;
       var yr=yt?yt.getBoundingClientRect():null;
-      var t='v1.30-orig  iW/iH '+window.innerWidth+'x'+window.innerHeight+' dpr'+window.devicePixelRatio+'\n';
+      var t='v1.14-orig  iW/iH '+window.innerWidth+'x'+window.innerHeight+' dpr'+window.devicePixelRatio+'\n';
       t+='safe L'+cs.paddingLeft+' R'+cs.paddingRight+' T'+cs.paddingTop+' B'+cs.paddingBottom+'\n';
       t+='exp:'+(!!(pw&&pw.classList.contains('expanded')))+'\n';
       if(pr)t+='PW  l'+r(pr.left)+' t'+r(pr.top)+' '+r(pr.width)+'x'+r(pr.height)+'\n';
