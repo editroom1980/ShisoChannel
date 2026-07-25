@@ -794,7 +794,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.38-lab（固定サイズ版）</div>
+    <div class="ps-version">version 1.39-lab（固定1920×1080）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1416,7 +1416,7 @@ function onYouTubeIframeAPIReady(){
   if(ytInitialized)return; // キャッシュ等による二重呼び出しを防止
   ytInitialized=true;
   ytPlayer=new YT.Player('yt-player-api',{
-    width:1280,height:720,
+    width:1920,height:1080,
     playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1,cc_load_policy:0},
     events:{
       onStateChange:function(e){
@@ -1491,7 +1491,9 @@ var isExpanded=false,fsUiTimer=null;
 // 以後どの向き・回転でも作り直し不要＝ズレない。表示はCSS transformで枠に合わせる。
 // ★重要: サイズの固定(width/height)は枠が非表示(サイズ0)でも必ず行う。動画ロード前に
 //         内部サイズを1280×720に確定させることが肝（前回labの取りこぼしを修正）。
-var _fitW0=1280,_fitH0=720;
+// 内部固定サイズ（16:9）。素材が最大1080pなので1920×1080が素材そのままの最高画質。
+// 将来4K素材にするなら 3840×2160 に変えるだけ（アスペクト比同じなのでフィット計算は不変）。
+var _fitW0=1920,_fitH0=1080;
 function fitPlayer(){
   var yt=document.getElementById('yt-player-api');
   if(!yt) return;
