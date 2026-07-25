@@ -197,10 +197,12 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 /* 疑似全画面状態 */
 .player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
-  padding-bottom:0;border-radius:0;border:none;box-shadow:none;
-  /* PC全画面(:fullscreen)と同じ物理画面基準に揃える。iOSで100%だと横向きにセーフエリア基準で右へずれるため */
-  width:100vw !important;
-  height:100vh !important;
+  border-radius:0;border:none;box-shadow:none;
+  /* 疑似全画面は inset:0 でビューポートちょうどに収める（幅高はinsetに任せる=auto）。
+     iOS横向きでは 100vw が実可視幅より広くなり映像が右へはみ出して切れるため、100vw/100vhは使わない。 */
+  width:auto !important;
+  height:auto !important;
+  padding:0 !important;
   margin:0 !important;
 }
 .player-wrap.expanded #yt-player-api{position:absolute;inset:0;}
@@ -792,7 +794,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.33</div>
+    <div class="ps-version">version 1.34</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
