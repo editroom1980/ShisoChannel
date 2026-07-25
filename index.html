@@ -794,7 +794,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.34</div>
+    <div class="ps-version">version 1.35</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1483,6 +1483,24 @@ function onYouTubeIframeAPIReady(){
 // ══════════════════════════════════════════════
 var isExpanded=false,fsUiTimer=null;
 
+// YouTubeプレイヤーを現在のコンテナサイズで再レイアウトさせる。
+// iOSでは動画をロードした時の向き(サイズ)で内部レイアウトが固定され、画面回転しても
+// 再計算されず映像が横にズレる（縦向きで再生→横向きにするとズレる、が実機で確定）。
+// setSizeで公式に新サイズを通知し、さらにiframe幅を一瞬変えて実サイズ差を作り、
+// YouTube内部のリサイズ検知を強制発火させて再配置させる。
+var _relayoutTimer=null;
+function forcePlayerRelayout(){
+  var yt=document.getElementById('yt-player-api');
+  if(!yt||!ytReady) return;
+  var pw=document.getElementById('player-wrap');
+  try{ if(ytPlayer&&ytPlayer.setSize&&pw){ ytPlayer.setSize(pw.clientWidth, pw.clientHeight); } }catch(_){}
+  try{
+    yt.style.width='99.5%';
+    if(_relayoutTimer)clearTimeout(_relayoutTimer);
+    _relayoutTimer=setTimeout(function(){ yt.style.width=''; _relayoutTimer=null; },70);
+  }catch(_){}
+}
+
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
@@ -1511,6 +1529,8 @@ function openExpand(){
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
   }
   showFsUi();
+  // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
+  setTimeout(forcePlayerRelayout,80); setTimeout(forcePlayerRelayout,350);
 }
 
 function closeExpand(){
@@ -1566,6 +1586,8 @@ function closeExpand(){
       }catch(_){}
     },200);
   }
+  // 全画面解除でサイズが戻るため、YouTube内部を再レイアウト
+  setTimeout(forcePlayerRelayout,80); setTimeout(forcePlayerRelayout,350);
 }
 
 function showFsUi(){
@@ -2161,7 +2183,20 @@ function init(){
   attachSponsorSwipe(document.getElementById('fs-sponsor'));
   // 画面回転・リサイズ時にバナーを再描画（縦↔横でコンパクト版を切替）
   window.addEventListener('resize', updateSponsorDisplay);
-  window.addEventListener('orientationchange', function(){ setTimeout(updateSponsorDisplay,100); });
+  window.addEventListener('orientationchange', function(){
+    setTimeout(updateSponsorDisplay,100);
+    // 画面回転でYouTube内部が旧サイズのまま映像が横ズレするため、寸法が確定した頃に再レイアウト
+    setTimeout(forcePlayerRelayout,200); setTimeout(forcePlayerRelayout,600);
+  });
+  // 回転がresizeとして来る端末（iOS等）への保険。幅が変わった時＝回転時のみ再レイアウト
+  // （URLバー開閉の高さ変化では発火させない＝不要なチラつき防止）。連続発火はデバウンス。
+  var _rzTimer=null, _lastW=window.innerWidth;
+  window.addEventListener('resize', function(){
+    if(window.innerWidth===_lastW) return;
+    _lastW=window.innerWidth;
+    if(_rzTimer)clearTimeout(_rzTimer);
+    _rzTimer=setTimeout(function(){ _rzTimer=null; forcePlayerRelayout(); },250);
+  });
   // スポンサーリンクから戻った時に再生を再開（タブ復帰・bfキャッシュ復元）
   // userWantsPlay基準: iOSが自動一時停止してもユーザーの再生意図があれば再開
   function resumeIfWanted(){
