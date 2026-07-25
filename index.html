@@ -416,8 +416,11 @@ body.fs-open .player-wrap.expanded{
   display:flex;align-items:center;
   padding:5px 12px 3px;
   border-bottom:1px solid var(--green5);
-  gap:0;flex-wrap:nowrap;overflow:hidden;
+  gap:0;flex-wrap:nowrap;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
+.time-bar::-webkit-scrollbar{display:none;}
 .time-chip-item{
   font-size:10px;font-weight:600;color:var(--text3);
   padding:1px 4px;border-radius:2px;
@@ -789,7 +792,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.32</div>
+    <div class="ps-version">version 1.33</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1755,9 +1758,9 @@ function refreshLive(){
   var c=pos.c,p=pos.p;lC=c;lP=p;
   document.getElementById('onair-badge').classList.remove('off');
   document.getElementById('bdot').className='bdot';
-  // viewing-title更新（LIVE番組名）
+  // viewing-title更新（LIVE番組名）。手動再生中は上書きしない（setViewUIが手動番組の題/カテゴリを表示済みのため）
   var vt=document.getElementById('viewing-title');
-  if(vt)vt.textContent=CYCLE[p].title;
+  if(vt&&!isManual)vt.textContent=CYCLE[p].title;
   setLiveBtn(isManual?'manual':'live');
 }
 function hlSB(c,p){
@@ -1782,6 +1785,15 @@ function hlSB(c,p){
       }else if(relTop+rowH>listH){
         list.scrollTop=scrollTop+relTop+rowH-listH+8;
       }
+    }
+  }
+  // 各番組の時刻バーを現在サイクル(c)の位置へ横スクロール（現在時刻の目盛りが画面外に隠れないように）
+  for(var pi=0;pi<CYCLE.length;pi++){
+    var tb=document.querySelector('#row-'+pi+' .time-bar');
+    var cc=document.getElementById('chip-'+pi+'-'+c);
+    if(tb&&cc){
+      var delta=(cc.getBoundingClientRect().left-tb.getBoundingClientRect().left)-tb.clientWidth/2+cc.offsetWidth/2;
+      tb.scrollLeft+=delta;
     }
   }
 }
@@ -1875,6 +1887,10 @@ function renderSB(){
 // ══════════════════════════════════════════════
 //  定期チェック・時計・電源・初期化
 // ══════════════════════════════════════════════
+// 再生/一時停止アイコンのSVGパス（グローバル。updateSeekBar等から参照。以前はtogglePlayPause内ローカルのみで
+// updateSeekBarが未定義参照→例外でシークバー幅更新が実行されない不具合があった）
+var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+var playPath='<path d="M8 5v14l11-7z"/>';
 // ── シークバー更新（1秒毎・実際の再生位置と連動） ──
 function updateSeekBar(){
   if(!ytPlayer||!ytReady)return;
