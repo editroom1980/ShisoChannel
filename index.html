@@ -789,7 +789,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.31</div>
+    <div class="ps-version">version 1.32</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1065,7 +1065,7 @@ var S=6,E=24,CM=120;
 var CYCLE=[];
 (function initScheduleFromCache(){
   try{
-    var c=JSON.parse(localStorage.getItem('shisochan_schedule_cache_v1')||'null');
+    var c=JSON.parse(localStorage.getItem('shisochan_schedule_cache_v2')||'null');
     if(c&&c.data&&validSchedule(c.data)===''){
       CYCLE=c.data.cycle;
       if(c.data.airStart!=null)S=c.data.airStart;
@@ -1152,37 +1152,44 @@ function showLoadErr(state){
   }
   ov.style.display='flex';
 }
-// 取得本体：当日キャッシュ→Firestore(数回リトライ)→期限切れキャッシュ→読み込み中(自動再試行)
+// 番組表の内容シグネチャ（同一データの無駄な再適用＝再生の巻き戻しを防ぐための比較用）
+function schedSig(d){
+  var s=d.airStart+'|'+d.airEnd+'|'+d.cycleMinutes+'|';
+  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+p.title+':'+p.cat+';';}
+  return s;
+}
+// 取得本体（stale-while-revalidate）：キャッシュがあれば即描画し、必ずサーバーの最新も取得して
+// 変わっていればその場で差し替える。→ 番組表の更新が当日中に全端末へ反映される（旧: 1日1回取得だと当日反映されない不具合を修正）。
 // 番組表は常にFirestoreが正。コード側に固定番組表は持たない。
 function loadRemoteSchedule(){
   if(!FIREBASE.projectId||!FIREBASE.apiKey)return; // 未設定なら何もしない
-  var KEY='shisochan_schedule_cache_v1';
-  // 放送日は6:00始まり：6時前は前日扱い→6:00の初回起動で当日分を取り直す（＝更新は放送開始6時基準）
-  var d0=new Date(Date.now()-6*3600*1000);
-  var today=d0.getFullYear()+'-'+(d0.getMonth()+1)+'-'+d0.getDate();
-  var force=/[?&]fresh=1/.test(location.search); // 動作確認用: ?fresh=1 でキャッシュ無視
+  var KEY='shisochan_schedule_cache_v2'; // v2: 「1日1回」キャッシュを廃し常に最新確認する設計へ（旧v1キャッシュは無視される）
   var cached=null;
   try{cached=JSON.parse(localStorage.getItem(KEY)||'null');}catch(_){}
-  if(!force&&cached&&cached.day===today&&cached.data&&validSchedule(cached.data)===''){
-    applySchedule(cached.data);return; // 当日キャッシュで完結（費用節約: 1日1回取得）
+  var appliedSig=''; // 現在アプリに適用済みの番組表のシグネチャ（空=未適用）
+  // 1) キャッシュがあれば即描画（高速表示＋オフライン耐性）。ただし必ず最新を取りに行く。
+  if(cached&&cached.data&&validSchedule(cached.data)===''){
+    applySchedule(cached.data);
+    appliedSig=schedSig(cached.data);
   }
   var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/schedule?key='+encodeURIComponent(FIREBASE.apiKey);
   var attempt=0, MAX=4;
   function useCacheOrWait(){
-    // 期限切れでも前回の番組表があればそれを使う（オフライン等）。無ければ読み込み中のまま自動再試行。
-    if(cached&&cached.data&&validSchedule(cached.data)===''){ applySchedule(cached.data); }
-    else { scheduleFailed=true; try{renderSB();}catch(_){}  try{showLoadErr('error');}catch(_){}
-           setTimeout(function(){ scheduleFailed=false; try{showLoadErr('loading');}catch(_){} attempt=0; tryFetch(); }, 15000); }
+    // 取得失敗時：既にキャッシュを適用済みならそのまま継続（オフライン等）。無ければ読み込み中のまま自動再試行。
+    if(appliedSig) return;
+    scheduleFailed=true; try{renderSB();}catch(_){}  try{showLoadErr('error');}catch(_){}
+    setTimeout(function(){ scheduleFailed=false; try{showLoadErr('loading');}catch(_){} attempt=0; tryFetch(); }, 15000);
   }
   function tryFetch(){
     attempt++;
-    fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(doc){
       var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
       var err=validSchedule(d);
       if(err){console.warn('[番組表] データ不正: '+err);throw new Error('invalid-data');}
-      try{localStorage.setItem(KEY,JSON.stringify({day:today,data:d}));}catch(_){}
-      applySchedule(d);
+      try{localStorage.setItem(KEY,JSON.stringify({data:d}));}catch(_){}
+      var sig=schedSig(d);
+      if(sig!==appliedSig){ applySchedule(d); appliedSig=sig; } // 変わった時だけ差し替え（無駄な再生切替を防ぐ）
     })
     .catch(function(e){
       console.warn('[番組表] 取得失敗('+e.message+') 試行'+attempt+'/'+MAX);
