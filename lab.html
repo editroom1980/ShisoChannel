@@ -795,7 +795,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.37-lab（テスト版）</div>
+    <div class="ps-version">version 1.37-lab2（診断版）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2344,6 +2344,40 @@ function init(){
   }
 }
 init();
+
+// ★LAB専用デバッグ表示：全画面横向きの実測値を画面に出す（原因特定用）。本番には入れない。
+(function(){
+  var probe=document.createElement('div');
+  probe.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
+    +'padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);'
+    +'padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);';
+  document.body.appendChild(probe);
+  var dbg=document.createElement('div');
+  dbg.style.cssText='position:fixed;left:50%;top:2px;transform:translateX(-50%);z-index:100000;'
+    +'background:rgba(0,0,0,.82);color:#3f6;font:11px/1.4 monospace;padding:5px 8px;'
+    +'white-space:pre;pointer-events:none;border-radius:5px;max-width:96vw;';
+  document.body.appendChild(dbg);
+  function r(n){return Math.round(n);}
+  function upd(){
+    var cs=getComputedStyle(probe);
+    var pw=document.getElementById('player-wrap');
+    var yt=document.getElementById('yt-player-api');
+    var pr=pw?pw.getBoundingClientRect():null;
+    var yr=yt?yt.getBoundingClientRect():null;
+    var vv=window.visualViewport;
+    var t='iW/iH '+window.innerWidth+'x'+window.innerHeight+'  scr '+screen.width+'x'+screen.height+' dpr'+window.devicePixelRatio+'\n';
+    if(vv)t+='vv '+r(vv.width)+'x'+r(vv.height)+' off('+r(vv.offsetLeft)+','+r(vv.offsetTop)+') sc'+vv.scale.toFixed(2)+'\n';
+    t+='safe L'+cs.paddingLeft+' R'+cs.paddingRight+' T'+cs.paddingTop+' B'+cs.paddingBottom+'\n';
+    t+='exp:'+(!!(pw&&pw.classList.contains('expanded')))+'  W0xH0 '+(window._fitW0)+'x'+(window._fitH0)+'\n';
+    if(pr)t+='PW  l'+r(pr.left)+' t'+r(pr.top)+' '+r(pr.width)+'x'+r(pr.height)+'\n';
+    if(yr)t+='YT  l'+r(yr.left)+' t'+r(yr.top)+' '+r(yr.width)+'x'+r(yr.height)+'\n';
+    if(yt)t+='YTstyle w='+(yt.style.width||'-')+' tf='+(yt.style.transform||'-');
+    dbg.textContent=t;
+  }
+  setInterval(upd,400); upd();
+  window.addEventListener('resize',upd);
+  window.addEventListener('orientationchange',function(){setTimeout(upd,300);});
+})();
 
 // ============================================================
 // チャンネルボタンブロック：
