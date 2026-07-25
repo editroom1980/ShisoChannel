@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow"><!-- テスト版: 検索避け -->
+<meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>しそチャンNET LAB（テスト版）</title>
+<title>しそチャンNET LAB(v1.30検証)</title>
 <link rel="apple-touch-icon" href="icon-180.png?v=130">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=130">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -198,12 +198,10 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 /* 疑似全画面状態 */
 .player-wrap.expanded{
   position:fixed;inset:0;z-index:500;
-  border-radius:0;border:none;box-shadow:none;
-  /* 疑似全画面は inset:0 でビューポートちょうどに収める（幅高はinsetに任せる=auto）。
-     iOS横向きでは 100vw が実可視幅より広くなり映像が右へはみ出して切れるため、100vw/100vhは使わない。 */
-  width:auto !important;
-  height:auto !important;
-  padding:0 !important;
+  padding-bottom:0;border-radius:0;border:none;box-shadow:none;
+  /* PC全画面(:fullscreen)と同じ物理画面基準に揃える。iOSで100%だと横向きにセーフエリア基準で右へずれるため */
+  width:100vw !important;
+  height:100vh !important;
   margin:0 !important;
 }
 .player-wrap.expanded #yt-player-api{position:absolute;inset:0;}
@@ -419,11 +417,8 @@ body.fs-open .player-wrap.expanded{
   display:flex;align-items:center;
   padding:5px 12px 3px;
   border-bottom:1px solid var(--green5);
-  gap:0;flex-wrap:nowrap;
-  overflow-x:auto;overflow-y:hidden;
-  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  gap:0;flex-wrap:nowrap;overflow:hidden;
 }
-.time-bar::-webkit-scrollbar{display:none;}
 .time-chip-item{
   font-size:10px;font-weight:600;color:var(--text3);
   padding:1px 4px;border-radius:2px;
@@ -795,7 +790,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.37-lab2（診断版）</div>
+    <div class="ps-version">version 1.30-orig（検証）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1071,7 +1066,7 @@ var S=6,E=24,CM=120;
 var CYCLE=[];
 (function initScheduleFromCache(){
   try{
-    var c=JSON.parse(localStorage.getItem('shisochan_schedule_cache_v2')||'null');
+    var c=JSON.parse(localStorage.getItem('shisochan_schedule_cache_v1')||'null');
     if(c&&c.data&&validSchedule(c.data)===''){
       CYCLE=c.data.cycle;
       if(c.data.airStart!=null)S=c.data.airStart;
@@ -1158,44 +1153,37 @@ function showLoadErr(state){
   }
   ov.style.display='flex';
 }
-// 番組表の内容シグネチャ（同一データの無駄な再適用＝再生の巻き戻しを防ぐための比較用）
-function schedSig(d){
-  var s=d.airStart+'|'+d.airEnd+'|'+d.cycleMinutes+'|';
-  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+p.title+':'+p.cat+';';}
-  return s;
-}
-// 取得本体（stale-while-revalidate）：キャッシュがあれば即描画し、必ずサーバーの最新も取得して
-// 変わっていればその場で差し替える。→ 番組表の更新が当日中に全端末へ反映される（旧: 1日1回取得だと当日反映されない不具合を修正）。
+// 取得本体：当日キャッシュ→Firestore(数回リトライ)→期限切れキャッシュ→読み込み中(自動再試行)
 // 番組表は常にFirestoreが正。コード側に固定番組表は持たない。
 function loadRemoteSchedule(){
   if(!FIREBASE.projectId||!FIREBASE.apiKey)return; // 未設定なら何もしない
-  var KEY='shisochan_schedule_cache_v2'; // v2: 「1日1回」キャッシュを廃し常に最新確認する設計へ（旧v1キャッシュは無視される）
+  var KEY='shisochan_schedule_cache_v1';
+  // 放送日は6:00始まり：6時前は前日扱い→6:00の初回起動で当日分を取り直す（＝更新は放送開始6時基準）
+  var d0=new Date(Date.now()-6*3600*1000);
+  var today=d0.getFullYear()+'-'+(d0.getMonth()+1)+'-'+d0.getDate();
+  var force=/[?&]fresh=1/.test(location.search); // 動作確認用: ?fresh=1 でキャッシュ無視
   var cached=null;
   try{cached=JSON.parse(localStorage.getItem(KEY)||'null');}catch(_){}
-  var appliedSig=''; // 現在アプリに適用済みの番組表のシグネチャ（空=未適用）
-  // 1) キャッシュがあれば即描画（高速表示＋オフライン耐性）。ただし必ず最新を取りに行く。
-  if(cached&&cached.data&&validSchedule(cached.data)===''){
-    applySchedule(cached.data);
-    appliedSig=schedSig(cached.data);
+  if(!force&&cached&&cached.day===today&&cached.data&&validSchedule(cached.data)===''){
+    applySchedule(cached.data);return; // 当日キャッシュで完結（費用節約: 1日1回取得）
   }
   var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/schedule?key='+encodeURIComponent(FIREBASE.apiKey);
   var attempt=0, MAX=4;
   function useCacheOrWait(){
-    // 取得失敗時：既にキャッシュを適用済みならそのまま継続（オフライン等）。無ければ読み込み中のまま自動再試行。
-    if(appliedSig) return;
-    scheduleFailed=true; try{renderSB();}catch(_){}  try{showLoadErr('error');}catch(_){}
-    setTimeout(function(){ scheduleFailed=false; try{showLoadErr('loading');}catch(_){} attempt=0; tryFetch(); }, 15000);
+    // 期限切れでも前回の番組表があればそれを使う（オフライン等）。無ければ読み込み中のまま自動再試行。
+    if(cached&&cached.data&&validSchedule(cached.data)===''){ applySchedule(cached.data); }
+    else { scheduleFailed=true; try{renderSB();}catch(_){}  try{showLoadErr('error');}catch(_){}
+           setTimeout(function(){ scheduleFailed=false; try{showLoadErr('loading');}catch(_){} attempt=0; tryFetch(); }, 15000); }
   }
   function tryFetch(){
     attempt++;
-    fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(doc){
       var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
       var err=validSchedule(d);
       if(err){console.warn('[番組表] データ不正: '+err);throw new Error('invalid-data');}
-      try{localStorage.setItem(KEY,JSON.stringify({data:d}));}catch(_){}
-      var sig=schedSig(d);
-      if(sig!==appliedSig){ applySchedule(d); appliedSig=sig; } // 変わった時だけ差し替え（無駄な再生切替を防ぐ）
+      try{localStorage.setItem(KEY,JSON.stringify({day:today,data:d}));}catch(_){}
+      applySchedule(d);
     })
     .catch(function(e){
       console.warn('[番組表] 取得失敗('+e.message+') 試行'+attempt+'/'+MAX);
@@ -1403,7 +1391,6 @@ var allT=function(pIdx){var r=[];for(var i=0;i<CS.length;i++)r.push(CS[i]+CO[pId
 
 // ── 状態管理 ──
 var isManual=false,isOff=false;
-var hasPoweredOn=false; // 放送開始ボタンを一度でも押したか（未操作での自動再生を防ぐ）
 var vC=0,vP=0,lC=0,lP=0;
 var ytPlayer=null,ytReady=false;
 var pendingYtId='',pendingSec=0;
@@ -1449,8 +1436,6 @@ function onYouTubeIframeAPIReady(){
         ytReady=true;ytPlayer=e.target;
         armStartBtn();   // API準備完了 → 放送開始ボタンを有効化
         killCaptions();  // 字幕を無効化
-        try{ fitPlayer(); }catch(_){} // iframe固定サイズ＋transformフィット（回転ズレ根治）
-        setTimeout(function(){try{fitPlayer();}catch(_){}},300);
         if(pendingYtId){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
@@ -1486,34 +1471,6 @@ function onYouTubeIframeAPIReady(){
 // ══════════════════════════════════════════════
 var isExpanded=false,fsUiTimer=null;
 
-// ── プレイヤーのフィット（根治方式・LAB） ──
-// iframeは常に固定サイズ(_fitW0×_fitH0=16:9)にしておき、CSS transformで拡大縮小して
-// コンテナ(player-wrap)にフィットさせる。iframe自体のサイズは一切変えないので、画面回転や
-// 全画面化でYouTube内部が再レイアウトを要求されることがなく、iOSの「回転で映像が横ズレ」が
-// 構造的に起きない（サイズ変化はtransformのみ＝YouTubeは無関係）。setSize/幅ナッジは廃止。
-var _fitW0=1280,_fitH0=720;
-(function(){
-  var lng=Math.max(screen.width||0,screen.height||0,window.innerWidth,window.innerHeight);
-  _fitW0=Math.min(1920,Math.max(1280,Math.round(lng))); // 画面より大きい固定サイズ→常に縮小表示で高精細
-  _fitH0=Math.round(_fitW0*9/16);
-})();
-function fitPlayer(){
-  var yt=document.getElementById('yt-player-api');
-  var pw=document.getElementById('player-wrap');
-  if(!yt||!pw) return;
-  var cw=pw.clientWidth, ch=pw.clientHeight;
-  if(cw<=0||ch<=0) return;
-  var scale=Math.min(cw/_fitW0, ch/_fitH0); // contain（全体表示・レターボックス）
-  var tx=(cw-_fitW0*scale)/2, ty=(ch-_fitH0*scale)/2;
-  yt.style.position='absolute';
-  yt.style.left='0'; yt.style.top='0'; yt.style.right='auto'; yt.style.bottom='auto';
-  yt.style.width=_fitW0+'px'; yt.style.height=_fitH0+'px';
-  yt.style.transformOrigin='0 0';
-  yt.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
-}
-// 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝デバウンス不要）
-function scheduleRelayout(){ fitPlayer(); }
-
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
@@ -1542,8 +1499,6 @@ function openExpand(){
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
   }
   showFsUi();
-  // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
-  scheduleRelayout();
 }
 
 function closeExpand(){
@@ -1599,8 +1554,6 @@ function closeExpand(){
       }catch(_){}
     },200);
   }
-  // 全画面解除でサイズが戻るため、YouTube内部を再レイアウト
-  scheduleRelayout();
 }
 
 function showFsUi(){
@@ -1679,7 +1632,6 @@ function loadVideo(ytId,sec,msg){
   vCurrentId=ytId; vCurrentSec=sec; // 現在の動画情報を保存
   if(ytReady&&ytPlayer){
     ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
-    try{ fitPlayer(); }catch(_){} setTimeout(function(){try{fitPlayer();}catch(_){}},300); // ロード後にフィット
     setTimeout(function(){
       try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
     },500);
@@ -1796,9 +1748,9 @@ function refreshLive(){
   var c=pos.c,p=pos.p;lC=c;lP=p;
   document.getElementById('onair-badge').classList.remove('off');
   document.getElementById('bdot').className='bdot';
-  // viewing-title更新（LIVE番組名）。手動再生中は上書きしない（setViewUIが手動番組の題/カテゴリを表示済みのため）
+  // viewing-title更新（LIVE番組名）
   var vt=document.getElementById('viewing-title');
-  if(vt&&!isManual)vt.textContent=CYCLE[p].title;
+  if(vt)vt.textContent=CYCLE[p].title;
   setLiveBtn(isManual?'manual':'live');
 }
 function hlSB(c,p){
@@ -1823,15 +1775,6 @@ function hlSB(c,p){
       }else if(relTop+rowH>listH){
         list.scrollTop=scrollTop+relTop+rowH-listH+8;
       }
-    }
-  }
-  // 各番組の時刻バーを現在サイクル(c)の位置へ横スクロール（現在時刻の目盛りが画面外に隠れないように）
-  for(var pi=0;pi<CYCLE.length;pi++){
-    var tb=document.querySelector('#row-'+pi+' .time-bar');
-    var cc=document.getElementById('chip-'+pi+'-'+c);
-    if(tb&&cc){
-      var delta=(cc.getBoundingClientRect().left-tb.getBoundingClientRect().left)-tb.clientWidth/2+cc.offsetWidth/2;
-      tb.scrollLeft+=delta;
     }
   }
 }
@@ -1925,10 +1868,6 @@ function renderSB(){
 // ══════════════════════════════════════════════
 //  定期チェック・時計・電源・初期化
 // ══════════════════════════════════════════════
-// 再生/一時停止アイコンのSVGパス（グローバル。updateSeekBar等から参照。以前はtogglePlayPause内ローカルのみで
-// updateSeekBarが未定義参照→例外でシークバー幅更新が実行されない不具合があった）
-var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-var playPath='<path d="M8 5v14l11-7z"/>';
 // ── シークバー更新（1秒毎・実際の再生位置と連動） ──
 function updateSeekBar(){
   if(!ytPlayer||!ytReady)return;
@@ -1977,7 +1916,6 @@ function updateSeekBar(){
 }
 
 function periodicCheck(){
-  if(!hasPoweredOn)return; // 放送開始前は一切の自動再生・状態変更をしない（PCで裏面音声再生になる不具合対策）
   if(isManual){refreshLive();return;}
   var pos=nowPos();
   if(!pos){if(!isOff)gotoOffAir();return;}
@@ -2008,7 +1946,6 @@ function armStartBtn(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
-  hasPoweredOn=true;
   userWantsPlay=true;
   var pos = CYCLE.length ? nowPos() : null;
   if(!CYCLE.length){ showLoadErr(scheduleFailed?'error':'loading'); } // 番組表未取得:読み込み中/エラー（届き次第applyScheduleで自動再生）
@@ -2190,12 +2127,6 @@ function init(){
   setInterval(updateClock,1000);
   setInterval(periodicCheck,10000);
   setInterval(updateSeekBar,100);
-  // プレイヤー枠のサイズ変化(回転/全画面/Silk調整/レイアウト変化)を常時監視して自動フィット。
-  // これが回転ズレ根治の中心：サイズ変化のたびにtransformだけ更新（iframe実サイズは不変）。
-  if(window.ResizeObserver){
-    try{ new ResizeObserver(function(){ fitPlayer(); }).observe(document.getElementById('player-wrap')); }catch(_){}
-  }
-  fitPlayer();
   // スポンサーバナー初期表示＋10秒ごと切り替え＋フリック切替
   updateSponsorDisplay();
   resetSponsorTimer();
@@ -2203,19 +2134,7 @@ function init(){
   attachSponsorSwipe(document.getElementById('fs-sponsor'));
   // 画面回転・リサイズ時にバナーを再描画（縦↔横でコンパクト版を切替）
   window.addEventListener('resize', updateSponsorDisplay);
-  window.addEventListener('orientationchange', function(){
-    setTimeout(updateSponsorDisplay,100);
-    // 画面回転でYouTube内部が旧サイズのまま映像が横ズレするため、寸法が確定した頃に1回だけ再レイアウト
-    scheduleRelayout();
-  });
-  // 回転がresizeとして来る端末（iOS等）への保険。幅が変わった時＝回転時のみ再レイアウト
-  // （URLバー開閉の高さ変化では発火させない＝不要なチラつき防止）。scheduleRelayoutが1回に集約。
-  var _lastW=window.innerWidth;
-  window.addEventListener('resize', function(){
-    if(window.innerWidth===_lastW) return;
-    _lastW=window.innerWidth;
-    scheduleRelayout();
-  });
+  window.addEventListener('orientationchange', function(){ setTimeout(updateSponsorDisplay,100); });
   // スポンサーリンクから戻った時に再生を再開（タブ復帰・bfキャッシュ復元）
   // userWantsPlay基準: iOSが自動一時停止してもユーザーの再生意図があれば再開
   function resumeIfWanted(){
@@ -2345,40 +2264,6 @@ function init(){
 }
 init();
 
-// ★LAB専用デバッグ表示：全画面横向きの実測値を画面に出す（原因特定用）。本番には入れない。
-(function(){
-  var probe=document.createElement('div');
-  probe.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
-    +'padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);'
-    +'padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);';
-  document.body.appendChild(probe);
-  var dbg=document.createElement('div');
-  dbg.style.cssText='position:fixed;left:50%;top:2px;transform:translateX(-50%);z-index:100000;'
-    +'background:rgba(0,0,0,.82);color:#3f6;font:11px/1.4 monospace;padding:5px 8px;'
-    +'white-space:pre;pointer-events:none;border-radius:5px;max-width:96vw;';
-  document.body.appendChild(dbg);
-  function r(n){return Math.round(n);}
-  function upd(){
-    var cs=getComputedStyle(probe);
-    var pw=document.getElementById('player-wrap');
-    var yt=document.getElementById('yt-player-api');
-    var pr=pw?pw.getBoundingClientRect():null;
-    var yr=yt?yt.getBoundingClientRect():null;
-    var vv=window.visualViewport;
-    var t='iW/iH '+window.innerWidth+'x'+window.innerHeight+'  scr '+screen.width+'x'+screen.height+' dpr'+window.devicePixelRatio+'\n';
-    if(vv)t+='vv '+r(vv.width)+'x'+r(vv.height)+' off('+r(vv.offsetLeft)+','+r(vv.offsetTop)+') sc'+vv.scale.toFixed(2)+'\n';
-    t+='safe L'+cs.paddingLeft+' R'+cs.paddingRight+' T'+cs.paddingTop+' B'+cs.paddingBottom+'\n';
-    t+='exp:'+(!!(pw&&pw.classList.contains('expanded')))+'  W0xH0 '+(window._fitW0)+'x'+(window._fitH0)+'\n';
-    if(pr)t+='PW  l'+r(pr.left)+' t'+r(pr.top)+' '+r(pr.width)+'x'+r(pr.height)+'\n';
-    if(yr)t+='YT  l'+r(yr.left)+' t'+r(yr.top)+' '+r(yr.width)+'x'+r(yr.height)+'\n';
-    if(yt)t+='YTstyle w='+(yt.style.width||'-')+' tf='+(yt.style.transform||'-');
-    dbg.textContent=t;
-  }
-  setInterval(upd,400); upd();
-  window.addEventListener('resize',upd);
-  window.addEventListener('orientationchange',function(){setTimeout(upd,300);});
-})();
-
 // ============================================================
 // チャンネルボタンブロック：
 // iframeをpointer-events:noneにしてクリックを完全制御
@@ -2482,6 +2367,43 @@ init();
 document.addEventListener('contextmenu', function(e){e.preventDefault();});
 // iframeへの長押しによるメニューを抑制
 document.addEventListener('touchstart', function(){}, {passive:true});
+</script>
+<script>
+// LAB計測表示（v1.30素の状態にズレが出るか切り分ける用）
+(function(){
+  function add(){
+    if(!document.body) return setTimeout(add,50);
+    var probe=document.createElement('div');
+    probe.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
+      +'padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);'
+      +'padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);';
+    document.body.appendChild(probe);
+    var dbg=document.createElement('div');
+    dbg.style.cssText='position:fixed;left:50%;top:2px;transform:translateX(-50%);z-index:100000;'
+      +'background:rgba(0,0,0,.82);color:#3f6;font:11px/1.4 monospace;padding:5px 8px;'
+      +'white-space:pre;pointer-events:none;border-radius:5px;max-width:96vw;';
+    document.body.appendChild(dbg);
+    function r(n){return Math.round(n);}
+    function upd(){
+      var cs=getComputedStyle(probe);
+      var pw=document.getElementById('player-wrap');
+      var yt=document.getElementById('yt-player-api');
+      var pr=pw?pw.getBoundingClientRect():null;
+      var yr=yt?yt.getBoundingClientRect():null;
+      var t='v1.30-orig  iW/iH '+window.innerWidth+'x'+window.innerHeight+' dpr'+window.devicePixelRatio+'\n';
+      t+='safe L'+cs.paddingLeft+' R'+cs.paddingRight+' T'+cs.paddingTop+' B'+cs.paddingBottom+'\n';
+      t+='exp:'+(!!(pw&&pw.classList.contains('expanded')))+'\n';
+      if(pr)t+='PW  l'+r(pr.left)+' t'+r(pr.top)+' '+r(pr.width)+'x'+r(pr.height)+'\n';
+      if(yr)t+='YT  l'+r(yr.left)+' t'+r(yr.top)+' '+r(yr.width)+'x'+r(yr.height)+'\n';
+      if(yt)t+='YTstyle w='+(yt.style.width||'-')+' tf='+(yt.style.transform||'-');
+      dbg.textContent=t;
+    }
+    setInterval(upd,400); upd();
+    window.addEventListener('resize',upd);
+    window.addEventListener('orientationchange',function(){setTimeout(upd,300);});
+  }
+  add();
+})();
 </script>
 </body>
 </html>
