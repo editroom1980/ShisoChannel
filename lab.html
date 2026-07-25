@@ -794,7 +794,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.40-lab（端末別:携帯1280/PC1920）</div>
+    <div class="ps-version">version 1.41-lab（1080p・px整数化）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1490,11 +1490,9 @@ var isExpanded=false,fsUiTimer=null;
 // (_fitW0×_fitH0=16:9)にしておけば、YouTubeは最初から横向き基準で一度だけレイアウトし、
 // 以後どの向き・回転でも作り直し不要＝ズレない。表示はCSS transformで枠に合わせる。
 // ★重要: サイズの固定(width/height)は枠が非表示(サイズ0)でも必ず行う。動画ロード前に
-//         内部サイズを1280×720に確定させることが肝（前回labの取りこぼしを修正）。
-// 内部固定サイズ（16:9）。タッチ端末(iPhone等)は1280＝iOSのYouTube1080p描画の微オフセットを
-// 避けつつスマホでは実質原寸。PC/大画面は1920＝1080pで高精細。将来4K素材なら3840×2160に。
-var _isTouchDev=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-var _fitW0=_isTouchDev?1280:1920, _fitH0=_isTouchDev?720:1080;
+//         内部サイズを確定させることが肝（前回labの取りこぼしを修正）。
+// 内部固定サイズ（16:9）＝1920×1080（1080p・全端末共通）。将来4K素材なら3840×2160に。
+var _fitW0=1920,_fitH0=1080;
 function fitPlayer(){
   var yt=document.getElementById('yt-player-api');
   if(!yt) return;
@@ -1508,7 +1506,8 @@ function fitPlayer(){
   var cw=pw.clientWidth, ch=pw.clientHeight;
   if(cw<=0||ch<=0){ yt.style.transform='scale(0)'; return; } // 非表示時は畳む（内部サイズは固定のまま）
   var scale=Math.min(cw/_fitW0, ch/_fitH0); // contain（全体表示・レターボックス）
-  var tx=(cw-_fitW0*scale)/2, ty=(ch-_fitH0*scale)/2;
+  // 平行移動は整数pxにスナップ（iOSのサブピクセル描画による微オフセット/にじみを防ぐ）
+  var tx=Math.round((cw-_fitW0*scale)/2), ty=Math.round((ch-_fitH0*scale)/2);
   yt.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
 }
 // 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝即実行でよい）
