@@ -328,7 +328,9 @@ body.fs-open .player-wrap.expanded{
 .ldiv{width:1px;height:14px;background:var(--border);flex-shrink:0;}
 /* ══ プログレスバー（タイトルバーと同じ高さ） ══ */
 .pt{font-size:12px;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
-.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;cursor:pointer;touch-action:none;}
+.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:visible;cursor:pointer;touch-action:none;position:relative;}
+/* 見た目は細いまま、指で掴める当たり判定を上下に拡張（ドラッグの反応向上） */
+.bar-bg::before{content:"";position:absolute;left:0;right:0;top:-16px;bottom:-16px;}
 /* 中央の半透明・再生ボタン（一時停止中のみ表示。視覚のみ＝タップは既存の画面タップ再生に委ねる） */
 #center-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74px;height:74px;border:none;border-radius:50%;background:rgba(30,58,40,0.40);color:#fff;display:none;align-items:center;justify-content:center;z-index:6;pointer-events:none;}
 #center-play svg{width:42px;height:42px;margin-left:3px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
@@ -802,7 +804,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.45-lab（操作バー改善）</div>
+    <div class="ps-version">version 1.46-lab（シーク判定拡張）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
