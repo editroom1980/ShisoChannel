@@ -804,7 +804,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.47-lab（番組は最後まで再生）</div>
+    <div class="ps-version">version 1.48-lab（シーク誤切替/24時修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1464,7 +1464,7 @@ function onYouTubeIframeAPIReady(){
         // iOS: st=5(cued)でスピナーを消す（cueVideoById後は自動再生されないため）
         if(st===5&&isIOS){ clearSpinnerTimer();showSpinner(false); }
         // 動画終了
-        if(st===0&&!isOff){ showSpinner(true,'切り替え中...'); onEnded(); }
+        if(st===0&&!isOff&&_endSwitchOK()){ showSpinner(true,'切り替え中...'); onEnded(); }
         // Now Playingインジケーター抑制（Dynamic Island非表示の試み）
         if('mediaSession' in navigator){
           navigator.mediaSession.playbackState='none';
@@ -1982,12 +1982,12 @@ function updateSeekBar(){
       if(swEl&&swEl.style.display!=='none'){ clearSpinnerTimer();showSpinner(false); }
     }
     // state=0(終了)のバックアップ検知（onStateChangeが発火しない場合の対策）
-    if(state===0&&!isOff&&!window._onEndedPending){
+    if(state===0&&!isOff&&!window._onEndedPending&&_endSwitchOK()){
       showSpinner(true,'切り替え中...'); // 即座にエンドスクリーンを隠す
       window._onEndedPending=true;
       setTimeout(function(){
         window._onEndedPending=false;
-        if(!isOff){ onEnded(); }
+        if(!isOff&&_endSwitchOK()){ onEnded(); }
       },500);
     }
     if(!seekInProgress){ // シーク中はアイコンを更新しない（フリッカー防止）
@@ -2019,20 +2019,26 @@ function updateSeekBar(){
 }
 
 // ══ シーク共通（30秒ボタン＋ドラッグ対応・全画面で画面が動くのを防ぐ） ══
+var _lastSeekAt=0; // 直近シーク時刻。シーク直後の誤「終了」検知を無視するため
+// 本当に終端付近まで再生した時だけ「動画終了」とみなす（シーク/再読み込み時の誤検知で番組が切り替わるのを防ぐ）
+function _isGenuineEnd(){
+  try{ var d=ytPlayer.getDuration(), c=ytPlayer.getCurrentTime(); return d>0 && c>=d-3; }catch(_){ return false; }
+}
+function _endSwitchOK(){ return _isGenuineEnd() && (Date.now()-_lastSeekAt>1000); }
 function _seekRatioAt(barEl,clientX){var r=barEl.getBoundingClientRect();return Math.min(1,Math.max(0,(clientX-r.left)/(r.width||1)));}
 function _seekVisual(ratio){
   var pb=document.getElementById('p-bar'),pbfs=document.getElementById('p-bar-fs');
   if(pb){pb.classList.add('no-transition');pb.style.width=(ratio*100)+'%';}
   if(pbfs){pbfs.classList.add('no-transition');pbfs.style.width=(ratio*100)+'%';}
-  seekInProgress=true; // ドラッグ中は自動更新でバーが戻らないように
+  seekInProgress=true; _lastSeekAt=Date.now(); // ドラッグ中は自動更新でバーが戻らないように
 }
 // 30秒 相対シーク（ボタン用）
 function seekRel(delta){
   if(!ytPlayer||!ytReady)return;
   var cur=0,dur=0;try{cur=ytPlayer.getCurrentTime()||0;dur=ytPlayer.getDuration()||0;}catch(_){}
   if(dur<=0)return;
-  var t=cur+delta; if(t<0)t=0; if(t>dur-1)t=dur-1;
-  _seekVisual(t/dur);
+  var t=cur+delta; if(t<0)t=0; if(t>dur-2)t=dur-2; // 終端の手前までに制限（シークで即終了→切替を防ぐ）
+  _seekVisual(t/dur); _lastSeekAt=Date.now();
   if(isIOS&&vCurrentId){iosFirstPlay=true;try{ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:Math.floor(t)});}catch(_){}}
   else{try{ytPlayer.seekTo(t,true);}catch(_){}}
   setTimeout(function(){seekInProgress=false;},450);
@@ -2065,7 +2071,14 @@ function periodicCheck(){
   if(!hasPoweredOn)return; // 放送開始前は一切の自動再生・状態変更をしない（PCで裏面音声再生になる不具合対策）
   if(isManual){refreshLive();return;}
   var pos=nowPos();
-  if(!pos){if(!isOff)gotoOffAir();return;} // 放送時間外(24時等)は終了画面へ
+  if(!pos){
+    // 放送時間外(24時以降)。今の番組を再生中なら最後まで流し、終了時(onEnded→pos=null)にoff-airへ。
+    if(!isOff){
+      var stx=-99; try{ stx=ytPlayer.getPlayerState(); }catch(_){}
+      if(stx!==1 && stx!==3){ gotoOffAir(); } // 再生・バッファ中でなければ終了画面へ
+    }
+    return;
+  }
   var wasOff=isOff;
   refreshLive(); // LIVE表示・lC/lP更新（タイトルは再生中の番組のまま。番組境界では強制切替しない）
   // 放送終了状態→放送開始時刻(6時等)になったら自動再生で復帰。
@@ -2388,7 +2401,8 @@ function init(){
     if(!ytPlayer.getDuration)return;
     var dur=ytPlayer.getDuration();
     if(dur<=0)return;
-    var seekPos=ratio*dur;
+    var seekPos=Math.min(ratio*dur, dur-2); if(seekPos<0)seekPos=0; // 終端手前まで（シークで即終了→切替を防ぐ）
+    _lastSeekAt=Date.now();
     var pb=document.getElementById('p-bar');var pbfs=document.getElementById('p-bar-fs');
     if(pb)pb.style.width=(ratio*100)+'%';
     if(pbfs)pbfs.style.width=(ratio*100)+'%';
@@ -2482,7 +2496,8 @@ init();
       var ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
       var dur = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
       if(dur <= 0) return;
-      var seekPos = ratio * dur;
+      var seekPos = Math.min(ratio * dur, dur-2); if(seekPos<0)seekPos=0; // 終端手前まで
+      _lastSeekAt=Date.now();
       // プログレスバーの表示を即時更新
       var pb = document.getElementById('p-bar');
       var pbfs = document.getElementById('p-bar-fs');
