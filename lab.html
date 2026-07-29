@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>しそチャンNET</title>
+<title>しそチャンNET LAB（操作改善テスト）</title>
 <link rel="apple-touch-icon" href="icon-180.png?v=130">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=130">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -327,7 +328,10 @@ body.fs-open .player-wrap.expanded{
 .ldiv{width:1px;height:14px;background:var(--border);flex-shrink:0;}
 /* ══ プログレスバー（タイトルバーと同じ高さ） ══ */
 .pt{font-size:12px;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
-.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;cursor:pointer;}
+.bar-bg{flex:1;height:5px;background:var(--green5);border-radius:3px;overflow:hidden;cursor:pointer;touch-action:none;}
+/* 中央の半透明・再生ボタン（一時停止中のみ表示。視覚のみ＝タップは既存の画面タップ再生に委ねる） */
+#center-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74px;height:74px;border:none;border-radius:50%;background:rgba(30,58,40,0.40);color:#fff;display:none;align-items:center;justify-content:center;z-index:6;pointer-events:none;}
+#center-play svg{width:42px;height:42px;margin-left:3px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
 .bar-fill.no-transition{transition:none !important;}
 /* ══ 次の番組（タイトルバーと同じ高さ） ══ */
@@ -794,7 +798,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.41-lab（1080p・px整数化）</div>
+    <div class="ps-version">version 1.43-lab（操作改善）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -859,6 +863,8 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
         </div>
         <div id="yt-player-api"></div>
         <div id="yt-mouse-block"></div>
+        <!-- 中央の半透明・再生ボタン（一時停止中のみ表示・視覚用） -->
+        <div id="center-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
         <!-- YouTubeボタンブロックレイヤー（シークバーは通す） -->
         <div class="yt-block" id="yt-block-left"></div>
         <div class="yt-block" id="yt-block-right"></div>
@@ -868,8 +874,14 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
         <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()" title="解除"><svg viewBox="0 0 24 24" width="31" height="31" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
         <!-- 全画面コントロールバー -->
         <div id="fs-ctrl-bar">
+          <button class="fs-ctrl-btn" id="fs-back30" title="30秒戻る" onclick="seekRel(-30)">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
+          </button>
           <button class="fs-ctrl-btn" id="fs-play" title="再生/停止">
             <svg id="fs-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button class="fs-ctrl-btn" id="fs-fwd30" title="30秒進む" onclick="seekRel(30)">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><g transform="scale(-1,1) translate(-24,0)"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></g><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
           </button>
           <div class="bar-bg" id="fs-seek-bg"><div class="bar-fill" id="p-bar-fs"></div></div>
           <button class="fs-ctrl-btn" id="fs-mute" title="ミュート">
@@ -884,9 +896,17 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
       <!-- カスタムコントロールバー -->
       <div class="custom-ctrl" id="custom-ctrl">
+        <!-- 30秒戻る -->
+        <button class="ctrl-btn" id="ctrl-back30" title="30秒戻る" onclick="seekRel(-30)">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
+        </button>
         <!-- 再生/停止 -->
         <button class="ctrl-btn" id="ctrl-play" title="再生/停止" onclick="togglePlayPause()">
           <svg id="ctrl-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <!-- 30秒進む -->
+        <button class="ctrl-btn" id="ctrl-fwd30" title="30秒進む" onclick="seekRel(30)">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><g transform="scale(-1,1) translate(-24,0)"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></g><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
         </button>
         <!-- シークバー -->
         <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
@@ -1448,7 +1468,7 @@ function onYouTubeIframeAPIReady(){
         ytReady=true;ytPlayer=e.target;
         armStartBtn();   // API準備完了 → 放送開始ボタンを有効化
         killCaptions();  // 字幕を無効化
-        try{ fitPlayer(); }catch(_){} // ★動画ロード前に内部サイズを1280x720へ固定（回転ズレ根治の肝）
+        try{ fitPlayer(); }catch(_){} // ★動画ロード前に内部サイズを1920x1080へ固定（回転ズレ根治の肝）
         if(pendingYtId){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
@@ -1484,19 +1504,17 @@ function onYouTubeIframeAPIReady(){
 // ══════════════════════════════════════════════
 var isExpanded=false,fsUiTimer=null;
 
-// ── プレイヤーのフィット（根治方式・LAB v1.38） ──
+// ── プレイヤーのフィット（根治方式） ──
 // iOSではYouTubeが「動画を読み込んだ時のiframeサイズ」でレイアウトを固定し、回転しても
-// 作り直さない（縦で再生→横でズレる、が実機確定）。→ iframeの"内部サイズ"を常に固定
-// (_fitW0×_fitH0=16:9)にしておけば、YouTubeは最初から横向き基準で一度だけレイアウトし、
+// 作り直さない（縦で再生→横でズレる、が実機確定）。→ iframeの"内部サイズ"を常に
+// 固定(1920×1080=16:9)にしておけば、YouTubeは最初から横向き基準で一度だけレイアウトし、
 // 以後どの向き・回転でも作り直し不要＝ズレない。表示はCSS transformで枠に合わせる。
-// ★重要: サイズの固定(width/height)は枠が非表示(サイズ0)でも必ず行う。動画ロード前に
-//         内部サイズを確定させることが肝（前回labの取りこぼしを修正）。
-// 内部固定サイズ（16:9）＝1920×1080（1080p・全端末共通）。将来4K素材なら3840×2160に。
+// ★内部サイズの固定は枠が非表示(サイズ0)でも必ず行う＝動画ロード前に確定させるのが肝。
+// 副次効果: YouTubeのUIも1920枠基準で描かれ縮小表示になり目立たない。将来4K素材なら3840×2160に。
 var _fitW0=1920,_fitH0=1080;
 function fitPlayer(){
   var yt=document.getElementById('yt-player-api');
   if(!yt) return;
-  // 内部サイズは常に固定（YouTubeのレイアウト基準を最初から横向きに固定する）
   yt.style.position='absolute'; yt.style.left='0'; yt.style.top='0';
   yt.style.right='auto'; yt.style.bottom='auto';
   yt.style.width=_fitW0+'px'; yt.style.height=_fitH0+'px';
@@ -1958,10 +1976,13 @@ function updateSeekBar(){
       if(icon)icon.innerHTML=isPlay?pausePath:playPath;
       if(fsIcon)fsIcon.innerHTML=isPlay?pausePath:playPath;
     }
-    // シークバー更新
+    // 中央の半透明・再生ボタン：一時停止中（再生・バッファ中でない）かつ放送中かつ動画ロード済みで表示
+    var cp=document.getElementById('center-play');
+    if(cp){ cp.style.display=(!isOff && vCurrentId && state!==1 && state!==3)?'flex':'none'; }
+    // シークバー更新（ドラッグ/シーク中は上書きしない）
     var dur=ytPlayer.getDuration();
     var cur=ytPlayer.getCurrentTime();
-    if(dur>0){
+    if(dur>0 && !seekInProgress){
       var pct=Math.min(100,Math.max(0,(cur/dur)*100));
       var pb=document.getElementById('p-bar');
       if(pb)pb.style.width=pct+'%';
@@ -1974,6 +1995,49 @@ function updateSeekBar(){
       }
     }
   }catch(e){}
+}
+
+// ══ シーク共通（30秒ボタン＋ドラッグ対応・全画面で画面が動くのを防ぐ） ══
+function _seekRatioAt(barEl,clientX){var r=barEl.getBoundingClientRect();return Math.min(1,Math.max(0,(clientX-r.left)/(r.width||1)));}
+function _seekVisual(ratio){
+  var pb=document.getElementById('p-bar'),pbfs=document.getElementById('p-bar-fs');
+  if(pb){pb.classList.add('no-transition');pb.style.width=(ratio*100)+'%';}
+  if(pbfs){pbfs.classList.add('no-transition');pbfs.style.width=(ratio*100)+'%';}
+  seekInProgress=true; // ドラッグ中は自動更新でバーが戻らないように
+}
+// 30秒 相対シーク（ボタン用）
+function seekRel(delta){
+  if(!ytPlayer||!ytReady)return;
+  var cur=0,dur=0;try{cur=ytPlayer.getCurrentTime()||0;dur=ytPlayer.getDuration()||0;}catch(_){}
+  if(dur<=0)return;
+  var t=cur+delta; if(t<0)t=0; if(t>dur-1)t=dur-1;
+  _seekVisual(t/dur);
+  if(isIOS&&vCurrentId){iosFirstPlay=true;try{ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:Math.floor(t)});}catch(_){}}
+  else{try{ytPlayer.seekTo(t,true);}catch(_){}}
+  setTimeout(function(){seekInProgress=false;},450);
+}
+// バーにドラッグシークを付与。commit(clientX)は指を離した時に実位置へシーク。
+function attachSeekDrag(barEl,commit){
+  if(!barEl||barEl._seekBound)return; barEl._seekBound=true;
+  barEl.addEventListener('touchstart',function(e){
+    barEl._dragging=true; e.stopPropagation();
+    if(isExpanded&&typeof resetFsUiTimer==='function')resetFsUiTimer();
+    if(e.touches[0])_seekVisual(_seekRatioAt(barEl,e.touches[0].clientX));
+  },{passive:true});
+  barEl.addEventListener('touchmove',function(e){
+    if(!barEl._dragging)return;
+    e.preventDefault(); e.stopPropagation(); // ★これで全画面でも画面が動かない
+    if(isExpanded&&typeof resetFsUiTimer==='function')resetFsUiTimer();
+    if(e.touches[0])_seekVisual(_seekRatioAt(barEl,e.touches[0].clientX));
+  },{passive:false});
+  barEl.addEventListener('touchend',function(e){
+    if(!barEl._dragging)return; barEl._dragging=false;
+    e.preventDefault(); e.stopPropagation(); // 合成clickを抑止（二重シーク防止）
+    var cx=(e.changedTouches&&e.changedTouches[0])?e.changedTouches[0].clientX:null;
+    if(cx!=null)commit(cx);
+    setTimeout(function(){seekInProgress=false;},450);
+  },{passive:false});
+  barEl.addEventListener('click',function(e){e.stopPropagation();commit(e.clientX);}); // PCマウス
 }
 
 function periodicCheck(){
@@ -2191,7 +2255,7 @@ function init(){
   setInterval(periodicCheck,10000);
   setInterval(updateSeekBar,100);
   // プレイヤー枠のサイズ変化(回転/全画面/レイアウト変化)を常時監視してtransformを更新。
-  // iframeの内部サイズ(1280x720)は変えないので、YouTubeは作り直し不要のまま。
+  // iframeの内部サイズ(1920x1080)は変えないので、YouTubeは作り直し不要のまま＝ズレない。
   if(window.ResizeObserver){
     try{ new ResizeObserver(function(){ fitPlayer(); }).observe(document.getElementById('player-wrap')); }catch(_){}
   }
@@ -2318,13 +2382,7 @@ function init(){
     }
   };
   var fsSeek=document.getElementById('fs-seek-bg');
-  if(fsSeek){
-    fsSeek.addEventListener('click',function(e){e.stopPropagation();doFsSeek(e.clientX,this);});
-    fsSeek.addEventListener('touchend',function(e){
-      e.stopPropagation();
-      if(e.changedTouches&&e.changedTouches.length>0)doFsSeek(e.changedTouches[0].clientX,this);
-    },{passive:true});
-  }
+  if(fsSeek){ attachSeekDrag(fsSeek, function(cx){ doFsSeek(cx, fsSeek); }); }
   // fs-ctrl-barタップ/マウス操作でタイマーリセット＋動画停止を防ぐ
   var fsBar2=document.getElementById('fs-ctrl-bar');
   if(fsBar2){
@@ -2422,19 +2480,8 @@ init();
       }
     }
 
-    // マウスクリック（PC）
-    barBg.addEventListener('click', function(e){
-      e.stopPropagation();
-      doSeek(e.clientX);
-    });
-
-    // タッチ（FireTV・iOS）
-    barBg.addEventListener('touchend', function(e){
-      e.stopPropagation();
-      if(e.changedTouches && e.changedTouches.length > 0){
-        doSeek(e.changedTouches[0].clientX);
-      }
-    }, {passive:true});
+    // クリック（PC）＋ドラッグ（タッチ）。全画面で画面が動かないようattachSeekDragで処理
+    attachSeekDrag(barBg, function(cx){ doSeek(cx); });
   }
 
   // DOMが準備できてから実行
@@ -2448,44 +2495,6 @@ init();
 document.addEventListener('contextmenu', function(e){e.preventDefault();});
 // iframeへの長押しによるメニューを抑制
 document.addEventListener('touchstart', function(){}, {passive:true});
-</script>
-<script>
-// LAB計測表示（固定サイズ版の検証用）
-(function(){
-  function add(){
-    if(!document.body) return setTimeout(add,50);
-    var probe=document.createElement('div');
-    probe.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
-      +'padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);'
-      +'padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);';
-    document.body.appendChild(probe);
-    var dbg=document.createElement('div');
-    dbg.style.cssText='position:fixed;left:50%;top:2px;transform:translateX(-50%);z-index:100000;'
-      +'background:rgba(0,0,0,.82);color:#3f6;font:11px/1.4 monospace;padding:5px 8px;'
-      +'white-space:pre;pointer-events:none;border-radius:5px;max-width:96vw;';
-    document.body.appendChild(dbg);
-    function r(n){return Math.round(n);}
-    function upd(){
-      var cs=getComputedStyle(probe);
-      var pw=document.getElementById('player-wrap');
-      var yt=document.getElementById('yt-player-api');
-      var pr=pw?pw.getBoundingClientRect():null;
-      var yr=yt?yt.getBoundingClientRect():null;
-      var t='v1.38固定  iW/iH '+window.innerWidth+'x'+window.innerHeight+' dpr'+window.devicePixelRatio+'\n';
-      t+='safe L'+cs.paddingLeft+' R'+cs.paddingRight+'\n';
-      t+='exp:'+(!!(pw&&pw.classList.contains('expanded')))+'\n';
-      if(pr)t+='PW  l'+r(pr.left)+' t'+r(pr.top)+' '+r(pr.width)+'x'+r(pr.height)+'\n';
-      if(yr)t+='YT  l'+r(yr.left)+' t'+r(yr.top)+' '+r(yr.width)+'x'+r(yr.height)+'\n';
-      if(yt)t+='YTsize w='+(yt.style.width||'-')+' h='+(yt.style.height||'-')+'\n';
-      if(yt)t+='tf='+(yt.style.transform||'-');
-      dbg.textContent=t;
-    }
-    setInterval(upd,400); upd();
-    window.addEventListener('resize',upd);
-    window.addEventListener('orientationchange',function(){setTimeout(upd,300);});
-  }
-  add();
-})();
 </script>
 </body>
 </html>
