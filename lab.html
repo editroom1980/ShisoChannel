@@ -730,6 +730,9 @@ body.silk-mode .expand-open-btn{display:flex !important;}
 /* iPhoneの丸角対策: 全画面時コントロールバーを中央に寄せる */
 body.iphone-mode #fs-ctrl-bar{
   padding:0 28px;
+  /* iOSのホームインジケーター(画面下端の横棒)にシークバーが被り、スワイプでアプリ切替に
+     なってしまうのを防ぐため、全画面の操作バー全体を少し上へ持ち上げる */
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
 }
 body.iphone-mode .player-wrap.expanded .custom-ctrl,
 body.iphone-mode .player-wrap.expanded ~ * .custom-ctrl{
@@ -798,7 +801,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.43-lab（操作改善）</div>
+    <div class="ps-version">version 1.44-lab（操作改善2）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -874,11 +877,11 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
         <button class="expand-close-btn" id="expand-close-btn" onclick="closeExpand()" title="解除"><svg viewBox="0 0 24 24" width="31" height="31" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
         <!-- 全画面コントロールバー -->
         <div id="fs-ctrl-bar">
-          <button class="fs-ctrl-btn" id="fs-back30" title="30秒戻る" onclick="seekRel(-30)">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
-          </button>
           <button class="fs-ctrl-btn" id="fs-play" title="再生/停止">
             <svg id="fs-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button class="fs-ctrl-btn" id="fs-back30" title="30秒戻る" onclick="seekRel(-30)">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
           </button>
           <button class="fs-ctrl-btn" id="fs-fwd30" title="30秒進む" onclick="seekRel(30)">
             <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><g transform="scale(-1,1) translate(-24,0)"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></g><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
@@ -896,13 +899,13 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
       <!-- カスタムコントロールバー -->
       <div class="custom-ctrl" id="custom-ctrl">
-        <!-- 30秒戻る -->
-        <button class="ctrl-btn" id="ctrl-back30" title="30秒戻る" onclick="seekRel(-30)">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
-        </button>
         <!-- 再生/停止 -->
         <button class="ctrl-btn" id="ctrl-play" title="再生/停止" onclick="togglePlayPause()">
           <svg id="ctrl-play-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <!-- 30秒戻る -->
+        <button class="ctrl-btn" id="ctrl-back30" title="30秒戻る" onclick="seekRel(-30)">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
         </button>
         <!-- 30秒進む -->
         <button class="ctrl-btn" id="ctrl-fwd30" title="30秒進む" onclick="seekRel(30)">
