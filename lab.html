@@ -591,13 +591,16 @@ body.fs-open .player-wrap.expanded{
 #fs-ctrl-bar{
   display:none;
   position:absolute;
-  bottom:0;left:0;right:0;
+  bottom:12px; left:50%; transform:translateX(-50%);
+  width:80%; max-width:calc(100% - 24px); /* 実幅はJS(fitPlayer)で動画幅より少し短く設定 */
   height:44px;
   z-index:2147483646;
-  background:rgba(0,0,0,0.75);
+  background:rgba(0,0,0,0.62);
   align-items:center;
   gap:14px;
   padding:0 16px;
+  border-radius:22px; /* 両端を丸くしたフローティングのピル型（画面端にくっつかない） */
+  box-shadow:0 2px 10px rgba(0,0,0,0.35);
 }
 #fs-ctrl-bar .bar-bg{flex:1;}
 #fs-ctrl-bar .vol-slider{width:50px;}
@@ -729,10 +732,8 @@ body.silk-mode .expand-open-btn{display:flex !important;}
 }
 /* iPhoneの丸角対策: 全画面時コントロールバーを中央に寄せる */
 body.iphone-mode #fs-ctrl-bar{
-  padding:0 28px;
-  /* iOSのホームインジケーター(画面下端の横棒)にシークバーが被り、スワイプでアプリ切替に
-     なってしまうのを防ぐため、全画面の操作バー全体を少し上へ持ち上げる */
-  bottom: calc(env(safe-area-inset-bottom) + 16px);
+  /* iOSのホームインジケーター(画面下端の横棒)に被らないよう少し上へ（上げ過ぎず+8px） */
+  bottom: calc(env(safe-area-inset-bottom) + 8px);
 }
 body.iphone-mode .player-wrap.expanded .custom-ctrl,
 body.iphone-mode .player-wrap.expanded ~ * .custom-ctrl{
@@ -801,7 +802,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.44-lab（操作改善2）</div>
+    <div class="ps-version">version 1.45-lab（操作バー改善）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1530,6 +1531,10 @@ function fitPlayer(){
   // 平行移動は整数pxにスナップ（iOSのサブピクセル描画による微オフセット/にじみを防ぐ）
   var tx=Math.round((cw-_fitW0*scale)/2), ty=Math.round((ch-_fitH0*scale)/2);
   yt.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  // 全画面のフローティング操作バーの幅を「映像の横幅より少し短く」動的設定
+  var vw=Math.round(_fitW0*scale); // 表示中の映像の横幅
+  var fsb=document.getElementById('fs-ctrl-bar');
+  if(fsb){ fsb.style.width=Math.max(280,Math.round(vw*0.94))+'px'; }
 }
 // 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝即実行でよい）
 function scheduleRelayout(){ fitPlayer(); }
@@ -1628,6 +1633,7 @@ function showFsUi(){
   if(cb){cb.style.opacity='1';cb.style.pointerEvents='';}
   var fsBar=document.getElementById('fs-ctrl-bar');
   if(fsBar)fsBar.style.display='flex';
+  try{ fitPlayer(); }catch(_){} // フローティングバー幅を映像幅に同期
   resetFsUiTimer();
 }
 function hideFsUi(){
