@@ -804,7 +804,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.46-lab（シーク判定拡張）</div>
+    <div class="ps-version">version 1.47-lab（番組は最後まで再生）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1728,7 +1728,8 @@ function pauseVideo(){
 function onEnded(){
   // まずスピナーで画面を覆う（YouTubeのエンドスクリーン＝サムネイルを隠す）
   showSpinner(true,'切り替え中...');
-  clearEndTimer();isManual=false;
+  clearEndTimer();
+  var ended=vP; // 今終わった番組
   var pos=nowPos();
   if(!pos){
     var wasExp=isExpanded;
@@ -1736,6 +1737,16 @@ function onEnded(){
     setTimeout(gotoOffAir,wasExp?300:0);
     return;
   }
+  isManual=false;
+  // 動画が尺より短く、終了時点でまだ同じ番組のスロット内に戻ってくる場合はループ防止で次の番組を頭から
+  if(pos.p===ended && CYCLE.length>1){
+    var np=(ended+1)%CYCLE.length;
+    vC=pos.c;vP=np;
+    loadVideo(CYCLE[np].ytId,0,'次の番組を読み込んでいます...');
+    setViewUI(pos.c,np);refreshLive();
+    return;
+  }
+  // 通常/シーク後：終了時点で放送中の番組を、現在時刻に合った位置（途中からでも）で再生
   playSchedule(pos.c,pos.p);
 }
 
@@ -1748,8 +1759,7 @@ function playSchedule(c,p){
   var sec=esOf(c,p);
   loadVideo(CYCLE[p].ytId,sec,'放送中の番組に切り替えています...');
   setViewUI(c,p);refreshLive();
-  // 放送終了時刻(c,p)を基準にタイマーセット（YouTubeの実尺に依存しない）
-  setEndTimer(c,p);
+  // ★強制切替タイマーは使わない：今の動画は自然終了(state=0)まで再生し、終了時にライブへ復帰する
 }
 
 // ★ Safari対策：ユーザータップのコールチェーン内で直接呼ぶ
@@ -1825,10 +1835,10 @@ function refreshLive(){
   var c=pos.c,p=pos.p;lC=c;lP=p;
   document.getElementById('onair-badge').classList.remove('off');
   document.getElementById('bdot').className='bdot';
-  // viewing-title更新（LIVE番組名）。手動再生中は上書きしない（setViewUIが手動番組の題/カテゴリを表示済みのため）
-  var vt=document.getElementById('viewing-title');
-  if(vt&&!isManual)vt.textContent=CYCLE[p].title;
-  setLiveBtn(isManual?'manual':'live');
+  // タイトルは番組ロード時(setViewUI)が「再生中の番組」を設定済み。ここでは上書きしない。
+  // LIVE表示：再生中の番組(vP)が現在放送中の番組(p)と一致していれば live、ずれていれば見逃し再生中(g)。
+  var atLive=(!isManual && vP===p);
+  setLiveBtn(atLive?'live':'manual');
 }
 function hlSB(c,p){
   document.querySelectorAll('.prow').forEach(function(r,i){r.classList.toggle('active',i===p);});
@@ -2055,13 +2065,12 @@ function periodicCheck(){
   if(!hasPoweredOn)return; // 放送開始前は一切の自動再生・状態変更をしない（PCで裏面音声再生になる不具合対策）
   if(isManual){refreshLive();return;}
   var pos=nowPos();
-  if(!pos){if(!isOff)gotoOffAir();return;}
-  var c=pos.c,p=pos.p;
-  // 変化検知はrefreshLive()より前に行う（refreshLive内でlC/lPが更新されるため）
-  var changed=(isOff||c!==lC||p!==lP);
-  refreshLive();
-  // isOff中（放送終了状態）でも放送開始時刻になったら自動再生
-  if(changed)playSchedule(c,p);
+  if(!pos){if(!isOff)gotoOffAir();return;} // 放送時間外(24時等)は終了画面へ
+  var wasOff=isOff;
+  refreshLive(); // LIVE表示・lC/lP更新（タイトルは再生中の番組のまま。番組境界では強制切替しない）
+  // 放送終了状態→放送開始時刻(6時等)になったら自動再生で復帰。
+  // ★番組境界の変化では強制切替しない：今の動画を最後まで再生し、終了時にonEndedがライブへ復帰させる。
+  if(wasOff){ playSchedule(pos.c,pos.p); }
 }
 function updateClock(){
   var d=new Date();
