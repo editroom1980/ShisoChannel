@@ -810,7 +810,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.50-lab（出典テロップ）</div>
+    <div class="ps-version">version 1.51-lab（テロップ反映修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1194,7 +1194,7 @@ function showLoadErr(state){
 // 番組表の内容シグネチャ（同一データの無駄な再適用＝再生の巻き戻しを防ぐための比較用）
 function schedSig(d){
   var s=d.airStart+'|'+d.airEnd+'|'+d.cycleMinutes+'|';
-  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+p.title+':'+p.cat+';';}
+  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+p.title+':'+p.cat+':'+(p.telop||'')+';';}
   return s;
 }
 // 取得本体（stale-while-revalidate）：キャッシュがあれば即描画し、必ずサーバーの最新も取得して
