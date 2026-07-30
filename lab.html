@@ -335,10 +335,10 @@ body.fs-open .player-wrap.expanded{
 #center-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74px;height:74px;border:none;border-radius:50%;background:rgba(30,58,40,0.40);color:#fff;display:none;align-items:center;justify-content:center;z-index:6;pointer-events:none;}
 #center-play svg{width:42px;height:42px;margin-left:3px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
 /* 出典テロップ（見始めから10秒・映像右下に座布団付き）。位置はfitPlayerで映像の右下に合わせる */
-#video-telop{position:absolute;right:12px;bottom:12px;z-index:7;white-space:nowrap;
+#video-telop{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:7;white-space:nowrap;
   background:rgba(0,0,0,0.6);color:#fff;font-size:12px;line-height:1.4;
   padding:5px 10px;border-radius:6px;display:none;opacity:1;transition:opacity .5s;
-  pointer-events:none;text-align:left;letter-spacing:.01em;}
+  pointer-events:none;text-align:center;letter-spacing:.01em;}
 #video-telop.telop-hide{opacity:0;}
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
 .bar-fill.no-transition{transition:none !important;}
@@ -810,7 +810,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.52-lab（テロップ1行自動調整）</div>
+    <div class="ps-version">version 1.53-lab（テロップ中央）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1547,7 +1547,7 @@ function fitPlayer(){
   if(fsb){ fsb.style.width=Math.max(280,Math.round(vw*0.94))+'px'; }
   // 出典テロップを「映像の右下」に合わせ、1行で動画幅に収まるようフォントを自動調整
   var tel=document.getElementById('video-telop');
-  if(tel){ tel.style.right=(tx+12)+'px'; tel.style.bottom=(ty+12)+'px'; try{ fitTelop(vw); }catch(_){} }
+  if(tel){ tel.style.bottom=(ty+12)+'px'; try{ fitTelop(vw); }catch(_){} } // 左右中央はCSS(left:50%+translateX)で映像中央に一致
 }
 // 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝即実行でよい）
 function scheduleRelayout(){ fitPlayer(); }
