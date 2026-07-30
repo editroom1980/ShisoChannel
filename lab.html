@@ -334,6 +334,12 @@ body.fs-open .player-wrap.expanded{
 /* 中央の半透明・再生ボタン（一時停止中のみ表示。視覚のみ＝タップは既存の画面タップ再生に委ねる） */
 #center-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74px;height:74px;border:none;border-radius:50%;background:rgba(30,58,40,0.40);color:#fff;display:none;align-items:center;justify-content:center;z-index:6;pointer-events:none;}
 #center-play svg{width:42px;height:42px;margin-left:3px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
+/* 出典テロップ（見始めから10秒・映像右下に座布団付き）。位置はfitPlayerで映像の右下に合わせる */
+#video-telop{position:absolute;right:12px;bottom:12px;z-index:7;max-width:64%;
+  background:rgba(0,0,0,0.6);color:#fff;font-size:12px;line-height:1.45;
+  padding:6px 10px;border-radius:6px;display:none;opacity:1;transition:opacity .5s;
+  pointer-events:none;text-align:left;letter-spacing:.02em;}
+#video-telop.telop-hide{opacity:0;}
 .bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:3px;transition:width .8s linear;width:0%;}
 .bar-fill.no-transition{transition:none !important;}
 /* ══ 次の番組（タイトルバーと同じ高さ） ══ */
@@ -804,7 +810,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.48-lab（シーク誤切替/24時修正）</div>
+    <div class="ps-version">version 1.50-lab（出典テロップ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -871,6 +877,8 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
         <div id="yt-mouse-block"></div>
         <!-- 中央の半透明・再生ボタン（一時停止中のみ表示・視覚用） -->
         <div id="center-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+        <!-- 出典テロップ（見始めから10秒・座布団付き） -->
+        <div id="video-telop"></div>
         <!-- YouTubeボタンブロックレイヤー（シークバーは通す） -->
         <div class="yt-block" id="yt-block-left"></div>
         <div class="yt-block" id="yt-block-right"></div>
@@ -1537,6 +1545,9 @@ function fitPlayer(){
   var vw=Math.round(_fitW0*scale); // 表示中の映像の横幅
   var fsb=document.getElementById('fs-ctrl-bar');
   if(fsb){ fsb.style.width=Math.max(280,Math.round(vw*0.94))+'px'; }
+  // 出典テロップを「映像の右下」に合わせる（レターボックス分だけ内側へ）
+  var tel=document.getElementById('video-telop');
+  if(tel){ tel.style.right=(tx+12)+'px'; tel.style.bottom=(ty+12)+'px'; }
 }
 // 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝即実行でよい）
 function scheduleRelayout(){ fitPlayer(); }
@@ -1688,8 +1699,27 @@ function killCaptions(){
   try{ ytPlayer.setOption('cc','track',{}); }catch(_){}
 }
 
+// 出典テロップ：番組(ytId)を新規に読み込んだ時だけ、見始めから10秒表示（同一ytIdの再読込=シークでは出さない）
+var _telopYtId='';
+function maybeShowTelop(ytId){
+  var el=document.getElementById('video-telop'); if(!el) return;
+  if(ytId===_telopYtId) return; // 同じ番組の再読み込みでは再表示しない
+  _telopYtId=ytId;
+  var text=''; for(var i=0;i<CYCLE.length;i++){ if(CYCLE[i].ytId===ytId){ text=CYCLE[i].telop||''; break; } }
+  if(el._t){clearTimeout(el._t);el._t=null;}
+  if(!text){ el.style.display='none'; return; }
+  el.textContent=text;
+  el.classList.remove('telop-hide');
+  el.style.display='block';
+  el._t=setTimeout(function(){
+    el.classList.add('telop-hide');
+    setTimeout(function(){ if(el.classList.contains('telop-hide')) el.style.display='none'; },600);
+  },10000);
+}
+
 function loadVideo(ytId,sec,msg){
   try{statsSessionStart(ytId);}catch(_){}
+  try{maybeShowTelop(ytId);}catch(_){}
   clearSpinnerTimer();
   showEnded(false);
   // シークバーをリセット
