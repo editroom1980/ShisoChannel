@@ -810,7 +810,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.53-lab（テロップ中央）</div>
+    <div class="ps-version">version 1.54-lab（つばきバナー）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1025,10 +1025,44 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
 
 // 画像バナーをHTMLに（縦=bannerC/横=banner）。?v=でキャッシュ更新
 function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="width:100%;display:block;border:0">';}
+// 豚骨らーめん つばき バナー（アップ画像＋テキストをSVG合成。左=ラーメン写真＋広告＋キャッチ、右=ロゴ=店名）
+function tsubakiBanner(){return ''
++'<svg viewBox="0 0 1400 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;display:block;border:0;border-radius:6px;">'
++'<defs>'
++'<clipPath id="tbLc"><rect x="0" y="0" width="770" height="320"/></clipPath>'
++'<linearGradient id="tbGr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.55"/><stop offset="0.45" stop-color="#000" stop-opacity="0.12"/><stop offset="0.82" stop-color="#141414" stop-opacity="0.55"/><stop offset="1" stop-color="#141414" stop-opacity="1"/></linearGradient>'
++'<filter id="tbSh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.8"/></filter>'
++'</defs>'
++'<rect width="1400" height="320" fill="#141414"/>'
++'<image href="_banner_tsubaki_ramen.jpg?v=1" x="0" y="0" width="770" height="320" preserveAspectRatio="xMidYMid slice" clip-path="url(#tbLc)"/>'
++'<rect x="0" y="0" width="770" height="320" fill="url(#tbGr)"/>'
++'<rect x="26" y="24" width="92" height="42" rx="6" fill="#000" fill-opacity="0.5" stroke="#fff" stroke-opacity="0.65" stroke-width="1.5"/>'
++'<text x="72" y="54" font-family="sans-serif" font-size="27" font-weight="700" fill="#fff" text-anchor="middle">広告</text>'
++'<text x="34" y="270" font-family="&apos;Zen Kaku Gothic New&apos;,sans-serif" font-size="42" font-weight="700" fill="#fff" filter="url(#tbSh)">本気の一杯を味わいください。</text>'
++'<image href="_banner_tsubaki_logo.png?v=1" x="778" y="66" width="600" height="188" preserveAspectRatio="xMidYMid meet"/>'
++'</svg>';}
+function tsubakiBannerC(){return ''
++'<svg viewBox="0 0 2300 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;display:block;border:0;">'
++'<defs>'
++'<clipPath id="tbLcP"><rect x="0" y="0" width="1200" height="210"/></clipPath>'
++'<linearGradient id="tbGrP" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.5"/><stop offset="0.5" stop-color="#000" stop-opacity="0.15"/><stop offset="0.85" stop-color="#141414" stop-opacity="0.6"/><stop offset="1" stop-color="#141414" stop-opacity="1"/></linearGradient>'
++'<filter id="tbShP"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.8"/></filter>'
++'</defs>'
++'<rect width="2300" height="210" fill="#141414"/>'
++'<image href="_banner_tsubaki_ramen.jpg?v=1" x="0" y="0" width="1200" height="210" preserveAspectRatio="xMidYMid slice" clip-path="url(#tbLcP)"/>'
++'<rect x="0" y="0" width="1200" height="210" fill="url(#tbGrP)"/>'
++'<rect x="30" y="26" width="104" height="46" rx="6" fill="#000" fill-opacity="0.5" stroke="#fff" stroke-opacity="0.65" stroke-width="1.5"/>'
++'<text x="82" y="60" font-family="sans-serif" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">広告</text>'
++'<text x="40" y="172" font-family="&apos;Zen Kaku Gothic New&apos;,sans-serif" font-size="52" font-weight="700" fill="#fff" filter="url(#tbShP)">本気の一杯を味わいください。</text>'
++'<image href="_banner_tsubaki_logo.png?v=1" x="1210" y="35" width="1050" height="140" preserveAspectRatio="xMidYMid meet"/>'
++'</svg>';}
 var SPONSORS=[
   {name:'町家cafe＆ギャラリーさんしょう', url:'https://cafesansyo.com',
    banner:imgBanner('_banner_sansho_land.jpg'),   // 横向き(1400x320)
    bannerC:imgBanner('_banner_view.jpg')},        // 縦向き(2300x210・提供画像)
+  {name:'豚骨らーめん つばき', url:'https://www.tonkotsuramen-tsubaki-shiso.com',
+   banner:tsubakiBanner(),    // 横向き(1400x320・合成)
+   bannerC:tsubakiBannerC()}, // 縦向き(2300x210・合成)
   {name:'クラウドファンディング実施中', url:'https://readyfor.jp/projects/shiso-chan',
    banner:imgBanner('_banner_cf_land.png'),        // 横向き(1400x320)
    bannerC:imgBanner('_banner_cf_port.png')},      // 縦向き(2300x210)
