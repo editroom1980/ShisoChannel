@@ -55,19 +55,31 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   padding:0 24px;
   /* safe-area-inset-topでステータスバー分を確保（被らないように） */
   padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
-  height:calc(60px + max(0px, calc(env(safe-area-inset-top) - 8px)));
+  min-height:calc(60px + max(0px, calc(env(safe-area-inset-top) - 8px)));
   display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;row-gap:4px;column-gap:14px;
   position:sticky;top:0;z-index:300;
   box-shadow:0 2px 10px rgba(0,0,0,0.2);
 }
-.h-logo{display:flex;flex-direction:row;align-items:center;gap:8px;}
+.h-logo{display:flex;flex-direction:row;align-items:center;gap:8px;flex-shrink:0;}
+/* 情報バー内のスポンサーバナー（横向き=ロゴと時間の間で中央／縦向き=ロゴ行の下に全幅） */
+.h-banner{flex:1 1 auto;min-width:0;display:flex;justify-content:center;align-items:center;overflow:hidden;cursor:pointer;padding:3px 0;-webkit-tap-highlight-color:transparent;}
+.h-banner .sponsor-img{width:auto;height:42px;line-height:0;display:flex;align-items:center;}
+.h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:auto;height:42px;display:block;}
+@media(orientation:portrait){
+  .header{justify-content:space-between;}
+  .h-right{order:1;}
+  .h-banner{order:2;flex-basis:100%;width:100%;padding:2px 0 3px;}
+  .h-banner .sponsor-img{width:100%;height:auto;}
+  .h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:100%;height:auto;}
+}
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
 .test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
 .ps-test-badge{display:inline-block;border:2px solid var(--gold2);color:var(--gold2);font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 16px;border-radius:6px;margin-top:16px;}
 .time-bar{display:none;}
 .h-logo-main{font-family:'CorpLogoB','Zen Kaku Gothic New',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:0.077em;}
 .h-logo-main em{color:var(--gold2);font-style:normal;font-size:1.125em;vertical-align:-0.062em;}
-.h-right{display:flex;align-items:center;gap:14px;}
+.h-right{display:flex;align-items:center;gap:14px;flex-shrink:0;}
 .h-datetime{display:flex;flex-direction:column;align-items:flex-end;}
 .h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
 .h-time{font-size:22px;font-weight:300;color:rgba(255,255,255,0.85);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1.1;}
@@ -83,15 +95,15 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   padding:16px 16px 40px;
   display:grid;
   grid-template-columns:1fr 300px;
-  grid-template-rows:auto 1fr;
+  grid-template-rows:1fr auto;
   grid-template-areas:
-    "banner banner"
-    "player guide";
+    "player guide"
+    "player news";
   gap:16px;
 }
 .player-col{grid-area:player;min-width:0;}
-.sponsor-banner{grid-area:banner;}
 .sidebar{grid-area:guide;}
+.newsbar{grid-area:news;}
 
 /* ══ 左カラム：プレイヤーエリア ══ */
 
@@ -454,18 +466,20 @@ body.fs-open .player-wrap.expanded{
 .pcat{font-size:11px;font-weight:700;color:var(--green2);}
 .pdur{font-size:11px;color:var(--text3);}
 
-/* ══ 宍粟市お知らせ・イベント枠（番組表の下・データがある時のみ表示） ══ */
-.sb-news{flex-shrink:0;border-top:2px solid var(--green5);background:var(--white);display:flex;flex-direction:column;}
-.sb-news-head{background:var(--green5);padding:5px 12px;flex-shrink:0;}
-.sb-news-ttl{font-size:11px;font-weight:700;color:var(--green);letter-spacing:2px;}
-.sb-news-body{padding:6px 12px;display:flex;flex-direction:column;gap:7px;max-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+/* ══ 宍粟市お知らせ・イベント（番組表と同形式の独立ウインドウ・データがある時のみ表示） ══ */
+.newsbar{
+  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  overflow:hidden;box-shadow:0 2px 12px rgba(30,58,40,0.08);
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.news-body{padding:6px 12px 4px;display:flex;flex-direction:column;gap:3px;min-height:0;}
 .news-item{display:flex;flex-direction:column;gap:2px;}
 .news-tag{align-self:flex-start;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;letter-spacing:1px;}
 .news-tag.notice{background:var(--green4);color:var(--forest);}
 .news-tag.event{background:#f2e3c4;color:#8a6414;}
-.news-ttl{font-size:12px;color:var(--text);line-height:1.4;}
+.news-ttl{font-size:12px;color:var(--text);line-height:1.35;}
 .news-date{font-size:10px;color:var(--text3);}
-.sb-news-src{padding:4px 12px 7px;font-size:9px;color:var(--text3);line-height:1.4;border-top:1px solid var(--green5);flex-shrink:0;}
+.sb-news-src{padding:2px 12px 6px;font-size:9px;color:var(--text3);line-height:1.3;flex-shrink:0;}
 
 /* ══ フッター ══ */
 .footer{background:var(--forest);color:rgba(255,255,255,0.4);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
@@ -486,9 +500,9 @@ body.fs-open .player-wrap.expanded{
     grid-template-columns:1fr;
     grid-template-rows:auto auto auto;
     grid-template-areas:
-      "banner"
       "player"
-      "guide";
+      "guide"
+      "news";
     padding:6px 8px 24px;
     gap:6px;
   }
@@ -499,7 +513,7 @@ body.fs-open .player-wrap.expanded{
     min-height:220px;
   }
   .header{
-    height:calc(44px + max(0px, calc(env(safe-area-inset-top) - 8px)));
+    min-height:calc(44px + max(0px, calc(env(safe-area-inset-top) - 8px)));
     padding:0 14px;
     padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
@@ -527,9 +541,9 @@ body.fs-open .player-wrap.expanded{
     overflow:hidden;
   }
   body.iphone-mode .page{
-    grid-template-rows:auto auto 1fr;
-    height:calc(100vh - 44px - max(0px, calc(env(safe-area-inset-top) - 8px)));
-    height:calc(100dvh - 44px - max(0px, calc(env(safe-area-inset-top) - 8px)));
+    grid-template-rows:auto 1fr auto;
+    height:calc(100vh - var(--hdr-h, 84px));
+    height:calc(100dvh - var(--hdr-h, 84px));
     overflow:hidden;
     padding-bottom:8px;
   }
@@ -551,10 +565,10 @@ body.fs-open .player-wrap.expanded{
   /* 動画幅 = 動画高さ × 16/9 */
   .page{
     grid-template-columns:calc((100vh - 114px) * 16 / 9) 1fr;
-    grid-template-rows:auto 1fr;
+    grid-template-rows:1fr auto;
     grid-template-areas:
-      "banner banner"
-      "player guide";
+      "player guide"
+      "player news";
     padding:4px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
     gap:6px;
     align-items:start;
@@ -564,7 +578,7 @@ body.fs-open .player-wrap.expanded{
   }
   /* ヘッダー: safe-area対応（「し」と時間の見切れ防止） */
   .header{
-    height:38px;
+    min-height:38px;
     padding-left:max(10px, env(safe-area-inset-left));
     padding-right:max(10px, env(safe-area-inset-right));
   }
@@ -640,10 +654,10 @@ body.fs-open .player-wrap.expanded{
 /* headerは44px sticky → pageの使える高さ = 100vh - 44px - padding(4+8)px = 100vh - 56px */
 body.silk-mode .page{
   grid-template-columns:1fr 232px;
-  grid-template-rows:auto 1fr;
+  grid-template-rows:1fr auto;
   grid-template-areas:
-    "banner banner"
-    "player guide";
+    "player guide"
+    "player news";
   padding:4px 8px 8px;
   gap:8px;
   align-items:stretch;
@@ -657,7 +671,7 @@ body.silk-mode .page > div:first-child{
   overflow:hidden;
 }
 body.silk-mode .header{
-  height:44px;
+  min-height:44px;
   padding:0 12px;
   padding-top:0;
   position:sticky;top:0;z-index:300;
@@ -721,9 +735,9 @@ body.silk-mode .expand-open-btn{display:flex !important;}
     grid-template-columns:1fr;
     grid-template-rows:auto auto auto;
     grid-template-areas:
-      "banner"
       "player"
-      "guide";
+      "guide"
+      "news";
     padding:10px 14px 20px;
     gap:12px;
   }
@@ -737,7 +751,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   /* ヘッダー：safe-area対応（iPadのステータスバーと被らないように）
      safe-area-inset-topが取得できない場合は固定24pxを使用 */
   .header{
-    height:calc(56px + max(24px, env(safe-area-inset-top)));
+    min-height:calc(56px + max(24px, env(safe-area-inset-top)));
     padding:max(24px, env(safe-area-inset-top)) 16px 0;
   }
   .h-date{display:none;}
@@ -783,7 +797,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   align-self:start;
 }
 .sponsor-img{width:100%;line-height:0;}
-.sponsor-img svg{width:100%;height:auto;display:block;}
+.sponsor-img svg,.sponsor-img img{width:100%;height:auto;display:block;}
 
 /* ══ 全画面時のスポンサー（通常バナーと同一デザイン・縦向きのみ） ══ */
 .fs-sponsor{
@@ -807,13 +821,20 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
     top:calc(env(safe-area-inset-top) + 14px);
   }
 }
-/* 全画面・横向き: 上部に薄型で常時表示（横長バナー） */
+/* 全画面・横向き: 上部の黒帯(48px)に横長バナーを中央表示（動画には被せない） */
 @media(orientation:landscape){
   .player-wrap.expanded .fs-sponsor,
   .player-wrap:fullscreen .fs-sponsor,
   .player-wrap:-webkit-full-screen .fs-sponsor{
-    display:block;
+    display:flex;align-items:center;justify-content:center;
+    top:0;left:0;transform:none;width:100%;height:48px;background:#000;z-index:40;
   }
+  .player-wrap.expanded .fs-sponsor .sponsor-img,
+  .player-wrap:fullscreen .fs-sponsor .sponsor-img,
+  .player-wrap:-webkit-full-screen .fs-sponsor .sponsor-img{width:auto;height:44px;display:flex;align-items:center;}
+  .player-wrap.expanded .fs-sponsor img,.player-wrap.expanded .fs-sponsor svg,
+  .player-wrap:fullscreen .fs-sponsor img,.player-wrap:fullscreen .fs-sponsor svg,
+  .player-wrap:-webkit-full-screen .fs-sponsor img,.player-wrap:-webkit-full-screen .fs-sponsor svg{width:auto;height:44px;}
 }
 </style>
 </head>
@@ -823,7 +844,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.58-lab（情報バー統合・お知らせ枠）</div>
+    <div class="ps-version">version 1.59-lab（情報バー統合・2300x210バナー・お知らせ独立枠）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -841,6 +862,10 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
     <div class="h-logo">
       <div class="h-logo-main">しそチャン<em>NET</em></div>
       <span class="test-badge">試験放送中</span>
+    </div>
+    <!-- スポンサーバナー（情報バー内・2300×210の横長） -->
+    <div class="h-banner" id="sponsor-banner" onclick="openSponsorLink()">
+      <div class="sponsor-img" id="sponsor-img"></div>
     </div>
     <div class="h-right">
       <div class="h-datetime">
@@ -948,24 +973,20 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
     </div>
 
-    <!-- スポンサーバナー -->
-    <div class="sponsor-banner" id="sponsor-banner" onclick="openSponsorLink()">
-      <div class="sponsor-img" id="sponsor-img"></div>
-    </div>
-
-    <!-- 右：番組表 -->
+    <!-- 右上：番組表 -->
     <div class="sidebar">
       <div class="sb-head">
         <div class="sb-ttl">番 組 表</div>
         <div id="today-date">—</div>
       </div>
       <div class="sb-list" id="sb-list"></div>
-      <!-- 宍粟市お知らせ・イベント（データがある時のみ表示。全画面ではsidebar非表示なので出ない） -->
-      <div class="sb-news" id="sb-news" style="display:none">
-        <div class="sb-news-head"><span class="sb-news-ttl">お知らせ・イベント</span></div>
-        <div class="sb-news-body" id="sb-news-body"></div>
-        <div class="sb-news-src" id="sb-news-src"></div>
-      </div>
+    </div>
+
+    <!-- 右下：お知らせ・イベント（番組表と同形式の独立ウインドウ・データがある時のみ表示） -->
+    <div class="newsbar" id="sb-news" style="display:none">
+      <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div></div>
+      <div class="news-body" id="sb-news-body"></div>
+      <div class="sb-news-src" id="sb-news-src"></div>
     </div>
   </div>
 
@@ -1043,7 +1064,7 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
 }
 
 // 画像バナーをHTMLに（縦=bannerC/横=banner）。?v=でキャッシュ更新
-function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="width:100%;display:block;border:0">';}
+function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="display:block;border:0">';}
 // ══════════════════════════════════════════════
 //  宍粟市お知らせ・イベント（番組表の下の枠）
 //  ※現状はサンプル。将来は Firestore / 観光協会RSS(/news/feed)中継 に置換予定。
@@ -1053,25 +1074,29 @@ var CITY_NEWS=[
   {type:'event',  title:'（サンプル）シソイチライドイベント2026', date:'2026.02.20'},
   {type:'notice', title:'（サンプル）ここに市からのお知らせが表示されます', date:''}
 ];
+var cityNewsIndex=0;
 function renderCityNews(){
   var box=document.getElementById('sb-news');
   if(!box) return;
   var body=document.getElementById('sb-news-body');
   var src=document.getElementById('sb-news-src');
   if(!CITY_NEWS || !CITY_NEWS.length){ box.style.display='none'; return; }
+  if(cityNewsIndex>=CITY_NEWS.length) cityNewsIndex=0;
+  var n=CITY_NEWS[cityNewsIndex], isEv=(n.type==='event');
   var esc=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  var html='';
-  for(var i=0;i<CITY_NEWS.length;i++){
-    var n=CITY_NEWS[i], isEv=(n.type==='event');
-    html+='<div class="news-item">'
-      +'<span class="news-tag '+(isEv?'event':'notice')+'">'+(isEv?'イベント':'お知らせ')+'</span>'
-      +'<div class="news-ttl">'+esc(n.title||'')+'</div>'
-      +(n.date?'<div class="news-date">'+esc(n.date)+'</div>':'')
-      +'</div>';
-  }
-  body.innerHTML=html;
+  // イベント／お知らせを1件ずつ順番に切り替え表示
+  body.innerHTML='<div class="news-item">'
+    +'<span class="news-tag '+(isEv?'event':'notice')+'">'+(isEv?'イベント':'お知らせ')+'</span>'
+    +'<div class="news-ttl">'+esc(n.title||'')+'</div>'
+    +(n.date?'<div class="news-date">'+esc(n.date)+'</div>':'')
+    +'</div>';
   src.textContent='※サンプル表示（実際の情報連携は準備中）';
   box.style.display='';
+}
+function rotateCityNews(){ if(!CITY_NEWS||CITY_NEWS.length<2) return; cityNewsIndex=(cityNewsIndex+1)%CITY_NEWS.length; renderCityNews(); }
+// 情報バーの実高さを CSS変数 --hdr-h に反映（バナー込みの高さでiPhone縦の本文高さを正しく計算）
+function setHdrVar(){
+  try{ var h=document.querySelector('.header'); if(h) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight+'px'); }catch(_){}
 }
 
 var SPONSORS=[
@@ -1097,12 +1122,12 @@ function updateSponsorDisplay(){
   var s=SPONSORS[sponsorIndex];
   if(!s)return;
   try{statsBannerImp(s.name);}catch(_){}
-  // 横長バナー1種類に統一（縦向き・全画面も横長を使用）
+  // 2300×210の細長い横長バナー(bannerC)に統一（縦・横・全画面すべて同じ）
   var img=document.getElementById('sponsor-img');
-  if(img){ img.innerHTML = s.banner; }
-  // 全画面オーバーレイは通常バナーを使用（縦向き全画面で表示）
+  if(img){ img.innerHTML = s.bannerC; }
   var fimg=document.getElementById('fs-sponsor-img');
-  if(fimg){ fimg.innerHTML=s.banner; }
+  if(fimg){ fimg.innerHTML=s.bannerC; }
+  try{ setHdrVar(); }catch(_){}
 }
 
 // バナークリックでスポンサーのサイトへ（同一タブ遷移→戻った時にbfキャッシュ復元で再生再開）
@@ -1591,9 +1616,14 @@ function fitPlayer(){
   if(!pw){ return; }
   var cw=pw.clientWidth, ch=pw.clientHeight;
   if(cw<=0||ch<=0){ yt.style.transform='scale(0)'; return; } // 非表示時は畳む（内部サイズは固定のまま）
-  var scale=Math.min(cw/_fitW0, ch/_fitH0); // contain（全体表示・レターボックス）
+  // 全画面・横向きのみ、上部にバナー用の黒帯を確保（動画は重ねず少し縮小して下げる。下部はそのまま）
+  var isFs=pw.classList.contains('expanded');
+  try{ if(!isFs && (pw.matches(':fullscreen')||pw.matches(':-webkit-full-screen'))) isFs=true; }catch(_){}
+  var topBand=(isFs && window.matchMedia('(orientation:landscape)').matches) ? 48 : 0;
+  var availH=ch-topBand;
+  var scale=Math.min(cw/_fitW0, availH/_fitH0); // contain（全体表示・レターボックス）
   // 平行移動は整数pxにスナップ（iOSのサブピクセル描画による微オフセット/にじみを防ぐ）
-  var tx=Math.round((cw-_fitW0*scale)/2), ty=Math.round((ch-_fitH0*scale)/2);
+  var tx=Math.round((cw-_fitW0*scale)/2), ty=Math.round(topBand + (availH-_fitH0*scale)/2);
   yt.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
   // 全画面のフローティング操作バーの幅を「映像の横幅より少し短く」動的設定
   var vw=Math.round(_fitW0*scale); // 表示中の映像の横幅
@@ -2375,7 +2405,10 @@ function init(){
   if(isIOS){ document.body.classList.add('iphone-mode'); }
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
-  renderSB();renderCityNews();updateClock();
+  renderSB();renderCityNews();updateClock();setHdrVar();
+  setInterval(rotateCityNews, 8000);
+  window.addEventListener('load', setHdrVar);
+  setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),powerOn);
