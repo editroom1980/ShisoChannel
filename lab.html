@@ -85,7 +85,7 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   grid-template-columns:1fr 300px;
   grid-template-rows:auto 1fr;
   grid-template-areas:
-    "player banner"
+    "banner banner"
     "player guide";
   gap:16px;
 }
@@ -454,6 +454,19 @@ body.fs-open .player-wrap.expanded{
 .pcat{font-size:11px;font-weight:700;color:var(--green2);}
 .pdur{font-size:11px;color:var(--text3);}
 
+/* ══ 宍粟市お知らせ・イベント枠（番組表の下・データがある時のみ表示） ══ */
+.sb-news{flex-shrink:0;border-top:2px solid var(--green5);background:var(--white);display:flex;flex-direction:column;}
+.sb-news-head{background:var(--green5);padding:5px 12px;flex-shrink:0;}
+.sb-news-ttl{font-size:11px;font-weight:700;color:var(--green);letter-spacing:2px;}
+.sb-news-body{padding:6px 12px;display:flex;flex-direction:column;gap:7px;max-height:96px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.news-item{display:flex;flex-direction:column;gap:2px;}
+.news-tag{align-self:flex-start;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;letter-spacing:1px;}
+.news-tag.notice{background:var(--green4);color:var(--forest);}
+.news-tag.event{background:#f2e3c4;color:#8a6414;}
+.news-ttl{font-size:12px;color:var(--text);line-height:1.4;}
+.news-date{font-size:10px;color:var(--text3);}
+.sb-news-src{padding:4px 12px 7px;font-size:9px;color:var(--text3);line-height:1.4;border-top:1px solid var(--green5);flex-shrink:0;}
+
 /* ══ フッター ══ */
 .footer{background:var(--forest);color:rgba(255,255,255,0.4);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
 
@@ -473,8 +486,8 @@ body.fs-open .player-wrap.expanded{
     grid-template-columns:1fr;
     grid-template-rows:auto auto auto;
     grid-template-areas:
-      "player"
       "banner"
+      "player"
       "guide";
     padding:6px 8px 24px;
     gap:6px;
@@ -540,7 +553,7 @@ body.fs-open .player-wrap.expanded{
     grid-template-columns:calc((100vh - 114px) * 16 / 9) 1fr;
     grid-template-rows:auto 1fr;
     grid-template-areas:
-      "player banner"
+      "banner banner"
       "player guide";
     padding:4px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
     gap:6px;
@@ -629,7 +642,7 @@ body.silk-mode .page{
   grid-template-columns:1fr 232px;
   grid-template-rows:auto 1fr;
   grid-template-areas:
-    "player banner"
+    "banner banner"
     "player guide";
   padding:4px 8px 8px;
   gap:8px;
@@ -708,8 +721,8 @@ body.silk-mode .expand-open-btn{display:flex !important;}
     grid-template-columns:1fr;
     grid-template-rows:auto auto auto;
     grid-template-areas:
-      "player"
       "banner"
+      "player"
       "guide";
     padding:10px 14px 20px;
     gap:12px;
@@ -794,12 +807,12 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
     top:calc(env(safe-area-inset-top) + 14px);
   }
 }
-/* 全画面・横向き: 非表示（B-2） */
+/* 全画面・横向き: 上部に薄型で常時表示（横長バナー） */
 @media(orientation:landscape){
   .player-wrap.expanded .fs-sponsor,
   .player-wrap:fullscreen .fs-sponsor,
   .player-wrap:-webkit-full-screen .fs-sponsor{
-    display:none !important;
+    display:block;
   }
 }
 </style>
@@ -810,7 +823,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.55-lab（つばきバナー画像）</div>
+    <div class="ps-version">version 1.58-lab（情報バー統合・お知らせ枠）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -947,6 +960,12 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
         <div id="today-date">—</div>
       </div>
       <div class="sb-list" id="sb-list"></div>
+      <!-- 宍粟市お知らせ・イベント（データがある時のみ表示。全画面ではsidebar非表示なので出ない） -->
+      <div class="sb-news" id="sb-news" style="display:none">
+        <div class="sb-news-head"><span class="sb-news-ttl">お知らせ・イベント</span></div>
+        <div class="sb-news-body" id="sb-news-body"></div>
+        <div class="sb-news-src" id="sb-news-src"></div>
+      </div>
     </div>
   </div>
 
@@ -1025,6 +1044,36 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
 
 // 画像バナーをHTMLに（縦=bannerC/横=banner）。?v=でキャッシュ更新
 function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="width:100%;display:block;border:0">';}
+// ══════════════════════════════════════════════
+//  宍粟市お知らせ・イベント（番組表の下の枠）
+//  ※現状はサンプル。将来は Firestore / 観光協会RSS(/news/feed)中継 に置換予定。
+//  ※本番反映前に CITY_NEWS を空配列 or 実データへ差し替えること。
+// ══════════════════════════════════════════════
+var CITY_NEWS=[
+  {type:'event',  title:'（サンプル）シソイチライドイベント2026', date:'2026.02.20'},
+  {type:'notice', title:'（サンプル）ここに市からのお知らせが表示されます', date:''}
+];
+function renderCityNews(){
+  var box=document.getElementById('sb-news');
+  if(!box) return;
+  var body=document.getElementById('sb-news-body');
+  var src=document.getElementById('sb-news-src');
+  if(!CITY_NEWS || !CITY_NEWS.length){ box.style.display='none'; return; }
+  var esc=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var html='';
+  for(var i=0;i<CITY_NEWS.length;i++){
+    var n=CITY_NEWS[i], isEv=(n.type==='event');
+    html+='<div class="news-item">'
+      +'<span class="news-tag '+(isEv?'event':'notice')+'">'+(isEv?'イベント':'お知らせ')+'</span>'
+      +'<div class="news-ttl">'+esc(n.title||'')+'</div>'
+      +(n.date?'<div class="news-date">'+esc(n.date)+'</div>':'')
+      +'</div>';
+  }
+  body.innerHTML=html;
+  src.textContent='※サンプル表示（実際の情報連携は準備中）';
+  box.style.display='';
+}
+
 var SPONSORS=[
   {name:'町家cafe＆ギャラリーさんしょう', url:'https://cafesansyo.com',
    banner:imgBanner('_banner_sansho_land.jpg'),   // 横向き(1400x320)
@@ -1048,10 +1097,9 @@ function updateSponsorDisplay(){
   var s=SPONSORS[sponsorIndex];
   if(!s)return;
   try{statsBannerImp(s.name);}catch(_){}
-  // iPhone縦向き(幅840px以下かつ縦)はコンパクトバナー（低背）を使用
-  var useCompact = window.matchMedia && window.matchMedia('(max-width:840px) and (orientation:portrait)').matches;
+  // 横長バナー1種類に統一（縦向き・全画面も横長を使用）
   var img=document.getElementById('sponsor-img');
-  if(img){ img.innerHTML = useCompact ? s.bannerC : s.banner; }
+  if(img){ img.innerHTML = s.banner; }
   // 全画面オーバーレイは通常バナーを使用（縦向き全画面で表示）
   var fimg=document.getElementById('fs-sponsor-img');
   if(fimg){ fimg.innerHTML=s.banner; }
@@ -1440,6 +1488,9 @@ var allT=function(pIdx){var r=[];for(var i=0;i<CS.length;i++)r.push(CS[i]+CO[pId
 // ── 状態管理 ──
 var isManual=false,isOff=false;
 var hasPoweredOn=false; // 放送開始ボタンを一度でも押したか（未操作での自動再生を防ぐ）
+// TV/キオスクモード(?tv または ?tv=1)。Google TV Streamer等に載せ、開くだけで自動放送・
+// カーソル非表示・スリープ抑止にする。通常URL(?tvなし)には一切影響しない。
+var TVMODE=/[?&]tv\b/.test(location.search);
 var vC=0,vP=0,lC=0,lP=0;
 var ytPlayer=null,ytReady=false;
 var pendingYtId='',pendingSec=0;
@@ -2324,7 +2375,7 @@ function init(){
   if(isIOS){ document.body.classList.add('iphone-mode'); }
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
-  renderSB();updateClock();
+  renderSB();renderCityNews();updateClock();
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),powerOn);
@@ -2406,6 +2457,28 @@ function init(){
     }
   }catch(_){}
 
+  // ══ TV/キオスクモード(?tv) ══
+  // Google TV Streamer等にFully Kioskで本ページを全画面表示する運用向け。
+  // 開くだけで ①カーソル非表示 ②YT準備でき次第そのまま放送開始（未操作でも再生）
+  // ③画面スリープ抑止。通常URL(?tvなし)では以下は一切実行されない。
+  if(TVMODE){
+    document.body.classList.add('cursor-hidden'); // マウスが無い前提で最初から非表示
+    var _tvStart=function(){
+      if(hasPoweredOn) return;      // 既に開始済み(復帰経路等)なら二重起動しない
+      if(ytReady){ powerOn(); }     // 放送開始ボタンを押したのと同じ状態にする
+      else { setTimeout(_tvStart,150); }
+    };
+    setTimeout(_tvStart,300);
+    // 画面スリープ抑止（対応環境のみ。Fully Kiosk側「画面を消さない」でも二重に担保）
+    if('wakeLock' in navigator){
+      var _reqWake=function(){
+        try{ navigator.wakeLock.request('screen').catch(function(){}); }catch(_){}
+      };
+      _reqWake();
+      document.addEventListener('visibilitychange',function(){ if(!document.hidden) _reqWake(); });
+    }
+  }
+
   // カーソル自動非表示（PC全画面）
   // マウスが動いたらカーソル＋コントロールバーを表示、2秒後に両方非表示
   var _globalCursorTimer=null;
@@ -2415,7 +2488,7 @@ function init(){
     // PC全画面中はコントロールバーも同時に表示（fsUiTimerはここで一元管理）
     if(isExpanded){ clearFsUiTimer(); showFsUi(); }
     _globalCursorTimer=setTimeout(function(){
-      var inFs=!!(document.fullscreenElement||document.webkitFullscreenElement)||isExpanded||isSilk;
+      var inFs=!!(document.fullscreenElement||document.webkitFullscreenElement)||isExpanded||isSilk||TVMODE;
       if(inFs){
         document.body.classList.add('cursor-hidden');
         if(isExpanded) hideFsUi(); // コントロールバーも同時に非表示
