@@ -67,9 +67,10 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .h-banner .sponsor-img{width:auto;height:36px;line-height:0;display:flex;align-items:center;}
 .h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:auto;height:36px;display:block;}
 @media(orientation:portrait){
-  .header{justify-content:space-between;}
+  .header{justify-content:space-between;row-gap:0;padding-bottom:0;}
   .h-right{order:1;}
-  .h-banner{order:2;flex-basis:100%;width:100%;padding:2px 0 3px;}
+  /* バナーの上下の隙間を均等に（下の隙間=padding-bottomを基準に上も同じ3px）→情報バーも詰まる */
+  .h-banner{order:2;flex-basis:100%;width:100%;padding:3px 0;}
   .h-banner .sponsor-img{width:100%;height:auto;}
   .h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:100%;height:auto;}
 }
@@ -809,14 +810,16 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 /* ══ 全画面時のスポンサーバナー（枠線・角丸・余白なしのベタ表示。縦横とも同サイズ＝画面の短辺幅） ══ */
 .fs-sponsor{
   position:absolute;
-  top:12px;
+  top:10px;
   left:50%;
   transform:translateX(-50%);
-  width:min(100vw,100vh);
-  max-width:100%;
+  width:auto;
   z-index:40;
   display:none;
 }
+/* 全画面バナーは通常画面と同じ大きさ（高さ36px・幅は比率なり・中央） */
+.fs-sponsor .sponsor-img{width:auto;height:36px;}
+.fs-sponsor .sponsor-img img,.fs-sponsor .sponsor-img svg{width:auto;height:36px;}
 /* 全画面・縦向き: 上部レターボックス内に表示（画面幅いっぱい） */
 @media(orientation:portrait){
   .player-wrap.expanded .fs-sponsor,
@@ -838,7 +841,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.61-lab（バナー角丸化・比率固定でEXIF崩れ対策）</div>
+    <div class="ps-version">version 1.62-lab（縦バナー間隔均等・全画面バナー通常サイズ・お知らせFirestore連動）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1068,7 +1071,7 @@ var CITY_NEWS=[
   {type:'event',  title:'（サンプル）シソイチライドイベント2026', date:'2026.02.20'},
   {type:'notice', title:'（サンプル）ここに市からのお知らせが表示されます', date:''}
 ];
-var cityNewsIndex=0;
+var cityNewsIndex=0, _cityNewsReal=false, _cityNewsSig='', _cityNewsSrc='';
 function renderCityNews(){
   var box=document.getElementById('sb-news');
   if(!box) return;
@@ -1085,7 +1088,7 @@ function renderCityNews(){
     +'<div class="news-ttl">'+esc(n.title||'')+'</div>'
     +'<div class="news-date">'+esc(n.date||'')+'</div>'
     +'</div>';
-  src.textContent='※サンプル表示（実際の情報連携は準備中）';
+  src.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示（実際の情報連携は準備中）';
   box.style.display='';
 }
 function rotateCityNews(){ if(!CITY_NEWS||CITY_NEWS.length<2) return; cityNewsIndex=(cityNewsIndex+1)%CITY_NEWS.length; renderCityNews(); }
@@ -1099,6 +1102,25 @@ function attachNewsSwipe(el){
     if(Math.abs(dx)<30 || Math.abs(dx)<Math.abs(dy)) return;
     if(dx<0) rotateCityNews(); else prevCityNews();
   },{passive:true});
+}
+// Firestoreの broadcast/city_news から お知らせ/イベント を取得（番組表と同じSWR方式）。
+// データがあれば自動でサンプルから差し替え・更新のたびに追従。無ければサンプルのまま。
+function loadCityNews(){
+  if(!FIREBASE.projectId||!FIREBASE.apiKey) return;
+  var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/city_news?key='+encodeURIComponent(FIREBASE.apiKey);
+  fetch(url,{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  .then(function(doc){
+    var f=doc.fields||{};
+    var items = f.items ? fsVal(f.items) : null;
+    var srcTxt = f.source ? fsVal(f.source) : '';
+    if(items && items.length){
+      var sig=JSON.stringify(items);
+      if(sig!==_cityNewsSig){
+        CITY_NEWS=items; _cityNewsSig=sig; _cityNewsReal=true; _cityNewsSrc=srcTxt||''; cityNewsIndex=0; renderCityNews();
+      }
+    }
+    // items が空/未定義ならサンプルのまま（何もしない）
+  }).catch(function(){ /* 取得失敗時もサンプルのまま */ });
 }
 // 情報バーの実高さを CSS変数 --hdr-h に反映（バナー込みの高さでiPhone縦の本文高さを正しく計算）
 function setHdrVar(){
@@ -1628,7 +1650,7 @@ function fitPlayer(){
   var topBand=0;
   if(isFs && window.matchMedia('(orientation:landscape)').matches){
     var _fss=document.getElementById('fs-sponsor');
-    topBand=(_fss && _fss.offsetHeight>8 ? _fss.offsetHeight : Math.round(Math.min(cw,ch)*210/2300)) + 12;
+    topBand=(_fss && _fss.offsetHeight>8 ? _fss.offsetHeight : 36) + 8;
   }
   var availH=ch-topBand;
   var scale=Math.min(cw/_fitW0, availH/_fitH0); // contain（全体表示・レターボックス）
@@ -2416,6 +2438,8 @@ function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();renderCityNews();updateClock();setHdrVar();
+  loadCityNews();                       // Firestoreから最新のお知らせを取得（あれば自動差し替え）
+  setInterval(loadCityNews, 60000);     // 60秒ごとに再取得＝更新に自動追従(SWR)
   setInterval(rotateCityNews, 8000);
   window.addEventListener('load', setHdrVar);
   setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
