@@ -802,8 +802,9 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 .sponsor-img svg,.sponsor-img img{width:100%;height:auto;display:block;}
 /* インラインSVGはwidth:auto/height指定でアスペクトが効かない環境があるため縦横比を明示（bannerCは720x60固定） */
 .sponsor-img svg{aspect-ratio:720 / 60;}
-/* 画像バナー(つばき等)は画像自体に白い角丸余白が焼き込まれているため端を薄くクロップして隠す（SVGバナーは対象外） */
-.sponsor-img img{clip-path:inset(4% 0.5%);}
+/* 画像バナー: EXIF回転や環境差で高さが暴走しないよう表示比率を固定(2300x210)。
+   白い角丸余白を端クロップで隠しつつ角丸(round)にする（枠線・白ボックスなし） */
+.sponsor-img img{aspect-ratio:2300 / 210;object-fit:cover;clip-path:inset(4% 0.5% round 8px);}
 
 /* ══ 全画面時のスポンサーバナー（枠線・角丸・余白なしのベタ表示。縦横とも同サイズ＝画面の短辺幅） ══ */
 .fs-sponsor{
@@ -837,7 +838,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.60-lab（バナー枠線/白角除去・全画面同寸・お知らせ固定/スワイプ・横向き整列）</div>
+    <div class="ps-version">version 1.61-lab（バナー角丸化・比率固定でEXIF崩れ対策）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
