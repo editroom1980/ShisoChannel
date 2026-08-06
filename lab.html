@@ -842,7 +842,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.69-lab（横向きの余白=ズレ原因を除去・デバッグ/緑撤去）</div>
+    <div class="ps-version">version 1.70-lab（動画をtransform非使用・iframe実寸方式に変更＝iOS回転ズレ根治試験）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1637,14 +1637,10 @@ var _fitW0=1920,_fitH0=1080;
 function fitPlayer(){
   var yt=document.getElementById('yt-player-api');
   if(!yt) return;
-  yt.style.position='absolute'; yt.style.left='0'; yt.style.top='0';
-  yt.style.right='auto'; yt.style.bottom='auto';
-  yt.style.width=_fitW0+'px'; yt.style.height=_fitH0+'px';
-  yt.style.transformOrigin='0 0';
   var pw=document.getElementById('player-wrap');
   if(!pw){ return; }
   var cw=pw.clientWidth, ch=pw.clientHeight;
-  if(cw<=0||ch<=0){ yt.style.transform='scale(0)'; return; } // 非表示時は畳む（内部サイズは固定のまま）
+  if(cw<=0||ch<=0){ yt.style.width='0px'; yt.style.height='0px'; return; } // 非表示時
   // 全画面・横向きのみ、上部にバナー用の黒帯を確保（動画は重ねず少し縮小して下げる。下部はそのまま）
   var isFs=pw.classList.contains('expanded');
   try{ if(!isFs && (pw.matches(':fullscreen')||pw.matches(':-webkit-full-screen'))) isFs=true; }catch(_){}
@@ -1654,17 +1650,23 @@ function fitPlayer(){
     topBand=(_fss && _fss.offsetHeight>8 ? _fss.offsetHeight : 36) + 8;
   }
   var availH=ch-topBand;
-  var scale=Math.min(cw/_fitW0, availH/_fitH0); // contain（全体表示・レターボックス）
-  // 平行移動は整数pxにスナップ（iOSのサブピクセル描画による微オフセット/にじみを防ぐ）
-  var tx=Math.round((cw-_fitW0*scale)/2), ty=Math.round(topBand + (availH-_fitH0*scale)/2);
-  yt.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  // 16:9を cw×availH に収める(contain)実寸。★transformを使わずiframe自体を実サイズにする。
+  // iOSはtransformで縮小したiframe内の動画を正しく合成できず横ズレする(iPhone16Pro等)。transform非使用が根治。
+  var vw, vh;
+  if(cw/availH > _fitW0/_fitH0){ vh=availH; vw=Math.round(availH*_fitW0/_fitH0); }
+  else { vw=cw; vh=Math.round(cw*_fitH0/_fitW0); }
+  var tx=Math.round((cw-vw)/2), ty=Math.round(topBand + (availH-vh)/2);
+  yt.style.position='absolute';
+  yt.style.left=tx+'px'; yt.style.top=ty+'px';
+  yt.style.right='auto'; yt.style.bottom='auto';
+  yt.style.width=vw+'px'; yt.style.height=vh+'px';
+  yt.style.transform='none'; yt.style.transformOrigin='0 0';
   // 全画面のフローティング操作バーの幅を「映像の横幅より少し短く」動的設定
-  var vw=Math.round(_fitW0*scale); // 表示中の映像の横幅
   var fsb=document.getElementById('fs-ctrl-bar');
   if(fsb){ fsb.style.width=Math.max(280,Math.round(vw*0.94))+'px'; }
-  // 出典テロップを「映像の右下」に合わせ、1行で動画幅に収まるようフォントを自動調整
+  // 出典テロップを「映像の下部」に合わせ、1行で動画幅に収まるようフォントを自動調整
   var tel=document.getElementById('video-telop');
-  if(tel){ tel.style.bottom=(ty+12)+'px'; try{ fitTelop(vw); }catch(_){} } // 左右中央はCSS(left:50%+translateX)で映像中央に一致
+  if(tel){ tel.style.bottom=(ch-(ty+vh)+12)+'px'; try{ fitTelop(vw); }catch(_){} }
 }
 // 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝即実行でよい）
 function scheduleRelayout(){ fitPlayer(); }
