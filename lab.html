@@ -571,14 +571,14 @@ body.fs-open .player-wrap.expanded{
     grid-template-areas:
       "player guide"
       "player news";
-    /* 横向き: 動画(左)は画面左端まで詰める(ノッチ回避の左余白を付けない=左の黒帯を解消)。
-       番組表(右)側だけノッチ回避を残す。上はステータスバー回避で少し空ける */
-    padding:max(4px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) 4px 4px;
+    padding:4px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
     gap:6px;
     align-items:start;
     height:calc(100vh - 44px);
     overflow:hidden;
     box-sizing:border-box;
+    /* ノッチ回避の左右余白(safe-area)を黒ではなくアプリ色にして「意図した枠」に見せる */
+    background:var(--forest);
   }
   /* 横向きは番組表のstickyオフセットを無効化＝上端を動画に揃える */
   .sidebar{position:static;top:auto;}
@@ -844,7 +844,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.67-lab（横向きのノッチ左余白を撤去し動画を左端まで＝黒帯解消）</div>
+    <div class="ps-version">version 1.68-lab（横向きノッチ余白を対称に戻し色をアプリ緑に）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
