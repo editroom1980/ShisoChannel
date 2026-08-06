@@ -66,7 +66,8 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .h-banner{flex:1 1 auto;min-width:0;display:flex;justify-content:center;align-items:center;overflow:hidden;cursor:pointer;padding:3px 0;-webkit-tap-highlight-color:transparent;}
 .h-banner .sponsor-img{width:auto;height:36px;line-height:0;display:flex;align-items:center;}
 .h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:auto;height:36px;display:block;}
-@media(orientation:portrait){
+/* スマホ縦(幅767px以下)のみ2段(バナー全幅)。iPad等の広い縦画面は横向きと同じ1列(ロゴと時計の間) */
+@media(orientation:portrait) and (max-width:767px){
   .header{justify-content:space-between;row-gap:0;padding-bottom:0;}
   .h-right{order:1;}
   /* バナーの上下の隙間を均等に（下の隙間=padding-bottomを基準に上も同じ3px）→情報バーも詰まる */
@@ -841,7 +842,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.62-lab（縦バナー間隔均等・全画面バナー通常サイズ・お知らせFirestore連動）</div>
+    <div class="ps-version">version 1.63-lab（iPad縦もヘッダー1列でバナー配置）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
