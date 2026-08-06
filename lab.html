@@ -571,14 +571,12 @@ body.fs-open .player-wrap.expanded{
     grid-template-areas:
       "player guide"
       "player news";
-    padding:4px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
+    padding:4px 6px;
     gap:6px;
     align-items:start;
     height:calc(100vh - 44px);
     overflow:hidden;
     box-sizing:border-box;
-    /* ノッチ回避の左右余白(safe-area)を黒ではなくアプリ色にして「意図した枠」に見せる */
-    background:var(--forest);
   }
   /* 横向きは番組表のstickyオフセットを無効化＝上端を動画に揃える */
   .sidebar{position:static;top:auto;}
@@ -844,7 +842,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.68-lab（横向きノッチ余白を対称に戻し色をアプリ緑に）</div>
+    <div class="ps-version">version 1.69-lab（横向きの余白=ズレ原因を除去・デバッグ/緑撤去）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -992,10 +990,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
   <footer class="footer">© 宍粟市　しそチャンNET　プロトタイプ版</footer>
 </div>
-
-<!-- 診断用: ?debug=1 の時だけ表示。原因特定後に撤去 -->
-<div id="dbg-safe" style="position:fixed;top:0;left:0;width:0;height:0;padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);pointer-events:none;visibility:hidden;"></div>
-<div id="dbg" style="display:none;position:fixed;top:0;left:0;z-index:2147483647;background:rgba(0,0,0,0.85);color:#0f0;font:10px/1.35 monospace;padding:6px 8px;max-width:66vw;white-space:pre;pointer-events:none;"></div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
@@ -1671,29 +1665,9 @@ function fitPlayer(){
   // 出典テロップを「映像の右下」に合わせ、1行で動画幅に収まるようフォントを自動調整
   var tel=document.getElementById('video-telop');
   if(tel){ tel.style.bottom=(ty+12)+'px'; try{ fitTelop(vw); }catch(_){} } // 左右中央はCSS(left:50%+translateX)で映像中央に一致
-  try{ updateDebug(); }catch(_){}
 }
 // 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝即実行でよい）
 function scheduleRelayout(){ fitPlayer(); }
-// 診断用: 実機の実数値を画面に出す(?debug=1)。原因特定後に撤去。
-var DEBUG=/[?&]debug/.test(location.search);
-function updateDebug(){
-  try{
-    var d=document.getElementById('dbg'); if(!d||d.style.display==='none') return;
-    var pw=document.getElementById('player-wrap'), yt=document.getElementById('yt-player-api'), hdr=document.querySelector('.header');
-    var pr=pw.getBoundingClientRect(), sp=document.getElementById('dbg-safe'), cs=sp?getComputedStyle(sp):{};
-    var yr=yt.getBoundingClientRect();
-    d.textContent =
-      'vp '+window.innerWidth+'x'+window.innerHeight+' '+(window.matchMedia('(orientation:landscape)').matches?'LAND':'PORT')+(document.body.classList.contains('iphone-mode')?' iOS':'')+'\n'+
-      'safe T'+parseInt(cs.paddingTop||0)+' L'+parseInt(cs.paddingLeft||0)+' R'+parseInt(cs.paddingRight||0)+'\n'+
-      'hdr.off='+(hdr?hdr.offsetHeight:'?')+' --hdr-h='+(getComputedStyle(document.documentElement).getPropertyValue('--hdr-h')||'-')+'\n'+
-      'pw '+Math.round(pr.width)+'x'+Math.round(pr.height)+' r='+(pr.width/pr.height).toFixed(3)+' left='+Math.round(pr.left)+'\n'+
-      'yt.style '+yt.style.width+'x'+yt.style.height+'\n'+
-      'yt.rect '+Math.round(yr.width)+'x'+Math.round(yr.height)+' L='+Math.round(yr.left)+' T='+Math.round(yr.top)+'\n'+
-      'yt.tf '+(yt.style.transform||'-')+'\n'+
-      'expanded='+pw.classList.contains('expanded');
-  }catch(_){}
-}
 
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
@@ -2465,7 +2439,6 @@ function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();renderCityNews();updateClock();setHdrVar();
-  if(DEBUG){ var _dbg=document.getElementById('dbg'); if(_dbg) _dbg.style.display='block'; setInterval(updateDebug,300); }
   loadCityNews();                       // Firestoreから最新のお知らせを取得（あれば自動差し替え）
   setInterval(loadCityNews, 60000);     // 60秒ごとに再取得＝更新に自動追従(SWR)
   setInterval(rotateCityNews, 8000);
