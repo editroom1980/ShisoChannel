@@ -815,7 +815,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 .sponsor-img svg{aspect-ratio:720 / 60;}
 /* 画像バナー: EXIF回転や環境差で高さが暴走しないよう表示比率を固定(2300x210)。
    白い角丸余白を端クロップで隠しつつ角丸(round)にする（枠線・白ボックスなし） */
-.sponsor-img img{aspect-ratio:2300 / 210;object-fit:cover;clip-path:inset(4% 0.5% round 8px);}
+.sponsor-img img{aspect-ratio:2300 / 210;object-fit:cover;clip-path:inset(4% 0.5% round 6px);}/* 角丸は動画ウインドウ等と同じ6pxに統一 */
 
 /* ══ 全画面時のスポンサーバナー（枠線・角丸・余白なしのベタ表示。全モード共通幅=--banner-w=386で中央） ══ */
 .fs-sponsor{
@@ -851,7 +851,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.79-lab（ヘッダー影除去/全画面はviewport-fit=cover動的付与で全部黒(戻すと深緑)/動画をオーバースキャンし左右1〜2px黒線を除去）</div>
+    <div class="ps-version">version 1.80-lab（全画面戻り時に安全領域を強制再描画=黒残り根絶/動画オーバースキャン増(右1px黒線対策)/バナー角丸6pxに統一）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1660,8 +1660,8 @@ function fitPlayer(){
     yt.style.position='absolute';
     // ★16:9を保ったまま枠より4px大きく(左右上下を各2px/1.125pxはみ出させ)、overflow:hiddenでクリップ。
     //   iframeと枠のサブピクセルのすき間から出る左右1〜2pxの黒線を消す(動画が枠を完全に覆う)。16:9維持でYouTubeのレターボックスは出ない。
-    yt.style.left='-2px'; yt.style.top='-1.125px'; yt.style.right='auto'; yt.style.bottom='auto';
-    yt.style.width='calc(100% + 4px)'; yt.style.height='calc(100% + 2.25px)';
+    yt.style.left='-3px'; yt.style.top='-1.6875px'; yt.style.right='auto'; yt.style.bottom='auto';
+    yt.style.width='calc(100% + 6px)'; yt.style.height='calc(100% + 3.375px)';
     yt.style.transform='none'; yt.style.transformOrigin='0 0';
     if(cw>0){
       var fsb0=document.getElementById('fs-ctrl-bar');
@@ -1774,8 +1774,16 @@ function closeExpand(){
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
   // ★全画面解除で viewport-fit=cover を外す＝通常表示に戻す(YouTube黒帯対策を維持・余白は深緑)。
-  //   これで「全画面から戻すと左右が黒くなる」症状も解消（再レイアウトで安全領域の帯が深緑に塗り直される）。
-  (function(){ var vp=document.querySelector('meta[name="viewport"]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0'); })();
+  //   iOSは安全領域の帯を前の色(全画面の黒)のまま残すことがあるため、強制リフローで確実に深緑へ塗り直す。
+  (function(){
+    var vp=document.querySelector('meta[name="viewport"]');
+    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0');
+    // 安全領域の帯を確実に再描画（黒残り防止）：ルート背景を深緑で明示→強制リフロー→次フレームで解除
+    var de=document.documentElement;
+    de.style.background='#1e3a28';
+    void de.offsetHeight;                 // 同期リフロー
+    requestAnimationFrame(function(){ void de.offsetHeight; de.style.background=''; });
+  })();
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
