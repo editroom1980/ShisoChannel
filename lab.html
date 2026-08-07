@@ -606,7 +606,13 @@ body.fs-open .player-wrap.expanded{
     height:calc(100vh - 44px - 34px - 34px - 8px);
   }
   #yt-player-api{
-    position:absolute;inset:0;width:100%;height:100%;
+    position:absolute;top:0;bottom:0;height:100%;
+    /* ★iOS横向き：YouTube側が映像を安全領域(ノッチ)ぶん右へインセットするのを相殺する。
+       iframeを同じだけ左へずらし、その分だけ幅を足す → YouTubeが寄せた映像がちょうど動画枠にピッタリ合う。
+       非ノッチ端末は env()=0 なので left:0 / width:100% と等価＝無影響（端末自動対応）。 */
+    left:calc(-1 * env(safe-area-inset-left)) !important;
+    right:auto !important;
+    width:calc(100% + env(safe-area-inset-left)) !important;
   }
   /* コントロールバー：コンパクト */
   .custom-ctrl{height:34px;padding:0 8px;gap:5px;}
@@ -844,7 +850,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.73-lab（横向きでノッチ回避のsafe-area余白を復活。動画枠/番組表をノッチ内側へ整列・余白は深緑の枠に）</div>
+    <div class="ps-version">version 1.74-lab（横向き：YouTubeが映像をノッチぶん右へ寄せるのをiframe逆ずらしで相殺し枠にピッタリ合わせる）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
