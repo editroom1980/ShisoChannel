@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>しそチャンNET LAB（操作改善テスト）</title>
@@ -49,7 +49,7 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .ps-hint{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;}
 
 /* ══ ヘッダー ══ */
-#main-content{display:none;background:var(--off);}
+#main-content{display:none;background:var(--forest);}/* 余白を深緑に統一（ノッチ帯=システムが塗る深緑と一致・縦横一貫）。カード/動画は各自の背景で不変 */
 .header{
   background:var(--forest);
   padding:0 24px;
@@ -844,7 +844,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.75-lab（計測ビルド：?debug=1で実機の数値を表示。1.74の相殺は撤去しクリーンな計測状態に戻した）</div>
+    <div class="ps-version">version 1.76-lab（根治：viewport-fit=cover除去でYouTubeの映像寄せ(黒帯)を断つ。余白の白→深緑に統一。?debug=1で確認可）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
