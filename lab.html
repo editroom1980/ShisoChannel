@@ -63,7 +63,7 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   display:flex;align-items:center;justify-content:space-between;
   flex-wrap:wrap;row-gap:4px;column-gap:14px;
   position:sticky;top:0;z-index:300;
-  box-shadow:0 2px 10px rgba(0,0,0,0.2);
+  /* 影は除去：下の深緑余白との境界に影が落ちて色味が違って見えるのを防ぐ（余白を完全に均一な深緑に） */
 }
 .h-logo{display:flex;flex-direction:row;align-items:center;gap:8px;flex-shrink:0;}
 /* 情報バー内のスポンサーバナー（横向き=ロゴと時間の間で中央／縦向き=ロゴ行の下に全幅） */
@@ -851,7 +851,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.78-lab（UI一括：バナー全モード386px統一・中央/白枠削除/見出し帯明るい緑/放送中セル薄緑のみ/全画面帯を黒/間隔6px均一）</div>
+    <div class="ps-version">version 1.79-lab（ヘッダー影除去/全画面はviewport-fit=cover動的付与で全部黒(戻すと深緑)/動画をオーバースキャンし左右1〜2px黒線を除去）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1658,8 +1658,10 @@ function fitPlayer(){
     //   枠(player-wrap)は縦横どちらでも常に16:9なので、iframeを100%で埋めれば
     //   YouTubeがそのまま16:9で描く＝拡大縮小の合成ズレが起きない（昔の安定挙動）。
     yt.style.position='absolute';
-    yt.style.left='0'; yt.style.top='0'; yt.style.right='0'; yt.style.bottom='0';
-    yt.style.width='100%'; yt.style.height='100%';
+    // ★16:9を保ったまま枠より4px大きく(左右上下を各2px/1.125pxはみ出させ)、overflow:hiddenでクリップ。
+    //   iframeと枠のサブピクセルのすき間から出る左右1〜2pxの黒線を消す(動画が枠を完全に覆う)。16:9維持でYouTubeのレターボックスは出ない。
+    yt.style.left='-2px'; yt.style.top='-1.125px'; yt.style.right='auto'; yt.style.bottom='auto';
+    yt.style.width='calc(100% + 4px)'; yt.style.height='calc(100% + 2.25px)';
     yt.style.transform='none'; yt.style.transformOrigin='0 0';
     if(cw>0){
       var fsb0=document.getElementById('fs-ctrl-bar');
@@ -1721,8 +1723,9 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  // 全画面中はルート(html)背景を黒に＝Safariが塗る最上部/左右の帯を黒くする（全画面らしく）
-  document.documentElement.style.background='#000';
+  // ★全画面中だけ viewport-fit=cover を付与＝画面全体(ノッチ含む端まで)を黒い動画で覆い、深緑の帯を出さない。
+  //   iOSは安全領域の帯色をロード時に固定し後からhtml背景を変えても塗り直さないため、この方式が確実。
+  (function(){ var vp=document.querySelector('meta[name="viewport"]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, viewport-fit=cover'); })();
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
@@ -1770,8 +1773,9 @@ function closeExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
-  // 全画面解除でルート背景を元(深緑)へ戻す＝通常横向きで左右が黒くなる症状を解消
-  document.documentElement.style.background='';
+  // ★全画面解除で viewport-fit=cover を外す＝通常表示に戻す(YouTube黒帯対策を維持・余白は深緑)。
+  //   これで「全画面から戻すと左右が黒くなる」症状も解消（再レイアウトで安全領域の帯が深緑に塗り直される）。
+  (function(){ var vp=document.querySelector('meta[name="viewport"]'); if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0'); })();
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
