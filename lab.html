@@ -22,6 +22,10 @@
   --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
   --white:#fff;--off:#f6f8f6;--border:#d4e0d6;
   --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;
+  /* 全モード共通のバナー基準幅＝画面短辺−左右余白16px（＝縦の動画ウインドウ幅386）。縦横問わず一定 */
+  --banner-w:calc(100vmin - 16px);
+  /* 番組表/お知らせの見出し帯：背景の深緑(--forest)と区別できる少し明るい緑 */
+  --band:#2f5f42;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 /* テキスト選択・長押しメニューを無効化 */
@@ -64,16 +68,16 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .h-logo{display:flex;flex-direction:row;align-items:center;gap:8px;flex-shrink:0;}
 /* 情報バー内のスポンサーバナー（横向き=ロゴと時間の間で中央／縦向き=ロゴ行の下に全幅） */
 .h-banner{flex:1 1 auto;min-width:0;display:flex;justify-content:center;align-items:center;overflow:hidden;cursor:pointer;padding:3px 0;-webkit-tap-highlight-color:transparent;}
-.h-banner .sponsor-img{width:auto;height:36px;line-height:0;display:flex;align-items:center;}
-.h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:auto;height:36px;display:block;}
-/* スマホ縦(幅767px以下)のみ2段(バナー全幅)。iPad等の広い縦画面は横向きと同じ1列(ロゴと時計の間) */
+/* バナーは全モード共通幅（--banner-w＝386）・中央。画像は枠内100%で高さは比率なり(約35px) */
+.h-banner .sponsor-img{width:var(--banner-w);max-width:100%;line-height:0;display:block;}
+.h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:100%;height:auto;display:block;}
+/* スマホ縦(幅767px以下)のみ2段(バナーは基準幅で中央)。iPad等の広い縦画面は横向きと同じ1列(ロゴと時計の間) */
 @media(orientation:portrait) and (max-width:767px){
-  .header{justify-content:space-between;row-gap:0;padding-bottom:0;}
+  /* バナー(386)が収まるようヘッダー左右余白をページ余白(8px)に合わせる */
+  .header{justify-content:space-between;row-gap:0;padding-bottom:0;padding-left:8px;padding-right:8px;}
   .h-right{order:1;}
   /* バナーの上下の隙間を均等に（下の隙間=padding-bottomを基準に上も同じ3px）→情報バーも詰まる */
-  .h-banner{order:2;flex-basis:100%;width:100%;padding:3px 0;}
-  .h-banner .sponsor-img{width:100%;height:auto;}
-  .h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:100%;height:auto;}
+  .h-banner{order:2;flex-basis:100%;padding:3px 0;}
 }
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
 .test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
@@ -111,7 +115,7 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 
 /* タイトルバー */
 .viewing-bar{
-  background:var(--white);border:1px solid var(--border);border-bottom:none;
+  background:var(--white);
   border-radius:6px 6px 0 0;
   padding:8px 14px;
   display:flex;align-items:center;gap:8px;
@@ -125,7 +129,6 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 /* プレイヤー本体 */
 .player-wrap{
   position:relative;padding-bottom:56.25%;
-  border:1px solid var(--border);border-top:none;
   overflow:hidden;box-shadow:0 4px 20px rgba(30,58,40,0.15);background:#000;
   isolation:isolate;
 }
@@ -360,7 +363,7 @@ body.fs-open .player-wrap.expanded{
 /* ══ カスタムコントロールバー ══ */
 .custom-ctrl{
   display:flex;align-items:center;
-  background:var(--white);border:1px solid var(--border);border-top:none;
+  background:var(--white);
   border-radius:0 0 6px 6px;
   padding:0 16px;
   height:44px;
@@ -405,7 +408,7 @@ body.fs-open .player-wrap.expanded{
 }
 /* ══ 番組表サイドバー ══ */
 .sidebar{
-  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  background:var(--white);border-radius:6px;
   overflow:hidden;
   box-shadow:0 2px 12px rgba(30,58,40,0.08);
   /* 左カラムと同じ高さになるよう sticky + max-height で制御 */
@@ -414,7 +417,7 @@ body.fs-open .player-wrap.expanded{
   display:flex;flex-direction:column;
 }
 .sb-head{
-  background:var(--forest);padding:12px 16px;
+  background:var(--band);padding:12px 16px;
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
 }
 .sb-ttl{font-size:12px;font-weight:700;color:var(--white);letter-spacing:3px;}
@@ -437,7 +440,7 @@ body.fs-open .player-wrap.expanded{
 }
 .prow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
 .prow.active{background:var(--green5);}
-.prow.active::before{background:var(--green2);}
+/* 放送中セルは薄緑のみ（左端の深緑ストリップは廃止）。現在時刻の時刻チップ強調は別途維持 */
 
 /* 時刻バー（タイトル上・横並び） */
 .time-bar{
@@ -470,7 +473,7 @@ body.fs-open .player-wrap.expanded{
 
 /* ══ 宍粟市お知らせ・イベント（番組表と同形式の独立ウインドウ・データがある時のみ表示） ══ */
 .newsbar{
-  background:var(--white);border:1px solid var(--border);border-radius:6px;
+  background:var(--white);border-radius:6px;
   overflow:hidden;box-shadow:0 2px 12px rgba(30,58,40,0.08);
   display:flex;flex-direction:column;flex-shrink:0;
 }
@@ -810,19 +813,19 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
    白い角丸余白を端クロップで隠しつつ角丸(round)にする（枠線・白ボックスなし） */
 .sponsor-img img{aspect-ratio:2300 / 210;object-fit:cover;clip-path:inset(4% 0.5% round 8px);}
 
-/* ══ 全画面時のスポンサーバナー（枠線・角丸・余白なしのベタ表示。縦横とも同サイズ＝画面の短辺幅） ══ */
+/* ══ 全画面時のスポンサーバナー（枠線・角丸・余白なしのベタ表示。全モード共通幅=--banner-w=386で中央） ══ */
 .fs-sponsor{
   position:absolute;
   top:10px;
   left:50%;
   transform:translateX(-50%);
-  width:auto;
+  width:var(--banner-w);max-width:100%;
   z-index:40;
   display:none;
 }
-/* 全画面バナーは通常画面と同じ大きさ（高さ36px・幅は比率なり・中央） */
-.fs-sponsor .sponsor-img{width:auto;height:36px;}
-.fs-sponsor .sponsor-img img,.fs-sponsor .sponsor-img svg{width:auto;height:36px;}
+/* 全画面バナーも通常と同じ基準幅（比率なりで高さ約35px・中央） */
+.fs-sponsor .sponsor-img{width:100%;height:auto;}
+.fs-sponsor .sponsor-img img,.fs-sponsor .sponsor-img svg{width:100%;height:auto;}
 /* 全画面・縦向き: 上部レターボックス内に表示（画面幅いっぱい） */
 @media(orientation:portrait){
   .player-wrap.expanded .fs-sponsor,
@@ -844,7 +847,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.76-lab（根治：viewport-fit=cover除去でYouTubeの映像寄せ(黒帯)を断つ。余白の白→深緑に統一。?debug=1で確認可）</div>
+    <div class="ps-version">version 1.77-lab（UI一括：バナー全モード386px統一/白枠削除/見出し帯を明るい緑/放送中セル薄緑のみ/全画面帯を黒/間隔調整）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1714,6 +1717,8 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
+  // 全画面中はルート(html)背景を黒に＝Safariが塗る最上部/左右の帯を黒くする（全画面らしく）
+  document.documentElement.style.background='#000';
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
@@ -1761,6 +1766,8 @@ function closeExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
+  // 全画面解除でルート背景を元(深緑)へ戻す＝通常横向きで左右が黒くなる症状を解消
+  document.documentElement.style.background='';
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
