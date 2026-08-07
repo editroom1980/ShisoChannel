@@ -606,13 +606,7 @@ body.fs-open .player-wrap.expanded{
     height:calc(100vh - 44px - 34px - 34px - 8px);
   }
   #yt-player-api{
-    position:absolute;top:0;bottom:0;height:100%;
-    /* ★iOS横向き：YouTube側が映像を安全領域(ノッチ)ぶん右へインセットするのを相殺する。
-       iframeを同じだけ左へずらし、その分だけ幅を足す → YouTubeが寄せた映像がちょうど動画枠にピッタリ合う。
-       非ノッチ端末は env()=0 なので left:0 / width:100% と等価＝無影響（端末自動対応）。 */
-    left:calc(-1 * env(safe-area-inset-left)) !important;
-    right:auto !important;
-    width:calc(100% + env(safe-area-inset-left)) !important;
+    position:absolute;inset:0;width:100%;height:100%;
   }
   /* コントロールバー：コンパクト */
   .custom-ctrl{height:34px;padding:0 8px;gap:5px;}
@@ -850,7 +844,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.74-lab（横向き：YouTubeが映像をノッチぶん右へ寄せるのをiframe逆ずらしで相殺し枠にピッタリ合わせる）</div>
+    <div class="ps-version">version 1.75-lab（計測ビルド：?debug=1で実機の数値を表示。1.74の相殺は撤去しクリーンな計測状態に戻した）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2747,6 +2741,41 @@ init();
 document.addEventListener('contextmenu', function(e){e.preventDefault();});
 // iframeへの長押しによるメニューを抑制
 document.addEventListener('touchstart', function(){}, {passive:true});
+</script>
+<script>
+/* ===== 計測用オーバーレイ（?debug=1 の時だけ・見た目/動作は変えない） =====
+   黒帯が「枠の外(CSS)」か「YouTube内部」かを実機の数値で確定するための一時ツール。 */
+(function(){
+  if(!/[?&]debug=1/.test(location.search)) return;
+  function saInset(){
+    var p=document.getElementById('__sa_probe');
+    if(!p){ p=document.createElement('div'); p.id='__sa_probe';
+      p.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
+        +'padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);'
+        +'padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);';
+      document.body.appendChild(p);
+    }
+    var cs=getComputedStyle(p);
+    return {L:parseFloat(cs.paddingLeft)||0,R:parseFloat(cs.paddingRight)||0,T:parseFloat(cs.paddingTop)||0,B:parseFloat(cs.paddingBottom)||0};
+  }
+  var ov=document.createElement('div'); ov.id='__dbg';
+  ov.style.cssText='position:fixed;top:2px;left:50%;transform:translateX(-50%);z-index:99999;'
+    +'background:rgba(0,0,0,.82);color:#3f6;font:bold 12px/1.35 ui-monospace,monospace;'
+    +'padding:4px 8px;border-radius:5px;pointer-events:none;white-space:pre;text-align:left;';
+  function R(n){ return (n<0?'':' ')+Math.round(n); }
+  function upd(){
+    if(!document.body.contains(ov)) document.body.appendChild(ov);
+    var pw=document.getElementById('player-wrap'), yt=document.getElementById('yt-player-api');
+    var sa=saInset();
+    var a=pw?pw.getBoundingClientRect():{left:0,width:0,right:0}, c=yt?yt.getBoundingClientRect():{left:0,width:0,right:0};
+    ov.textContent=
+      'SA L'+R(sa.L)+' R'+R(sa.R)+' T'+R(sa.T)+' B'+R(sa.B)+'  WIN '+window.innerWidth+'x'+window.innerHeight+'\n'+
+      'PW  x'+R(a.left)+' w'+R(a.width)+' right'+R(a.right)+'\n'+
+      'IF  x'+R(c.left)+' w'+R(c.width)+' right'+R(c.right)+'\n'+
+      'gap  Left'+R(c.left-a.left)+'   Right'+R(a.right-c.right);
+  }
+  setInterval(upd,400); setTimeout(upd,300); upd();
+})();
 </script>
 </body>
 </html>
