@@ -78,8 +78,9 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   /* バナー(390)が収まるようヘッダー左右余白をページ余白(6px)に合わせる（間隔6px統一） */
   .header{justify-content:space-between;row-gap:0;padding-bottom:0;padding-left:6px;padding-right:6px;}
   .h-right{order:1;}
-  /* ③バナー下の余白は0にし、動画ウインドウとの間隔=ページ上余白6px（間隔Aと同一）だけにする */
-  .h-banner{order:2;flex-basis:100%;padding:3px 0 0;}
+  /* ③バナー下の余白は0にし、動画ウインドウとの間隔=ページ上余白6px（間隔Aと同一）だけにする。
+     上余白はロゴ行→バナーの間隔=6px（間隔統一・2026-08-09指示） */
+  .h-banner{order:2;flex-basis:100%;padding:6px 0 0;}
 }
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
 .test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
@@ -620,7 +621,13 @@ body.fs-open .header{ background:#000; }
   /* 横向きのバナーはロゴ群と時刻群の「間」で自動センタリング（重なり構造ゼロ・幅は--banner-w=386のまま） */
   .h-banner{padding:0;}
   .h-date{display:none;}
-  /* ①文字サイズは縦向きと完全に同一にする（縮小指定を撤廃→縦と同じ16px/16px/9pxを継承）。位置は横向きのまま */
+  /* ①文字サイズは縦向きと完全に同一（15/15/9/9）。max-width:840だけに頼ると全画面(cover)中は
+     内部画面幅が750→874に広がって条件から外れ、ヘッダーがPC文字で別レイアウトになる
+     （v2.11の回転バナー位置ズレの原因）。この横向きブロック(高さ500px以下)は874でも効くためここに明記 */
+  .h-logo-main{font-size:15px;}
+  .h-time{font-size:15px;min-width:72px;text-align:right;}
+  .onair-badge{padding:2px 7px;font-size:9px;}
+  .test-badge{font-size:9px;}
   /* ●LIVEと番組タイトルバー：コンパクト表示 */
   .viewing-bar{
     height:34px;
@@ -863,7 +870,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.11-lab（全画面中の回転でバナー座標を新しい向きで再計算=縦横どちらへ回しても通常時と同じ位置に表示/全画面フェード0.3s）</div>
+    <div class="ps-version">version 2.12-lab（横の全画面バナー位置を根治=通常時に保存した座標＋安全領域で置き直し・cover中874pxでも文字レイアウト同一化/縦のロゴ行→バナー間隔を6pxに統一）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1748,7 +1755,10 @@ function openExpand(){
   //   （計算式ではなく実測値＝端末が変わっても全画面化でバナーが1pxも動かない。固定はcover適用後の180ms時点で行う）
   var _spTop=null,_spLeft=null;
   (function(){ var si=document.getElementById('sponsor-img');
-    if(si){ var r=si.getBoundingClientRect(); if(r && r.height>0){ _spTop=Math.round(r.top); _spLeft=Math.round(r.left); } } })();
+    if(si){ var r=si.getBoundingClientRect(); if(r && r.height>0){ _spTop=Math.round(r.top); _spLeft=Math.round(r.left);
+      // 全画面中の回転用に「この向きの通常時座標」として保存（repinFsSponsorが最優先で使う）
+      _normBanner[(window.innerWidth>window.innerHeight)?'land':'port']={t:r.top,l:r.left};
+    } } })();
   // ★全画面バナーはcover適用の再レイアウト(1〜2フレーム遅れ)で位置が跳ねて見える(ガタつき)ため、
   //   位置が確定するまで非表示にし、確定後(180ms)にすっと表示する（ガタつき除去・2026-08-08ユーザー指示）
   var _fsSp=document.getElementById('fs-sponsor');
@@ -1801,26 +1811,46 @@ function openExpand(){
   },180);
 }
 
-// ★全画面「中」の回転対応（v2.11）：バナーの固定座標を新しい向きで計算し直す。
-//   突入時の固定座標は入った瞬間の向きの実測値のため、全画面のまま回転すると
-//   縦→横=縦用座標が残留して変な位置／横→縦=横用座標(上6px)が上部黒帯の裏＝不可視になっていた（その根治）。
-//   全画面中はcover適用済み＝ヘッダー内バナー(sponsor-img)の現在rectは物理座標そのもの。
-//   ただしcover中のヘッダーは padding-top:max(0px, env(safe-area-inset-top)-8px) のぶん
-//   通常時（物理=帯env + padding0）より min(env,8px) だけ上に居るため、それを足し戻すと
-//   「その向きで通常表示した時の物理位置」に一致する（シミュレータ実測: 縦77.7+8=85.7=通常時physical ✓／横+0 ✓）。
+// ★全画面「中」の回転対応（v2.12）：バナーの固定座標を新しい向きで置き直す。
+//   【v2.11の失敗と教訓】全画面中(cover)は横の内部画面幅が750→874に広がり、ヘッダー内バナーを
+//   「その場で実測」するとcover中の別レイアウト（874は max-width:840 の文字縮小が外れる等）の座標を
+//   拾ってしまい変な位置に固定された。→ 実測に頼らず、**通常表示中に実測して保存した座標
+//   （_normBanner）＋ 現在のenv(safe-area)** を使う。これは突入時ピンと完全に同じ式で、
+//   縦(6,23.7)+env(0,62)／横(188,6)+env(62,0) が実機で正位置と証明済み。
+//   保存が無い向き（通常表示でその向きを一度も見ていない場合）のみ実測にフォールバックする
+//   （横向きブロックに文字サイズを明記したためcover中874でも通常と同一レイアウト＝実測も正しくなる）。
+var _normBanner={port:null,land:null};
+function recordNormBanner(){
+  if(isExpanded) return; // 通常表示中の座標だけが「正」
+  var si=document.getElementById('sponsor-img');
+  if(!si) return;
+  var r=si.getBoundingClientRect();
+  if(!r || r.height<=0) return;
+  _normBanner[(window.innerWidth>window.innerHeight)?'land':'port']={t:r.top,l:r.left};
+}
 function repinFsSponsor(){
   if(!isExpanded) return;
   var fsSp=document.getElementById('fs-sponsor');
-  var si=document.getElementById('sponsor-img');
-  if(!fsSp||!si) return;
-  var r=si.getBoundingClientRect();
-  if(!r || r.height<=0) return;
-  var envT=0;
+  if(!fsSp) return;
+  var envL=0,envT=0;
   try{ var p=document.createElement('div');
-    p.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);';
-    document.body.appendChild(p); envT=parseFloat(getComputedStyle(p).paddingTop)||0; p.remove(); }catch(_){}
-  fsSp.style.top=(r.top+Math.min(envT,8))+'px';
-  fsSp.style.left=r.left+'px';
+    p.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left);padding-top:env(safe-area-inset-top);';
+    document.body.appendChild(p); var pcs=getComputedStyle(p);
+    envL=parseFloat(pcs.paddingLeft)||0; envT=parseFloat(pcs.paddingTop)||0; p.remove(); }catch(_){}
+  var saved=_normBanner[(window.innerWidth>window.innerHeight)?'land':'port'];
+  var t,l;
+  if(saved){
+    t=saved.t+envT; l=saved.l+envL;   // 突入時ピンと同一式（実機で正位置と証明済み）
+  }else{
+    var si=document.getElementById('sponsor-img');
+    if(!si) return;
+    var r=si.getBoundingClientRect();
+    if(!r || r.height<=0) return;
+    // cover中ヘッダーは padding-top:max(0,env-8) のぶん通常より min(env,8) 上に居る（シミュレータ実測77.7+8=85.7）
+    t=r.top+Math.min(envT,8); l=r.left;
+  }
+  fsSp.style.top=t+'px';
+  fsSp.style.left=l+'px';
   fsSp.style.transform='none';
   try{ fitPlayer(); }catch(_){}
 }
@@ -2409,7 +2439,7 @@ function powerOn(){
   // ★本体を表示した直後にヘッダー実高(--hdr-h)を測り直す（起動画面中の測定は非表示=高さ0で無効なため）＋
   //   ページのスクロール位置を0に固定（本文が固定ヘッダーの裏に潜り込む上ズレの保険）
   setHdrVar();
-  requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); });
+  requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); recordNormBanner(); });
   hasPoweredOn=true;
   userWantsPlay=true;
   var pos = CYCLE.length ? nowPos() : null;
@@ -2588,9 +2618,12 @@ function init(){
   setInterval(rotateCityNews, 8000);
   window.addEventListener('load', setHdrVar);
   window.addEventListener('resize', setHdrVar); // 回転・画面サイズ変化でヘッダー実高を追従（測り直し漏れの根治）
-  // 全画面中の回転：バナー固定座標を新しい向きで再計算（iOSはresize直後に寸法が定まらない事があるため250ms後にもう一度。
-  //   resizeとorientationchangeの両方で拾う=発火順が端末で異なる保険）
-  var _fsRepinOnRotate=function(){ if(isExpanded){ repinFsSponsor(); setTimeout(repinFsSponsor,250); } };
+  // 回転時：全画面中はバナー固定座標を置き直し／通常表示中は「その向きの通常時バナー座標」を保存
+  //   （iOSはresize直後に寸法が定まらない事があるため250ms後にもう一度。resizeとorientationchange両方で拾う保険）
+  var _fsRepinOnRotate=function(){
+    if(isExpanded){ repinFsSponsor(); setTimeout(repinFsSponsor,250); }
+    else{ recordNormBanner(); setTimeout(recordNormBanner,250); }
+  };
   window.addEventListener('resize', _fsRepinOnRotate);
   window.addEventListener('orientationchange', _fsRepinOnRotate);
   setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
