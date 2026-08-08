@@ -25,6 +25,9 @@
   --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;
   /* 全モード共通のバナー基準幅＝画面短辺−左右余白16px（＝縦の動画ウインドウ幅386）。縦横問わず一定 */
   --banner-w:calc(100vmin - 16px);
+  /* バナーの見かけ高さ（クロップ後の実表示比率2277:193.2）と、横向きヘッダー高さ（=バナー高+上下6px=間隔A） */
+  --banner-h:calc((100vmin - 16px) * 193.2 / 2277);
+  --hdrL:calc((100vmin - 16px) * 193.2 / 2277 + 12px);
   /* 番組表/お知らせの見出し帯：背景の深緑(--forest)と区別できる少し明るい緑 */
   --band:#2f5f42;
 }
@@ -69,16 +72,14 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .h-logo{display:flex;flex-direction:row;align-items:center;gap:8px;flex-shrink:0;}
 /* 情報バー内のスポンサーバナー（横向き=ロゴと時間の間で中央／縦向き=ロゴ行の下に全幅） */
 .h-banner{flex:1 1 auto;min-width:0;display:flex;justify-content:center;align-items:center;overflow:hidden;cursor:pointer;padding:3px 0;-webkit-tap-highlight-color:transparent;}
-/* バナーは全モード共通幅（--banner-w＝386）・中央。画像は枠内100%で高さは比率なり(約35px) */
-.h-banner .sponsor-img{width:var(--banner-w);max-width:100%;line-height:0;display:block;}
-.h-banner .sponsor-img svg,.h-banner .sponsor-img img{width:100%;height:auto;display:block;}
+/* バナーの寸法は共通の .sponsor-img（②の見えている幅=--banner-w 構造）に一本化 */
 /* スマホ縦(幅767px以下)のみ2段(バナーは基準幅で中央)。iPad等の広い縦画面は横向きと同じ1列(ロゴと時計の間) */
 @media(orientation:portrait) and (max-width:767px){
   /* バナー(386)が収まるようヘッダー左右余白をページ余白(8px)に合わせる */
   .header{justify-content:space-between;row-gap:0;padding-bottom:0;padding-left:8px;padding-right:8px;}
   .h-right{order:1;}
-  /* バナーの上下の隙間を均等に（下の隙間=padding-bottomを基準に上も同じ3px）→情報バーも詰まる */
-  .h-banner{order:2;flex-basis:100%;padding:3px 0;}
+  /* ③バナー下の余白は0にし、動画ウインドウとの間隔=ページ上余白6px（間隔Aと同一）だけにする */
+  .h-banner{order:2;flex-basis:100%;padding:3px 0 0;}
 }
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
 .test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
@@ -533,8 +534,8 @@ body.fs-open .header{ background:#000; }
   }
   .sidebar{
     position:static;
-    /* 画面の残りの高さに合わせて番組表の高さを決める */
-    max-height:calc(100vh - 330px);
+    /* 画面の残りの高さに合わせて番組表の高さを決める（③で上部が詰まった分+6px伸ばして帳尻を合わせる） */
+    max-height:calc(100vh - 324px);
     min-height:220px;
   }
   .header{
@@ -590,7 +591,7 @@ body.fs-open .header{ background:#000; }
   /* 動画高さ = 100vh - header38 - viewing-bar34 - ctrl34 - padding8 = 100vh - 114px */
   /* 動画幅 = 動画高さ × 16/9 */
   .page{
-    grid-template-columns:calc((100vh - 120px) * 16 / 9) 1fr;
+    grid-template-columns:calc((100vh - var(--hdrL) - 76px) * 16 / 9) 1fr;
     grid-template-rows:1fr auto;
     grid-template-areas:
       "player guide"
@@ -600,25 +601,26 @@ body.fs-open .header{ background:#000; }
     padding:6px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
     gap:6px;
     align-items:start;
-    height:calc(100vh - 44px);
+    height:calc(100vh - var(--hdrL));
     overflow:hidden;
     box-sizing:border-box;
   }
   /* 横向きは番組表のstickyオフセットを無効化＝上端を動画に揃える */
   .sidebar{position:static;top:auto;}
-  /* ヘッダー: safe-area対応（「し」と時間の見切れ防止） */
+  /* ヘッダー: 高さ＝バナー高＋上下6px(間隔A)ずつ（④バナーの上下余白=間隔A・少し下がる） */
   .header{
-    min-height:38px;
+    height:var(--hdrL);
+    min-height:0;
+    padding-top:0;
     padding-left:max(10px, env(safe-area-inset-left));
     padding-right:max(10px, env(safe-area-inset-right));
+    column-gap:0;   /* バナー幅386を確保するため列間ギャップは0（左右の隙間はセンタリングで自然に生まれる） */
     position:relative;
   }
-  /* 横向きのバナーは「画面中央」に絶対配置（縦向きと同じ中央位置に統一）。幅は--banner-w=386 */
-  .h-banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);flex:0 0 auto;}
+  /* 横向きのバナーはロゴ群と時刻群の「間」で自動センタリング（重なり構造ゼロ・幅は--banner-w=386のまま） */
+  .h-banner{padding:0;}
   .h-date{display:none;}
-  .h-logo-main{font-size:13px;}
-  .h-time{font-size:14px;}
-  .onair-badge{padding:2px 6px;font-size:8px;}
+  /* ①文字サイズは縦向きと完全に同一にする（縮小指定を撤廃→縦と同じ16px/16px/9pxを継承）。位置は横向きのまま */
   /* ●LIVEと番組タイトルバー：コンパクト表示 */
   .viewing-bar{
     height:34px;
@@ -630,7 +632,7 @@ body.fs-open .header{ background:#000; }
   /* プレイヤー：高さ固定・幅はgridが決める */
   .player-wrap{
     padding-bottom:0 !important;
-    height:calc(100vh - 44px - 34px - 34px - 10px);
+    height:calc(100vh - var(--hdrL) - 34px - 34px - 10px);
   }
   /* 横向きの#yt-player-apiは上書きせず、基本定義(env相殺)に委ねる（ズレ打ち消しを効かせるため） */
   /* コントロールバー：コンパクト */
@@ -827,13 +829,12 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   -webkit-tap-highlight-color:transparent;
   align-self:start;
 }
-.sponsor-img{width:100%;line-height:0;}
-.sponsor-img svg,.sponsor-img img{width:100%;height:auto;display:block;}
-/* インラインSVGはwidth:auto/height指定でアスペクトが効かない環境があるため縦横比を明示（bannerCは720x60固定） */
-.sponsor-img svg{aspect-ratio:720 / 60;}
-/* 画像バナー: EXIF回転や環境差で高さが暴走しないよう表示比率を固定(2300x210)。
-   白い角丸余白を端クロップで隠しつつ角丸(round)にする（枠線・白ボックスなし） */
-.sponsor-img img{aspect-ratio:2300 / 210;object-fit:cover;clip-path:inset(4% 0.5% round 6px);}/* 角丸は動画ウインドウ等と同じ6pxに統一 */
+/* ★②バナーは「見えている領域」の幅が正確に --banner-w（=縦の動画ウインドウ幅）になる構造。
+   画像の白フチはラッパーのoverflowで裁ち落とす（左右0.5%・上下4%）。クロップ後の見かけ比率=2277:193.2。
+   従来のclip-path方式は「見た目の幅」がクロップ分(約4px)狭くなり動画ウインドウと一致しなかったため廃止。 */
+.sponsor-img{position:relative;width:var(--banner-w);max-width:100%;aspect-ratio:2277 / 193.2;overflow:hidden;border-radius:6px;line-height:0;}
+.sponsor-img img{position:absolute;left:-0.5051%;top:-4.3478%;width:101.0101%;height:108.6957%;display:block;border:0;}
+.sponsor-img svg{width:100%;height:100%;display:block;}
 
 /* ══ 全画面時のスポンサーバナー（枠線・角丸・余白なしのベタ表示。全モード共通幅=--banner-w=386で中央） ══ */
 .fs-sponsor{
@@ -845,9 +846,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
   z-index:40;
   display:none;
 }
-/* 全画面バナーも通常と同じ基準幅（比率なりで高さ約35px・中央） */
-.fs-sponsor .sponsor-img{width:100%;height:auto;}
-.fs-sponsor .sponsor-img img,.fs-sponsor .sponsor-img svg{width:100%;height:auto;}
+/* 全画面バナーの寸法も共通の .sponsor-img に一本化（同じ幅・同じ大きさ） */
 /* 全画面・縦向き: 上部レターボックス内に表示（画面幅いっぱい） */
 @media(orientation:portrait){
   .player-wrap.expanded .fs-sponsor,
@@ -869,7 +868,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.08-lab（全画面バナーのガタつき除去：cover再レイアウトで位置が確定してから表示(180ms後・0.12秒フェード)。突入/解除の他の挙動は2.07と同一）</div>
+    <div class="ps-version">version 2.09-lab（横向き文字サイズを縦と同一化/バナー見かけ幅を動画ウインドウ幅に完全一致・全モード統一/バナー位置を実測固定=全画面で不動/上下間隔を間隔A(6px)に統一/映像もフェード表示でガタつき除去）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1750,10 +1749,18 @@ function openExpand(){
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
   // ※突入時の演出・事前黒切替は全て無効と実証済み(v1.96/97/2.00/2.02)。演出なしの即全画面のみ。
+  // ★③④通常時のバナー画面座標(縦・横)を「今この瞬間」に実測。全画面バナーはこの実測座標へピクセル固定する
+  //   （計算式ではなく実測値＝端末が変わっても全画面化でバナーが1pxも動かない。固定はcover適用後の180ms時点で行う）
+  var _spTop=null,_spLeft=null;
+  (function(){ var si=document.getElementById('sponsor-img');
+    if(si){ var r=si.getBoundingClientRect(); if(r && r.height>0){ _spTop=Math.round(r.top); _spLeft=Math.round(r.left); } } })();
   // ★全画面バナーはcover適用の再レイアウト(1〜2フレーム遅れ)で位置が跳ねて見える(ガタつき)ため、
   //   位置が確定するまで非表示にし、確定後(180ms)にすっと表示する（ガタつき除去・2026-08-08ユーザー指示）
   var _fsSp=document.getElementById('fs-sponsor');
   if(_fsSp){ _fsSp.style.transition='none'; _fsSp.style.opacity='0'; }
+  // ★⓪映像もcover再レイアウトの横ガタつきを見せないため、位置確定後に表示（バナーと同方式）
+  var _ytFade=document.getElementById('yt-player-api');
+  if(_ytFade){ _ytFade.style.transition='none'; _ytFade.style.opacity='0'; }
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
   // ★全画面中はルート(html)背景も黒に：帯色の採取元候補(html/body)を全て黒に揃える。
@@ -1773,10 +1780,23 @@ function openExpand(){
   showFsUi();
   // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
   scheduleRelayout();
-  // バナーの位置確定後に表示（cover再レイアウトのガタつきを見せない）
+  // 位置確定後に表示（cover再レイアウトのガタつきを見せない）。バナーを実測座標へ固定→fitPlayer→表示の順
   setTimeout(function(){
+    if(!isExpanded) return;   // 既に解除されていたら何もしない（closeExpandが復元する）
+    // ★バナーを通常時の実測座標へ固定。cover適用で座標系が安全領域ぶん左へ広がるため、
+    //   横位置は「実測left + 現在のenv(safe-area-inset-left)」で補正（縦は座標系が動かないため実測値そのまま）
+    if(_fsSp && _spTop!==null){
+      var envL=0;
+      try{ var p=document.createElement('div');
+        p.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left);';
+        document.body.appendChild(p); envL=parseFloat(getComputedStyle(p).paddingLeft)||0; p.remove(); }catch(_){}
+      _fsSp.style.top=_spTop+'px';
+      _fsSp.style.left=(_spLeft+envL)+'px';
+      _fsSp.style.transform='none';
+    }
+    try{ fitPlayer(); }catch(_){}
     if(_fsSp){ _fsSp.style.transition='opacity .12s ease'; _fsSp.style.opacity='1'; }
-    try{ fitPlayer(); }catch(_){}  // バナー実寸確定後にtopBandを再計算
+    if(_ytFade){ _ytFade.style.transition='opacity .15s ease'; _ytFade.style.opacity='1'; }
   },180);
 }
 
@@ -1828,9 +1848,11 @@ function closeExpand(){
   // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
     if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0'); })();
-  // 全画面バナーの表示状態を復元（次回の突入時にまた非表示→確定後表示から始められるように）
+  // 全画面バナー・映像の表示状態を復元（座標固定/フェード用のインライン指定を全て解除）
   (function(){ var sp=document.getElementById('fs-sponsor');
-    if(sp){ sp.style.transition=''; sp.style.opacity=''; } })();
+    if(sp){ sp.style.transition=''; sp.style.opacity=''; sp.style.top=''; sp.style.left=''; sp.style.transform=''; }
+    var yt=document.getElementById('yt-player-api');
+    if(yt){ yt.style.transition=''; yt.style.opacity=''; } })();
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
     try{_exitOv.remove();}catch(_){}
     setThemeColor('#1e3a28');
