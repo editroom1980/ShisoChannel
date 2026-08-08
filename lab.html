@@ -857,7 +857,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.92-lab（theme-colorメタで帯色を深緑に明示指定＝全画面戻り後の左右黒残り対策・第1手。他は一切変更なし）</div>
+    <div class="ps-version">version 1.93-lab（第2手：全画面の出入りでtheme-colorを動的切替(全画面=黒/通常=深緑)。メタ変更自体を帯再描画のトリガーにする）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1706,6 +1706,16 @@ function fitPlayer(){
 // 旧呼び出し名の互換（サイズ変化はtransformのみで安価＝即実行でよい）
 function scheduleRelayout(){ fitPlayer(); }
 
+// ノッチ帯(ビューポート外・iOSが塗る領域)の色を明示指定し直す。
+// ★metaの「変更」自体がiOSの帯再描画トリガーになる（DOM色変更/リフローでは再描画されないことはv1.80/83/91で実証済み）。
+function setThemeColor(c){
+  try{
+    var mt=document.querySelector('meta[name="theme-color"]');
+    if(!mt){ mt=document.createElement('meta'); mt.setAttribute('name','theme-color'); document.head.appendChild(mt); }
+    mt.setAttribute('content', c);
+  }catch(_){}
+}
+
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
@@ -1729,7 +1739,9 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  // ★viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面はbody深緑のまま＋player-wrapの黒でレターボックス。ノッチ帯は深緑（黒にはcoverが要りズレが出るため両立不可）。
+  // ★viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
+  // ノッチ帯は theme-color の動的変更で制御：全画面中=黒（変更イベント自体がiOSの帯再描画トリガー）
+  setThemeColor('#000000');
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
@@ -1777,7 +1789,9 @@ function closeExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
-  // ★viewport-fitは無し・切り替えもしない。全画面中もbodyを深緑に保つので、ノッチ帯が黒くサンプリングされず、通常へ戻した時の左右黒残りが起きない。
+  // ★ノッチ帯を theme-color の動的変更で深緑へ戻す。通常レイアウトの描画完了後(2フレーム後)に変更する
+  //   （metaの変更イベント自体がiOSの帯再描画トリガー。その瞬間の画面端は既に深緑＝どちらの機構でも深緑になる）
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ setThemeColor('#1e3a28'); }); });
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
