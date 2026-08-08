@@ -251,6 +251,10 @@ body.fs-open::before{
   height:env(safe-area-inset-top);
   background:#000;z-index:100001;pointer-events:none;
 }
+/* ★iOS26はステータスバー帯の色を「上端付近のfixed/sticky要素のbackground-color」から自動採取する（文書化済み仕様・
+   theme-colorは無視される）。通常時の帯の緑の供給源は position:sticky の .header(深緑)。全画面中はその採取元を黒にする。
+   ヘッダーは全画面オーバーレイ(z500)の下で見えないため、見た目への影響はゼロ＝帯の採取色だけが黒になる。 */
+body.fs-open .header{ background:#000; }
 
 /* ══ YouTubeボタンブロックレイヤー ══ */
 /* 共有ボタン（左端）・YouTubeロゴ（右端）のみブロック、シークバーは通す */
@@ -864,7 +868,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.04-lab（疑似回転(bandRejudge)を完全撤去=バナーがブレる副作用のみで帯に無効だったため。全画面突入は演出ゼロの即表示に復帰）</div>
+    <div class="ps-version">version 2.05-lab（iOS26の帯色仕様を特定：上端付近のfixed/sticky要素の背景色を自動採取(theme-color無視)。供給源=ヘッダーの深緑。全画面中はヘッダー背景を黒にして帯を黒化=見た目への副作用ゼロ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
