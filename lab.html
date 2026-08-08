@@ -869,7 +869,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.07-lab（上部帯の根治：全画面中だけviewport-fit=cover ON=帯が消えてページの黒が透ける（iOSシミュレータで機構実証済み）。解除でcover OFF=帯は即・緑へ復帰。通常時cover無し=映像ズレ無し）</div>
+    <div class="ps-version">version 2.08-lab（全画面バナーのガタつき除去：cover再レイアウトで位置が確定してから表示(180ms後・0.12秒フェード)。突入/解除の他の挙動は2.07と同一）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1750,6 +1750,10 @@ function openExpand(){
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
   // ※突入時の演出・事前黒切替は全て無効と実証済み(v1.96/97/2.00/2.02)。演出なしの即全画面のみ。
+  // ★全画面バナーはcover適用の再レイアウト(1〜2フレーム遅れ)で位置が跳ねて見える(ガタつき)ため、
+  //   位置が確定するまで非表示にし、確定後(180ms)にすっと表示する（ガタつき除去・2026-08-08ユーザー指示）
+  var _fsSp=document.getElementById('fs-sponsor');
+  if(_fsSp){ _fsSp.style.transition='none'; _fsSp.style.opacity='0'; }
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
   // ★全画面中はルート(html)背景も黒に：帯色の採取元候補(html/body)を全て黒に揃える。
@@ -1769,6 +1773,11 @@ function openExpand(){
   showFsUi();
   // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
   scheduleRelayout();
+  // バナーの位置確定後に表示（cover再レイアウトのガタつきを見せない）
+  setTimeout(function(){
+    if(_fsSp){ _fsSp.style.transition='opacity .12s ease'; _fsSp.style.opacity='1'; }
+    try{ fitPlayer(); }catch(_){}  // バナー実寸確定後にtopBandを再計算
+  },180);
 }
 
 function closeExpand(){
@@ -1819,6 +1828,9 @@ function closeExpand(){
   // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
     if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0'); })();
+  // 全画面バナーの表示状態を復元（次回の突入時にまた非表示→確定後表示から始められるように）
+  (function(){ var sp=document.getElementById('fs-sponsor');
+    if(sp){ sp.style.transition=''; sp.style.opacity=''; } })();
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
     try{_exitOv.remove();}catch(_){}
     setThemeColor('#1e3a28');
