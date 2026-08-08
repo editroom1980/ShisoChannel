@@ -23,11 +23,11 @@
   --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
   --white:#fff;--off:#f6f8f6;--border:#d4e0d6;
   --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;
-  /* 全モード共通のバナー基準幅＝画面短辺−左右余白16px（＝縦の動画ウインドウ幅386）。縦横問わず一定 */
-  --banner-w:calc(100vmin - 16px);
+  /* 全モード共通のバナー基準幅＝画面短辺−左右余白12px（＝縦の動画ウインドウ幅390・全間隔6px統一）。縦横問わず一定 */
+  --banner-w:calc(100vmin - 12px);
   /* バナーの見かけ高さ（クロップ後の実表示比率2277:193.2）と、横向きヘッダー高さ（=バナー高+上下6px=間隔A） */
-  --banner-h:calc((100vmin - 16px) * 193.2 / 2277);
-  --hdrL:calc((100vmin - 16px) * 193.2 / 2277 + 12px);
+  --banner-h:calc((100vmin - 12px) * 193.2 / 2277);
+  --hdrL:calc((100vmin - 12px) * 193.2 / 2277 + 12px);
   /* 番組表/お知らせの見出し帯：背景の深緑(--forest)と区別できる少し明るい緑 */
   --band:#2f5f42;
 }
@@ -75,8 +75,8 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 /* バナーの寸法は共通の .sponsor-img（②の見えている幅=--banner-w 構造）に一本化 */
 /* スマホ縦(幅767px以下)のみ2段(バナーは基準幅で中央)。iPad等の広い縦画面は横向きと同じ1列(ロゴと時計の間) */
 @media(orientation:portrait) and (max-width:767px){
-  /* バナー(386)が収まるようヘッダー左右余白をページ余白(8px)に合わせる */
-  .header{justify-content:space-between;row-gap:0;padding-bottom:0;padding-left:8px;padding-right:8px;}
+  /* バナー(390)が収まるようヘッダー左右余白をページ余白(6px)に合わせる（間隔6px統一） */
+  .header{justify-content:space-between;row-gap:0;padding-bottom:0;padding-left:6px;padding-right:6px;}
   .h-right{order:1;}
   /* ③バナー下の余白は0にし、動画ウインドウとの間隔=ページ上余白6px（間隔Aと同一）だけにする */
   .h-banner{order:2;flex-basis:100%;padding:3px 0 0;}
@@ -507,9 +507,6 @@ body.fs-open .header{ background:#000; }
 .news-date{font-size:10px;color:var(--text3);height:14px;line-height:14px;overflow:hidden;}
 .sb-news-src{padding:2px 12px 6px;font-size:9px;color:var(--text3);line-height:1.3;flex-shrink:0;}
 
-/* ══ フッター ══ */
-.footer{background:var(--forest);color:rgba(255,255,255,0.4);text-align:center;padding:14px;font-size:11px;letter-spacing:1px;}
-
 /* ══ レスポンシブ ══ */
 
 /* スマホ縦画面 */
@@ -529,7 +526,7 @@ body.fs-open .header{ background:#000; }
       "player"
       "guide"
       "news";
-    padding:6px 8px 24px;
+    padding:6px 6px 6px;
     gap:6px;
   }
   .sidebar{
@@ -540,13 +537,15 @@ body.fs-open .header{ background:#000; }
   }
   .header{
     min-height:calc(44px + max(0px, calc(env(safe-area-inset-top) - 8px)));
-    /* バナー(386)と動画ウインドウ(左右8px余白)を揃えるため、ヘッダー左右余白もページと同じ8pxに */
-    padding:0 8px;
+    /* バナー(390)と動画ウインドウ(左右6px余白)を揃えるため、ヘッダー左右余白もページと同じ6pxに */
+    padding:0 6px;
     padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
-  .h-logo-main{font-size:16px;}
-  .h-time{font-size:16px;}
+  .h-logo-main{font-size:15px;}
+  /* 時計は箱の幅を最大値(88:88:88=69px)+余裕で固定：数字ごとの字幅差(最大12.6px/秒)で隣のバナーが押されるのを構造的に排除 */
+  .h-time{font-size:15px;min-width:72px;text-align:right;}
   .onair-badge{padding:2px 7px;font-size:9px;}
+  .test-badge{font-size:9px;}
   .h-date{display:none;}
   /* スマホはUI要素をコンパクトに（縦幅を詰めて情報量を増やす） */
   .viewing-bar{padding:5px 12px;min-height:30px;}
@@ -572,7 +571,7 @@ body.fs-open .header{ background:#000; }
     height:calc(100vh - var(--hdr-h, 84px));
     height:calc(100dvh - var(--hdr-h, 84px));
     overflow:hidden;
-    padding-bottom:8px;
+    padding-bottom:6px;
   }
   body.iphone-mode .sidebar{
     position:static;
@@ -588,17 +587,18 @@ body.fs-open .header{ background:#000; }
   /* 横向きは画面全体をスクロールさせない（番組表内だけスクロール） */
   html,body{overflow:hidden;height:100%;}
   /* ページ全体: 動画幅を正確に計算して余白なし */
-  /* 動画高さ = 100vh - header38 - viewing-bar34 - ctrl34 - padding8 = 100vh - 114px */
+  /* 動画高さ = 100vh - ヘッダー(--hdrL) - viewing-bar34 - ctrl34 - ページ下余白6 = 100vh - hdrL - 74px */
   /* 動画幅 = 動画高さ × 16/9 */
   .page{
-    grid-template-columns:calc((100vh - var(--hdrL) - 76px) * 16 / 9) 1fr;
+    grid-template-columns:calc((100vh - var(--hdrL) - 74px) * 16 / 9) 1fr;
     grid-template-rows:1fr auto;
     grid-template-areas:
       "player guide"
       "player news";
     /* ★ノッチ回避：左右にsafe-area分の余白を確保し、動画ウインドウ/番組表をノッチの内側へピッタリ寄せる。
-       非ノッチ端末では env()=0 なので余白ゼロ＝無駄な余白なし。余白色は既存のまま（縦画面と同じ）＝勝手に変えない。 */
-    padding:6px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left));
+       非ノッチ端末では env()=0 なので余白ゼロ＝無駄な余白なし。余白色は既存のまま（縦画面と同じ）＝勝手に変えない。
+       ★上余白は0：バナー→動画の間隔はヘッダー下側の6px(間隔A)のみ＝合計6px。下余白は6px(間隔統一) */
+    padding:0 max(6px, env(safe-area-inset-right)) 6px max(6px, env(safe-area-inset-left));
     gap:6px;
     align-items:start;
     height:calc(100vh - var(--hdrL));
@@ -632,7 +632,7 @@ body.fs-open .header{ background:#000; }
   /* プレイヤー：高さ固定・幅はgridが決める */
   .player-wrap{
     padding-bottom:0 !important;
-    height:calc(100vh - var(--hdrL) - 34px - 34px - 10px);
+    height:calc(100vh - var(--hdrL) - 34px - 34px - 6px);
   }
   /* 横向きの#yt-player-apiは上書きせず、基本定義(env相殺)に委ねる（ズレ打ち消しを効かせるため） */
   /* コントロールバー：コンパクト */
@@ -651,8 +651,6 @@ body.fs-open .header{ background:#000; }
   .time-bar{padding:2px 10px 2px;}
   .pinfo{padding:3px 10px 5px;gap:2px;}
   .pname{font-size:11px;line-height:1.3;}
-  /* フッター非表示 */
-  .footer{display:none;}
 }
 
 /* ══ 全画面コントロールバー ══ */
@@ -744,7 +742,6 @@ body.silk-mode .sidebar{
   overflow-y:auto;
   position:static;
 }
-body.silk-mode .footer{display:none;}
 body.silk-mode .expand-open-btn{display:flex !important;}
 /* iOS(iPhone・iPad): 音量スライダー非表示・CC間隔を半分に */
 @media(pointer:coarse){
@@ -795,8 +792,6 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   .custom-ctrl{height:44px;padding:0 14px;gap:10px;}
   .expand-open-btn{margin-left:-5px;}
   .ctrl-btn{min-width:36px;height:36px;}
-  /* フッター */
-  .footer{font-size:11px;padding:10px 0;}
 }
 /* iPhoneの丸角対策: 全画面時コントロールバーを中央に寄せる */
 body.iphone-mode #fs-ctrl-bar{
@@ -868,7 +863,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.09-lab（横向き文字サイズを縦と同一化/バナー見かけ幅を動画ウインドウ幅に完全一致・全モード統一/バナー位置を実測固定=全画面で不動/上下間隔を間隔A(6px)に統一/映像もフェード表示でガタつき除去）</div>
+    <div class="ps-version">version 2.10-lab（縦の上ズレ根治=フッター削除で余剰45px除去+ヘッダー高再測定+スクロール0固定/縦全画面バナー復活=上方向の安全領域補正/時計の箱幅固定でバナー静止/文字15-15-9-9統一/全間隔6px統一・幅390/全画面フェード0.25s）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1013,8 +1008,6 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
       <div class="sb-news-src" id="sb-news-src"></div>
     </div>
   </div>
-
-  <footer class="footer">© 宍粟市　しそチャンNET　プロトタイプ版</footer>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -1151,7 +1144,9 @@ function loadCityNews(){
 }
 // 情報バーの実高さを CSS変数 --hdr-h に反映（バナー込みの高さでiPhone縦の本文高さを正しく計算）
 function setHdrVar(){
-  try{ var h=document.querySelector('.header'); if(h) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight+'px'); }catch(_){}
+  // 高さ0＝非表示中(起動画面表示中など)の測定は無効。0を記録するとiPhone縦の本文が画面より縦長になり
+  // 「本文が固定ヘッダーの裏に潜る上ズレ」の原因になるため、表示中(>0)のみ反映する
+  try{ var h=document.querySelector('.header'); if(h && h.offsetHeight>0) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight+'px'); }catch(_){}
 }
 
 var SPONSORS=[
@@ -1783,20 +1778,26 @@ function openExpand(){
   // 位置確定後に表示（cover再レイアウトのガタつきを見せない）。バナーを実測座標へ固定→fitPlayer→表示の順
   setTimeout(function(){
     if(!isExpanded) return;   // 既に解除されていたら何もしない（closeExpandが復元する）
-    // ★バナーを通常時の実測座標へ固定。cover適用で座標系が安全領域ぶん左へ広がるため、
-    //   横位置は「実測left + 現在のenv(safe-area-inset-left)」で補正（縦は座標系が動かないため実測値そのまま）
+    // ★バナーを通常時の実測座標へ固定。cover適用で座標系が安全領域ぶん「左」と「上」の両方向へ広がるため、
+    //   横位置=「実測left + env(safe-area-inset-left)」・縦位置=「実測top + env(safe-area-inset-top)」で補正。
+    //   （縦向き全画面はenv-top=62px：v2.09で上補正が無くバナーが上部黒帯の裏に隠れて消えた＝その根治）
     if(_fsSp && _spTop!==null){
-      var envL=0;
+      var envL=0,envT=0;
       try{ var p=document.createElement('div');
-        p.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left);';
-        document.body.appendChild(p); envL=parseFloat(getComputedStyle(p).paddingLeft)||0; p.remove(); }catch(_){}
-      _fsSp.style.top=_spTop+'px';
+        p.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left);padding-top:env(safe-area-inset-top);';
+        document.body.appendChild(p); var pcs=getComputedStyle(p);
+        envL=parseFloat(pcs.paddingLeft)||0; envT=parseFloat(pcs.paddingTop)||0; p.remove(); }catch(_){}
+      _fsSp.style.top=(_spTop+envT)+'px';
       _fsSp.style.left=(_spLeft+envL)+'px';
       _fsSp.style.transform='none';
     }
     try{ fitPlayer(); }catch(_){}
-    if(_fsSp){ _fsSp.style.transition='opacity .12s ease'; _fsSp.style.opacity='1'; }
-    if(_ytFade){ _ytFade.style.transition='opacity .15s ease'; _ytFade.style.opacity='1'; }
+    // レイアウトが完全に確定した2フレーム後に0.25秒でふわっと表示（承認済みフェード方式・時間配分のみ調整）
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      if(!isExpanded) return;
+      if(_fsSp){ _fsSp.style.transition='opacity .25s ease'; _fsSp.style.opacity='1'; }
+      if(_ytFade){ _ytFade.style.transition='opacity .25s ease'; _ytFade.style.opacity='1'; }
+    }); });
   },180);
 }
 
@@ -2381,6 +2382,10 @@ function armStartBtn(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
+  // ★本体を表示した直後にヘッダー実高(--hdr-h)を測り直す（起動画面中の測定は非表示=高さ0で無効なため）＋
+  //   ページのスクロール位置を0に固定（本文が固定ヘッダーの裏に潜り込む上ズレの保険）
+  setHdrVar();
+  requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); });
   hasPoweredOn=true;
   userWantsPlay=true;
   var pos = CYCLE.length ? nowPos() : null;
@@ -2558,6 +2563,7 @@ function init(){
   setInterval(loadCityNews, 60000);     // 60秒ごとに再取得＝更新に自動追従(SWR)
   setInterval(rotateCityNews, 8000);
   window.addEventListener('load', setHdrVar);
+  window.addEventListener('resize', setHdrVar); // 回転・画面サイズ変化でヘッダー実高を追従（測り直し漏れの根治）
   setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   statsInit(); // 視聴計測（未設定なら何もしない）
