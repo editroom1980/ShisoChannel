@@ -504,6 +504,8 @@ body.fs-open .header{ background:#000; }
 .news-tag{align-self:flex-start;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;letter-spacing:1px;}
 .news-tag.notice{background:var(--green4);color:var(--forest);}
 .news-tag.event{background:#f2e3c4;color:#8a6414;}
+.news-tag.warn{background:#f7dada;color:#8a1f1f;}
+.news-ttl.warn{color:#8a1f1f;font-weight:700;}
 .news-ttl{font-size:12px;color:var(--text);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .news-date{font-size:10px;color:var(--text3);height:14px;line-height:14px;overflow:hidden;}
 .sb-news-src{padding:2px 12px 6px;font-size:9px;color:var(--text3);line-height:1.3;flex-shrink:0;}
@@ -870,7 +872,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.13-lab（ピンチ拡大縮小を禁止=viewport指定＋ピンチジェスチャー抑止の二段構え。タップ・スクロール等の通常操作は無影響）</div>
+    <div class="ps-version">version 2.14-lab（お知らせ枠を宍粟市公式サイトの新着に自動連携=くらし/イベント/募集/重要をタップでリンク・30分毎自動更新・出典明記/気象庁の警報発表中は優先表示/観光協会情報は廃止）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1091,44 +1093,110 @@ function makeBannerCompact(name, tagline, bg, accent, icon){
 function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="display:block;border:0">';}
 // ══════════════════════════════════════════════
 //  宍粟市お知らせ・イベント（番組表の下の枠）
-//  ※現状はサンプル。将来は Firestore / 観光協会RSS(/news/feed)中継 に置換予定。
-//  ※本番反映前に CITY_NEWS を空配列 or 実データへ差し替えること。
+//  表示の優先順位（2026-08-09ユーザー承認）:
+//   ①気象庁の警報(発表中のみ・最優先) → ②市公式サイトの新着(city_news.json=GitHub Actionsが30分毎に自動転記)
+//   → ③サンプル(②が読めない時のみ)。
+//  ※観光協会(しそうツーリズムガイド)の情報は「不要」の指示により廃止:
+//    旧・観光協会RSS→Firestore中継(scripts/fetch-city-news.mjs+毎時Actions)は撤去、
+//    Firestore(broadcast/city_news)の読み込み(loadCityNews)も停止（関数は残置・手動お知らせを再開したい時に復活可）。
 // ══════════════════════════════════════════════
 var CITY_NEWS=[
   {type:'event',  title:'（サンプル）シソイチライドイベント2026', date:'2026.02.20'},
   {type:'notice', title:'（サンプル）ここに市からのお知らせが表示されます', date:''}
 ];
 var cityNewsIndex=0, _cityNewsReal=false, _cityNewsSig='', _cityNewsSrc='';
+var CIVIC_NEWS=[], _civicSig='';   // 市公式サイトの新着（くらし/イベント/募集/重要）
+var JMA_WARN=[], _jmaSig='';       // 発表中の気象警報（宍粟市・優先表示）
+// いま表示すべきリスト（優先順位を一元化）
+function newsDisplayList(){
+  if(JMA_WARN.length) return JMA_WARN;
+  if(CIVIC_NEWS.length) return CIVIC_NEWS;
+  return CITY_NEWS||[];
+}
+// 市公式の新着を読む（同一オリジンのcity_news.json・番組表と同じSWR方式）
+function loadCivicNews(){
+  fetch('city_news.json?v='+Date.now(),{cache:'no-store'})
+  .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  .then(function(j){
+    if(j && j.items && j.items.length){
+      var sig=JSON.stringify(j.items);
+      if(sig!==_civicSig){ _civicSig=sig; CIVIC_NEWS=j.items; cityNewsIndex=0; renderCityNews(); }
+    }
+  }).catch(function(){ /* 取得失敗時は現状維持 */ });
+}
+// 気象庁の警報（兵庫県280000のJSONから宍粟市2822700を抽出。CORS開放済み＝直接取得可・実測確認）
+// コード表: 02暴風雪/03大雨/04洪水/05暴風/06大雪/07波浪/08高潮、32-38は特別警報。10-29は注意報＝対象外
+var JMA_NAMES={'02':'暴風雪警報','03':'大雨警報','04':'洪水警報','05':'暴風警報','06':'大雪警報','07':'波浪警報','08':'高潮警報',
+  '32':'暴風雪特別警報','33':'大雨特別警報','35':'暴風特別警報','36':'大雪特別警報','37':'波浪特別警報','38':'高潮特別警報'};
+var JMA_ADVISORY={'10':1,'12':1,'13':1,'14':1,'15':1,'16':1,'17':1,'18':1,'19':1,'20':1,'21':1,'22':1,'23':1,'24':1,'25':1,'26':1,'29':1};
+function loadJmaWarn(){
+  fetch('https://www.jma.go.jp/bosai/warning/data/warning/280000.json',{cache:'no-store'})
+  .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  .then(function(j){
+    var names=[], dtxt='';
+    try{ var d=new Date(j.reportDatetime);
+      dtxt=(d.getMonth()+1)+'月'+d.getDate()+'日 '+d.getHours()+':'+('0'+d.getMinutes()).slice(-2)+' 発表'; }catch(_){}
+    (j.areaTypes||[]).forEach(function(at){ (at.areas||[]).forEach(function(a){
+      if(a.code!=='2822700') return;   // 宍粟市
+      (a.warnings||[]).forEach(function(w){
+        if(!w || !w.code) return;                 // 「発表警報・注意報はなし」はcode無し
+        if(JMA_ADVISORY[w.code]) return;          // 注意報は対象外（承認済み範囲=警報のみ）
+        if(w.status==='解除') return;
+        var nm=JMA_NAMES[w.code]||'気象警報';      // 未知コードでも警報側は取りこぼさない
+        if(names.indexOf(nm)<0) names.push(nm);
+      });
+    }); });
+    var list=names.map(function(nm){
+      return {tag:'警報', warn:true, title:nm+'　宍粟市に発表中', date:dtxt,
+        url:'https://www.jma.go.jp/bosai/warning/#area_type=class20s&area_code=2822700', src:'出典：気象庁'};
+    });
+    var sig=JSON.stringify(list);
+    if(sig!==_jmaSig){ _jmaSig=sig; JMA_WARN=list; cityNewsIndex=0; renderCityNews(); }
+  }).catch(function(){ /* 取得失敗時は現状維持（警報の誤消去はしない） */ });
+}
 function renderCityNews(){
   var box=document.getElementById('sb-news');
   if(!box) return;
   var body=document.getElementById('sb-news-body');
   var src=document.getElementById('sb-news-src');
-  if(!CITY_NEWS || !CITY_NEWS.length){ box.style.display='none'; return; }
-  if(cityNewsIndex>=CITY_NEWS.length) cityNewsIndex=0;
-  var n=CITY_NEWS[cityNewsIndex], isEv=(n.type==='event');
+  var L=newsDisplayList();
+  if(!L.length){ box.style.display='none'; return; }
+  if(cityNewsIndex>=L.length) cityNewsIndex=0;
+  var n=L[cityNewsIndex];
+  // タグ表記: 市新着はtag(くらし/イベント/募集/重要)・警報はtag=警報・旧形式(Firestore/サンプル)はtypeから
+  var tag = n.tag || (n.type==='event' ? 'イベント' : 'お知らせ');
+  var tagCls = n.warn ? 'warn' : ((tag==='イベント'||tag==='募集') ? 'event' : (tag==='重要' ? 'warn' : 'notice'));
   var esc=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  // イベント／お知らせを1件ずつ順番に切り替え表示
-  // 高さ固定のため date行は常に描画（無い時は空）・タイトルは1行省略
+  // 1件ずつ順番に切り替え表示。高さ固定のため date行は常に描画（無い時は空）・タイトルは1行省略
   body.innerHTML='<div class="news-item">'
-    +'<span class="news-tag '+(isEv?'event':'notice')+'">'+(isEv?'イベント':'お知らせ')+'</span>'
-    +'<div class="news-ttl">'+esc(n.title||'')+'</div>'
+    +'<span class="news-tag '+tagCls+'">'+esc(tag)+'</span>'
+    +'<div class="news-ttl'+(n.warn?' warn':'')+'">'+esc(n.title||'')+'</div>'
     +'<div class="news-date">'+esc(n.date||'')+'</div>'
     +'</div>';
-  src.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示（実際の情報連携は準備中）';
+  if(n.warn){ src.textContent = n.src||'出典：気象庁'; }
+  else if(n.tag){ src.textContent = '出典：宍粟市公式サイト（タップで詳細ページへ）'; }
+  else { src.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示（実際の情報連携は準備中）'; }
   box.style.display='';
 }
-function rotateCityNews(){ if(!CITY_NEWS||CITY_NEWS.length<2) return; cityNewsIndex=(cityNewsIndex+1)%CITY_NEWS.length; renderCityNews(); }
-function prevCityNews(){ if(!CITY_NEWS||CITY_NEWS.length<2) return; cityNewsIndex=(cityNewsIndex-1+CITY_NEWS.length)%CITY_NEWS.length; renderCityNews(); }
-// お知らせをスワイプで前後に切替（バナーと同様）
+function rotateCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex+1)%L.length; renderCityNews(); }
+function prevCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex-1+L.length)%L.length; renderCityNews(); }
+// お知らせをスワイプで前後に切替（バナーと同様）＋タップでリンク先へ（スワイプ直後の誤タップは抑止）
+var _newsTapSuppress=false;
 function attachNewsSwipe(el){
   if(!el) return; var x0=null,y0=null;
   el.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; y0=e.touches[0].clientY; },{passive:true});
   el.addEventListener('touchend',function(e){
     if(x0===null) return; var dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0; x0=null;
     if(Math.abs(dx)<30 || Math.abs(dx)<Math.abs(dy)) return;
+    _newsTapSuppress=true; setTimeout(function(){ _newsTapSuppress=false; },400);
     if(dx<0) rotateCityNews(); else prevCityNews();
   },{passive:true});
+  // 表示中の項目にurlがあれば同一タブで開く（スポンサーバナーと同じ方式＝戻るとbfcacheで再生復帰）
+  el.addEventListener('click',function(){
+    if(_newsTapSuppress) return;
+    var L=newsDisplayList(); var n=L[cityNewsIndex];
+    if(n && n.url){ location.href=n.url; }
+  });
 }
 // Firestoreの broadcast/city_news から お知らせ/イベント を取得（番組表と同じSWR方式）。
 // データがあれば自動でサンプルから差し替え・更新のたびに追従。無ければサンプルのまま。
@@ -2613,8 +2681,11 @@ function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();renderCityNews();updateClock();setHdrVar();
-  loadCityNews();                       // Firestoreから最新のお知らせを取得（あれば自動差し替え）
-  setInterval(loadCityNews, 60000);     // 60秒ごとに再取得＝更新に自動追従(SWR)
+  // loadCityNews(Firestore手動お知らせ)は停止中：中身が廃止済みの観光協会情報のため（2026-08-09指示）。
+  loadCivicNews();                      // 市公式サイトの新着(city_news.json)
+  setInterval(loadCivicNews, 300000);   // 5分ごと（元データはActionsが30分ごとに更新）
+  loadJmaWarn();                        // 気象庁の警報（発表中は優先表示）
+  setInterval(loadJmaWarn, 300000);     // 5分ごと
   setInterval(rotateCityNews, 8000);
   window.addEventListener('load', setHdrVar);
   window.addEventListener('resize', setHdrVar); // 回転・画面サイズ変化でヘッダー実高を追従（測り直し漏れの根治）
