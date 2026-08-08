@@ -6,13 +6,13 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>しそチャンNET LAB（操作改善テスト）</title>
-<link rel="apple-touch-icon" href="icon-180.png?v=131">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=131">
+<link rel="apple-touch-icon" href="icon-180.png?v=132">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
-<link rel="apple-touch-icon" href="icon-180.png?v=131">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=131">
+<link rel="apple-touch-icon" href="icon-180.png?v=132">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
 /* タイトル用フォント コーポレートロゴB（Corporate Logo Bold・OFLベース）。タイトル文字だけにサブセット済(約1KB) */
@@ -851,7 +851,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.82-lab（原因特定用の計測強化：?debug=1でviewport-fit状態/各背景色/safe-areaを表示。全画面戻り黒帯の根治調査）</div>
+    <div class="ps-version">version 1.83-lab（全画面戻り黒帯を根治：先に深緑を描画→2フレーム後にcover解除で帯が深緑をサンプリング/アイコン更新v132）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1773,17 +1773,15 @@ function closeExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
-  // ★全画面解除で viewport-fit=cover を外す＝通常表示に戻す(YouTube黒帯対策を維持・余白は深緑)。
-  //   iOSは安全領域の帯を前の色(全画面の黒)のまま残すことがあるため、強制リフローで確実に深緑へ塗り直す。
-  (function(){
-    var vp=document.querySelector('meta[name="viewport"]');
-    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0');
-    // 安全領域の帯を確実に再描画（黒残り防止）：ルート背景を深緑で明示→強制リフロー→次フレームで解除
-    var de=document.documentElement;
-    de.style.background='#1e3a28';
-    void de.offsetHeight;                 // 同期リフロー
-    requestAnimationFrame(function(){ void de.offsetHeight; de.style.background=''; });
-  })();
+  // ★左右黒帯の根治（原因確定：Safariはノッチ帯に「cover解除の瞬間の映像＝全画面の黒」を残す。DOMは全て深緑）。
+  //   対策：先に通常レイアウト(ノッチ位置=深緑)を確実に"描画"させてから cover を外し、帯が深緑をサンプリングするようにする。
+  void document.body.offsetHeight;                    // 通常レイアウトを同期でレイアウト（cover状態のまま=ノッチ位置に深緑）
+  requestAnimationFrame(function(){                   // フレーム1：深緑を描画
+    requestAnimationFrame(function(){                 // フレーム2：深緑が確実に描画済み
+      var vp=document.querySelector('meta[name="viewport"]');
+      if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0');  // ここで初めてcover解除→帯は深緑をサンプリング
+    });
+  });
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
