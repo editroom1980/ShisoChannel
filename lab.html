@@ -857,7 +857,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.95-lab（帯黒残りを根治：全画面解除時に深緑オーバーレイを0.1秒表示→除去で帯を塗り直し＝実機診断T5で毎回再現確認済みの機構を自動化）</div>
+    <div class="ps-version">version 1.96-lab（帯の塗り直しを高速化：解除時の深緑フラッシュを50msに短縮／突入時は黒フラッシュ(不可視)で上部の深緑残りも即黒化）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1716,6 +1716,17 @@ function setThemeColor(c){
   }catch(_){}
 }
 
+// ★帯(ビューポート外・iOSが塗る領域)の色をiOSに再判定させる【実機診断v1.94のT5で機構確定】：
+//   画面全体を覆うオーバーレイの「出現・消滅」が帯色再判定のトリガー。指定色を一瞬出し入れして帯を塗り直させる。
+function bandFlash(color,ms){
+  try{
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:'+color+';z-index:99998;pointer-events:none;';
+    document.body.appendChild(ov);
+    setTimeout(function(){ try{ov.remove();}catch(_){} }, ms||50);
+  }catch(_){}
+}
+
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
@@ -1749,6 +1760,9 @@ function openExpand(){
   showFsUi();
   // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
   scheduleRelayout();
+  // ★帯を最速で黒へ再判定させる：全画面の黒が描画された直後(2フレーム後)に黒を一瞬出し入れ
+  //   （画面は既に全画面の黒なので見た目には一切見えない）＝上部/左右の帯の深緑が残る時間を根絶
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ bandFlash('#000000',50); }); });
 }
 
 function closeExpand(){
@@ -1791,16 +1805,9 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   // ★ノッチ帯を theme-color の動的変更で深緑へ戻す。通常レイアウトの描画完了後(2フレーム後)に変更する
   requestAnimationFrame(function(){ requestAnimationFrame(function(){ setThemeColor('#1e3a28'); }); });
-  // ★横向きレターボックス(ビューポート外・iOSが塗る帯)の黒残り根治【実機診断v1.94のT5で機構確定】：
-  //   iOSは「画面全体を覆うオーバーレイの出現・消滅」の瞬間に帯色を再判定する。全画面(黒)の出入りで黒を拾うのはこの機構。
-  //   同じ機構を逆利用し、解除直後に深緑のオーバーレイを一瞬(100ms)表示→除去することで帯を深緑へ塗り直させる（実機で毎回再現を確認）。
-  //   ※viewportメタ再処理(350ms/1000ms)は実機で無効と判明したため撤去済み。
-  (function(){
-    var ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;background:#1e3a28;z-index:99998;pointer-events:none;';
-    document.body.appendChild(ov);
-    setTimeout(function(){ try{ov.remove();}catch(_){} },100);
-  })();
+  // ★横向きレターボックス(帯)の黒残り根治：解除直後に深緑を一瞬(50ms)出し入れして帯を深緑へ塗り直させる。
+  //   （機構はbandFlash参照。100msで実機確認済み→体感短縮のため50msに。効きが悪ければ戻す）
+  bandFlash('#1e3a28',50);
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
