@@ -864,7 +864,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.02-lab（承認済みの一方向黒切替：全画面突入時にページ描画を先に黒→次フレームで全画面表示（往復ゼロ）＝縦全画面上部の帯を黒採取させる）</div>
+    <div class="ps-version">version 2.03-lab（縦全画面上部の帯対策：回転相当のジオメトリ再計算(viewport倍率を一瞬1%変更→復元)を全画面描画後に実行=回転で黒くなる実測機構をコード化。2.02の無効な黒切替は撤去）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1723,6 +1723,21 @@ function setThemeColor(c){
   }catch(_){}
 }
 
+// ★帯(ビューポート外・iOSが塗る領域)を「今の画面の色」で塗り直させる：回転相当のジオメトリ再計算を起こす。
+//   全画面のまま回転すると帯が今の画面色(黒)になることは実機確認済み。その回転と同じ「画面サイズの再計算」を
+//   viewport倍率を一瞬1%変えて戻すことで発生させる（過去のviewport-fit=auto付与等は既定値と同義=無変化で無効だった。
+//   今回は実際に倍率が変わるため再計算が走る）。
+function bandRejudge(){
+  try{
+    var vp=document.querySelector('meta[name="viewport"]');
+    if(!vp) return;
+    var c=vp.getAttribute('content');
+    if(!c || /viewport-fit/.test(c)) return;  // 想定外の構成では触らない
+    vp.setAttribute('content','width=device-width, initial-scale=1.01');
+    setTimeout(function(){ vp.setAttribute('content', c); },50);
+  }catch(_){}
+}
+
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
@@ -1744,28 +1759,22 @@ function openExpand(){
   // タッチデバイス：疑似全画面（position:fixed）
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
-  // ★一方向の黒切替（ユーザー承認済み 2026-08-08）：オーバーレイは使わず「ページ自体の描画」を先に黒へ。
-  //   黒が画面に載った次のフレームで全画面を表示＝全画面が現れる瞬間の直前画面が黒になり、上部/左右の帯が黒を採取。
-  //   通常画面→黒→全画面 の往復ゼロ。過去3回の点滅(v1.96/97/2.00)は間に通常画面が戻ったのが原因で、この方式では構造上起きない。
-  var _de=document.documentElement;
-  _de.style.background='#000';
-  document.body.style.visibility='hidden';   // 画面を黒1色に（約2フレームだけ非表示・再生は継続）
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){
-    if(!isExpanded){ _de.style.background=''; document.body.style.visibility=''; return; } // 黒切替中に解除されたら中断
-    wrap.classList.add('expanded');
-    document.body.classList.add('fs-open');
-    document.body.style.visibility='';       // 全画面(黒)の下で即復帰＝見た目の変化なし
-    _de.style.background='';
-    // viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
-    setThemeColor('#000000');
-    if(!wrap._touchHandler){
-      wrap._touchHandler=function(){if(isExpanded)showFsUi();};
-      wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
-    }
-    showFsUi();
-    // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
-    scheduleRelayout();
-  }); });
+  // ※突入時の演出・事前黒切替は全て無効と実証済み(v1.96/97/2.00/2.02)。演出なしの即全画面のみ。
+  wrap.classList.add('expanded');
+  document.body.classList.add('fs-open');
+  // viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
+  setThemeColor('#000000');
+  if(!wrap._touchHandler){
+    wrap._touchHandler=function(){if(isExpanded)showFsUi();};
+    wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
+  }
+  showFsUi();
+  // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
+  scheduleRelayout();
+  // ★上部/左右の帯を黒にする：回転相当の「画面ジオメトリ再計算」を全画面描画後に起こす。
+  //   （全画面のまま回転すると帯が黒くなる＝ユーザー実機確認済みの唯一の全画面中トリガー。その回転と同じ
+  //     再計算をviewport倍率の一瞬の変更で起こし、今の黒い画面で帯を塗り直させる。黒い全画面上では視覚影響ほぼゼロ）
+  setTimeout(function(){ if(isExpanded) bandRejudge(); },400);
 }
 
 function closeExpand(){
