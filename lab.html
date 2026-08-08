@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>しそチャンNET LAB（操作改善テスト）</title>
@@ -141,7 +141,15 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   pointer-events:auto;
   transition:background 0.1s;
 }
-#yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+/* ★viewport-fit=cover環境でYouTubeが映像を安全領域(env)ぶん各辺へ寄せるのを、CSSの同じenv値で相殺（env()はCSSで確実に解決）。
+   +数pxオーバースキャン(16:9維持)でサブピクセルの黒線も除去。結果、映像が動画枠を完全に覆う（ズレ・黒帯なし）。非ノッチ機種はenv=0で無影響。 */
+#yt-player-api{position:absolute;z-index:1;
+  left:calc(-1 * env(safe-area-inset-left) - 3px);
+  top:calc(-1 * env(safe-area-inset-top) - 1.6875px);
+  right:auto;bottom:auto;
+  width:calc(100% + env(safe-area-inset-left) + env(safe-area-inset-right) + 6px);
+  height:calc(100% + env(safe-area-inset-top) + env(safe-area-inset-bottom) + 3.375px);
+}
 #yt-player-api iframe{pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
 
@@ -612,9 +620,7 @@ body.fs-open .player-wrap.expanded{
     padding-bottom:0 !important;
     height:calc(100vh - 44px - 34px - 34px - 10px);
   }
-  #yt-player-api{
-    position:absolute;inset:0;width:100%;height:100%;
-  }
+  /* 横向きの#yt-player-apiは上書きせず、基本定義(env相殺)に委ねる（ズレ打ち消しを効かせるため） */
   /* コントロールバー：コンパクト */
   .custom-ctrl{height:34px;padding:0 8px;gap:5px;}
   .custom-ctrl .expand-open-btn{margin-left:-3px;width:30px;height:30px;}
@@ -851,7 +857,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.85-lab（cover撤去でYouTube映像寄れ(ズレ)を根絶／切替なしで戻り黒帯も無し。全画面のノッチ帯のみ深緑=iOS制約）</div>
+    <div class="ps-version">version 1.86-lab（cover常時ON=戻り黒帯無し＋全画面ノッチ黒。YouTube映像寄れ(ズレ)はCSSのenv相殺で除去=env確実解決）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1658,12 +1664,10 @@ function fitPlayer(){
     //   枠(player-wrap)は縦横どちらでも常に16:9なので、iframeを100%で埋めれば
     //   YouTubeがそのまま16:9で描く＝拡大縮小の合成ズレが起きない（昔の安定挙動）。
     yt.style.position='absolute';
-    // ★16:9を保ったまま枠より4px大きく(左右上下を各2px/1.125pxはみ出させ)、overflow:hiddenでクリップ。
-    //   iframeと枠のサブピクセルのすき間から出る左右1〜2pxの黒線を消す(動画が枠を完全に覆う)。16:9維持でYouTubeのレターボックスは出ない。
-    // viewport-fit無し(cover無し)＝YouTubeの映像寄せは起きない。枠を16:9のまま±数pxだけオーバースキャンして
-    // サブピクセルの黒線を消すだけ（ズレは出ない）。
-    yt.style.left='-3px'; yt.style.top='-1.6875px'; yt.style.right='auto'; yt.style.bottom='auto';
-    yt.style.width='calc(100% + 6px)'; yt.style.height='calc(100% + 3.375px)';
+    // ★サイズ・位置はCSS側(#yt-player-apiのenv相殺)に委ねる。env()はCSSで確実に解決するため、
+    //   viewport-fit=cover時のYouTube映像寄せをピタリ相殺できる。インライン指定はクリアしてCSSを効かせる。
+    yt.style.left=''; yt.style.top=''; yt.style.right=''; yt.style.bottom='';
+    yt.style.width=''; yt.style.height='';
     yt.style.transform='none'; yt.style.transformOrigin='0 0';
     if(cw>0){
       var fsb0=document.getElementById('fs-ctrl-bar');
@@ -1725,7 +1729,7 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  // ★viewport-fitは常に無し（切り替え廃止）。cover無し＝YouTubeの映像寄せ(ズレ)が起きない。切替無し＝戻り黒帯も起きない。全画面のノッチ帯は深緑(iOS制約で黒にはできない)。
+  // ★viewport-fit=cover常時ON（切り替え廃止）。ノッチ帯はDOM(#main-content深緑/全画面は.expandedの黒)で制御＝Safari任せの黒残りが起きない。YouTubeの映像寄せはCSSのenv相殺で除去。
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
@@ -1773,7 +1777,7 @@ function closeExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
-  // ★viewport-fit切り替えは廃止（常に無し）。通常時のノッチ帯はhtml深緑のまま＝黒くなりようがない（切替が無いので黒サンプリングが起きない）。
+  // ★viewport-fit=cover常時ON（切り替え廃止）。通常時のノッチ帯は #main-content の深緑(DOM)が常に表示＝黒くなりようがない（切替による黒サンプリングが起きない）。
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
