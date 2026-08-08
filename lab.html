@@ -141,13 +141,11 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   pointer-events:auto;
   transition:background 0.1s;
 }
-/* ★YouTubeは横向きで映像を padding-left:env(safe-area-inset-left)(=ノッチ62px) ぶん右へ寄せる（実測で左のみ・縦向きは0）。
-   これを CSS の env(safe-area-inset-left) だけで相殺（左へずらし＋同ぶん幅を足す）。上下・右は触らず、±数pxオーバースキャンのみ。
-   CSSなのでenv()が確実に解決。非ノッチ機種はenv=0で無影響＝ただのオーバースキャン。 */
-#yt-player-api{position:absolute;z-index:1;
-  left:calc(-1 * env(safe-area-inset-left) - 3px);top:-1.6875px;right:auto;bottom:auto;
-  width:calc(100% + env(safe-area-inset-left) + 6px);height:calc(100% + 3.375px);
-}
+/* 計測用：相殺を一旦外し枠を素直に充填（YouTubeの実際の寄せ量を測るため）。 */
+#yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+/* ?debug=1時：動画枠の左端にマゼンタの2px線。映像がこの線から何px右にあるか＝YouTubeの実寄せ量。 */
+body.dbgline #player-wrap::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:magenta;z-index:60;pointer-events:none;}
+body.dbgline #player-wrap::after{content:'';position:absolute;left:20px;top:0;bottom:0;width:1px;background:rgba(255,0,255,0.5);z-index:60;pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
 
@@ -855,7 +853,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.89-lab（横向きの左62pxズレ=YouTubeのsafe-area-inset-left寄せと実測特定。CSSでenv-leftだけ相殺。計測数字をノッチ下へ）</div>
+    <div class="ps-version">version 1.90-lab（計測：相殺を外し枠左端にマゼンタ線。YouTubeの実際の寄せ量を測って正確に相殺するため）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2762,6 +2760,7 @@ document.addEventListener('touchstart', function(){}, {passive:true});
    黒帯が「枠の外(CSS)」か「YouTube内部」かを実機の数値で確定するための一時ツール。 */
 (function(){
   if(!/[?&]debug=1/.test(location.search)) return;
+  try{ document.body.classList.add('dbgline'); }catch(_){}
   function saInset(){
     var p=document.getElementById('__sa_probe');
     if(!p){ p=document.createElement('div'); p.id='__sa_probe';
