@@ -863,7 +863,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.10-lab（縦の上ズレ根治=フッター削除で余剰45px除去+ヘッダー高再測定+スクロール0固定/縦全画面バナー復活=上方向の安全領域補正/時計の箱幅固定でバナー静止/文字15-15-9-9統一/全間隔6px統一・幅390/全画面フェード0.25s）</div>
+    <div class="ps-version">version 2.11-lab（全画面中の回転でバナー座標を新しい向きで再計算=縦横どちらへ回しても通常時と同じ位置に表示/全画面フェード0.3s）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1795,10 +1795,34 @@ function openExpand(){
     // レイアウトが完全に確定した2フレーム後に0.25秒でふわっと表示（承認済みフェード方式・時間配分のみ調整）
     requestAnimationFrame(function(){ requestAnimationFrame(function(){
       if(!isExpanded) return;
-      if(_fsSp){ _fsSp.style.transition='opacity .25s ease'; _fsSp.style.opacity='1'; }
-      if(_ytFade){ _ytFade.style.transition='opacity .25s ease'; _ytFade.style.opacity='1'; }
+      if(_fsSp){ _fsSp.style.transition='opacity .3s ease'; _fsSp.style.opacity='1'; }
+      if(_ytFade){ _ytFade.style.transition='opacity .3s ease'; _ytFade.style.opacity='1'; }
     }); });
   },180);
+}
+
+// ★全画面「中」の回転対応（v2.11）：バナーの固定座標を新しい向きで計算し直す。
+//   突入時の固定座標は入った瞬間の向きの実測値のため、全画面のまま回転すると
+//   縦→横=縦用座標が残留して変な位置／横→縦=横用座標(上6px)が上部黒帯の裏＝不可視になっていた（その根治）。
+//   全画面中はcover適用済み＝ヘッダー内バナー(sponsor-img)の現在rectは物理座標そのもの。
+//   ただしcover中のヘッダーは padding-top:max(0px, env(safe-area-inset-top)-8px) のぶん
+//   通常時（物理=帯env + padding0）より min(env,8px) だけ上に居るため、それを足し戻すと
+//   「その向きで通常表示した時の物理位置」に一致する（シミュレータ実測: 縦77.7+8=85.7=通常時physical ✓／横+0 ✓）。
+function repinFsSponsor(){
+  if(!isExpanded) return;
+  var fsSp=document.getElementById('fs-sponsor');
+  var si=document.getElementById('sponsor-img');
+  if(!fsSp||!si) return;
+  var r=si.getBoundingClientRect();
+  if(!r || r.height<=0) return;
+  var envT=0;
+  try{ var p=document.createElement('div');
+    p.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);';
+    document.body.appendChild(p); envT=parseFloat(getComputedStyle(p).paddingTop)||0; p.remove(); }catch(_){}
+  fsSp.style.top=(r.top+Math.min(envT,8))+'px';
+  fsSp.style.left=r.left+'px';
+  fsSp.style.transform='none';
+  try{ fitPlayer(); }catch(_){}
 }
 
 function closeExpand(){
@@ -2564,6 +2588,11 @@ function init(){
   setInterval(rotateCityNews, 8000);
   window.addEventListener('load', setHdrVar);
   window.addEventListener('resize', setHdrVar); // 回転・画面サイズ変化でヘッダー実高を追従（測り直し漏れの根治）
+  // 全画面中の回転：バナー固定座標を新しい向きで再計算（iOSはresize直後に寸法が定まらない事があるため250ms後にもう一度。
+  //   resizeとorientationchangeの両方で拾う=発火順が端末で異なる保険）
+  var _fsRepinOnRotate=function(){ if(isExpanded){ repinFsSponsor(); setTimeout(repinFsSponsor,250); } };
+  window.addEventListener('resize', _fsRepinOnRotate);
+  window.addEventListener('orientationchange', _fsRepinOnRotate);
   setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   statsInit(); // 視聴計測（未設定なら何もしない）
