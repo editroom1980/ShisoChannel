@@ -857,7 +857,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.96-lab（帯の塗り直しを高速化：解除時の深緑フラッシュを50msに短縮／突入時は黒フラッシュ(不可視)で上部の深緑残りも即黒化）</div>
+    <div class="ps-version">version 1.97-lab（突入時の黒フラッシュを描画後100ms/350msに修正=縦全画面上部の深緑を確実に黒化（不可視）／解除時の緑フラッシュを33msへ短縮）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1760,9 +1760,11 @@ function openExpand(){
   showFsUi();
   // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
   scheduleRelayout();
-  // ★帯を最速で黒へ再判定させる：全画面の黒が描画された直後(2フレーム後)に黒を一瞬出し入れ
-  //   （画面は既に全画面の黒なので見た目には一切見えない）＝上部/左右の帯の深緑が残る時間を根絶
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){ bandFlash('#000000',50); }); });
+  // ★帯(上部/左右)を黒へ再判定させる：フラッシュは「全画面の黒が実際に画面へ表示された後」に走らせるのが肝
+  //   （rAF 2フレームでは描画前に走り直前の緑を拾うことがある＝v1.96の失敗原因）。100ms後＋保険350ms後の2回。
+  //   黒の上に黒なので見た目には一切見えない。
+  setTimeout(function(){ bandFlash('#000000',50); },100);
+  setTimeout(function(){ bandFlash('#000000',50); },350);
 }
 
 function closeExpand(){
@@ -1805,9 +1807,9 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   // ★ノッチ帯を theme-color の動的変更で深緑へ戻す。通常レイアウトの描画完了後(2フレーム後)に変更する
   requestAnimationFrame(function(){ requestAnimationFrame(function(){ setThemeColor('#1e3a28'); }); });
-  // ★横向きレターボックス(帯)の黒残り根治：解除直後に深緑を一瞬(50ms)出し入れして帯を深緑へ塗り直させる。
-  //   （機構はbandFlash参照。100msで実機確認済み→体感短縮のため50msに。効きが悪ければ戻す）
-  bandFlash('#1e3a28',50);
+  // ★横向きレターボックス(帯)の黒残り根治：解除直後に深緑を一瞬(33ms)出し入れして帯を深緑へ塗り直させる。
+  //   （機構はbandFlash参照。100ms→50ms→33msと段階短縮。塗り直しが失敗するようなら50へ戻す）
+  bandFlash('#1e3a28',33);
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
