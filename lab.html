@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>しそチャンNET LAB（操作改善テスト）</title>
@@ -141,11 +141,12 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   pointer-events:auto;
   transition:background 0.1s;
 }
-/* 計測用：相殺を一旦外し枠を素直に充填（YouTubeの実際の寄せ量を測るため）。 */
-#yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
-/* ?debug=1時：動画枠の左端にマゼンタの2px線。映像がこの線から何px右にあるか＝YouTubeの実寄せ量。 */
-body.dbgline #player-wrap::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:magenta;z-index:60;pointer-events:none;}
-body.dbgline #player-wrap::after{content:'';position:absolute;left:20px;top:0;bottom:0;width:1px;background:rgba(255,0,255,0.5);z-index:60;pointer-events:none;}
+/* cover無し＝YouTubeは映像を寄せない（縦向きで実証済み）ので、枠を16:9のまま±数pxだけオーバースキャンして
+   完全に覆う（サブピクセルの黒線対策のみ・相殺は入れない＝ズレ無し）。非ノッチ機種も同じ。 */
+#yt-player-api{position:absolute;z-index:1;
+  left:-3px;top:-1.6875px;right:auto;bottom:auto;
+  width:calc(100% + 6px);height:calc(100% + 3.375px);
+}
 #yt-player-api iframe{pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
 
@@ -231,7 +232,9 @@ body.dbgline #player-wrap::after{content:'';position:absolute;left:20px;top:0;bo
 .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
 body.fs-open{
   overflow:hidden;
-  background:#000;
+  /* ★全画面中も body は深緑のまま（黒にしない）。動画部の黒は player-wrap.expanded が担当。
+     bodyを黒にするとSafariがノッチ帯へその黒をサンプリングし、通常へ戻した時に左右が黒く残る（cover無し時の戻り黒帯の元凶）ため。 */
+  background:var(--forest);
   margin:0;
   padding:0;
 }
@@ -853,7 +856,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.90-lab（計測：相殺を外し枠左端にマゼンタ線。YouTubeの実際の寄せ量を測って正確に相殺するため）</div>
+    <div class="ps-version">version 1.91-lab（cover除去で横向き動画ズレを根絶(YouTube寄せが起きない)。全画面中もbody深緑で戻り黒帯防止。放送中番組を番組表の一番上へ自動スクロール）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1725,7 +1728,7 @@ function openExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  // ★viewport-fit=cover常時ON（切り替え廃止）。ノッチ帯はDOM(#main-content深緑/全画面は.expandedの黒)で制御＝Safari任せの黒残りが起きない。YouTubeの映像寄せはCSSのenv相殺で除去。
+  // ★viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面はbody深緑のまま＋player-wrapの黒でレターボックス。ノッチ帯は深緑（黒にはcoverが要りズレが出るため両立不可）。
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
     wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
@@ -1773,7 +1776,7 @@ function closeExpand(){
   var wrap=document.getElementById('player-wrap');
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
-  // ★viewport-fit=cover常時ON（切り替え廃止）。通常時のノッチ帯は #main-content の深緑(DOM)が常に表示＝黒くなりようがない（切替による黒サンプリングが起きない）。
+  // ★viewport-fitは無し・切り替えもしない。全画面中もbodyを深緑に保つので、ノッチ帯が黒くサンプリングされず、通常へ戻した時の左右黒残りが起きない。
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
@@ -2051,13 +2054,10 @@ function hlSB(c,p){
       var rowH=row.offsetHeight;
       var listH=list.offsetHeight;
       var scrollTop=list.scrollTop;
-      // rowが見えていない場合のみスクロール
       var relTop=rowTop-listTop;
-      if(relTop<0){
-        list.scrollTop=scrollTop+relTop-8;
-      }else if(relTop+rowH>listH){
-        list.scrollTop=scrollTop+relTop+rowH-listH+8;
-      }
+      // ★放送中の番組を常にリストの一番上へ。最下部の番組はscrollTopが自動で上限にclampされ、
+      //   一番上には行かないが「見える位置」に収まる（＝ご指示通り：最下部は無理せず見えればOK）。
+      list.scrollTop=scrollTop+relTop-8;
     }
   }
   // 各番組の時刻バーを現在サイクル(c)の位置へ横スクロール（現在時刻の目盛りが画面外に隠れないように）
@@ -2760,7 +2760,6 @@ document.addEventListener('touchstart', function(){}, {passive:true});
    黒帯が「枠の外(CSS)」か「YouTube内部」かを実機の数値で確定するための一時ツール。 */
 (function(){
   if(!/[?&]debug=1/.test(location.search)) return;
-  try{ document.body.classList.add('dbgline'); }catch(_){}
   function saInset(){
     var p=document.getElementById('__sa_probe');
     if(!p){ p=document.createElement('div'); p.id='__sa_probe';
