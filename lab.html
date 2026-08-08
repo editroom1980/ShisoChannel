@@ -857,7 +857,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.94-lab（調査に基づく修正：全画面解除350ms/1000ms後にviewportメタ再処理で帯を塗り直し（公認トリック・映像無影響）＋?debug=1にT1〜T5診断ボタン）</div>
+    <div class="ps-version">version 1.95-lab（帯黒残りを根治：全画面解除時に深緑オーバーレイを0.1秒表示→除去で帯を塗り直し＝実機診断T5で毎回再現確認済みの機構を自動化）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1791,22 +1791,16 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   // ★ノッチ帯を theme-color の動的変更で深緑へ戻す。通常レイアウトの描画完了後(2フレーム後)に変更する
   requestAnimationFrame(function(){ requestAnimationFrame(function(){ setThemeColor('#1e3a28'); }); });
-  // ★横向きレターボックス(ビューポート外の帯)の塗り直しをWebKitに強制する（調査で確認済みの公認トリック：
-  //   viewportメタを一時的に別値へ切り替えて戻すと安全領域まわりが強制再計算される）。
-  //   viewport-fit=auto は既定値と同義＝レイアウト・映像に無影響（coverは使わない）。
-  //   全画面遷移の描画が完全に落ち着いた後(350ms/1000msの2回)に実施→帯が現在の画面(深緑)で塗り直される。
-  function _vpReprocess(){
-    try{
-      var vp=document.querySelector('meta[name="viewport"]');
-      if(!vp) return;
-      var c=vp.getAttribute('content');
-      if(!c || /viewport-fit/.test(c)) return;   // 想定外の構成では触らない
-      vp.setAttribute('content', c+', viewport-fit=auto');
-      setTimeout(function(){ vp.setAttribute('content', c); },50);
-    }catch(_){}
-  }
-  setTimeout(_vpReprocess,350);
-  setTimeout(_vpReprocess,1000);
+  // ★横向きレターボックス(ビューポート外・iOSが塗る帯)の黒残り根治【実機診断v1.94のT5で機構確定】：
+  //   iOSは「画面全体を覆うオーバーレイの出現・消滅」の瞬間に帯色を再判定する。全画面(黒)の出入りで黒を拾うのはこの機構。
+  //   同じ機構を逆利用し、解除直後に深緑のオーバーレイを一瞬(100ms)表示→除去することで帯を深緑へ塗り直させる（実機で毎回再現を確認）。
+  //   ※viewportメタ再処理(350ms/1000ms)は実機で無効と判明したため撤去済み。
+  (function(){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:#1e3a28;z-index:99998;pointer-events:none;';
+    document.body.appendChild(ov);
+    setTimeout(function(){ try{ov.remove();}catch(_){} },100);
+  })();
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
@@ -2818,39 +2812,6 @@ document.addEventListener('touchstart', function(){}, {passive:true});
       'gap L'+R(c.left-a.left)+' R'+R(a.right-c.right)+' T'+R(c.top-a.top)+' B'+R(a.bottom-c.bottom);
   }
   setInterval(upd,400); setTimeout(upd,300); upd();
-
-  // ===== 横ノッチ帯の再描画トリガー診断（?debug=1限定） =====
-  // 黒帯を再現した後、T1→T5を順にタップし「どれで左右が深緑に戻るか」を特定する。
-  var bar=document.createElement('div');
-  bar.style.cssText='position:fixed;bottom:calc(env(safe-area-inset-bottom) + 8px);left:50%;transform:translateX(-50%);z-index:100000;display:flex;gap:6px;';
-  function btn(label,fn){
-    var b=document.createElement('button');
-    b.textContent=label;
-    b.style.cssText='font:bold 12px/1 sans-serif;padding:10px 10px;border-radius:6px;border:1px solid #fff;background:rgba(0,0,0,.78);color:#3f6;';
-    b.addEventListener('click',function(){ try{fn();}catch(_){} b.style.background='rgba(0,90,40,.9)'; });
-    bar.appendChild(b);
-  }
-  // T1: theme-colorを今この場で深緑に再指定（タイミング問題かどうかの判定）
-  btn('T1色',function(){ setThemeColor('#1e3a28'); });
-  // T2: viewportメタを実際に変更→50ms後に元へ（viewport再処理をトリガー。coverは使わない）
-  btn('T2vp',function(){
-    var vp=document.querySelector('meta[name="viewport"]');
-    if(vp){ var c=vp.getAttribute('content');
-      vp.setAttribute('content', c+', minimum-scale=1.0');
-      setTimeout(function(){ vp.setAttribute('content', c); },50); }
-  });
-  // T3: ページ全体を1フレーム消して全再描画（最強のリペイント）
-  btn('T3再描画',function(){ var de=document.documentElement; de.style.display='none'; void de.offsetHeight; de.style.display=''; });
-  // T4: スクロールを揺らす（帯=スクロール外周色の再評価狙い）
-  btn('T4scr',function(){ try{window.scrollTo(0,2);}catch(_){} setTimeout(function(){ try{window.scrollTo(0,0);}catch(_){} },60); });
-  // T5: 深緑の全画面オーバーレイを一瞬(約0.1秒)出して消す（「緑の全画面に入って出る」を疑似再現）
-  btn('T5緑F',function(){
-    var ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;background:#1e3a28;z-index:99998;';
-    document.body.appendChild(ov);
-    setTimeout(function(){ ov.remove(); },100);
-  });
-  document.body.appendChild(bar);
 })();
 </script>
 </body>
