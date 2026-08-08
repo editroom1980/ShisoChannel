@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1e3a28"><!-- ノッチ帯(ビューポート外)の色をiOSへ明示指定。全画面出入り後の黒残り対策(サンプリング推測を無効化する狙い) -->
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -870,7 +870,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.12-lab（横の全画面バナー位置を根治=通常時に保存した座標＋安全領域で置き直し・cover中874pxでも文字レイアウト同一化/縦のロゴ行→バナー間隔を6pxに統一）</div>
+    <div class="ps-version">version 2.13-lab（ピンチ拡大縮小を禁止=viewport指定＋ピンチジェスチャー抑止の二段構え。タップ・スクロール等の通常操作は無影響）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1776,7 +1776,7 @@ function openExpand(){
   //   cover有りでは帯が消えてページの色がそのまま見える(=黒い全画面が透ける=帯黒✓)。coverを外すと帯は即・元の緑に戻る(実証済み)。
   //   よって「全画面中だけcover ON」が唯一の正解。通常時はcover無し=映像ズレは起きない(v1.79-83時代の実機で実証済み)。
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
-    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, viewport-fit=cover'); })();
+    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'); })();
   setThemeColor('#000000');
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
@@ -1902,7 +1902,7 @@ function closeExpand(){
   document.documentElement.style.background='';   // ルート背景を通常(深緑)へ復元
   // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
-    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0'); })();
+    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); })();
   // 全画面バナー・映像の表示状態を復元（座標固定/フェード用のインライン指定を全て解除）
   (function(){ var sp=document.getElementById('fs-sponsor');
     if(sp){ sp.style.transition=''; sp.style.opacity=''; sp.style.top=''; sp.style.left=''; sp.style.transform=''; }
@@ -2626,6 +2626,14 @@ function init(){
   };
   window.addEventListener('resize', _fsRepinOnRotate);
   window.addEventListener('orientationchange', _fsRepinOnRotate);
+  // ピンチ拡大縮小の禁止（2026-08-09指示）。iOSはviewportのuser-scalable=noを無視する場合があるため、
+  // ピンチジェスチャー自体を止める（gesture*はiOS固有の2本指ピンチイベント＝1本指のタップ/スクロールには無影響）
+  ['gesturestart','gesturechange'].forEach(function(ev){
+    document.addEventListener(ev, function(e){ e.preventDefault(); }, {passive:false});
+  });
+  document.addEventListener('touchmove', function(e){
+    if(e.scale!==undefined && e.scale!==1){ e.preventDefault(); } // 2本指ピンチのみ抑止（通常スクロールは素通し）
+  }, {passive:false});
   setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   statsInit(); // 視聴計測（未設定なら何もしない）
