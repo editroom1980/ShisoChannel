@@ -141,15 +141,11 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   pointer-events:auto;
   transition:background 0.1s;
 }
-/* ★viewport-fit=cover環境でYouTubeが映像を安全領域(env)ぶん各辺へ寄せるのを、CSSの同じenv値で相殺（env()はCSSで確実に解決）。
-   +数pxオーバースキャン(16:9維持)でサブピクセルの黒線も除去。結果、映像が動画枠を完全に覆う（ズレ・黒帯なし）。非ノッチ機種はenv=0で無影響。 */
-#yt-player-api{position:absolute;z-index:1;
-  left:calc(-1 * env(safe-area-inset-left) - 3px);
-  top:calc(-1 * env(safe-area-inset-top) - 1.6875px);
-  right:auto;bottom:auto;
-  width:calc(100% + env(safe-area-inset-left) + env(safe-area-inset-right) + 6px);
-  height:calc(100% + env(safe-area-inset-top) + env(safe-area-inset-bottom) + 3.375px);
-}
+#yt-player-api{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+/* 計測用：?debug=1のとき動画枠(player-wrap)の内縁にマゼンタの線を出し、YouTubeが映像を何pxどの辺へ寄せているか実測する */
+body.dbgline #player-wrap{outline:2px solid magenta;outline-offset:-2px;}
+body.dbgline #player-wrap::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,0,255,0.7);z-index:60;pointer-events:none;}
+body.dbgline #player-wrap::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(255,0,255,0.7);z-index:60;pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
 
@@ -857,7 +853,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.86-lab（cover常時ON=戻り黒帯無し＋全画面ノッチ黒。YouTube映像寄れ(ズレ)はCSSのenv相殺で除去=env確実解決）</div>
+    <div class="ps-version">version 1.87-lab（計測ビルド：?debug=1で動画枠にマゼンタ目印線＋座標表示。YouTubeの映像寄せを実測して根治するため）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2780,19 +2776,17 @@ document.addEventListener('touchstart', function(){}, {passive:true});
     +'background:rgba(0,0,0,.82);color:#3f6;font:bold 12px/1.35 ui-monospace,monospace;'
     +'padding:4px 8px;border-radius:5px;pointer-events:none;white-space:pre;text-align:left;';
   function R(n){ return (n<0?'':' ')+Math.round(n); }
-  function bg(sel){ var e=(sel==='html')?document.documentElement:(sel==='body'?document.body:document.querySelector(sel)); return e?getComputedStyle(e).backgroundColor:'?'; }
+  document.body.classList.add('dbgline');   // 動画枠にマゼンタの目印線を出す
   function upd(){
     if(!document.body.contains(ov)) document.body.appendChild(ov);
     var sa=saInset();
-    var vp=(document.querySelector('meta[name="viewport"]')||{}).content||'?';
-    var cover=/viewport-fit=cover/.test(vp)?'COVER':'no-cover';
+    var pw=document.getElementById('player-wrap'), yt=document.getElementById('yt-player-api');
+    var a=pw?pw.getBoundingClientRect():{}, c=yt?yt.getBoundingClientRect():{};
     ov.textContent=
-      'vp:'+cover+'  SA L'+R(sa.L)+' R'+R(sa.R)+' T'+R(sa.T)+' B'+R(sa.B)+'\n'+
-      'WIN '+window.innerWidth+'x'+window.innerHeight+'  fs:'+(document.body.classList.contains('fs-open')?'OPEN':'-')+'\n'+
-      'html '+bg('html')+'\n'+
-      'body '+bg('body')+'\n'+
-      'main '+bg('#main-content')+'\n'+
-      'page '+bg('.page');
+      'SA L'+R(sa.L)+' R'+R(sa.R)+' T'+R(sa.T)+' B'+R(sa.B)+'  WIN '+window.innerWidth+'x'+window.innerHeight+'\n'+
+      'PW  x'+R(a.left)+' w'+R(a.width)+' y'+R(a.top)+' h'+R(a.height)+'\n'+
+      'IF  x'+R(c.left)+' w'+R(c.width)+' y'+R(c.top)+' h'+R(c.height)+'\n'+
+      'gap L'+R(c.left-a.left)+' R'+R(a.right-c.right)+' T'+R(c.top-a.top)+' B'+R(a.bottom-c.bottom);
   }
   setInterval(upd,400); setTimeout(upd,300); upd();
 })();
