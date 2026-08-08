@@ -864,7 +864,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.99-lab（全画面中は上部安全領域(縦=62px/横=0)を黒帯DOMで常時覆う=縦全画面上部の深緑対策。演出なし）</div>
+    <div class="ps-version">version 2.00-lab（帯の機構確定：覆いが外れた瞬間にその覆いの色で塗られる。突入時=黒1フレームを先に出し入れ→帯黒化して全画面へ／解除時=深緑1フレーム(物理最速)）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1725,13 +1725,17 @@ function setThemeColor(c){
 
 // ★帯(ビューポート外・iOSが塗る領域)の色をiOSに再判定させる【実機診断v1.94のT5で機構確定】：
 //   画面全体を覆うオーバーレイの「出現・消滅」が帯色再判定のトリガー。指定色を一瞬出し入れして帯を塗り直させる。
-function bandFlash(color,ms){
+function bandFlash(color,onDone){
   try{
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:'+color+';z-index:99998;pointer-events:none;';
     document.body.appendChild(ov);
-    setTimeout(function(){ try{ov.remove();}catch(_){} }, ms||50);
-  }catch(_){}
+    // ちょうど1フレームだけ表示して外す（物理的な最速。1ms等の1フレーム未満では一度も描画されず塗り直し自体が不発になる）
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      try{ov.remove();}catch(_){}
+      if(onDone) requestAnimationFrame(onDone);
+    }); });
+  }catch(_){ if(onDone) onDone(); }
 }
 
 function openExpand(){
@@ -1755,19 +1759,22 @@ function openExpand(){
   // タッチデバイス：疑似全画面（position:fixed）
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
-  wrap.classList.add('expanded');
-  document.body.classList.add('fs-open');
-  // ★viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
-  // ノッチ帯は theme-color の動的変更で制御：全画面中=黒（変更イベント自体がiOSの帯再描画トリガー）
-  setThemeColor('#000000');
-  if(!wrap._touchHandler){
-    wrap._touchHandler=function(){if(isExpanded)showFsUi();};
-    wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
-  }
-  showFsUi();
-  // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
-  scheduleRelayout();
-  // ※全画面中のフラッシュ演出は厳禁（映像を覆って点滅して見える・v1.96/97の失敗）。帯対策は解除時のみ。
+  // ★帯(上部/左右)はiOSが「覆いが外れた瞬間にその覆いの色」で塗る（実測確定・回転時は今の画面色）。
+  //   そこで先に黒を1フレームだけ重ねて外し（＝帯が黒に確定）、直後に全画面を表示する。
+  //   追加は合計約3フレーム(約0.025秒)＝体感されない。※全画面表示中のフラッシュは厳禁(v1.96/97の失敗)
+  bandFlash('#000000',function(){
+    wrap.classList.add('expanded');
+    document.body.classList.add('fs-open');
+    // viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
+    setThemeColor('#000000');
+    if(!wrap._touchHandler){
+      wrap._touchHandler=function(){if(isExpanded)showFsUi();};
+      wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
+    }
+    showFsUi();
+    // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
+    scheduleRelayout();
+  });
 }
 
 function closeExpand(){
@@ -1810,9 +1817,9 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   // ★ノッチ帯を theme-color の動的変更で深緑へ戻す。通常レイアウトの描画完了後(2フレーム後)に変更する
   requestAnimationFrame(function(){ requestAnimationFrame(function(){ setThemeColor('#1e3a28'); }); });
-  // ★横向きレターボックス(帯)の黒残り根治：解除直後に深緑を一瞬(33ms)出し入れして帯を深緑へ塗り直させる。
-  //   （機構はbandFlash参照。100ms→50ms→33msと段階短縮。塗り直しが失敗するようなら50へ戻す）
-  bandFlash('#1e3a28',33);
+  // ★横向きレターボックス(帯)の黒残り根治：解除直後に深緑を1フレームだけ出し入れして帯を深緑へ塗り直させる。
+  //   （機構はbandFlash参照。1フレーム=物理的な最速。塗り直しが失敗するようなら時間を延ばす）
+  bandFlash('#1e3a28');
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
   if(fsBarT)fsBarT.style.display='none';
