@@ -1,17 +1,35 @@
+# 宍粟市公式サイトの新着を30分ごとに取得し、変化があれば city_news.json を更新してコミットする。
+# アプリ(lab.html/index.html)は同一オリジンの city_news.json を読むだけ＝CORS問題なし。
 name: city-news
+
 on:
   schedule:
-    - cron: '17 * * * *'
-  workflow_dispatch: {}
+    - cron: '17,47 * * * *'   # 毎時17分・47分(UTC)＝約30分ごと
+  workflow_dispatch:           # 手動実行も可能（Actionsタブから）
+
+permissions:
+  contents: write
+
+concurrency:
+  group: city-news
+  cancel-in-progress: false
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: node scripts/fetch-city-news.mjs
-        env:
-          FB_EMAIL: ${{ secrets.FB_EMAIL }}
-          FB_PASSWORD: ${{ secrets.FB_PASSWORD }}
+      - name: 市の新着JSONを取得して整形
+        run: python3 scripts/fetch_city_news.py
+      - name: 変化があればコミット
+        run: |
+          if git diff --quiet city_news.json; then
+            echo "変化なし"
+          else
+            git config user.name  'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git add city_news.json
+            git commit -m 'data: 市新着を自動更新'
+            git pull --rebase origin main
+            git push
+          fi
