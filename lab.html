@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e3a28"><!-- ノッチ帯(ビューポート外)の色をiOSへ明示指定。全画面出入り後の黒残り対策(サンプリング推測を無効化する狙い) -->
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>しそチャンNET LAB（操作改善テスト）</title>
@@ -856,7 +857,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.91-lab（cover除去で横向き動画ズレを根絶(YouTube寄せが起きない)。全画面中もbody深緑で戻り黒帯防止。放送中番組を番組表の一番上へ自動スクロール）</div>
+    <div class="ps-version">version 1.92-lab（theme-colorメタで帯色を深緑に明示指定＝全画面戻り後の左右黒残り対策・第1手。他は一切変更なし）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
