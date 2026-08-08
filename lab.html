@@ -864,7 +864,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.01-lab（突入時のフラッシュ完全撤去（演出なしの即全画面）／解除は緑を先に重ねてから解除=黒→緑→通常の一方向切替で点滅感を排除・1フレーム維持）</div>
+    <div class="ps-version">version 2.02-lab（承認済みの一方向黒切替：全画面突入時にページ描画を先に黒→次フレームで全画面表示（往復ゼロ）＝縦全画面上部の帯を黒採取させる）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1744,18 +1744,28 @@ function openExpand(){
   // タッチデバイス：疑似全画面（position:fixed）
   isExpanded=true;
   var wrap=document.getElementById('player-wrap');
-  // ※全画面突入時にフラッシュ等の演出を入れるのは厳禁（v1.96/97/2.00で3度失敗＝点滅して見える）
-  wrap.classList.add('expanded');
-  document.body.classList.add('fs-open');
-  // viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
-  setThemeColor('#000000');
-  if(!wrap._touchHandler){
-    wrap._touchHandler=function(){if(isExpanded)showFsUi();};
-    wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
-  }
-  showFsUi();
-  // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
-  scheduleRelayout();
+  // ★一方向の黒切替（ユーザー承認済み 2026-08-08）：オーバーレイは使わず「ページ自体の描画」を先に黒へ。
+  //   黒が画面に載った次のフレームで全画面を表示＝全画面が現れる瞬間の直前画面が黒になり、上部/左右の帯が黒を採取。
+  //   通常画面→黒→全画面 の往復ゼロ。過去3回の点滅(v1.96/97/2.00)は間に通常画面が戻ったのが原因で、この方式では構造上起きない。
+  var _de=document.documentElement;
+  _de.style.background='#000';
+  document.body.style.visibility='hidden';   // 画面を黒1色に（約2フレームだけ非表示・再生は継続）
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    if(!isExpanded){ _de.style.background=''; document.body.style.visibility=''; return; } // 黒切替中に解除されたら中断
+    wrap.classList.add('expanded');
+    document.body.classList.add('fs-open');
+    document.body.style.visibility='';       // 全画面(黒)の下で即復帰＝見た目の変化なし
+    _de.style.background='';
+    // viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
+    setThemeColor('#000000');
+    if(!wrap._touchHandler){
+      wrap._touchHandler=function(){if(isExpanded)showFsUi();};
+      wrap.addEventListener('touchstart',wrap._touchHandler,{passive:true});
+    }
+    showFsUi();
+    // 全画面化でサイズが変わるため、YouTube内部を再レイアウト（映像の横ズレ対策）
+    scheduleRelayout();
+  }); });
 }
 
 function closeExpand(){
