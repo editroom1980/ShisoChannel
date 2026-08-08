@@ -58,8 +58,8 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   background:var(--forest);
   padding:0 24px;
   /* safe-area-inset-topでステータスバー分を確保（被らないように） */
-  padding-top:max(0px, env(safe-area-inset-top));
-  min-height:calc(60px + max(0px, env(safe-area-inset-top)));
+  padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
+  min-height:calc(60px + max(0px, calc(env(safe-area-inset-top) - 8px)));
   display:flex;align-items:center;justify-content:space-between;
   flex-wrap:wrap;row-gap:4px;column-gap:14px;
   position:sticky;top:0;z-index:300;
@@ -141,11 +141,12 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   pointer-events:auto;
   transition:background 0.1s;
 }
-/* 動画は枠を16:9のまま±数pxだけオーバースキャンして完全に覆う（サブピクセルの黒線対策・env相殺は入れない=ズレ無し）。
-   枠が安全領域内に収まっているためYouTubeの映像寄せは起きず、映像は枠にぴったり。非ノッチ機種でも同じ。 */
+/* ★YouTubeは横向きで映像を padding-left:env(safe-area-inset-left)(=ノッチ62px) ぶん右へ寄せる（実測で左のみ・縦向きは0）。
+   これを CSS の env(safe-area-inset-left) だけで相殺（左へずらし＋同ぶん幅を足す）。上下・右は触らず、±数pxオーバースキャンのみ。
+   CSSなのでenv()が確実に解決。非ノッチ機種はenv=0で無影響＝ただのオーバースキャン。 */
 #yt-player-api{position:absolute;z-index:1;
-  left:-3px;top:-1.6875px;right:auto;bottom:auto;
-  width:calc(100% + 6px);height:calc(100% + 3.375px);
+  left:calc(-1 * env(safe-area-inset-left) - 3px);top:-1.6875px;right:auto;bottom:auto;
+  width:calc(100% + env(safe-area-inset-left) + 6px);height:calc(100% + 3.375px);
 }
 #yt-player-api iframe{pointer-events:none;}
 #yt-player-api iframe{pointer-events:none;}
@@ -523,10 +524,10 @@ body.fs-open .player-wrap.expanded{
     min-height:220px;
   }
   .header{
-    min-height:calc(44px + max(0px, env(safe-area-inset-top)));
+    min-height:calc(44px + max(0px, calc(env(safe-area-inset-top) - 8px)));
     /* バナー(386)と動画ウインドウ(左右8px余白)を揃えるため、ヘッダー左右余白もページと同じ8pxに */
     padding:0 8px;
-    padding-top:max(0px, env(safe-area-inset-top));
+    padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
   .h-logo-main{font-size:16px;}
   .h-time{font-size:16px;}
@@ -854,7 +855,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.88-lab（ズレの真因=私の入れた相殺だったので完全撤去(実測gap0)。縦向きのノッチ被りは上部余白を完全化で解消。目印線撤去）</div>
+    <div class="ps-version">version 1.89-lab（横向きの左62pxズレ=YouTubeのsafe-area-inset-left寄せと実測特定。CSSでenv-leftだけ相殺。計測数字をノッチ下へ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2773,7 +2774,7 @@ document.addEventListener('touchstart', function(){}, {passive:true});
     return {L:parseFloat(cs.paddingLeft)||0,R:parseFloat(cs.paddingRight)||0,T:parseFloat(cs.paddingTop)||0,B:parseFloat(cs.paddingBottom)||0};
   }
   var ov=document.createElement('div'); ov.id='__dbg';
-  ov.style.cssText='position:fixed;top:2px;left:50%;transform:translateX(-50%);z-index:99999;'
+  ov.style.cssText='position:fixed;top:calc(env(safe-area-inset-top) + 4px);left:50%;transform:translateX(-50%);z-index:99999;'
     +'background:rgba(0,0,0,.82);color:#3f6;font:bold 12px/1.35 ui-monospace,monospace;'
     +'padding:4px 8px;border-radius:5px;pointer-events:none;white-space:pre;text-align:left;';
   function R(n){ return (n<0?'':' ')+Math.round(n); }
