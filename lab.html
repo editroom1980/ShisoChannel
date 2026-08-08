@@ -233,9 +233,10 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .player-wrap.expanded #yt-player-api iframe{width:100%;height:100%;}
 body.fs-open{
   overflow:hidden;
-  /* ★全画面中も body は深緑のまま（黒にしない）。動画部の黒は player-wrap.expanded が担当。
-     bodyを黒にするとSafariがノッチ帯へその黒をサンプリングし、通常へ戻した時に左右が黒く残る（cover無し時の戻り黒帯の元凶）ため。 */
-  background:var(--forest);
+  /* ★全画面中は body も黒。帯色の公式フォールバック元はbody背景のため（v1.91で緑にしたのは誤った理論に基づく残骸。
+     解除時の左右帯の緑化は_exitOvオーバーレイ機構が担うためbody色とは無関係＝黒に戻して安全）。
+     bodyは黒いオーバーレイの下で不可視＝見た目への影響ゼロ。 */
+  background:#000;
   margin:0;
   padding:0;
 }
@@ -868,7 +869,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.05-lab（iOS26の帯色仕様を特定：上端付近のfixed/sticky要素の背景色を自動採取(theme-color無視)。供給源=ヘッダーの深緑。全画面中はヘッダー背景を黒にして帯を黒化=見た目への副作用ゼロ）</div>
+    <div class="ps-version">version 2.07-lab（上部帯の根治：全画面中だけviewport-fit=cover ON=帯が消えてページの黒が透ける（iOSシミュレータで機構実証済み）。解除でcover OFF=帯は即・緑へ復帰。通常時cover無し=映像ズレ無し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1751,7 +1752,15 @@ function openExpand(){
   // ※突入時の演出・事前黒切替は全て無効と実証済み(v1.96/97/2.00/2.02)。演出なしの即全画面のみ。
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
-  // viewport-fitは無し（YouTubeの映像寄せを避けるため）。全画面の黒はplayer-wrapが担当。
+  // ★全画面中はルート(html)背景も黒に：帯色の採取元候補(html/body)を全て黒に揃える。
+  document.documentElement.style.background='#000';
+  // ★★上部帯の根治【iOSシミュレータで機構実証済み 2026-08-08】：
+  //   cover無しでは、iOSは上部帯を「起動時の色で固定した不透明バー」としてページの上に描き、ページ側から二度と変更できない
+  //   (黒オーバーレイ/body・html・header黒/スクロール/coverパルス＝全て無効と実機環境で証明)。
+  //   cover有りでは帯が消えてページの色がそのまま見える(=黒い全画面が透ける=帯黒✓)。coverを外すと帯は即・元の緑に戻る(実証済み)。
+  //   よって「全画面中だけcover ON」が唯一の正解。通常時はcover無し=映像ズレは起きない(v1.79-83時代の実機で実証済み)。
+  (function(){ var vp=document.querySelector('meta[name="viewport"]');
+    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, viewport-fit=cover'); })();
   setThemeColor('#000000');
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
@@ -1806,6 +1815,10 @@ function closeExpand(){
   document.body.appendChild(_exitOv);
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
+  document.documentElement.style.background='';   // ルート背景を通常(深緑)へ復元
+  // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
+  (function(){ var vp=document.querySelector('meta[name="viewport"]');
+    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0'); })();
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
     try{_exitOv.remove();}catch(_){}
     setThemeColor('#1e3a28');
