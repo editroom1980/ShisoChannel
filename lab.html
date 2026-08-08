@@ -851,7 +851,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 1.81-lab（アプリアイコンを新キャラクター版に差し替え）</div>
+    <div class="ps-version">version 1.82-lab（原因特定用の計測強化：?debug=1でviewport-fit状態/各背景色/safe-areaを表示。全画面戻り黒帯の根治調査）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2786,16 +2786,19 @@ document.addEventListener('touchstart', function(){}, {passive:true});
     +'background:rgba(0,0,0,.82);color:#3f6;font:bold 12px/1.35 ui-monospace,monospace;'
     +'padding:4px 8px;border-radius:5px;pointer-events:none;white-space:pre;text-align:left;';
   function R(n){ return (n<0?'':' ')+Math.round(n); }
+  function bg(sel){ var e=(sel==='html')?document.documentElement:(sel==='body'?document.body:document.querySelector(sel)); return e?getComputedStyle(e).backgroundColor:'?'; }
   function upd(){
     if(!document.body.contains(ov)) document.body.appendChild(ov);
-    var pw=document.getElementById('player-wrap'), yt=document.getElementById('yt-player-api');
     var sa=saInset();
-    var a=pw?pw.getBoundingClientRect():{left:0,width:0,right:0}, c=yt?yt.getBoundingClientRect():{left:0,width:0,right:0};
+    var vp=(document.querySelector('meta[name="viewport"]')||{}).content||'?';
+    var cover=/viewport-fit=cover/.test(vp)?'COVER':'no-cover';
     ov.textContent=
-      'SA L'+R(sa.L)+' R'+R(sa.R)+' T'+R(sa.T)+' B'+R(sa.B)+'  WIN '+window.innerWidth+'x'+window.innerHeight+'\n'+
-      'PW  x'+R(a.left)+' w'+R(a.width)+' right'+R(a.right)+'\n'+
-      'IF  x'+R(c.left)+' w'+R(c.width)+' right'+R(c.right)+'\n'+
-      'gap  Left'+R(c.left-a.left)+'   Right'+R(a.right-c.right);
+      'vp:'+cover+'  SA L'+R(sa.L)+' R'+R(sa.R)+' T'+R(sa.T)+' B'+R(sa.B)+'\n'+
+      'WIN '+window.innerWidth+'x'+window.innerHeight+'  fs:'+(document.body.classList.contains('fs-open')?'OPEN':'-')+'\n'+
+      'html '+bg('html')+'\n'+
+      'body '+bg('body')+'\n'+
+      'main '+bg('#main-content')+'\n'+
+      'page '+bg('.page');
   }
   setInterval(upd,400); setTimeout(upd,300); upd();
 })();
