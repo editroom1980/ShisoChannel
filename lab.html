@@ -575,15 +575,14 @@ body.fs-open .header{ background:#000; }
 @media(orientation:portrait){
   body.iphone-mode{
     height:100vh;
-    /* --vpH: ビューポート凍結(iOS 26系の既知不具合)の間だけJSが画面定数由来の正しい高さを注入。通常は未設定=100dvh */
-    height:var(--vpH, 100dvh);
+    height:100dvh;
     min-height:0;
     overflow:hidden;
   }
   body.iphone-mode .page{
     grid-template-rows:auto 1fr auto;
     height:calc(100vh - var(--hdr-h, 84px));
-    height:calc(var(--vpH, 100dvh) - var(--hdr-h, 84px));
+    height:calc(100dvh - var(--hdr-h, 84px));
     overflow:hidden;
     padding-bottom:6px;
   }
@@ -885,7 +884,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.21-lab（リンク先から戻った時の崩れを実証にもとづき根治=凍結の正体は「描画幅だけが回転前の値で固まる」iOS側の不具合と最小構成で確定し、端末の実寸法(outer)でviewportを上書き・維持する方式で復帰を実証。正常時は通常と完全に同じ表示）</div>
+    <div class="ps-version">version 2.22-lab（v2.21の自動補正を全面撤去=実機では判定材料も凍結するため誤った寸法を固定し拡大表示や全画面解除不能を招いていた。アプリはビューポートに触れない素の状態へ／全画面中に回転して解除した時の上ズレを修正／?debug=1に凍結診断の数値を追加）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1858,7 +1857,8 @@ function openExpand(){
   //   (黒オーバーレイ/body・html・header黒/スクロール/coverパルス＝全て無効と実機環境で証明)。
   //   cover有りでは帯が消えてページの色がそのまま見える(=黒い全画面が透ける=帯黒✓)。coverを外すと帯は即・元の緑に戻る(実証済み)。
   //   よって「全画面中だけcover ON」が唯一の正解。通常時はcover無し=映像ズレは起きない(v1.79-83時代の実機で実証済み)。
-  applyViewport(true);   // 全画面はcover有り（上書き中ならその寸法を維持したままcoverを付与）
+  (function(){ var vp=document.querySelector('meta[name="viewport"]');
+    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'); })();
   setThemeColor('#000000');
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
@@ -1937,101 +1937,12 @@ function repinFsSponsor(){
   try{ fitPlayer(); }catch(_){}
 }
 
-// ★ビューポート凍結（iOS 26系WebKitの既知不具合）への対策：v2.21【最小構成の実験で原因と解法を実証】
-//   ■実証1: 外部リンク(アプリ内ブラウザ)を開いている間に端末を回すと、戻った時に
-//     「ページの描画幅」だけが回転前の値で凍結する（実測: 端末は横=outer 874x402・
-//      screen.orientationも横なのに、inner が 402x402 のまま＝CSSの向き判定が縦のまま）。
-//     CSS13行の最小ページでも同一症状＝**アプリのコードとは無関係のiOS側の不具合**と確定。
-//   ■実証2: 凍結中に viewport を「width=outerWidth, height=outerHeight」で明示指定すると
-//     **即座に正しいレイアウトへ復帰する**（inner が 750x402 の正規値になる）。
-//     ※v2.17が失敗した原因も判明＝安全領域を引いた750を指定していた（正解はouterの874）。
-//   ■実証3: 復帰後に width=device-width へ戻すと**即座に再凍結する**（79回振動を観測）。
-//     → 上書きは「解除せず維持」し、端末の実寸法(outer)が変わった時だけ張り替える。
-//   ■実証4: 正常時に同じ上書きをしても結果は通常と完全に一致（縦402x812/横750x402）。
-//     ＝この方式は正常時に何の副作用も生まない。
-//   outerWidth/outerHeight は凍結の影響を受けない（実測）ので、これを唯一の真実として使う。
-var _vpPulseBusy=false;   // 他所（実測記録）から参照される互換用フラグ
-var _vpStrip=null;        // 起動時に確定するステータスバー帯の高さ（高さ凍結対策で使用）
-var _vpPin=null;          // 現在の上書き寸法 {w,h,cover}
-function _vpDevOrient(){
-  try{ if(screen.orientation && screen.orientation.type) return (screen.orientation.type.indexOf('portrait')===0)?'p':'l'; }catch(_){}
-  return (window.outerWidth<=window.outerHeight)?'p':'l';
-}
-function _vpLayoutOrient(){
-  try{ return window.matchMedia('(orientation: portrait)').matches?'p':'l'; }catch(_){ return null; }
-}
-function _vpCalibrate(){  // 起動直後(必ず健全)に1回だけ帯の高さを確定（高さ凍結の補正に使う）
-  if(_vpStrip!==null) return;
-  if(_vpDevOrient()!=='p') return;
-  var s=(screen.height||0)-window.innerHeight;
-  if(s>=0 && s<=120){ _vpStrip=s; }
-}
-// この端末で凍結対策を行うか（ホーム画面アプリのiPhoneのみ。PC/Android/Safariは通常動作のまま）
-function _vpEnabled(){ return isIOS && window.navigator.standalone===true; }
-function _vpBase(cover){
-  return 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'+(cover?', viewport-fit=cover':'');
-}
-function _vpFixed(w,h,cover){
-  return 'width='+w+', height='+h+', initial-scale=1.0, maximum-scale=1.0, user-scalable=no'+(cover?', viewport-fit=cover':'');
-}
-// 全画面の出入りでviewportを切り替える時も、上書き中ならその寸法を維持する
-function applyViewport(cover){
-  var m=document.querySelector('meta[name="viewport"]'); if(!m) return;
-  var want=_vpPin ? _vpFixed(_vpPin.w,_vpPin.h,cover) : _vpBase(cover);
-  if(_vpPin) _vpPin.cover=cover;
-  if(m.getAttribute('content')!==want) m.setAttribute('content', want);
-}
-function _vpWedged(){
-  var mqLand;
-  try{ mqLand=window.matchMedia('(orientation: landscape)').matches; }catch(_){ return false; }
-  return (window.outerWidth>window.outerHeight)!==mqLand;
-}
-function _vpObserve(){
-  if(document.hidden || !_vpEnabled()) return;
-  var m=document.querySelector('meta[name="viewport"]'); if(!m) return;
-  var w=window.outerWidth, h=window.outerHeight;
-  if(!w || !h) return;
-  var cover=isExpanded;
-  if(_vpWedged()){
-    // 凍結を検知：端末の実寸法で上書きし、そのまま維持する（解除すると即再凍結するため）
-    if(!_vpPin || _vpPin.w!==w || _vpPin.h!==h || _vpPin.cover!==cover){
-      _vpPin={w:w,h:h,cover:cover};
-      window._vpFixCount=(window._vpFixCount||0)+1;
-      m.setAttribute('content', _vpFixed(w,h,cover));
-      setTimeout(function(){
-        setHdrVar();
-        try{ fitPlayer(); }catch(_){}
-        if(isExpanded){ repinFsSponsor(); } else { recordNormBanner(); }
-      },200);
-    }
-    return;
-  }
-  // 正常時：端末の実寸法が変わった（回転した）のに古い上書きが残っていれば解除
-  if(_vpPin && (_vpPin.w!==w || _vpPin.h!==h)){
-    _vpPin=null;
-    m.setAttribute('content', _vpBase(cover));
-    setTimeout(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} recordNormBanner(); },200);
-    return;
-  }
-  // 高さだけの凍結（向きは一致）：正しい高さをCSSへ注入して吸収する
-  if(!_vpPin && _vpDevOrient()==='p' && _vpStrip!==null){
-    var expect=(screen.height||0)-_vpStrip;
-    if(expect>300 && Math.abs(window.innerHeight-expect)>2){
-      if(getComputedStyle(document.documentElement).getPropertyValue('--vpH').trim()!==expect+'px'){
-        document.documentElement.style.setProperty('--vpH', expect+'px');
-        setHdrVar();
-        try{ fitPlayer(); }catch(_){}
-        recordNormBanner(); try{ window.scrollTo(0,0); }catch(_){}
-      }
-      return;
-    }
-  }
-  if(document.documentElement.style.getPropertyValue('--vpH')){
-    document.documentElement.style.removeProperty('--vpH');
-    setHdrVar();
-    try{ fitPlayer(); }catch(_){}
-  }
-}
+// 【重要・2026-08-09】ビューポート凍結(iOSアプリ内ブラウザ中に回転して戻ると描画が古い寸法で固まる)への
+//   自動補正は【全面撤去】した。理由：シミュレータでは outer/screen.orientation が正しい値を保つのに対し、
+//   実機では同じ値も凍結しうるため、それらを信じた自動補正が誤った寸法を固定し、
+//   「拡大表示のまま戻らない」「全画面が解除できない」というより重い故障を生んだ（v2.21の実機失敗）。
+//   凍結はiOS側の不具合であり、現状ページ側から安全に直す手段が確認できていない。
+//   ＝アプリはビューポートに触れない（全画面のcover切替のみ）。凍結時は端末の回転で復帰する。
 
 function closeExpand(){
   if(!isExpanded)return;
@@ -2079,7 +1990,8 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   document.documentElement.style.background='';   // ルート背景を通常(深緑)へ復元
   // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
-  applyViewport(false);  // 通常はcover無し（上書き中ならその寸法は維持）
+  (function(){ var vp=document.querySelector('meta[name="viewport"]');
+    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); })();
   // 全画面バナー・映像の表示状態を復元（座標固定/フェード用のインライン指定を全て解除）
   (function(){ var sp=document.getElementById('fs-sponsor');
     if(sp){ sp.style.transition=''; sp.style.opacity=''; sp.style.top=''; sp.style.left=''; sp.style.transform=''; }
@@ -2106,6 +2018,11 @@ function closeExpand(){
   }
   // 全画面解除でサイズが戻るため、YouTube内部を再レイアウト
   scheduleRelayout();
+  // ★全画面中に画面を回転してから解除すると、ヘッダーの実高(--hdr-h)が回転前の向きの値のまま残り、
+  //   本文(動画〜お知らせ)が上へズレる。解除後にレイアウトが落ち着いてから測り直す（2026-08-09指摘）。
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} }); });
+  setTimeout(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} }, 250);
+  setTimeout(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} }, 800);
 }
 
 function showFsUi(){
@@ -2616,7 +2533,7 @@ function powerOn(){
   // ★本体を表示した直後にヘッダー実高(--hdr-h)を測り直す（起動画面中の測定は非表示=高さ0で無効なため）＋
   //   ページのスクロール位置を0に固定（本文が固定ヘッダーの裏に潜り込む上ズレの保険）
   setHdrVar();
-  requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); recordNormBanner(); _vpCalibrate(); });
+  requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); recordNormBanner(); });
   hasPoweredOn=true;
   userWantsPlay=true;
   var pos = CYCLE.length ? nowPos() : null;
@@ -2801,7 +2718,15 @@ function init(){
   // 回転時：全画面中はバナー固定座標を置き直し／通常表示中は「その向きの通常時バナー座標」を保存
   //   （iOSはresize直後に寸法が定まらない事があるため250ms後にもう一度。resizeとorientationchange両方で拾う保険）
   var _fsRepinOnRotate=function(){
-    if(isExpanded){ repinFsSponsor(); setTimeout(repinFsSponsor,250); }
+    if(isExpanded){
+      // ★全画面中に回転すると操作バー(解除ボタン)が出せなくなり全画面から抜けられなくなる
+      //   （シミュレータで再現・2026-08-09ユーザー報告の致命的不具合）。
+      //   回転後は映像レイアウトを組み直し、操作バーを必ず出し直す。
+      repinFsSponsor(); setTimeout(repinFsSponsor,250);
+      try{ fitPlayer(); showFsUi(); }catch(_){}
+      setTimeout(function(){ if(isExpanded){ try{ fitPlayer(); showFsUi(); }catch(_){} } },300);
+      setTimeout(function(){ if(isExpanded){ try{ fitPlayer(); showFsUi(); }catch(_){} } },900);
+    }
     else{ recordNormBanner(); setTimeout(recordNormBanner,250); }
   };
   window.addEventListener('resize', _fsRepinOnRotate);
@@ -2810,13 +2735,6 @@ function init(){
   // ※シミュレータ実測：アプリ内ブラウザのシートを閉じてもvisibilitychange/pageshow/resizeは
   //   発火しない場合がある（アプリはシートの裏で「表示中」のまま）ため、0.4秒間隔の軽量監視＋
   //   復帰後の最初のタッチでも即チェックして遅延を最小化する。
-  if(isIOS){
-    setInterval(_vpObserve, 400);
-    document.addEventListener('touchstart', function(){ _vpObserve(); }, {passive:true});
-    window.addEventListener('pageshow', function(){ setTimeout(_vpObserve,100); });
-    window.addEventListener('focus', function(){ setTimeout(_vpObserve,100); });
-    window.addEventListener('orientationchange', function(){ setTimeout(_vpObserve,300); setTimeout(_vpObserve,900); });
-  }
   // ピンチ拡大縮小の禁止（2026-08-09指示）。iOSはviewportのuser-scalable=noを無視する場合があるため、
   // ピンチジェスチャー自体を止める（gesture*はiOS固有の2本指ピンチイベント＝1本指のタップ/スクロールには無影響）
   ['gesturestart','gesturechange'].forEach(function(ev){
@@ -3132,7 +3050,13 @@ document.addEventListener('touchstart', function(){}, {passive:true});
       'SA L'+R(sa.L)+' R'+R(sa.R)+' T'+R(sa.T)+' B'+R(sa.B)+'  WIN '+window.innerWidth+'x'+window.innerHeight+'\n'+
       'PW  x'+R(a.left)+' w'+R(a.width)+' y'+R(a.top)+' h'+R(a.height)+'\n'+
       'IF  x'+R(c.left)+' w'+R(c.width)+' y'+R(c.top)+' h'+R(c.height)+'\n'+
-      'gap L'+R(c.left-a.left)+' R'+R(a.right-c.right)+' T'+R(c.top-a.top)+' B'+R(a.bottom-c.bottom);
+      'gap L'+R(c.left-a.left)+' R'+R(a.right-c.right)+' T'+R(c.top-a.top)+' B'+R(a.bottom-c.bottom)+'\n'+
+      'OUT '+window.outerWidth+'x'+window.outerHeight+'  SCR '+screen.width+'x'+screen.height+'\n'+
+      'ORI '+(function(){try{return screen.orientation.type.replace('-primary','').replace('-secondary','2');}catch(_){return '-';}})()+
+      '  CSS '+(window.matchMedia('(orientation: landscape)').matches?'LAND':'PORT')+
+      '  VV '+(window.visualViewport?Math.round(window.visualViewport.width)+'x'+Math.round(window.visualViewport.height)+'@'+window.visualViewport.scale.toFixed(2):'-')+'\n'+
+      'HDR '+(getComputedStyle(document.documentElement).getPropertyValue('--hdr-h').trim()||'-')+
+      '  DPR '+window.devicePixelRatio;
   }
   setInterval(upd,400); setTimeout(upd,300); upd();
 })();
