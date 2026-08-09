@@ -736,60 +736,79 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   #fs-ctrl-bar #fs-close{ margin-left:-7px; }
 }
 
-/* iPad横（タッチ・横向き・600px以上）: gap:14px→7px
-   ※向きの判定は凍結しないJS判定(body.ori-tl)へ移行（2026-08-10）。
-     旧 @media(pointer:coarse) and (orientation:landscape) and (min-width:600px) と同じ条件をJSで組む。 */
-body.ori-tl .expand-open-btn{ margin-left:-7px; }
+/* ══════════════════════════════════════════════════════════════════
+   iPad専用レイアウト（縦=body.ori-tp / 横=body.ori-tl）
+   2026-08-10のご指示：
+     ・縦は お知らせがはみ出していたので、1画面にぴったり収める
+     ・横は 下に余白が出ていたので、動画・番組表・お知らせの大きさを調整して余白ゼロにする
+     ・間隔は「番組表とお知らせの間」を実測（=6px）し、バナーの上下・動画との間も全て6pxに統一
+   ※向きの判定は凍結しないJS判定へ移行済み（旧 @media(pointer:coarse) and (orientation:...)）。
+   ══════════════════════════════════════════════════════════════════ */
 
-/* iPad縦向き専用レイアウト
-   タッチかつ縦向きかつ600px以上（iPhone除外）。iPadの横向きには適用されない。
-   ※向きの判定は凍結しないJS判定(body.ori-tp)へ移行（2026-08-10）。
-     旧 @media(pointer:coarse) and (orientation:portrait) and (min-width:600px) と同じ条件をJSで組む。 */
-  /* 動画と番組表を縦に積む（iPhone縦向きと同様の構造） */
-  body.ori-tp .page{
-    grid-template-columns:1fr;
-    grid-template-rows:auto auto auto;
-    grid-template-areas:
-      "player"
-      "guide"
-      "news";
-    padding:10px 14px 20px;
-    gap:12px;
-  }
-  /* 番組表：スクロール可能な高さで表示 */
-  body.ori-tp .sidebar{
-    position:static;
-    max-height:calc(100vh - 56px - 44px - 44px - 56.25vw - 60px);
-    min-height:240px;
-    overflow-y:auto;
-  }
-  /* ヘッダー：safe-area対応（iPadのステータスバーと被らないように）
-     safe-area-inset-topが取得できない場合は固定24pxを使用 */
-  body.ori-tp .header{
-    min-height:calc(56px + max(24px, env(safe-area-inset-top)));
-    padding:max(24px, env(safe-area-inset-top)) 16px 0;
-  }
-  body.ori-tp .h-date{display:none;}
-  body.ori-tp .h-time{font-size:20px;}
-  /* viewing-barとcontrolを表示（iPhoneと同様） */
-  body.ori-tp .viewing-bar{padding:8px 14px;min-height:44px;}
-  body.ori-tp #viewing-title{font-size:14px;}
-  body.ori-tp .custom-ctrl{height:44px;padding:0 14px;gap:10px;}
-  body.ori-tp .expand-open-btn{margin-left:-5px;}
-  body.ori-tp .ctrl-btn{min-width:36px;height:36px;}
-
-/* ══ iPad（縦・横とも）のバナー：ロゴと時刻の間にサイズ固定で置く（2026-08-10指示）══
-   バナー幅の基準 --banner-w は「画面の短辺−12px」なので、iPadでは822pxになり巨大化していた。
+/* ── ヘッダー：バナーはロゴと時刻の間に幅390px固定で置く ──
+   バナー幅の基準 --banner-w は「画面の短辺−12px」なのでiPadでは822pxに膨らんでいた。
    スマホ横向きと同じ考え方に揃え、幅を390pxに固定してヘッダーの1行に収める（折り返さない）。
-   幅が足りない機種(iPad mini等)では max-width:100% で自動的に縮む。 */
-body.ori-tp .header, body.ori-tl .header{ flex-wrap:nowrap; }
+   ヘッダーの高さも同じ考え方で「バナー高＋上下6px」＝間隔6px統一。 */
+body.ori-tp, body.ori-tl{ --hdrT: calc(390px * 193.2 / 2277 + 12px); }
+body.ori-tp .header, body.ori-tl .header{
+  flex-wrap:nowrap;
+  min-height:calc(var(--hdrT) + max(0px, env(safe-area-inset-top)));
+  padding:max(0px, env(safe-area-inset-top)) 6px 0;
+  align-items:center;
+  row-gap:0;
+}
 /* ★order:0 は必須。iPad mini（短辺744px）では「スマホ縦」の指定(body.ori-p)も同時に付き、
-   そちらが order:2 を与えるためバナーが時計の右端へ回ってしまう（2026-08-10の点検で実測確認）。 */
+   そちらが order:2 を与えるためバナーが時計の右端へ回ってしまう（実測確認済み）。 */
 body.ori-tp .h-banner, body.ori-tl .h-banner{ order:0; flex:1 1 auto; flex-basis:auto; padding:0; }
 body.ori-tp .sponsor-img, body.ori-tl .sponsor-img{ width:390px; }
-/* 同じくiPad miniのみ、ヘッダー左右余白は従来どおり6pxを維持する（上のpadding指定が
-   body.ori-p の6px指定と同じ強さで後勝ちしてしまい、16pxに変わるのを防ぐ＝挙動を変えない）。 */
-body.ori-p.ori-tp .header{ padding-left:6px; padding-right:6px; }
+body.ori-tp .h-date, body.ori-tl .h-date{ display:none; }
+body.ori-tp .h-time, body.ori-tl .h-time{ font-size:20px; min-width:96px; text-align:right; }
+
+/* ── iPad縦：動画→番組表→お知らせを縦に積み、全体を1画面に収める ── */
+body.ori-tp{ height:100dvh; min-height:0; overflow:hidden; }
+body.ori-tp .page{
+  grid-template-columns:1fr;
+  grid-template-rows:auto 1fr auto;
+  grid-template-areas:
+    "player"
+    "guide"
+    "news";
+  padding:6px;
+  gap:6px;
+  height:calc(100dvh - var(--hdr-h, 84px));
+  overflow:hidden;
+}
+body.ori-tp .sidebar{ position:static; height:100%; min-height:0; max-height:100%; overflow:hidden; }
+body.ori-tp .viewing-bar{padding:8px 14px;min-height:44px;}
+body.ori-tp #viewing-title{font-size:14px;}
+body.ori-tp .custom-ctrl{height:44px;padding:0 14px;gap:10px;}
+body.ori-tp .expand-open-btn{margin-left:-5px;}
+body.ori-tp .ctrl-btn{min-width:36px;height:36px;}
+
+/* ── iPad横：動画を左、番組表とお知らせを右に置き、全体を1画面に収める ──
+   ★動画の枠は左列の高さいっぱいまで広げる。枠が16:9でなくなってもYouTube側が映像の縦横比を
+     保ったまま枠の中央に収めるため映像は歪まず、画面下に深緑の余白が残らない。 */
+body.ori-tl{ height:100dvh; min-height:0; overflow:hidden; }
+body.ori-tl .page{
+  grid-template-columns:1fr 320px;
+  grid-template-rows:1fr auto;
+  grid-template-areas:
+    "player guide"
+    "player news";
+  padding:0 max(6px, env(safe-area-inset-right)) 6px max(6px, env(safe-area-inset-left));
+  gap:6px;
+  align-items:stretch;
+  height:calc(100dvh - var(--hdr-h, 84px));
+  overflow:hidden;
+}
+body.ori-tl .player-col{ display:flex; flex-direction:column; min-height:0; }
+body.ori-tl .player-wrap{ flex:1 1 auto; min-height:0; height:auto; padding-bottom:0 !important; }
+body.ori-tl .sidebar{ position:static; height:100%; min-height:0; max-height:100%; overflow:hidden; }
+body.ori-tl .viewing-bar{padding:6px 14px;min-height:40px;}
+body.ori-tl #viewing-title{font-size:14px;}
+body.ori-tl .custom-ctrl{height:40px;padding:0 14px;gap:10px;}
+body.ori-tl .expand-open-btn{ margin-left:-7px; }
+body.ori-tl .ctrl-btn{min-width:36px;height:36px;}
 /* iPhoneの丸角対策: 全画面時コントロールバーを中央に寄せる */
 body.iphone-mode #fs-ctrl-bar{
   /* iOSのホームインジケーター(画面下端の横棒)に被らないよう少し上へ（上げ過ぎず+8px） */
@@ -858,7 +877,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.30-lab（再点検・iPad mini修正）</div>
+    <div class="ps-version">version 2.31-lab（全画面解除の上ズレ根治・iPadレイアウト)</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2081,9 +2100,24 @@ function closeExpand(){
   scheduleRelayout();
   // ★全画面中に画面を回転してから解除すると、ヘッダーの実高(--hdr-h)が回転前の向きの値のまま残り、
   //   本文(動画〜お知らせ)が上へズレる。解除後にレイアウトが落ち着いてから測り直す（2026-08-09指摘）。
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} }); });
-  setTimeout(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} }, 250);
-  setTimeout(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} }, 800);
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ afterCloseFix(); }); });
+  setTimeout(afterCloseFix, 250);
+  setTimeout(afterCloseFix, 800);
+}
+// 全画面解除後の後始末（3回のタイミングで同じことをする）
+function afterCloseFix(){
+  // ★スクロール位置を0へ戻す（2026-08-10・実機の数値で確定した根治）：
+  //   全画面中は viewport-fit=cover により上部に安全領域(実測62px)が生まれ、その分ページがスクロールする。
+  //   解除でcoverを外すと安全領域は消えるのに【スクロール位置62pxだけが残り】、
+  //   本文全体が上へズレて番組タイトルバーがヘッダーの裏に潜る（実機で scrollY=62 / ヘッダーy=-62 を実測）。
+  //   本文がスクロールしない構成(iPhone縦・横=overflow:hidden)のときだけ0へ戻す＝
+  //   ページ全体がスクロールするiPad等では、見ていた位置を勝手に動かさない。
+  try{
+    var ov=getComputedStyle(document.body).overflowY;
+    if((ov==='hidden'||ov==='clip') && window.scrollY) window.scrollTo(0,0);
+  }catch(_){}
+  setHdrVar();
+  try{ fitPlayer(); }catch(_){}
 }
 
 function showFsUi(){
