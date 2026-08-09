@@ -885,7 +885,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.19-lab（向きごと凍結の最終決着=メディアクエリ評価まで凍結しviewport指定でも書換不能と実測確定→検知したら自動再読み込みで作り直し(起動時は必ず正常)+放送状態を自動復帰。60秒以内の再発は強制寸法モードで粘る）</div>
+    <div class="ps-version">version 2.20-lab（外部リンクから戻った時の崩れを決定論的に根治=壊れているかを判定せず、リンクへ出たら戻り時に必ずページを作り直す＋放送を自動復帰。ジャンプ以外では絶対に発動しない。?diag=1で実機状態を表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1210,7 +1210,7 @@ function attachNewsSwipe(el){
   el.addEventListener('click',function(){
     if(_newsTapSuppress) return;
     var L=newsDisplayList(); var n=L[cityNewsIndex];
-    if(n && n.url){ location.href=n.url; }
+    if(n && n.url){ markExternalJump(); location.href=n.url; }
   });
 }
 // Firestoreの broadcast/city_news から お知らせ/イベント を取得（番組表と同じSWR方式）。
@@ -1276,7 +1276,7 @@ function openSponsorLink(){
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
     try{statsBannerClick(s.name);statsFlush(true);}catch(_){}
-    try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+    markExternalJump();
     location.href=s.url;
   }
 }
@@ -1938,6 +1938,54 @@ function repinFsSponsor(){
   try{ fitPlayer(); }catch(_){}
 }
 
+// ══ 外部リンクから戻った時の確実な復旧（v2.20・検知に頼らない決定論的方式）══
+//   【v2.19までの失敗】「凍結を検知して直す」方式は、検知条件(向きの食い違い)が実機の
+//   本物の凍結で成立するとは限らず（シミュレータの擬似凍結でしか検証できていなかった）機能しなかった。
+//   実機ではレイアウトだけでなく動画も永久に読み込み中＝ページ全体が壊れており、部分的な補正では治らない。
+//   【v2.20の方式】外部リンクへ出る瞬間に印を付け、戻ってきたら【無条件で】ページを作り直す。
+//   ＝壊れているかを判定しない＝判定を誤りようがない。純粋な回転など、ジャンプ以外では絶対に発動しない。
+//   放送状態は既存のshiso_resume機構で自動復帰（起動画面を挟まない）。
+function markExternalJump(){
+  try{
+    sessionStorage.setItem('sc_jump','1');
+    sessionStorage.setItem('sc_jump_at', String(Date.now()));
+    sessionStorage.setItem('shiso_resume', (typeof userWantsPlay!=='undefined' && userWantsPlay)?'1':'0');
+  }catch(_){}
+}
+var _scBackChecked=false;
+function scRecoverAfterReturn(){
+  if(_scBackChecked) return;
+  try{
+    if(sessionStorage.getItem('sc_jump')!=='1') return;
+    var at=+sessionStorage.getItem('sc_jump_at')||0;
+    if(Date.now()-at<1500) return;                // ジャンプ直後(シートが開く前)の誤発動を防ぐ
+    var last=+sessionStorage.getItem('sc_reload_at')||0;
+    if(Date.now()-last<8000) return;              // 連続リロード防止
+    sessionStorage.removeItem('sc_jump');
+    sessionStorage.setItem('sc_reload_at', String(Date.now()));
+  }catch(_){ return; }
+  _scBackChecked=true;
+  try{ sessionStorage.setItem('sc_reloads', String((+sessionStorage.getItem('sc_reloads')||0)+1)); }catch(_){}
+  location.reload();
+}
+// 「戻ってきた」信号は端末・状況で異なるため全経路で拾う（どれか1つでも効けば復旧する）。
+// ※シート表示中は誤発動しない：シートに覆われている間はページに触れられず、hasFocusもfalseのため。
+function initReturnWatch(){
+  var fire=function(){ setTimeout(scRecoverAfterReturn, 60); };
+  window.addEventListener('pageshow', fire);
+  window.addEventListener('focus', fire);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) fire(); });
+  document.addEventListener('touchstart', fire, {passive:true});
+  document.addEventListener('click', fire);
+  // フォーカスの復帰をポーリングでも監視（イベントが配信されない端末向けの保険）
+  var hadFocus=true;
+  try{ hadFocus=document.hasFocus(); }catch(_){}
+  setInterval(function(){
+    var f=true; try{ f=document.hasFocus(); }catch(_){}
+    if(f && !hadFocus){ fire(); }
+    hadFocus=f;
+  }, 300);
+}
 // ★ビューポート凍結（iOS 26系WebKitの既知不具合群）への対策：v2.17。
 //   症状=リンク先(アプリ内ブラウザ)から戻る際等にiOSがビューポート更新を配信せず、
 //   寸法(innerWidth/innerHeight/100dvh/100vh)が古いまま凍結する（間欠発生・シミュレータで再現済み）。
@@ -2821,7 +2869,31 @@ function init(){
   // ※シミュレータ実測：アプリ内ブラウザのシートを閉じてもvisibilitychange/pageshow/resizeは
   //   発火しない場合がある（アプリはシートの裏で「表示中」のまま）ため、0.4秒間隔の軽量監視＋
   //   復帰後の最初のタッチでも即チェックして遅延を最小化する。
-  if(isIOS && navigator.standalone){
+  // 実機の状態を画面上に表示する診断モード（?diag=1 の時だけ・通常表示には一切影響しない）
+  if(/[?&]diag=1/.test(location.search)){
+    var dg=document.createElement('div');
+    dg.style.cssText='position:fixed;top:2px;left:2px;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:9px/1.25 monospace;padding:3px 5px;pointer-events:none;white-space:pre;max-width:60vw;';
+    document.body.appendChild(dg);
+    setInterval(function(){
+      var so='-',wo='-',vv='-',hf='-';
+      try{ so=screen.orientation.type; }catch(_){}
+      try{ wo=String(window.orientation); }catch(_){}
+      try{ vv=window.visualViewport.width.toFixed(0)+'x'+window.visualViewport.height.toFixed(0); }catch(_){}
+      try{ hf=String(document.hasFocus()); }catch(_){}
+      var j='-'; try{ j=sessionStorage.getItem('sc_jump')||'なし'; }catch(_){}
+      dg.textContent='in:'+window.innerWidth+'x'+window.innerHeight+' out:'+window.outerWidth+'x'+window.outerHeight
+        +'\nvv:'+vv+' scr:'+screen.width+'x'+screen.height
+        +'\nMQ:'+(window.matchMedia('(orientation: portrait)').matches?'portrait':'landscape')
+        +'\nscrOri:'+so+' winOri:'+wo
+        +'\nfocus:'+hf+' vis:'+document.visibilityState+' jump:'+j
+        +'\n復旧リロード:'+(function(){try{return sessionStorage.getItem('sc_reloads')||0;}catch(_){return '-';}})()+'回 yt:'+(typeof ytReady!=='undefined'?ytReady:'-');
+    },300);
+  }
+  // 新規読み込みで戻ってきた場合＝既にページが作り直されているので復旧リロードは不要（印を消す）。
+  // ページが保存状態から復元された場合はここは実行されず、復帰監視がリロードする。
+  try{ sessionStorage.removeItem('sc_jump'); }catch(_){}
+  initReturnWatch();   // 外部リンクからの復帰を全経路で監視（ブラウザ表示でも有効）
+  if(isIOS){
     setInterval(_vpObserve, 400);
     document.addEventListener('touchstart', function(){ _vpObserve(); }, {passive:true});
     window.addEventListener('pageshow', function(){ setTimeout(_vpObserve,100); });
