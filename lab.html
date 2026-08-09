@@ -884,7 +884,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.24-lab（復旧処理が「ホーム画面アプリの時だけ動く」条件になっていたためSafari検証では一度も作動していなかった=実機データのsafe-area全0で判明。条件を撤去し、誤検知しない共通判定(端末の向きとCSSの向きの食い違い)で全環境に対応。診断表示に動作環境・検知状態・復旧回数を追加）</div>
+    <div class="ps-version">version 2.25-lab（実機データで「ページの作り直しでは凍結が治らない」と確定したため、無駄なリロードを停止。検知は診断表示のために継続）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1994,6 +1994,9 @@ function _vpWatch(){
   _vpBadTicks++;
   if(_vpBadTicks<4) return;      // 1.6秒連続で異常＝回転の過渡状態では作動しない
   _vpBadTicks=0;
+  // ★2026-08-10：作り直し(リロード)は【実機で無効】と確定（復旧1回の実測後も凍結YESのまま）。
+  //   無駄な再読み込みで再生を止めるだけなので停止。検知(_vpFrozen)は診断表示のために残す。
+  if(true) return;
   try{
     if(performance.now()<6000) return;                       // 起動直後は作動しない
     var n=+sessionStorage.getItem('sc_fix_n')||0;
