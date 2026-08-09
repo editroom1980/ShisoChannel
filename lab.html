@@ -74,14 +74,14 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .h-banner{flex:1 1 auto;min-width:0;display:flex;justify-content:center;align-items:center;overflow:hidden;cursor:pointer;padding:3px 0;-webkit-tap-highlight-color:transparent;}
 /* バナーの寸法は共通の .sponsor-img（②の見えている幅=--banner-w 構造）に一本化 */
 /* スマホ縦(幅767px以下)のみ2段(バナーは基準幅で中央)。iPad等の広い縦画面は横向きと同じ1列(ロゴと時計の間) */
-@media(orientation:portrait) and (max-width:767px){
+/* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
+
   /* バナー(390)が収まるようヘッダー左右余白をページ余白(6px)に合わせる（間隔6px統一） */
-  .header{justify-content:space-between;row-gap:0;padding-bottom:0;padding-left:6px;padding-right:6px;}
-  .h-right{order:1;}
+  body.ori-p .header{justify-content:space-between;row-gap:0;padding-bottom:0;padding-left:6px;padding-right:6px;}body.ori-p .h-right{order:1;}
   /* ③バナー下の余白は0にし、動画ウインドウとの間隔=ページ上余白6px（間隔Aと同一）だけにする。
      上余白はロゴ行→バナーの間隔=6px（間隔統一・2026-08-09指示） */
-  .h-banner{order:2;flex-basis:100%;padding:6px 0 0;}
-}
+  body.ori-p .h-banner{order:2;flex-basis:100%;padding:6px 0 0;}
+
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
 .test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
 .ps-test-badge{display:inline-block;border:2px solid var(--gold2);color:var(--gold2);font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 16px;border-radius:6px;margin-top:16px;}
@@ -202,9 +202,9 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 (pointer:fine){
   .expand-open-btn{display:flex;}
 }
-@media(orientation:landscape) and (max-height:500px){
-  .expand-open-btn{display:flex;}
-}
+/* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
+body.ori-l .expand-open-btn{display:flex;}
+
 
 /* 全画面ボタン専用ブロック */
 #yt-block-fs{
@@ -511,14 +511,12 @@ body.fs-open .header{ background:#000; }
 .news-ttl{font-size:12px;color:var(--text);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* 縦向きスマホ: ジャンルタグとタイトルを1行に（2026-08-09指示。横向きは従来の2段のまま）
    ※基本定義(.news-item)より後に書くこと（前に書くと後勝ちで打ち消される=v2.16の失敗） */
-@media(orientation:portrait) and (max-width:767px){
-  .news-item{flex-direction:row;align-items:center;gap:7px;}
-  .news-tag{align-self:center;flex-shrink:0;}
-  .news-ttl{flex:1 1 auto;min-width:0;}
+/* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
+body.ori-p .news-item{flex-direction:row;align-items:center;gap:7px;}body.ori-p .news-tag{align-self:center;flex-shrink:0;}body.ori-p .news-ttl{flex:1 1 auto;min-width:0;}
   /* 画面最下部のホームインジケーター(アプリ切替の下線)と被らないよう、窓を少し縦に広げ
      タグ+タイトルを上へ寄せる（上7px/下22px・2026-08-09指示） */
-  .news-body{padding:7px 12px 22px;}
-}
+  body.ori-p .news-body{padding:7px 12px 22px;}
+
 
 /* ══ レスポンシブ ══ */
 
@@ -572,37 +570,37 @@ body.fs-open .header{ background:#000; }
   }
 
 /* iPhone縦向き: 番組表を横向き同様「1画面固定＋内側スクロール」に（iPhone限定・iPad/PC非影響） */
-@media(orientation:portrait){
-  body.iphone-mode{
+/* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
+body.iphone-mode.ori-p{
     height:100vh;
     height:100dvh;
     min-height:0;
     overflow:hidden;
-  }
-  body.iphone-mode .page{
+  }body.iphone-mode.ori-p .page{
     grid-template-rows:auto 1fr auto;
     height:calc(100vh - var(--hdr-h, 84px));
     height:calc(100dvh - var(--hdr-h, 84px));
     overflow:hidden;
     padding-bottom:6px;
-  }
-  body.iphone-mode .sidebar{
+  }body.iphone-mode.ori-p .sidebar{
     position:static;
     height:100%;
     min-height:0;
     max-height:100%;
     overflow:hidden;
   }
-}
+
 
 /* スマホ横画面：動画(左) ＋ 番組表(右) */
-@media(orientation:landscape) and (max-height:500px){
+/* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
+
   /* 横向きは画面全体をスクロールさせない（番組表内だけスクロール） */
-  html,body{overflow:hidden;height:100%;}
+  html.ori-l,
+body.ori-l{overflow:hidden;height:100%;}
   /* ページ全体: 動画幅を正確に計算して余白なし */
   /* 動画高さ = 100vh - ヘッダー(--hdrL) - viewing-bar34 - ctrl34 - ページ下余白6 = 100vh - hdrL - 74px */
   /* 動画幅 = 動画高さ × 16/9 */
-  .page{
+  body.ori-l .page{
     grid-template-columns:calc((100vh - var(--hdrL) - 74px) * 16 / 9) 1fr;
     grid-template-rows:1fr auto;
     grid-template-areas:
@@ -619,9 +617,9 @@ body.fs-open .header{ background:#000; }
     box-sizing:border-box;
   }
   /* 横向きは番組表のstickyオフセットを無効化＝上端を動画に揃える */
-  .sidebar{position:static;top:auto;}
+  body.ori-l .sidebar{position:static;top:auto;}
   /* ヘッダー: 高さ＝バナー高＋上下6px(間隔A)ずつ（④バナーの上下余白=間隔A・少し下がる） */
-  .header{
+  body.ori-l .header{
     height:var(--hdrL);
     min-height:0;
     padding-top:0;
@@ -631,48 +629,38 @@ body.fs-open .header{ background:#000; }
     position:relative;
   }
   /* 横向きのバナーはロゴ群と時刻群の「間」で自動センタリング（重なり構造ゼロ・幅は--banner-w=386のまま） */
-  .h-banner{padding:0;}
-  .h-date{display:none;}
+  body.ori-l .h-banner{padding:0;}body.ori-l .h-date{display:none;}
   /* ①文字サイズは縦向きと完全に同一（15/15/9/9）。max-width:840だけに頼ると全画面(cover)中は
      内部画面幅が750→874に広がって条件から外れ、ヘッダーがPC文字で別レイアウトになる
      （v2.11の回転バナー位置ズレの原因）。この横向きブロック(高さ500px以下)は874でも効くためここに明記 */
-  .h-logo-main{font-size:15px;}
-  .h-time{font-size:15px;min-width:72px;text-align:right;}
-  .onair-badge{padding:2px 7px;font-size:9px;}
-  .test-badge{font-size:9px;}
+  body.ori-l .h-logo-main{font-size:15px;}body.ori-l .h-time{font-size:15px;min-width:72px;text-align:right;}body.ori-l .onair-badge{padding:2px 7px;font-size:9px;}body.ori-l .test-badge{font-size:9px;}
   /* ●LIVEと番組タイトルバー：コンパクト表示 */
-  .viewing-bar{
+  body.ori-l .viewing-bar{
     height:34px;
     min-height:34px;
     padding:0 8px;
     align-items:center;
-  }
-  #viewing-title{font-size:11px;}
+  }body.ori-l #viewing-title{font-size:11px;}
   /* プレイヤー：高さ固定・幅はgridが決める */
-  .player-wrap{
+  body.ori-l .player-wrap{
     padding-bottom:0 !important;
     height:calc(100vh - var(--hdrL) - 34px - 34px - 6px);
   }
   /* 横向きの#yt-player-apiは上書きせず、基本定義(env相殺)に委ねる（ズレ打ち消しを効かせるため） */
   /* コントロールバー：コンパクト */
-  .custom-ctrl{height:34px;padding:0 8px;gap:5px;}
-  .custom-ctrl .expand-open-btn{margin-left:-3px;width:30px;height:30px;}
-  .ctrl-btn{min-width:28px;height:28px;}
+  body.ori-l .custom-ctrl{height:34px;padding:0 8px;gap:5px;}body.ori-l .custom-ctrl .expand-open-btn{margin-left:-3px;width:30px;height:30px;}body.ori-l .ctrl-btn{min-width:28px;height:28px;}
   /* 番組表：グリッドの番組表エリアに収める（内側のsb-listだけスクロール） */
-  .sidebar{
+  body.ori-l .sidebar{
     height:100%;
     min-height:0;
     max-height:100%;
     overflow:hidden;
   }
   /* 番組表を圧縮して横向きでも多く表示 */
-  .sb-head{padding:6px 12px;}
+  body.ori-l .sb-head{padding:6px 12px;}
   /* 見出し帯の補足文（出典・操作案内）は横向きでは非表示（2026-08-09指示） */
-  .sb-note{display:none;}
-  .time-bar{padding:2px 10px 2px;}
-  .pinfo{padding:3px 10px 5px;gap:2px;}
-  .pname{font-size:11px;line-height:1.3;}
-}
+  body.ori-l .sb-note{display:none;}body.ori-l .time-bar{padding:2px 10px 2px;}body.ori-l .pinfo{padding:3px 10px 5px;gap:2px;}body.ori-l .pname{font-size:11px;line-height:1.3;}
+
 
 /* ══ 全画面コントロールバー ══ */
 #fs-ctrl-bar{
@@ -864,18 +852,16 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 }
 /* 全画面バナーの寸法も共通の .sponsor-img に一本化（同じ幅・同じ大きさ） */
 /* 全画面・縦向き: 上部レターボックス内に表示（画面幅いっぱい） */
-@media(orientation:portrait){
-  .player-wrap.expanded .fs-sponsor,
-  .player-wrap:fullscreen .fs-sponsor,
-  .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; }
-  body.iphone-mode .player-wrap.expanded .fs-sponsor{ top:calc(env(safe-area-inset-top) + 12px); }
-}
+/* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
+/*KEEP*/
+  body.ori-p .player-wrap.expanded .fs-sponsor,
+body.ori-p .player-wrap:fullscreen .fs-sponsor,
+body.ori-p .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; }body.iphone-mode.ori-p .player-wrap.expanded .fs-sponsor{ top:calc(env(safe-area-inset-top) + 12px); }
+
 /* 全画面・横向き: 縦向きと同サイズのバナーを、上部の黒地（動画は下へ縮小）に中央表示 */
-@media(orientation:landscape){
-  .player-wrap.expanded .fs-sponsor,
-  .player-wrap:fullscreen .fs-sponsor,
-  .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
-}
+body.ori-l .player-wrap.expanded .fs-sponsor,
+body.ori-l .player-wrap:fullscreen .fs-sponsor,
+body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
 </style>
 </head>
 <body>
@@ -884,7 +870,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.25-lab（実機データで「ページの作り直しでは凍結が治らない」と確定したため、無駄なリロードを停止。検知は診断表示のために継続）</div>
+    <div class="ps-version">version 2.26-lab（大改修 第1段階：縦横の切り替えをCSSの向き判定から、凍結しないJS判定(向きセンサー＋画面の物理サイズ)へ全面変更。見た目の数値は一切変更なし）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1936,6 +1922,42 @@ function repinFsSponsor(){
   fsSp.style.transform='none';
   try{ fitPlayer(); }catch(_){}
 }
+
+// ══ 向きの判定をCSSから切り離す（2026-08-10・大改修 第1段階）══
+//  iOSはアプリ内ブラウザから戻った際にCSSの向き判定(@media(orientation))を凍結させ、
+//  縦なのに横用レイアウト（またはその逆）が適用されたまま戻らなくなる（実機データで確定）。
+//  そこで「凍結しない値」だけで向きを決め、htmlとbodyのクラス(ori-p/ori-l)で切り替える。
+//   ・screen.orientation … 端末の物理的な向き（凍結しない・実測確認済み）
+//   ・screen.width/height … 画面の物理サイズ（回転しても不変＝端末の素性。凍結しない）
+//  旧: @media(orientation:portrait) and (max-width:767px) → body.ori-p
+//  旧: @media(orientation:landscape) and (max-height:500px) → body.ori-l
+function applyOrientationClass(){
+  try{
+    var S=Math.min(screen.width||0, screen.height||0);   // 画面の短辺＝スマホ判定に使う
+    if(!S) return;
+    // 凍結しない2つの値を突き合わせ、一致した時だけ採用する（片方が当てにならない環境での取り違え防止）。
+    // どちらも得られない場合のみ、従来どおり表示領域の縦横比で判定する。
+    var so=null, od=null;
+    try{ if(screen.orientation && screen.orientation.type) so=(screen.orientation.type.indexOf('landscape')===0); }catch(_){}
+    if(window.outerWidth && window.outerHeight) od=(window.outerWidth>window.outerHeight);
+    var land;
+    if(so!==null && od!==null) land=(so===od)?so:od;   // 食い違い時は窓の実形状を優先
+    else if(od!==null) land=od;
+    else if(so!==null) land=so;
+    else land=(window.innerWidth>window.innerHeight);
+    // スマホ判定：画面の物理短辺（凍結しない）で判定。加えて、PCで窓を細くした場合など
+    // 「画面は大きいが表示領域が小さい」ケースは従来どおり表示領域でも判定する（既存挙動を維持）。
+    var p = !land && (S<=767 || window.innerWidth<=767);
+    var l =  land && (S<=500 || window.innerHeight<=500);
+    var de=document.documentElement, b=document.body;
+    if(de){ de.classList.toggle('ori-p',p); de.classList.toggle('ori-l',l); }
+    if(b){ b.classList.toggle('ori-p',p); b.classList.toggle('ori-l',l); }
+  }catch(_){}
+}
+applyOrientationClass();
+window.addEventListener('orientationchange', function(){ applyOrientationClass(); setTimeout(applyOrientationClass,200); setTimeout(applyOrientationClass,600); });
+window.addEventListener('resize', applyOrientationClass);
+setInterval(applyOrientationClass, 500);   // 凍結からの復帰も含め常に正しい向きへ追従
 
 // ══ ビューポート凍結の検知と復旧（2026-08-10・実機の生データで機構を確定）══
 //  【実機で確定した凍結の3形態】(?debug=1の実測)
