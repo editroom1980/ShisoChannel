@@ -870,7 +870,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.26-lab（大改修 第1段階：縦横の切り替えをCSSの向き判定から、凍結しないJS判定(向きセンサー＋画面の物理サイズ)へ全面変更。見た目の数値は一切変更なし）</div>
+    <div class="ps-version">version 2.27-lab（全画面の解除ボタンを押した時、タップが真下のお知らせウインドウへ突き抜けて意図せずリンクへ飛ぶ不具合を根治。解除直後0.7秒だけタップを無効化＋お知らせ/バナー側にも二重の保険）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1193,7 +1193,7 @@ function attachNewsSwipe(el){
   },{passive:true});
   // 表示中の項目にurlがあれば同一タブで開く（スポンサーバナーと同じ方式＝戻るとbfcacheで再生復帰）
   el.addEventListener('click',function(){
-    if(_newsTapSuppress) return;
+    if(_newsTapSuppress || isTapBlocked()) return;
     var L=newsDisplayList(); var n=L[cityNewsIndex];
     if(n && n.url){ location.href=n.url; }
   });
@@ -1258,6 +1258,7 @@ function updateSponsorDisplay(){
 // バナークリックでスポンサーのサイトへ（同一タブ遷移→戻った時にbfキャッシュ復元で再生再開）
 function openSponsorLink(){
   if(_swipeSuppressClick){ _swipeSuppressClick=false; return; }
+  if(isTapBlocked()) return;   // 全画面解除直後の突き抜け防止
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
     try{statsBannerClick(s.name);statsFlush(true);}catch(_){}
@@ -2039,8 +2040,22 @@ function _vpWatch(){
 //   凍結はiOS側の不具合であり、現状ページ側から安全に直す手段が確認できていない。
 //   ＝アプリはビューポートに触れない（全画面のcover切替のみ）。凍結時は端末の回転で復帰する。
 
+// ══ タップの突き抜け防止（2026-08-10）══
+//  全画面の解除ボタンを押すと、ボタンが消えた直後に同じ指のタップが真下の要素
+//  （お知らせウインドウ等）へ届き、意図せずリンクへ飛んでしまう（実機で発生）。
+//  解除の瞬間から短時間だけ、あらゆるタップを捕捉段階で無効化して根治する。
+var _tapBlockUntil=0;
+function blockTapThrough(ms){ _tapBlockUntil=Date.now()+(ms||700); }
+function isTapBlocked(){ return Date.now()<_tapBlockUntil; }
+(function(){
+  var kill=function(e){ if(isTapBlocked()){ e.stopPropagation(); if(e.cancelable) e.preventDefault(); } };
+  document.addEventListener('click', kill, true);
+  document.addEventListener('touchend', kill, true);
+})();
+
 function closeExpand(){
   if(!isExpanded)return;
+  blockTapThrough(700);   // 解除ボタンのタップが真下の要素へ突き抜けるのを防ぐ
   isExpanded=false;
   clearFsUiTimer();
 
