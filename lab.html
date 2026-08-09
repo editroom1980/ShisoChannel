@@ -885,7 +885,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.18-lab（縦のお知らせ窓を少し縦に拡大しタグ+タイトルを上へ=画面最下部のホームインジケーターとの被りを解消）</div>
+    <div class="ps-version">version 2.19-lab（向きごと凍結の最終決着=メディアクエリ評価まで凍結しviewport指定でも書換不能と実測確定→検知したら自動再読み込みで作り直し(起動時は必ず正常)+放送状態を自動復帰。60秒以内の再発は強制寸法モードで粘る）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1975,6 +1975,21 @@ function _vpTrueDims(){   // 物理向きに対する正しいレイアウト寸
   if(_vpDevOrient()==='p') return {w:S, h:L-_vpStrip};
   return {w:L-2*side, h:S};
 }
+// 向きごと凍結の復旧: メディアクエリ評価コンテキストまで凍結しviewport指定でも書換不能（実測）。
+// ページ側で解く手段が無いため自動再読み込みで作り直す（起動時は必ず正常）。放送状態はsc_resumeで自動復帰。
+// ループ防止: 60秒以内の再発動はリロードせず強制寸法モードで粘る。
+function _vpRecover(){
+  if(window._vpReloading) return;
+  var last=0; try{ last=+sessionStorage.getItem('sc_vp_reload')||0; }catch(_){}
+  if(Date.now()-last<60000){ _vpApplyForced(); return; }
+  try{
+    sessionStorage.setItem('sc_vp_reload', String(Date.now()));
+    sessionStorage.setItem('sc_resume','1');
+  }catch(_){}
+  window._vpReloading=true;
+  window._vpReloadCount=(window._vpReloadCount||0)+1;
+  location.reload();
+}
 function _vpApplyForced(){
   var t=_vpTrueDims(); if(!t) return;
   var vp=document.querySelector('meta[name="viewport"]'); if(!vp) return;
@@ -2003,7 +2018,7 @@ function _vpObserve(){
   var d=_vpDevOrient(), l=_vpLayoutOrient();
   if(d && l && d!==l){
     _vpMismatchTicks++;
-    if(_vpMismatchTicks>=2){ _vpApplyForced(); }
+    if(_vpMismatchTicks>=2){ _vpRecover(); }
     return;
   }
   _vpMismatchTicks=0;
@@ -2826,6 +2841,13 @@ function init(){
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),powerOn);
+  // 凍結復旧リロード後は放送状態を自動復帰（起動画面を挟まない。再生開始はYT準備完了後の既存リトライに委ねる）
+  try{
+    if(sessionStorage.getItem('sc_resume')==='1'){
+      sessionStorage.removeItem('sc_resume');
+      setTimeout(function(){ try{ powerOn(); }catch(_){} }, 200);
+    }
+  }catch(_){}
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
   (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
   setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
