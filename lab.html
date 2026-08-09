@@ -884,7 +884,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.23-lab（実機データで凍結の3形態を特定し、確実に検知できた時だけページを1回作り直して放送を自動復帰。判定は安全領域の影響を受けない軸のみで行う=正常な回転では作動しない）</div>
+    <div class="ps-version">version 2.24-lab（復旧処理が「ホーム画面アプリの時だけ動く」条件になっていたためSafari検証では一度も作動していなかった=実機データのsafe-area全0で判明。条件を撤去し、誤検知しない共通判定(端末の向きとCSSの向きの食い違い)で全環境に対応。診断表示に動作環境・検知状態・復旧回数を追加）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1964,14 +1964,20 @@ function _vpCal(){    // 起動直後の縦向きで1回だけ較正
   var t=_vpSaTop();
   if(t>0 && t<=120) _vpSaTop0=t;
 }
+// ★2026-08-10：standalone限定の条件を撤去。実機データ(safe-areaが全て0)から、
+//   ユーザーはSafariでも検証しており、そこでは復旧処理が【一度も動いていなかった】ことが判明した。
+//   ブラウザ表示でも安全に使える判定＝「端末の物理向き」と「CSSが採用した向き」の食い違いのみを共通ルールとし、
+//   寸法の比較はブラウザのバー等で正常時も差が出るためホーム画面アプリ限定にする。
+function _vpStandalone(){ return window.navigator.standalone===true; }
 function _vpFrozen(){
-  if(!(isIOS && window.navigator.standalone===true)) return false;
+  if(!isIOS) return false;
   if(isExpanded || document.hidden) return false;
   var ow=window.outerWidth, oh=window.outerHeight;
   if(!ow || !oh) return false;
   var cssLand; try{ cssLand=window.matchMedia('(orientation: landscape)').matches; }catch(_){ return false; }
   var devLand=(ow>oh);
-  if(devLand!==cssLand) return true;                            // ③向きの凍結
+  if(devLand!==cssLand) return true;                            // ③向きの凍結（全環境共通・誤検知しない）
+  if(!_vpStandalone()) return false;                            // 以降はホーム画面アプリのみ
   if(!devLand){
     if(Math.abs(window.innerWidth-ow)>2) return true;           // 縦：幅は安全領域の影響を受けない
     if(_vpSaTop0!==null && _vpSaTop()<1) return true;           // ①安全領域が0に凍結
@@ -1981,7 +1987,7 @@ function _vpFrozen(){
   return false;
 }
 function _vpWatch(){
-  if(!(isIOS && window.navigator.standalone===true)) return;
+  if(!isIOS) return;
   _vpCal();
   if(document.hidden || isExpanded){ _vpBadTicks=0; return; }
   if(!_vpFrozen()){ _vpBadTicks=0; return; }
@@ -2796,7 +2802,7 @@ function init(){
   window.addEventListener('resize', _fsRepinOnRotate);
   window.addEventListener('orientationchange', _fsRepinOnRotate);
   // ビューポート凍結の監視（ホーム画面アプリのiPhoneのみ・0.4秒間隔の軽量チェック）
-  if(isIOS && window.navigator.standalone===true){
+  if(isIOS){
     setInterval(_vpWatch, 400);
     // 正常状態を確認できたら復旧カウンタを戻す（次の凍結にまた対応できるように）
     setInterval(function(){ if(!document.hidden && !isExpanded && !_vpFrozen()){
@@ -3127,7 +3133,10 @@ document.addEventListener('touchstart', function(){}, {passive:true});
       '  CSS '+(window.matchMedia('(orientation: landscape)').matches?'LAND':'PORT')+
       '  VV '+(window.visualViewport?Math.round(window.visualViewport.width)+'x'+Math.round(window.visualViewport.height)+'@'+window.visualViewport.scale.toFixed(2):'-')+'\n'+
       'HDR '+(getComputedStyle(document.documentElement).getPropertyValue('--hdr-h').trim()||'-')+
-      '  DPR '+window.devicePixelRatio;
+      '  DPR '+window.devicePixelRatio+'\n'+
+      'APP '+(window.navigator.standalone===true?'ホーム画面':'ブラウザ')+
+      '  凍結'+((typeof _vpFrozen==='function'&&_vpFrozen())?'YES':'no')+
+      '  復旧'+(function(){try{return sessionStorage.getItem('sc_fix_n')||0;}catch(_){return '-';}})()+'回';
   }
   setInterval(upd,400); setTimeout(upd,300); upd();
 })();
