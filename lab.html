@@ -9,11 +9,8 @@
 <title>しそチャンNET LAB（操作改善テスト）</title>
 <link rel="apple-touch-icon" href="icon-180.png?v=132">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
-<link rel="apple-touch-icon" href="icon-180.png?v=132">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
 /* タイトル用フォント コーポレートロゴB（Corporate Logo Bold・OFLベース）。タイトル文字だけにサブセット済(約1KB) */
@@ -85,7 +82,6 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
 .test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
 .ps-test-badge{display:inline-block;border:2px solid var(--gold2);color:var(--gold2);font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 16px;border-radius:6px;margin-top:16px;}
-.time-bar{display:none;}
 .h-logo-main{font-family:'CorpLogoB','Zen Kaku Gothic New',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:0.077em;}
 .h-logo-main em{color:var(--gold2);font-style:normal;font-size:1.125em;vertical-align:-0.062em;}
 .h-right{display:flex;align-items:center;gap:14px;flex-shrink:0;}
@@ -151,7 +147,6 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   width:calc(100% + 6px);height:calc(100% + 3.375px);
 }
 #yt-player-api iframe{pointer-events:none;}
-#yt-player-api iframe{pointer-events:none;}
 
 #ended-ov{position:absolute;inset:0;z-index:35;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 #sw-ov{position:absolute;inset:0;z-index:30;background:rgba(30,58,40,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
@@ -175,27 +170,11 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
    player-wrap内に position:absolute で配置
    YouTubeのiframeの全画面ボタンと同じ右下位置に重ねる
    スマホのみ表示 */
-/* ══ live-bar（LIVEバー + 拡大ボタンのコンテナ） ══ */
-/* LIVEボタン：flex-grow で残りスペースを埋める */
-.live-bar /* 拡大ボタン：右端に固定・スマホのみ表示 */
-.expand-open-btn{
-  display:none; /* デフォルト非表示 */
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  padding:0 14px;
-  border:none;
-  border-left:1px solid var(--border);
-  background:var(--white);
-  color:var(--green2);
-  font-size:24px;
-  font-weight:700;
-  font-family:inherit;
-  cursor:pointer;
-  white-space:nowrap;
-  -webkit-tap-highlight-color:transparent;
-  flex-shrink:0;
-}
+/* ══ 拡大ボタン ══ */
+/* ★2026-08-10の点検で削除：ここには以前「.live-bar」という【HTMLに存在しないクラス名】が頭に付いた
+   指定ブロックがあり、セレクタが .live-bar .expand-open-btn になっていて一度も適用されていなかった。
+   拡大ボタンの実際の見た目（36×36・白背景・枠なし）は下の .custom-ctrl .expand-open-btn が決めている。
+   ブラウザ上でこのブロックを削除して座標・色・寸法が1pxも変わらないことを実測確認済み。 */
 .expand-open-btn:active{background:transparent;}
 /* 全デバイスで拡大ボタンを表示 */
 @media(pointer:coarse),
@@ -414,10 +393,6 @@ body.fs-open .header{ background:#000; }
   background:var(--green2);cursor:pointer;
 }
 
-/* ctrl-btnクラスのmin-width/heightを正方形で上書き */
-
-
-.custom-ctrl .bar-bg{flex:1;cursor:pointer;}
 .custom-ctrl .expand-open-btn{
   border:none;
   background:var(--white);
@@ -761,17 +736,17 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   #fs-ctrl-bar #fs-close{ margin-left:-7px; }
 }
 
-/* iPad横(pointer:coarse, landscape, min-width:600px) gap:14px→7px */
-@media(pointer:coarse) and (orientation:landscape) and (min-width:600px){
-  .expand-open-btn{ margin-left:-7px; }
-}
+/* iPad横（タッチ・横向き・600px以上）: gap:14px→7px
+   ※向きの判定は凍結しないJS判定(body.ori-tl)へ移行（2026-08-10）。
+     旧 @media(pointer:coarse) and (orientation:landscape) and (min-width:600px) と同じ条件をJSで組む。 */
+body.ori-tl .expand-open-btn{ margin-left:-7px; }
 
 /* iPad縦向き専用レイアウト
-   pointer:coarse（タッチ）かつ縦向きかつ幅600px以上（iPhone除外）
-   iPadは横向き時はこのクエリに入らないため変更なし */
-@media(pointer:coarse) and (orientation:portrait) and (min-width:600px){
+   タッチかつ縦向きかつ600px以上（iPhone除外）。iPadの横向きには適用されない。
+   ※向きの判定は凍結しないJS判定(body.ori-tp)へ移行（2026-08-10）。
+     旧 @media(pointer:coarse) and (orientation:portrait) and (min-width:600px) と同じ条件をJSで組む。 */
   /* 動画と番組表を縦に積む（iPhone縦向きと同様の構造） */
-  .page{
+  body.ori-tp .page{
     grid-template-columns:1fr;
     grid-template-rows:auto auto auto;
     grid-template-areas:
@@ -782,7 +757,7 @@ body.silk-mode .expand-open-btn{display:flex !important;}
     gap:12px;
   }
   /* 番組表：スクロール可能な高さで表示 */
-  .sidebar{
+  body.ori-tp .sidebar{
     position:static;
     max-height:calc(100vh - 56px - 44px - 44px - 56.25vw - 60px);
     min-height:240px;
@@ -790,19 +765,26 @@ body.silk-mode .expand-open-btn{display:flex !important;}
   }
   /* ヘッダー：safe-area対応（iPadのステータスバーと被らないように）
      safe-area-inset-topが取得できない場合は固定24pxを使用 */
-  .header{
+  body.ori-tp .header{
     min-height:calc(56px + max(24px, env(safe-area-inset-top)));
     padding:max(24px, env(safe-area-inset-top)) 16px 0;
   }
-  .h-date{display:none;}
-  .h-time{font-size:20px;}
+  body.ori-tp .h-date{display:none;}
+  body.ori-tp .h-time{font-size:20px;}
   /* viewing-barとcontrolを表示（iPhoneと同様） */
-  .viewing-bar{padding:8px 14px;min-height:44px;}
-  #viewing-title{font-size:14px;}
-  .custom-ctrl{height:44px;padding:0 14px;gap:10px;}
-  .expand-open-btn{margin-left:-5px;}
-  .ctrl-btn{min-width:36px;height:36px;}
-}
+  body.ori-tp .viewing-bar{padding:8px 14px;min-height:44px;}
+  body.ori-tp #viewing-title{font-size:14px;}
+  body.ori-tp .custom-ctrl{height:44px;padding:0 14px;gap:10px;}
+  body.ori-tp .expand-open-btn{margin-left:-5px;}
+  body.ori-tp .ctrl-btn{min-width:36px;height:36px;}
+
+/* ══ iPad（縦・横とも）のバナー：ロゴと時刻の間にサイズ固定で置く（2026-08-10指示）══
+   バナー幅の基準 --banner-w は「画面の短辺−12px」なので、iPadでは822pxになり巨大化していた。
+   スマホ横向きと同じ考え方に揃え、幅を390pxに固定してヘッダーの1行に収める（折り返さない）。
+   幅が足りない機種(iPad mini等)では max-width:100% で自動的に縮む。 */
+body.ori-tp .header, body.ori-tl .header{ flex-wrap:nowrap; }
+body.ori-tp .h-banner, body.ori-tl .h-banner{ flex:1 1 auto; flex-basis:auto; padding:0; }
+body.ori-tp .sponsor-img, body.ori-tl .sponsor-img{ width:390px; }
 /* iPhoneの丸角対策: 全画面時コントロールバーを中央に寄せる */
 body.iphone-mode #fs-ctrl-bar{
   /* iOSのホームインジケーター(画面下端の横棒)に被らないよう少し上へ（上げ過ぎず+8px） */
@@ -871,7 +853,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.28-lab（縦のまま戻った時に番組表が短くなりお知らせが上へ上がる不具合を修正=表示領域の高さが凍った時だけ、端末の高さから算出した正しい高さを注入。通常時は従来と完全に同一）</div>
+    <div class="ps-version">version 2.29-lab（総点検・バナー7社）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1023,73 +1005,10 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 // ══════════════════════════════════════════════
 //  スポンサー定義（仮データ・将来スプレッドシート化）
 // ══════════════════════════════════════════════
-// 各社のテーマ色に合わせた仮バナー画像（SVG）を生成
-function makeBanner(name, tagline, bg, accent, icon){
-  var safe=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  // 社名の長さに応じてフォント調整（中央配置・はみ出し防止）
-  var nlen=name.length;
-  var nameSize = nlen>=12 ? 28 : (nlen>=9 ? 34 : 38);
-  return '<svg viewBox="0 0 640 86" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'
-    + '<rect width="640" height="86" fill="'+bg+'"/>'
-    + '<rect x="0" y="0" width="12" height="86" fill="'+accent+'"/>'
-    + '<circle cx="588" cy="43" r="62" fill="'+accent+'" opacity="0.15"/>'
-    + '<circle cx="640" cy="14" r="34" fill="#ffffff" opacity="0.07"/>'
-    + '<text x="572" y="56" font-family="sans-serif" font-size="42" text-anchor="middle" opacity="0.9">'+icon+'</text>'
-    // 上段左: sponsoredバッジ
-    + '<rect x="26" y="11" width="62" height="26" rx="5" fill="#c8992a"/>'
-    + '<text x="57" y="30" font-family="-apple-system,sans-serif" font-size="17" font-weight="700" fill="#ffffff" text-anchor="middle">広告</text>'
-    // 上段右: タグライン（sponsoredの右）
-    + '<text x="146" y="30" font-family="-apple-system,sans-serif" font-size="19" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
-    // 下段: 社名（中央配置・上段に寄せて縦間隔を短縮）
-    + '<text x="320" y="72" font-family="-apple-system,sans-serif" font-size="'+nameSize+'" font-weight="800" fill="#ffffff" text-anchor="middle">'+safe(name)+'</text>'
-    + '</svg>';
-}
-
-// iPhone縦向き専用: sponsored(左固定)＋[キャッチ＋社名](表示エリア中央)＋アイコン(右)。緑バー相当の高さ・社名は縦幅最大
-function makeBannerCompact(name, tagline, bg, accent, icon){
-  var safe=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  // 文字幅推定(em): CJK全角=1.0 / 半角空白=0.30 / その他=0.55
-  var chW=function(s){var w=0;for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);
-    if((c>=0x3000&&c<=0x9fff)||(c>=0xff00&&c<=0xffef)) w+=1.0;
-    else if(s.charAt(i)===' ') w+=0.30; else w+=0.55;} return w;};
-  var cy=30, areaL=106, areaR=674, gap=16, areaW=areaR-areaL; // sponsoredとアイコンの間が表示エリア
-  var nlen=name.length;
-  var nameFont = nlen>=9 ? 38 : (nlen>=7 ? 42 : 46); // 社名は縦幅いっぱい
-  var nEm=chW(name), tEm=chW(tagline);
-  var Wn=nEm*nameFont;
-  // キャッチは残り幅に収まる最大サイズ（上限22・下限11）
-  var catchFont=Math.min(22, Math.floor((areaW-Wn-gap)/Math.max(tEm,0.1)));
-  if(catchFont<11) catchFont=11;
-  var Wc=tEm*catchFont, groupW=Wc+gap+Wn;
-  // それでも収まらなければ社名を縮小して表示エリア内に収める（はみ出し防止）
-  while(groupW>areaW && nameFont>26){
-    nameFont-=2; Wn=nEm*nameFont;
-    catchFont=Math.min(22, Math.floor((areaW-Wn-gap)/Math.max(tEm,0.1)));
-    if(catchFont<11) catchFont=11;
-    Wc=tEm*catchFont; groupW=Wc+gap+Wn;
-  }
-  var gStart=(areaL+areaR)/2 - groupW/2;            // [キャッチ＋社名]を表示エリア中央に
-  var catchX=gStart, nameX=gStart+Wc+gap;
-  var baseC=(cy + catchFont*0.35).toFixed(1);
-  var baseN=(cy + nameFont*0.35).toFixed(1);
-  return '<svg viewBox="0 0 720 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'
-    + '<rect width="720" height="60" fill="'+bg+'"/>'
-    + '<rect x="0" y="0" width="9" height="60" fill="'+accent+'"/>'
-    + '<circle cx="700" cy="30" r="36" fill="'+accent+'" opacity="0.15"/>'
-    // アイコン（右端）
-    + '<text x="700" y="41" font-family="sans-serif" font-size="32" text-anchor="middle" opacity="0.9">'+icon+'</text>'
-    // sponsoredバッジ（左・位置そのまま）
-    + '<rect x="14" y="18" width="52" height="24" rx="4" fill="#c8992a"/>'
-    + '<text x="40" y="36" font-family="-apple-system,sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">広告</text>'
-    // キャッチフレーズ（中央グループ・左寄せ開始）
-    + '<text x="'+catchX.toFixed(1)+'" y="'+baseC+'" font-family="-apple-system,sans-serif" font-size="'+catchFont+'" fill="#ffffff" opacity="0.92">'+safe(tagline)+'</text>'
-    // 社名（中央グループ・縦幅最大）
-    + '<text x="'+nameX.toFixed(1)+'" y="'+baseN+'" font-family="-apple-system,sans-serif" font-size="'+nameFont+'" font-weight="800" fill="#ffffff">'+safe(name)+'</text>'
-    + '</svg>';
-}
-
-// 画像バナーをHTMLに（縦=bannerC/横=banner）。?v=でキャッシュ更新
-function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="display:block;border:0">';}
+// ★2026-08-10の点検で削除：仮バナーをSVGで生成する makeBanner / makeBannerCompact（計62行）は、
+//   バナーが提供画像(imgBanner)に置き換わった時点から一度も呼ばれていなかったため撤去した。
+// 画像バナーをHTMLに。?v= はキャッシュ更新用（バナー画像を差し替えたらこの数字を上げること）
+function imgBanner(src){return '<img src="'+src+'?v=229" alt="" style="display:block;border:0">';}
 // ══════════════════════════════════════════════
 //  宍粟市お知らせ・イベント（番組表の下の枠）
 //  表示の優先順位（2026-08-09ユーザー承認）:
@@ -1097,13 +1016,14 @@ function imgBanner(src){return '<img src="'+src+'?v=129" alt="" style="display:b
 //   → ③サンプル(②が読めない時のみ)。
 //  ※観光協会(しそうツーリズムガイド)の情報は「不要」の指示により廃止:
 //    旧・観光協会RSS→Firestore中継(scripts/fetch-city-news.mjs+毎時Actions)は撤去、
-//    Firestore(broadcast/city_news)の読み込み(loadCityNews)も停止（関数は残置・手動お知らせを再開したい時に復活可）。
+//    Firestore(broadcast/city_news)を読む loadCityNews も撤去した（2026-08-10の点検。復活が必要になったら
+//    backup/lab_v2.28.html に残っている）。
 // ══════════════════════════════════════════════
 var CITY_NEWS=[
   {type:'event',  title:'（サンプル）シソイチライドイベント2026', date:'2026.02.20'},
   {type:'notice', title:'（サンプル）ここに市からのお知らせが表示されます', date:''}
 ];
-var cityNewsIndex=0, _cityNewsReal=false, _cityNewsSig='', _cityNewsSrc='';
+var cityNewsIndex=0, _cityNewsReal=false, _cityNewsSrc='';
 var CIVIC_NEWS=[], _civicSig='';   // 市公式サイトの新着（くらし/イベント/募集/重要）
 var JMA_WARN=[], _jmaSig='';       // 発表中の気象警報（宍粟市・優先表示）
 // いま表示すべきリスト（優先順位を一元化）
@@ -1199,25 +1119,6 @@ function attachNewsSwipe(el){
     if(n && n.url){ location.href=n.url; }
   });
 }
-// Firestoreの broadcast/city_news から お知らせ/イベント を取得（番組表と同じSWR方式）。
-// データがあれば自動でサンプルから差し替え・更新のたびに追従。無ければサンプルのまま。
-function loadCityNews(){
-  if(!FIREBASE.projectId||!FIREBASE.apiKey) return;
-  var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/city_news?key='+encodeURIComponent(FIREBASE.apiKey);
-  fetch(url,{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-  .then(function(doc){
-    var f=doc.fields||{};
-    var items = f.items ? fsVal(f.items) : null;
-    var srcTxt = f.source ? fsVal(f.source) : '';
-    if(items && items.length){
-      var sig=JSON.stringify(items);
-      if(sig!==_cityNewsSig){
-        CITY_NEWS=items; _cityNewsSig=sig; _cityNewsReal=true; _cityNewsSrc=srcTxt||''; cityNewsIndex=0; renderCityNews();
-      }
-    }
-    // items が空/未定義ならサンプルのまま（何もしない）
-  }).catch(function(){ /* 取得失敗時もサンプルのまま */ });
-}
 // 情報バーの実高さを CSS変数 --hdr-h に反映（バナー込みの高さでiPhone縦の本文高さを正しく計算）
 function setHdrVar(){
   // 高さ0＝非表示中(起動画面表示中など)の測定は無効。0を記録するとiPhone縦の本文が画面より縦長になり
@@ -1225,34 +1126,46 @@ function setHdrVar(){
   try{ var h=document.querySelector('.header'); if(h && h.offsetHeight>0) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight+'px'); }catch(_){}
 }
 
+// スポンサーバナー（10秒ごとに順番に切り替え／フリックで手動送り）。
+// 画像は全て 1170×107 の1枚で、縦・横・全画面すべて共通に使う（bannerCのみ。横向き専用画像は廃止＝一度も使われていなかった）。
+// ※nameは視聴計測(Firestore)の集計キー。既存データと繋がるので表記は変えない。
 var SPONSORS=[
+  {name:'株式会社松本工務店',             url:'https://www.matsukou.hyogo.jp',
+   bannerC:imgBanner('_banner_matsumotokoumuten_port.jpg')},
+  {name:'株式会社川本石材商会',           url:'https://www.kawamoto-sekizai.com',
+   bannerC:imgBanner('_banner_kawamotosekizai_port.jpg')},
+  {name:'お食事処 ドライブインオアシス',  url:'https://www.instagram.com/driveinoasis/',
+   bannerC:imgBanner('_banner_oasis_port.jpg')},
   {name:'町家cafe＆ギャラリーさんしょう', url:'https://cafesansyo.com',
-   banner:imgBanner('_banner_sansho_land.jpg'),   // 横向き(1400x320)
-   bannerC:imgBanner('_banner_view.jpg')},        // 縦向き(2300x210・提供画像)
-  {name:'豚骨らーめん つばき', url:'https://www.tonkotsuramen-tsubaki-shiso.com',
-   banner:imgBanner('_banner_tsubaki_land.jpg'),  // 横向き(1400x320・提供画像)
-   bannerC:imgBanner('_banner_tsubaki_port.jpg')}, // 縦向き(2300x210・提供画像)
-  {name:'クラウドファンディング実施中', url:'https://readyfor.jp/projects/shiso-chan',
-   banner:imgBanner('_banner_cf_land.png'),        // 横向き(1400x320)
-   bannerC:imgBanner('_banner_cf_port.png')},      // 縦向き(2300x210)
-  {name:'バナー広告募集中', url:'',                 // リンク先は未設定（クリックで遷移しない）
-   banner:imgBanner('_banner_recruit_land.jpg'),   // 横向き(1400x320)
-   bannerC:imgBanner('_banner_recruit_port.jpg')}  // 縦向き(2300x210)
+   bannerC:imgBanner('_banner_sansho_port.jpg')},
+  {name:'豚骨らーめん つばき',            url:'https://www.tonkotsuramen-tsubaki-shiso.com',
+   bannerC:imgBanner('_banner_tsubaki_port.jpg')},
+  {name:'クラウドファンディング実施中',    url:'https://readyfor.jp/projects/shiso-chan',
+   bannerC:imgBanner('_banner_cf_port.png')},
+  {name:'バナー広告募集中',               url:'',   // リンク先は未設定（タップしても遷移しない）
+   bannerC:imgBanner('_banner_recruit_port.jpg')}
 ];
 var sponsorIndex=0;
 var _sponsorTimer=null;
 var _swipeSuppressClick=false;
 
 // バナー画像を更新（通常バナー＋全画面バナー両方）
+var _sponsorShownIdx=-1;   // いま画面に入れてあるスポンサー番号
 function updateSponsorDisplay(){
   var s=SPONSORS[sponsorIndex];
   if(!s)return;
   try{statsBannerImp(s.name);}catch(_){}
-  // 2300×210の細長い横長バナー(bannerC)に統一（縦・横・全画面すべて同じ）
+  // 1170×107の細長いバナー(bannerC)に統一（縦・横・全画面すべて同じ画像）
   var img=document.getElementById('sponsor-img');
-  if(img){ img.innerHTML = s.bannerC; }
   var fimg=document.getElementById('fs-sponsor-img');
-  if(fimg){ fimg.innerHTML=s.bannerC; }
+  // ★同じバナーを入れ直さない（2026-08-10）：この関数は画面のリサイズ・回転のたびに呼ばれるため、
+  //   毎回<img>を作り直すと同じ画像の再デコードとレイアウトが無駄に走っていた。
+  //   スポンサーが実際に切り替わった時（または中身が空の時）だけ差し替える。
+  if(_sponsorShownIdx!==sponsorIndex || (img && !img.innerHTML) || (fimg && !fimg.innerHTML)){
+    _sponsorShownIdx=sponsorIndex;
+    if(img){ img.innerHTML = s.bannerC; }
+    if(fimg){ fimg.innerHTML=s.bannerC; }
+  }
   try{ setHdrVar(); }catch(_){}
 }
 
@@ -1630,11 +1543,6 @@ function nowPos(){
 var smOf=function(c,p){return CS[c]+CO[p];};
 var emOf=function(c,p){return smOf(c,p)+CYCLE[p].dur;};
 var esOf=function(c,p){return Math.max(0,Math.floor((nowF()-smOf(c,p))*60));};
-var nxtOf=function(c,p){
-  if(p<CYCLE.length-1)return{c:c,p:p+1};
-  if(c<NC-1)return{c:c+1,p:0};
-  return null;
-};
 var allT=function(pIdx){var r=[];for(var i=0;i<CS.length;i++)r.push(CS[i]+CO[pIdx]);return r;};
 
 // ── 状態管理 ──
@@ -1768,8 +1676,11 @@ function fitPlayer(){
   yt.style.transformOrigin='0 0';
   if(cw<=0||ch<=0){ yt.style.transform='scale(0)'; return; }
   // 全画面・横向きのみ、上部にバナー用の帯を確保（動画を少し縮小して下げる。下部はそのまま）
+  // ★向きの判定は凍結しない isLandscapeNow() を使う（2026-08-10）。
+  //   以前は matchMedia('(orientation:landscape)') を見ており、iOSでCSSの向きが凍結すると
+  //   全画面の帯の有無を取り違えて映像位置がずれる余地があった。
   var topBand=0;
-  if(window.matchMedia('(orientation:landscape)').matches){
+  if(isLandscapeNow()){
     var _fss=document.getElementById('fs-sponsor');
     topBand=(_fss && _fss.offsetHeight>8 ? _fss.offsetHeight : 36) + 8;
   }
@@ -1802,10 +1713,10 @@ function setThemeColor(c){
 function openExpand(){
   // isOffでも動画再生中なら全画面を許可（放送終了後の任意視聴対応）
   if(isExpanded){closeExpand();return;}
+  var wrap=document.getElementById('player-wrap');   // PC分岐・タッチ分岐の両方で使う（以前は同じvar宣言が2回あった）
   // PC/Mac：requestFullscreenで本物の全画面
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   if(!isTouch){
-    var wrap=document.getElementById('player-wrap');
     var req=wrap.requestFullscreen||wrap.webkitRequestFullscreen||wrap.mozRequestFullScreen;
     if(req){
       isExpanded=true;
@@ -1817,9 +1728,8 @@ function openExpand(){
       return;
     }
   }
-  // タッチデバイス：疑似全画面（position:fixed）
+  // タッチデバイス：疑似全画面（position:fixed）※wrapは関数先頭で取得済み
   isExpanded=true;
-  var wrap=document.getElementById('player-wrap');
   // ※突入時の演出・事前黒切替は全て無効と実証済み(v1.96/97/2.00/2.02)。演出なしの即全画面のみ。
   // ★③④通常時のバナー画面座標(縦・横)を「今この瞬間」に実測。全画面バナーはこの実測座標へピクセル固定する
   //   （計算式ではなく実測値＝端末が変わっても全画面化でバナーが1pxも動かない。固定はcover適用後の180ms時点で行う）
@@ -1827,7 +1737,7 @@ function openExpand(){
   (function(){ var si=document.getElementById('sponsor-img');
     if(si){ var r=si.getBoundingClientRect(); if(r && r.height>0){ _spTop=Math.round(r.top); _spLeft=Math.round(r.left);
       // 全画面中の回転用に「この向きの通常時座標」として保存（repinFsSponsorが最優先で使う）
-      _normBanner[(window.innerWidth>window.innerHeight)?'land':'port']={t:r.top,l:r.left};
+      _normBanner[isLandscapeNow()?'land':'port']={t:r.top,l:r.left};
     } } })();
   // ★全画面バナーはcover適用の再レイアウト(1〜2フレーム遅れ)で位置が跳ねて見える(ガタつき)ため、
   //   位置が確定するまで非表示にし、確定後(180ms)にすっと表示する（ガタつき除去・2026-08-08ユーザー指示）
@@ -1896,7 +1806,7 @@ function recordNormBanner(){
   if(!si) return;
   var r=si.getBoundingClientRect();
   if(!r || r.height<=0) return;
-  _normBanner[(window.innerWidth>window.innerHeight)?'land':'port']={t:r.top,l:r.left};
+  _normBanner[isLandscapeNow()?'land':'port']={t:r.top,l:r.left};
 }
 function repinFsSponsor(){
   if(!isExpanded) return;
@@ -1907,7 +1817,7 @@ function repinFsSponsor(){
     p.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left);padding-top:env(safe-area-inset-top);';
     document.body.appendChild(p); var pcs=getComputedStyle(p);
     envL=parseFloat(pcs.paddingLeft)||0; envT=parseFloat(pcs.paddingTop)||0; p.remove(); }catch(_){}
-  var saved=_normBanner[(window.innerWidth>window.innerHeight)?'land':'port'];
+  var saved=_normBanner[isLandscapeNow()?'land':'port'];
   var t,l;
   if(saved){
     t=saved.t+envT; l=saved.l+envL;   // 突入時ピンと同一式（実機で正位置と証明済み）
@@ -1933,27 +1843,39 @@ function repinFsSponsor(){
 //   ・screen.width/height … 画面の物理サイズ（回転しても不変＝端末の素性。凍結しない）
 //  旧: @media(orientation:portrait) and (max-width:767px) → body.ori-p
 //  旧: @media(orientation:landscape) and (max-height:500px) → body.ori-l
+// ★向きの判定はこの1本に集約する（2026-08-10の点検で統一）。
+//   凍結しない2つの値を突き合わせ、一致した時だけ採用する（片方が当てにならない環境での取り違え防止）。
+//   どちらも得られない場合のみ、従来どおり表示領域の縦横比で判定する。
+//   【使ってはいけない値】window.innerWidth/innerHeight と matchMedia('(orientation:...)')
+//    ＝iOSのアプリ内ブラウザから戻ると凍結し、縦なのに横と誤判定する（実機データで確定）。
+function isLandscapeNow(){
+  var so=null, od=null;
+  try{ if(screen.orientation && screen.orientation.type) so=(screen.orientation.type.indexOf('landscape')===0); }catch(_){}
+  if(window.outerWidth && window.outerHeight) od=(window.outerWidth>window.outerHeight);
+  if(so!==null && od!==null) return (so===od)?so:od;   // 食い違い時は窓の実形状を優先
+  if(od!==null) return od;
+  if(so!==null) return so;
+  return (window.innerWidth>window.innerHeight);
+}
 function applyOrientationClass(){
   try{
     var S=Math.min(screen.width||0, screen.height||0);   // 画面の短辺＝スマホ判定に使う
     if(!S) return;
-    // 凍結しない2つの値を突き合わせ、一致した時だけ採用する（片方が当てにならない環境での取り違え防止）。
-    // どちらも得られない場合のみ、従来どおり表示領域の縦横比で判定する。
-    var so=null, od=null;
-    try{ if(screen.orientation && screen.orientation.type) so=(screen.orientation.type.indexOf('landscape')===0); }catch(_){}
-    if(window.outerWidth && window.outerHeight) od=(window.outerWidth>window.outerHeight);
-    var land;
-    if(so!==null && od!==null) land=(so===od)?so:od;   // 食い違い時は窓の実形状を優先
-    else if(od!==null) land=od;
-    else if(so!==null) land=so;
-    else land=(window.innerWidth>window.innerHeight);
+    var land=isLandscapeNow();
+    var coarse=false; try{ coarse=window.matchMedia('(pointer:coarse)').matches; }catch(_){}
     // スマホ判定：画面の物理短辺（凍結しない）で判定。加えて、PCで窓を細くした場合など
     // 「画面は大きいが表示領域が小さい」ケースは従来どおり表示領域でも判定する（既存挙動を維持）。
     var p = !land && (S<=767 || window.innerWidth<=767);
     var l =  land && (S<=500 || window.innerHeight<=500);
+    // iPad等の大きなタッチ画面の向き。旧 @media(pointer:coarse) and (orientation:...) and (min-width:600px) の置き換え。
+    // サイズ条件(600px以上)は旧CSSと同じ判定のまま＝挙動を変えず、向きの部分だけ凍結しない値にする。
+    var tp = coarse && !land && S>=600 && window.innerWidth>=600;
+    var tl = coarse &&  land && S>=600 && window.innerWidth>=600;
     var de=document.documentElement, b=document.body;
-    if(de){ de.classList.toggle('ori-p',p); de.classList.toggle('ori-l',l); }
-    if(b){ b.classList.toggle('ori-p',p); b.classList.toggle('ori-l',l); }
+    [de,b].forEach(function(e){ if(!e) return;
+      e.classList.toggle('ori-p',p);  e.classList.toggle('ori-l',l);
+      e.classList.toggle('ori-tp',tp); e.classList.toggle('ori-tl',tl);
+    });
   }catch(_){}
 }
 applyOrientationClass();
@@ -1972,7 +1894,6 @@ setInterval(applyOrientationClass, 500);   // 凍結からの復帰も含め常�
 //   よって安全領域の影響を受けない軸だけで比較する：縦向き=幅どうし／横向き=高さどうし。
 //  【復旧手段】ページ側から凍結を解く方法は存在しない（実機で全滅）。唯一確実なのは文書の作り直し。
 var _vpSaTop0=null;   // 起動時(必ず健全)の縦向きsafe-area上端。以後0になったら凍結の証拠
-var _vpBadTicks=0;
 function _vpSaTop(){
   try{
     var p=document.getElementById('__vp_sa');
@@ -2011,27 +1932,11 @@ function _vpFrozen(){
   return false;
 }
 function _vpWatch(){
+  // ★凍結の検知は【診断表示(?debug=1)のためだけ】に残す。
+  //   検知して作り直す(location.reload)方式は実機で無効と確定済み（復旧1回の実測後も凍結YESのまま）で、
+  //   無駄な再読み込みが再生を止めるだけだったため撤去した。ここでやるのは起動直後の較正のみ。
   if(!isIOS) return;
-  _vpCal();
-  if(document.hidden || isExpanded){ _vpBadTicks=0; return; }
-  if(!_vpFrozen()){ _vpBadTicks=0; return; }
-  _vpBadTicks++;
-  if(_vpBadTicks<4) return;      // 1.6秒連続で異常＝回転の過渡状態では作動しない
-  _vpBadTicks=0;
-  // ★2026-08-10：作り直し(リロード)は【実機で無効】と確定（復旧1回の実測後も凍結YESのまま）。
-  //   無駄な再読み込みで再生を止めるだけなので停止。検知(_vpFrozen)は診断表示のために残す。
-  if(true) return;
-  try{
-    if(performance.now()<6000) return;                       // 起動直後は作動しない
-    var n=+sessionStorage.getItem('sc_fix_n')||0;
-    var last=+sessionStorage.getItem('sc_fix_at')||0;
-    if(Date.now()-last<30000) return;                        // 30秒以内の再作動なし
-    if(n>=2) return;                                         // 1エピソードで最大2回（無限ループ防止）
-    sessionStorage.setItem('sc_fix_n', String(n+1));
-    sessionStorage.setItem('sc_fix_at', String(Date.now()));
-    sessionStorage.setItem('shiso_resume', (typeof userWantsPlay!=='undefined' && userWantsPlay)?'1':'0');
-  }catch(_){ return; }
-  location.reload();
+  _vpCal();   // 起動直後(必ず健全)の縦向きsafe-area上端を1回だけ記録＝_vpFrozenの判定材料
 }
 
 // 【重要・2026-08-09】ビューポート凍結(iOSアプリ内ブラウザ中に回転して戻ると描画が古い寸法で固まる)への
@@ -2096,6 +2001,11 @@ function closeExpand(){
   blockTapThrough(700);   // 解除ボタンのタップが真下の要素へ突き抜けるのを防ぐ
   isExpanded=false;
   clearFsUiTimer();
+  // ★player-wrapは下のPC分岐（mousemoveリスナーの解除）でも使うため、関数の先頭で取得しておく。
+  //   以前はタッチ側の分岐でしか宣言しておらず、PC/Macで全画面を解除すると
+  //   「undefinedのプロパティを読めない」例外で止まり、直後の「解除後に再生を維持」処理が
+  //   実行されないままだった（2026-08-10の点検でブラウザ上で再現・確認）。
+  var wrap=document.getElementById('player-wrap');
 
   // PC：本物の全画面を解除
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
@@ -2126,8 +2036,7 @@ function closeExpand(){
     return;
   }
 
-  // タッチデバイス：疑似全画面を解除
-  var wrap=document.getElementById('player-wrap');
+  // タッチデバイス：疑似全画面を解除（wrapは関数先頭で取得済み）
   // ★帯(左右)の黒残り根治＝深緑オーバーレイを「解除より先に」重ねる：
   //   黒(全画面)→緑→通常画面 の一方向切替になり、通常画面の上で緑が点滅して見える構造自体を排除。
   //   1フレーム描画後に外す＝外れた瞬間に帯が緑を採取して深緑に塗り直される(実機確定の機構・物理最速)。
@@ -2189,7 +2098,6 @@ function hideFsUi(){
 }
 function resetFsUiTimer(){clearFsUiTimer();fsUiTimer=setTimeout(hideFsUi,3000);}
 function clearFsUiTimer(){if(fsUiTimer){clearTimeout(fsUiTimer);fsUiTimer=null;}}
-function onFsTap(){if(!isExpanded)return;showFsUi();}
 
 // ── オーバーレイ ──
 function showEnded(v){document.getElementById('ended-ov').style.display=v?'flex':'none';}
@@ -2201,24 +2109,6 @@ function showSpinner(v,t){
 // ── タイマー ──
 function clearSpinnerTimer(){if(spinnerTimer){clearTimeout(spinnerTimer);spinnerTimer=null;}}
 function clearEndTimer(){if(endTimer){clearTimeout(endTimer);endTimer=null;}}
-
-// 放送終了時刻(c,p)になった瞬間に切り替えるタイマー
-// YouTubeの実尺に関係なく、放送スケジュール通りに正確に切り替わる
-function setEndTimer(c,p){
-  clearEndTimer();
-  var endMin=emOf(c,p);        // 番組終了時刻（分）
-  var nowMin=nowF();            // 現在時刻（分）
-  var remainMs=(endMin-nowMin)*60*1000; // 残りミリ秒
-  if(remainMs<=0){
-    // すでに終了時刻を過ぎている場合は即切り替え
-    setTimeout(function(){onEnded();},100);
-    return;
-  }
-  endTimer=setTimeout(function(){
-    endTimer=null;
-    onEnded();
-  },remainMs);
-}
 
 // ── 動画ロード（ユーザー操作チェーン内で呼ぶこと・Safari対策） ──
 // 字幕(YouTube CC)を強制無効化。端末の字幕設定で勝手に表示される問題への対処。
@@ -2428,8 +2318,6 @@ function hlSB(c,p){
     if(list&&row){
       var listTop=list.getBoundingClientRect().top;
       var rowTop=row.getBoundingClientRect().top;
-      var rowH=row.offsetHeight;
-      var listH=list.offsetHeight;
       var scrollTop=list.scrollTop;
       var relTop=rowTop-listTop;
       // ★放送中の番組を常にリストの一番上へ。最下部の番組はscrollTopが自動で上限にclampされ、
@@ -2742,8 +2630,6 @@ function togglePlayPause(){
   // アイコンを即座に更新（APIの応答を待たない）
   var icon=document.getElementById('ctrl-play-icon');
   var fsIcon=document.getElementById('fs-play-icon');
-  var pausePath='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-  var playPath='<path d="M8 5v14l11-7z"/>';
   if(playing){
     // 停止マーク→再生マークに即座に切替
     if(icon)icon.innerHTML=playPath;
@@ -2855,7 +2741,6 @@ function init(){
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   renderSB();renderCityNews();updateClock();setHdrVar();
-  // loadCityNews(Firestore手動お知らせ)は停止中：中身が廃止済みの観光協会情報のため（2026-08-09指示）。
   loadCivicNews();                      // 市公式サイトの新着(city_news.json)
   setInterval(loadCivicNews, 300000);   // 5分ごと（元データはActionsが30分ごとに更新）
   loadJmaWarn();                        // 気象庁の警報（発表中は優先表示）
@@ -2882,9 +2767,6 @@ function init(){
   // ビューポート凍結の監視（ホーム画面アプリのiPhoneのみ・0.4秒間隔の軽量チェック）
   if(isIOS){
     setInterval(_vpWatch, 400);
-    // 正常状態を確認できたら復旧カウンタを戻す（次の凍結にまた対応できるように）
-    setInterval(function(){ if(!document.hidden && !isExpanded && !_vpFrozen()){
-      try{ if(sessionStorage.getItem('sc_fix_n')) sessionStorage.removeItem('sc_fix_n'); }catch(_){} } }, 5000);
   }
   // ビューポート凍結の監視（ホーム画面アプリのiPhoneのみ）。
   // ※シミュレータ実測：アプリ内ブラウザのシートを閉じてもvisibilitychange/pageshow/resizeは

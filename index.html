@@ -1590,6 +1590,11 @@ function closeExpand(){
   if(!isExpanded)return;
   isExpanded=false;
   clearFsUiTimer();
+  // ★player-wrapは下のPC分岐（mousemoveリスナーの解除）でも使うため、関数の先頭で取得しておく。
+  //   以前はタッチ側の分岐でしか宣言しておらず、PC/Macで全画面を解除すると
+  //   「undefinedのプロパティを読めない」例外で止まり、直後の「解除後に再生を維持」処理が
+  //   実行されないままだった（2026-08-10の点検でブラウザ上で再現・確認）。
+  var wrap=document.getElementById('player-wrap');
 
   // PC：本物の全画面を解除
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
@@ -1620,8 +1625,7 @@ function closeExpand(){
     return;
   }
 
-  // タッチデバイス：疑似全画面を解除
-  var wrap=document.getElementById('player-wrap');
+  // タッチデバイス：疑似全画面を解除（wrapは関数先頭で取得済み）
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
   // fs-ctrl-barを非表示
