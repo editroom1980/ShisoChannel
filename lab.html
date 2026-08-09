@@ -573,13 +573,14 @@ body.ori-p .news-item{flex-direction:row;align-items:center;gap:7px;}body.ori-p 
 /* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
 body.iphone-mode.ori-p{
     height:100vh;
-    height:100dvh;
+    /* --vpH: 表示領域の高さが凍った時だけ、JSが端末実寸法から算出した正しい高さを入れる。通常は未設定＝100dvh */
+    height:var(--vpH, 100dvh);
     min-height:0;
     overflow:hidden;
   }body.iphone-mode.ori-p .page{
     grid-template-rows:auto 1fr auto;
     height:calc(100vh - var(--hdr-h, 84px));
-    height:calc(100dvh - var(--hdr-h, 84px));
+    height:calc(var(--vpH, 100dvh) - var(--hdr-h, 84px));
     overflow:hidden;
     padding-bottom:6px;
   }body.iphone-mode.ori-p .sidebar{
@@ -870,7 +871,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.27-lab（全画面の解除ボタンを押した時、タップが真下のお知らせウインドウへ突き抜けて意図せずリンクへ飛ぶ不具合を根治。解除直後0.7秒だけタップを無効化＋お知らせ/バナー側にも二重の保険）</div>
+    <div class="ps-version">version 2.28-lab（縦のまま戻った時に番組表が短くなりお知らせが上へ上がる不具合を修正=表示領域の高さが凍った時だけ、端末の高さから算出した正しい高さを注入。通常時は従来と完全に同一）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2039,6 +2040,43 @@ function _vpWatch(){
 //   「拡大表示のまま戻らない」「全画面が解除できない」というより重い故障を生んだ（v2.21の実機失敗）。
 //   凍結はiOS側の不具合であり、現状ページ側から安全に直す手段が確認できていない。
 //   ＝アプリはビューポートに触れない（全画面のcover切替のみ）。凍結時は端末の回転で復帰する。
+
+// ══ 表示領域の高さの凍結を補う（2026-08-10・縦向きのみ）══
+//  リンクから戻ると表示領域の高さが古い値（実測682／正常812）で凍り、番組表が短くなって
+//  お知らせが上へ上がる（ユーザー報告）。端末の高さ(outerHeight)は凍らないので、
+//  「端末の高さ − 上部バーの高さ」で正しい高さを算出して注入する。
+//  上部バーの高さは起動直後（必ず健全）に1回だけ実測し、妥当な範囲(0〜120px)でなければ較正しない＝何もしない。
+var _barTop=null;
+function calibBar(){
+  if(_barTop!==null) return;
+  if(window.outerWidth>window.outerHeight) return;      // 縦向きでのみ較正
+  var d=(window.outerHeight||0)-(window.innerHeight||0);
+  if(d>=0 && d<=120) _barTop=d;
+}
+function fixFrozenHeight(){
+  try{
+    calibBar();
+    var de=document.documentElement;
+    if(_barTop===null || (window.outerWidth>window.outerHeight) || !document.body.classList.contains('ori-p')){
+      if(de.style.getPropertyValue('--vpH')) de.style.removeProperty('--vpH');
+      return;
+    }
+    var expect=(window.outerHeight||0)-_barTop;
+    if(expect<300){ return; }
+    if(Math.abs(window.innerHeight-expect)>2){
+      if(de.style.getPropertyValue('--vpH')!==expect+'px'){
+        de.style.setProperty('--vpH', expect+'px');
+        try{ setHdrVar(); }catch(_){}
+        try{ fitPlayer(); }catch(_){}
+      }
+    }else if(de.style.getPropertyValue('--vpH')){
+      de.style.removeProperty('--vpH');
+      try{ setHdrVar(); }catch(_){}
+      try{ fitPlayer(); }catch(_){}
+    }
+  }catch(_){}
+}
+setInterval(fixFrozenHeight, 400);
 
 // ══ タップの突き抜け防止（2026-08-10）══
 //  全画面の解除ボタンを押すと、ボタンが消えた直後に同じ指のタップが真下の要素
