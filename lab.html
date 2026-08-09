@@ -515,6 +515,9 @@ body.fs-open .header{ background:#000; }
   .news-item{flex-direction:row;align-items:center;gap:7px;}
   .news-tag{align-self:center;flex-shrink:0;}
   .news-ttl{flex:1 1 auto;min-width:0;}
+  /* 画面最下部のホームインジケーター(アプリ切替の下線)と被らないよう、窓を少し縦に広げ
+     タグ+タイトルを上へ寄せる（上7px/下22px・2026-08-09指示） */
+  .news-body{padding:7px 12px 22px;}
 }
 
 /* ══ レスポンシブ ══ */
@@ -882,7 +885,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.17-lab（向きごと凍結(横で戻ると縦のまま等)を根治=凍結寸法に頼らず物理向き+画面定数から正しい幅・高さをviewportへ明示指定する強制寸法モード(食い違い0.8秒確認で発動・回転で通常復帰)/縦のお知らせ1行化のCSS記述位置ミスを修正）</div>
+    <div class="ps-version">version 2.18-lab（縦のお知らせ窓を少し縦に拡大しタグ+タイトルを上へ=画面最下部のホームインジケーターとの被りを解消）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
