@@ -442,8 +442,10 @@ body.fs-open .header{ background:#000; }
   background:var(--band);padding:12px 16px;
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
 }
-.sb-ttl{font-size:12px;font-weight:700;color:var(--white);letter-spacing:3px;}
-#today-date{font-size:10px;color:rgba(255,255,255,0.5);}
+.sb-ttl{font-size:12px;font-weight:700;color:var(--white);letter-spacing:3px;white-space:nowrap;flex-shrink:0;}
+#today-date{font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap;}
+/* 見出し帯の補足文（出典・操作案内）。縦向きで余裕がある時のみ表示（横向きは非表示） */
+.sb-note{font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.5px;margin-left:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0;text-align:left;}
 
 /* 番組リスト：スクロール可能 */
 .sb-list{
@@ -507,8 +509,6 @@ body.fs-open .header{ background:#000; }
 .news-tag.warn{background:#f7dada;color:#8a1f1f;}
 .news-ttl.warn{color:#8a1f1f;font-weight:700;}
 .news-ttl{font-size:12px;color:var(--text);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.news-date{font-size:10px;color:var(--text3);height:14px;line-height:14px;overflow:hidden;}
-.sb-news-src{padding:2px 12px 6px;font-size:9px;color:var(--text3);line-height:1.3;flex-shrink:0;}
 
 /* ══ レスポンシブ ══ */
 
@@ -565,14 +565,15 @@ body.fs-open .header{ background:#000; }
 @media(orientation:portrait){
   body.iphone-mode{
     height:100vh;
-    height:100dvh;
+    /* --vpH: ビューポート凍結時(リンクから戻った際にiOSが100dvhを更新しない事がある)にJSが正しい実測高を注入する。通常は未設定=100dvh */
+    height:var(--vpH, 100dvh);
     min-height:0;
     overflow:hidden;
   }
   body.iphone-mode .page{
     grid-template-rows:auto 1fr auto;
     height:calc(100vh - var(--hdr-h, 84px));
-    height:calc(100dvh - var(--hdr-h, 84px));
+    height:calc(var(--vpH, 100dvh) - var(--hdr-h, 84px));
     overflow:hidden;
     padding-bottom:6px;
   }
@@ -657,6 +658,8 @@ body.fs-open .header{ background:#000; }
   }
   /* 番組表を圧縮して横向きでも多く表示 */
   .sb-head{padding:6px 12px;}
+  /* 見出し帯の補足文（出典・操作案内）は横向きでは非表示（2026-08-09指示） */
+  .sb-note{display:none;}
   .time-bar{padding:2px 10px 2px;}
   .pinfo{padding:3px 10px 5px;gap:2px;}
   .pname{font-size:11px;line-height:1.3;}
@@ -872,7 +875,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.14-lab（お知らせ枠を宍粟市公式サイトの新着に自動連携=くらし/イベント/募集/重要をタップでリンク・30分毎自動更新・出典明記/気象庁の警報発表中は優先表示/観光協会情報は廃止）</div>
+    <div class="ps-version">version 2.15-lab（リンクから戻った時のズレ・崩れを根治=ビューポート凍結を検知して自動復元/出典と操作案内を見出し帯へ移動(縦のみ表示)/お知らせの日付行を廃止して番組表を拡大）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1005,6 +1008,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
     <div class="sidebar">
       <div class="sb-head">
         <div class="sb-ttl">番 組 表</div>
+        <span class="sb-note">好きな番組をタップして視聴できます</span>
         <div id="today-date">—</div>
       </div>
       <div class="sb-list" id="sb-list"></div>
@@ -1012,9 +1016,8 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
     <!-- 右下：お知らせ・イベント（番組表と同形式の独立ウインドウ・データがある時のみ表示） -->
     <div class="newsbar" id="sb-news" style="display:none">
-      <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div></div>
+      <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div><span class="sb-note" id="sb-news-note"></span></div>
       <div class="news-body" id="sb-news-body"></div>
-      <div class="sb-news-src" id="sb-news-src"></div>
     </div>
   </div>
 </div>
@@ -1158,7 +1161,7 @@ function renderCityNews(){
   var box=document.getElementById('sb-news');
   if(!box) return;
   var body=document.getElementById('sb-news-body');
-  var src=document.getElementById('sb-news-src');
+  var note=document.getElementById('sb-news-note');
   var L=newsDisplayList();
   if(!L.length){ box.style.display='none'; return; }
   if(cityNewsIndex>=L.length) cityNewsIndex=0;
@@ -1167,15 +1170,17 @@ function renderCityNews(){
   var tag = n.tag || (n.type==='event' ? 'イベント' : 'お知らせ');
   var tagCls = n.warn ? 'warn' : ((tag==='イベント'||tag==='募集') ? 'event' : (tag==='重要' ? 'warn' : 'notice'));
   var esc=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  // 1件ずつ順番に切り替え表示。高さ固定のため date行は常に描画（無い時は空）・タイトルは1行省略
+  // 1件ずつ順番に切り替え表示。日付行は廃止(2026-08-09指示=更新日のみで不要・縦幅節約)・タイトルは1行省略。
+  // 出典は見出し帯の補足文(.sb-note)へ移動（縦向きのみ表示・警報時は発表時刻も添える）
   body.innerHTML='<div class="news-item">'
     +'<span class="news-tag '+tagCls+'">'+esc(tag)+'</span>'
     +'<div class="news-ttl'+(n.warn?' warn':'')+'">'+esc(n.title||'')+'</div>'
-    +'<div class="news-date">'+esc(n.date||'')+'</div>'
     +'</div>';
-  if(n.warn){ src.textContent = n.src||'出典：気象庁'; }
-  else if(n.tag){ src.textContent = '出典：宍粟市公式サイト（タップで詳細ページへ）'; }
-  else { src.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示（実際の情報連携は準備中）'; }
+  if(note){
+    if(n.warn){ note.textContent = (n.date? n.date+'　':'')+(n.src||'出典：気象庁'); }
+    else if(n.tag){ note.textContent = '出典：宍粟市公式サイト（タップで詳細へ）'; }
+    else { note.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示'; }
+  }
   box.style.display='';
 }
 function rotateCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex+1)%L.length; renderCityNews(); }
@@ -1923,6 +1928,76 @@ function repinFsSponsor(){
   try{ fitPlayer(); }catch(_){}
 }
 
+// ★ページ復帰時の「ビューポート凍結」対策（v2.15・シミュレータ実測で機構確定）:
+//   お知らせ等のリンクからアプリ内ブラウザで市サイトを開いて戻ると、iOSがビューポート更新(resize)を
+//   配信しない場合があり、innerHeight/100dvhが離脱中の縮小値(実測682・正常812)のまま凍結して
+//   本文が短く描画される（縦=下に余白/離脱中に回転=旧向きのレイアウトのまま）。回転で直る=再計算が走るため、
+//   「正常時に記録した高さ」と照合し、不一致の時だけ疑似回転(viewport倍率を一瞬1.01→復元)で再計算を強制する。
+//   ※疑似回転はv2.03で常用して却下された手法だが、今回は【凍結検知時のみ】発動＝正常時は一切何も起きない。
+var _goodH={};
+var _lastGoodW=0;
+function _orientKey(){
+  try{ if(screen.orientation && screen.orientation.type) return (screen.orientation.type.indexOf('portrait')===0)?'p':'l'; }catch(_){}
+  return (window.innerWidth<=window.innerHeight)?'p':'l';
+}
+function recordGoodViewport(force){
+  if(document.hidden) return;
+  if(_vpPulseBusy) return; // 幅ナッジ中の一時的な寸法を「正常値」として記録しない
+  // 幅が変わらない高さのみの変化（アプリ内ブラウザのシート等）は「正常値」として採用しない
+  if(!force && window.innerWidth===_lastGoodW) return;
+  _lastGoodW=window.innerWidth;
+  _goodH[_orientKey()]=window.innerHeight;
+}
+var _vpPulseBusy=false;
+var _vpPulseTries=0;
+function fixStaleViewport(){
+  var good=_goodH[_orientKey()];
+  // 横向きの記録が無い場合の推定値（横はステータスバー帯なし＝画面の短辺がそのまま高さ。実測402で一致）
+  if(!good && _orientKey()==='l'){ good=Math.min(screen.width||0,screen.height||0)||null; }
+  if(good && Math.abs(window.innerHeight-good)>2){
+    if(_vpPulseBusy) return;
+    // ①幅ナッジ（viewport幅を一瞬1px変えて戻す=回転相当の再計算を要求。3回まで試す）
+    if(_vpPulseTries<3){
+      _vpPulseTries++;
+      window._vpPulseCount=(window._vpPulseCount||0)+1;
+      _vpPulseBusy=true;
+      var vp=document.querySelector('meta[name="viewport"]');
+      var base=vp?vp.getAttribute('content'):null;
+      if(vp&&base){
+        vp.setAttribute('content','width='+(window.innerWidth+1)+', initial-scale=1.01, maximum-scale=1.01, user-scalable=no'+(base.indexOf('viewport-fit=cover')>=0?', viewport-fit=cover':''));
+      }
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        if(vp&&base) vp.setAttribute('content',base);
+        setTimeout(function(){
+          _vpPulseBusy=false;
+          _applyVpFallback(good);
+        },120);
+      }); });
+    }else{
+      _applyVpFallback(good);
+    }
+  }else{
+    // 指標は正常。凍結時の高さ注入が残っていれば解除し、再測定とスクロール0だけ行う
+    _vpPulseTries=0;
+    document.documentElement.style.removeProperty('--vpH');
+    setHdrVar();
+    if(!isExpanded){ try{ window.scrollTo(0,0); }catch(_){} }
+  }
+}
+// ②最終手段：ビューポート指標が直らなくてもレイアウトだけは正しくする（凍結した100dvhの代わりに実測高を注入）
+function _applyVpFallback(good){
+  if(Math.abs(window.innerHeight-good)>2){
+    document.documentElement.style.setProperty('--vpH', good+'px');
+  }else{
+    _vpPulseTries=0;
+    document.documentElement.style.removeProperty('--vpH');
+  }
+  setHdrVar();
+  try{ fitPlayer(); }catch(_){}
+  if(isExpanded){ repinFsSponsor(); }
+  else{ recordNormBanner(); try{ window.scrollTo(0,0); }catch(_){} }
+}
+
 function closeExpand(){
   if(!isExpanded)return;
   isExpanded=false;
@@ -2507,7 +2582,7 @@ function powerOn(){
   // ★本体を表示した直後にヘッダー実高(--hdr-h)を測り直す（起動画面中の測定は非表示=高さ0で無効なため）＋
   //   ページのスクロール位置を0に固定（本文が固定ヘッダーの裏に潜り込む上ズレの保険）
   setHdrVar();
-  requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); recordNormBanner(); });
+  requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); recordNormBanner(); recordGoodViewport(true); });
   hasPoweredOn=true;
   userWantsPlay=true;
   var pos = CYCLE.length ? nowPos() : null;
@@ -2697,6 +2772,26 @@ function init(){
   };
   window.addEventListener('resize', _fsRepinOnRotate);
   window.addEventListener('orientationchange', _fsRepinOnRotate);
+  // ページ復帰時のビューポート凍結対策：正常時の高さを記録し、凍結を検知したら疑似回転で強制再計算。
+  // ※シミュレータ実測：アプリ内ブラウザのシートを閉じてもvisibilitychange/pageshowは発火しない
+  //   （アプリはシートの裏で「表示中」のまま）ため、1.2秒間隔の常時監視で検知する。
+  //   誤発動防止：全画面中(cover=高さが正常に874へ変わる)と非表示中は監視しない・2回連続不一致で初めて発動。
+  recordGoodViewport(true);
+  window.addEventListener('resize', function(){ recordGoodViewport(false); });
+  var _staleTicks=0;
+  setInterval(function(){
+    if(document.hidden || isExpanded || _vpPulseBusy){ _staleTicks=0; return; }
+    var good=_goodH[_orientKey()];
+    if(good && Math.abs(window.innerHeight-good)>2){
+      _staleTicks++;
+      if(_staleTicks>=2){ _staleTicks=0; fixStaleViewport(); }
+    }else{ _staleTicks=0; }
+  }, 1200);
+  window.addEventListener('pageshow', function(e){
+    if(e.persisted){ setTimeout(fixStaleViewport,150); setTimeout(fixStaleViewport,700); }
+  });
+  // シートを閉じた際にfocusが発火する環境ではより早く復元（発火しなくても常時監視が拾う）
+  window.addEventListener('focus', function(){ setTimeout(fixStaleViewport,150); setTimeout(fixStaleViewport,700); });
   // ピンチ拡大縮小の禁止（2026-08-09指示）。iOSはviewportのuser-scalable=noを無視する場合があるため、
   // ピンチジェスチャー自体を止める（gesture*はiOS固有の2本指ピンチイベント＝1本指のタップ/スクロールには無影響）
   ['gesturestart','gesturechange'].forEach(function(ev){
