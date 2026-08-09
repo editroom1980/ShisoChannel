@@ -81,9 +81,6 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   /* ③バナー下の余白は0にし、動画ウインドウとの間隔=ページ上余白6px（間隔Aと同一）だけにする。
      上余白はロゴ行→バナーの間隔=6px（間隔統一・2026-08-09指示） */
   .h-banner{order:2;flex-basis:100%;padding:6px 0 0;}
-  /* 縦向きはジャンルタグとタイトルを1行に（2026-08-09指示。横向きは従来の2段のまま） */
-  .news-item{flex-direction:row;align-items:center;gap:7px;}
-  .news-ttl{flex:1 1 auto;min-width:0;}
 }
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
 .test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
@@ -512,6 +509,13 @@ body.fs-open .header{ background:#000; }
 .news-tag.warn{background:#f7dada;color:#8a1f1f;}
 .news-ttl.warn{color:#8a1f1f;font-weight:700;}
 .news-ttl{font-size:12px;color:var(--text);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 縦向きスマホ: ジャンルタグとタイトルを1行に（2026-08-09指示。横向きは従来の2段のまま）
+   ※基本定義(.news-item)より後に書くこと（前に書くと後勝ちで打ち消される=v2.16の失敗） */
+@media(orientation:portrait) and (max-width:767px){
+  .news-item{flex-direction:row;align-items:center;gap:7px;}
+  .news-tag{align-self:center;flex-shrink:0;}
+  .news-ttl{flex:1 1 auto;min-width:0;}
+}
 
 /* ══ レスポンシブ ══ */
 
@@ -878,7 +882,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.16-lab（凍結対策を壊れようがない設計へ全面変更=学習・強制上書きを全廃し、向きの食い違い等の一次情報だけで検知→無害な幅ナッジのみで復元/縦のお知らせはジャンルとタイトルを1行表示）</div>
+    <div class="ps-version">version 2.17-lab（向きごと凍結(横で戻ると縦のまま等)を根治=凍結寸法に頼らず物理向き+画面定数から正しい幅・高さをviewportへ明示指定する強制寸法モード(食い違い0.8秒確認で発動・回転で通常復帰)/縦のお知らせ1行化のCSS記述位置ミスを修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1931,25 +1935,23 @@ function repinFsSponsor(){
   try{ fitPlayer(); }catch(_){}
 }
 
-// ★ビューポート凍結（iOS 26系WebKitの既知不具合群）への対策：v2.16最終形。
+// ★ビューポート凍結（iOS 26系WebKitの既知不具合群）への対策：v2.17。
 //   症状=リンク先(アプリ内ブラウザ)から戻る際等にiOSがビューポート更新を配信せず、
-//   innerHeight/100dvh等が古い値のまま凍結する（間欠発生・シミュレータで再現）。
-//   【実測で確定した事実】
-//    ・幅ナッジ(viewport再処理)は凍結を解除できない（141回連発しても685のまま＝根本治療にならない）
-//    ・v2.15の「実測値を学習→強制上書き」は回転過渡値の誤学習で恒久破壊を生んだ（ルール9に刻んだ教訓）
-//   【最終設計＝壊れようがない形】
-//    ・期待高さは実行中の学習ではなく【画面の物理定数】から導く：起動時(必ず健全)に
-//      「ステータスバー帯 = screen.height − innerHeight」を1回だけ確定 → 期待縦高さ = screen.height − 帯。
-//      画面定数は凍結の影響を受けない一次情報＝回転過渡値に汚染されようがない。
-//    ・凍結検知(期待と不一致)の間だけ、正しい高さを --vpH としてCSSへ注入（縦レイアウトのみが参照）。
-//      指標が正常に戻れば即解除。ナッジも上書き学習も一切しない。
-//    ・「端末の物理向き(screen.orientation)とレイアウト向き(matchMedia)の食い違い」（横で戻った直後等）は
-//      ページ側から根治する手段がないため、復帰操作(タッチ等)時に限り再計算要求を少数回だけ試み、
-//      それでも直らない場合は次の回転で自然回復する（画面を壊す介入はしない）。
-var _vpPulseBusy=false;   // 再計算要求の実行中フラグ（他所の実測記録の汚染防止に参照）
+//   寸法(innerWidth/innerHeight/100dvh/100vh)が古いまま凍結する（間欠発生・シミュレータで再現済み）。
+//   【実測で確定した事実】幅ナッジ(viewport再処理)では凍結を解除できない(141回連発でも不変)。
+//   学習型の強制補正は誤学習で恒久破壊を生む(v2.15の失敗・ルール9)。回転だけは必ず直す(iOSが実寸法を再配信)。
+//   【設計＝凍結値に頼らず、汚染されない一次情報(画面定数・物理向き)だけで正しいレイアウトを組む】
+//    1) 高さ凍結(向きは一致): 起動時に1回だけ確定した「帯=screen.height−innerHeight」から期待高さを導き、
+//       不一致の間だけ --vpH をCSSへ注入（縦レイアウトのみ参照・毎回同一定数=冪等・回復で自動解除）
+//    2) 向きごと凍結(横で戻ったら縦のまま等): 凍結寸法に頼るのをやめ、物理向きに対する正しい幅・高さを
+//       viewportメタへ明示指定する【強制寸法モード】でレイアウトを組み直す。
+//       発動=物理向きとレイアウト向きの食い違いを2回連続(約0.8秒)確認した時のみ（回転アニメ中の一瞬では発動しない）。
+//       解除=次の物理回転時（iOSが実寸法を再配信する唯一確実な契機）に通常のwidth=device-widthへ戻す。
+var _vpPulseBusy=false;   // 強制モード切替の直後処理中フラグ（実測記録の汚染防止に他所から参照）
 var _vpStrip=null;        // 起動時に確定するステータスバー帯の高さ（画面定数）
-var _vpLastNudge=0;
-var _vpNudgeCount=0;      // 向き食い違い時の試行回数（エピソード毎に最大3回）
+var _vpForced=false;      // 強制寸法モード中か
+var _vpMismatchTicks=0;
+var VP_BASE='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
 function _vpDevOrient(){  // 端末の物理向き（レイアウト非依存の一次情報）
   try{ if(screen.orientation && screen.orientation.type) return (screen.orientation.type.indexOf('portrait')===0)?'p':'l'; }catch(_){}
   return null;
@@ -1957,20 +1959,55 @@ function _vpDevOrient(){  // 端末の物理向き（レイアウト非依存の
 function _vpLayoutOrient(){ // レイアウトが組まれている向き
   try{ return window.matchMedia('(orientation: portrait)').matches?'p':'l'; }catch(_){ return null; }
 }
-function _vpCalibrate(){  // 起動直後(健全)に1回だけ帯の高さを確定
+function _vpCalibrate(){  // 起動直後(必ず健全)に1回だけ帯の高さを確定
   if(_vpStrip!==null) return;
-  if(_vpDevOrient()!=='p') return;                       // 縦起動時のみ（本アプリの実運用は縦起動）
+  if(_vpDevOrient()!=='p') return;
   var s=(screen.height||0)-window.innerHeight;
-  if(s>=0 && s<=120){ _vpStrip=s; }                      // 妥当範囲(0〜120px)のみ採用
+  if(s>=0 && s<=120){ _vpStrip=s; }
+}
+function _vpTrueDims(){   // 物理向きに対する正しいレイアウト寸法（画面定数から導出・凍結の影響を受けない）
+  var S=Math.min(screen.width||0,screen.height||0), L=Math.max(screen.width||0,screen.height||0);
+  if(!S||!L||_vpStrip===null) return null;
+  var side=(_vpStrip>=40?_vpStrip:0);  // ノッチ機(帯62)は横向きで左右に同幅の安全帯・非ノッチ機(帯20)は横帯なし
+  if(_vpDevOrient()==='p') return {w:S, h:L-_vpStrip};
+  return {w:L-2*side, h:S};
+}
+function _vpApplyForced(){
+  var t=_vpTrueDims(); if(!t) return;
+  var vp=document.querySelector('meta[name="viewport"]'); if(!vp) return;
+  var want='width='+t.w+', height='+t.h+', initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+  if(vp.getAttribute('content')!==want){
+    window._vpForceCount=(window._vpForceCount||0)+1;
+    _vpPulseBusy=true;
+    vp.setAttribute('content', want);
+    setTimeout(function(){
+      _vpPulseBusy=false;
+      setHdrVar();
+      try{ fitPlayer(); }catch(_){}
+      recordNormBanner(); try{ window.scrollTo(0,0); }catch(_){}
+    },150);
+  }
+  _vpForced=true;
+}
+function _vpRestoreBase(){  // 回転時に通常指定へ復帰（回転はiOSが実寸法を必ず再配信する）
+  _vpForced=false;
+  if(isExpanded) return;    // 全画面中はopen/closeExpandがviewportを管理
+  var vp=document.querySelector('meta[name="viewport"]'); if(!vp) return;
+  if(vp.getAttribute('content')!==VP_BASE){ vp.setAttribute('content', VP_BASE); }
 }
 function _vpObserve(){
   if(document.hidden || isExpanded || _vpPulseBusy) return;
   var d=_vpDevOrient(), l=_vpLayoutOrient();
-  if(d && l && d!==l){ return; }                          // 向き食い違いはタッチ等の操作時のみ対処(_vpKick)
+  if(d && l && d!==l){
+    _vpMismatchTicks++;
+    if(_vpMismatchTicks>=2){ _vpApplyForced(); }
+    return;
+  }
+  _vpMismatchTicks=0;
+  // 高さ凍結の補正（縦向きのみ。強制モード中でmeta height指定が効いていれば自動的に一致し発動しない）
   if(d==='p' && _vpStrip!==null){
     var expect=(screen.height||0)-_vpStrip;
     if(expect>300 && Math.abs(window.innerHeight-expect)>2){
-      // 高さ凍結：正しい高さを注入（凍結中のみ・毎回同じ定数値＝冪等）
       if(getComputedStyle(document.documentElement).getPropertyValue('--vpH').trim()!==expect+'px'){
         document.documentElement.style.setProperty('--vpH', expect+'px');
         window._vpFixCount=(window._vpFixCount||0)+1;
@@ -1981,38 +2018,11 @@ function _vpObserve(){
       return;
     }
   }
-  // 指標正常：注入が残っていれば解除
   if(document.documentElement.style.getPropertyValue('--vpH')){
     document.documentElement.style.removeProperty('--vpH');
     setHdrVar();
     try{ fitPlayer(); }catch(_){}
   }
-  _vpNudgeCount=0;  // 健全時に試行回数をリセット
-}
-// 復帰操作(タッチ/focus等)時のみ：向き食い違いなら再計算要求を試す（シート表示中は操作できない＝誤発動なし）
-function _vpKick(){
-  _vpObserve();
-  var d=_vpDevOrient(), l=_vpLayoutOrient();
-  if(!(d && l && d!==l)) return;
-  var now=Date.now();
-  if(_vpPulseBusy || now-_vpLastNudge<3000 || _vpNudgeCount>=3) return;
-  _vpLastNudge=now; _vpNudgeCount++;
-  window._vpPulseCount=(window._vpPulseCount||0)+1;
-  var vp=document.querySelector('meta[name="viewport"]');
-  if(!vp) return;
-  var base=vp.getAttribute('content');
-  _vpPulseBusy=true;
-  vp.setAttribute('content','width='+(window.innerWidth+1)+', initial-scale=1.01, maximum-scale=1.01, user-scalable=no'+(base.indexOf('viewport-fit=cover')>=0?', viewport-fit=cover':''));
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){
-    vp.setAttribute('content',base);
-    setTimeout(function(){
-      _vpPulseBusy=false;
-      setHdrVar();
-      try{ fitPlayer(); }catch(_){}
-      if(isExpanded){ repinFsSponsor(); }
-      else{ recordNormBanner(); try{ window.scrollTo(0,0); }catch(_){} }
-    },100);
-  }); });
 }
 
 function closeExpand(){
@@ -2795,9 +2805,11 @@ function init(){
   //   復帰後の最初のタッチでも即チェックして遅延を最小化する。
   if(isIOS && navigator.standalone){
     setInterval(_vpObserve, 400);
-    document.addEventListener('touchstart', function(){ _vpKick(); }, {passive:true});
-    window.addEventListener('pageshow', function(){ setTimeout(_vpKick,100); });
-    window.addEventListener('focus', function(){ setTimeout(_vpKick,100); });
+    document.addEventListener('touchstart', function(){ _vpObserve(); }, {passive:true});
+    window.addEventListener('pageshow', function(){ setTimeout(_vpObserve,100); });
+    window.addEventListener('focus', function(){ setTimeout(_vpObserve,100); });
+    // 回転時：強制寸法モードを通常指定へ復帰（回転はiOSが実寸法を必ず再配信する唯一確実な契機）
+    window.addEventListener('orientationchange', function(){ if(_vpForced){ setTimeout(_vpRestoreBase,300); } });
   }
   // ピンチ拡大縮小の禁止（2026-08-09指示）。iOSはviewportのuser-scalable=noを無視する場合があるため、
   // ピンチジェスチャー自体を止める（gesture*はiOS固有の2本指ピンチイベント＝1本指のタップ/スクロールには無影響）
