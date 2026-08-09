@@ -885,7 +885,7 @@ body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.20-lab（外部リンクから戻った時の崩れを決定論的に根治=壊れているかを判定せず、リンクへ出たら戻り時に必ずページを作り直す＋放送を自動復帰。ジャンプ以外では絶対に発動しない。?diag=1で実機状態を表示）</div>
+    <div class="ps-version">version 2.21-lab（リンク先から戻った時の崩れを実証にもとづき根治=凍結の正体は「描画幅だけが回転前の値で固まる」iOS側の不具合と最小構成で確定し、端末の実寸法(outer)でviewportを上書き・維持する方式で復帰を実証。正常時は通常と完全に同じ表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1210,7 +1210,7 @@ function attachNewsSwipe(el){
   el.addEventListener('click',function(){
     if(_newsTapSuppress) return;
     var L=newsDisplayList(); var n=L[cityNewsIndex];
-    if(n && n.url){ markExternalJump(); location.href=n.url; }
+    if(n && n.url){ location.href=n.url; }
   });
 }
 // Firestoreの broadcast/city_news から お知らせ/イベント を取得（番組表と同じSWR方式）。
@@ -1276,7 +1276,7 @@ function openSponsorLink(){
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
     try{statsBannerClick(s.name);statsFlush(true);}catch(_){}
-    markExternalJump();
+    try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
     location.href=s.url;
   }
 }
@@ -1858,8 +1858,7 @@ function openExpand(){
   //   (黒オーバーレイ/body・html・header黒/スクロール/coverパルス＝全て無効と実機環境で証明)。
   //   cover有りでは帯が消えてページの色がそのまま見える(=黒い全画面が透ける=帯黒✓)。coverを外すと帯は即・元の緑に戻る(実証済み)。
   //   よって「全画面中だけcover ON」が唯一の正解。通常時はcover無し=映像ズレは起きない(v1.79-83時代の実機で実証済み)。
-  (function(){ var vp=document.querySelector('meta[name="viewport"]');
-    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'); })();
+  applyViewport(true);   // 全画面はcover有り（上書き中ならその寸法を維持したままcoverを付与）
   setThemeColor('#000000');
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
@@ -1938,145 +1937,88 @@ function repinFsSponsor(){
   try{ fitPlayer(); }catch(_){}
 }
 
-// ══ 外部リンクから戻った時の確実な復旧（v2.20・検知に頼らない決定論的方式）══
-//   【v2.19までの失敗】「凍結を検知して直す」方式は、検知条件(向きの食い違い)が実機の
-//   本物の凍結で成立するとは限らず（シミュレータの擬似凍結でしか検証できていなかった）機能しなかった。
-//   実機ではレイアウトだけでなく動画も永久に読み込み中＝ページ全体が壊れており、部分的な補正では治らない。
-//   【v2.20の方式】外部リンクへ出る瞬間に印を付け、戻ってきたら【無条件で】ページを作り直す。
-//   ＝壊れているかを判定しない＝判定を誤りようがない。純粋な回転など、ジャンプ以外では絶対に発動しない。
-//   放送状態は既存のshiso_resume機構で自動復帰（起動画面を挟まない）。
-function markExternalJump(){
-  try{
-    sessionStorage.setItem('sc_jump','1');
-    sessionStorage.setItem('sc_jump_at', String(Date.now()));
-    sessionStorage.setItem('shiso_resume', (typeof userWantsPlay!=='undefined' && userWantsPlay)?'1':'0');
-  }catch(_){}
-}
-var _scBackChecked=false;
-function scRecoverAfterReturn(){
-  if(_scBackChecked) return;
-  try{
-    if(sessionStorage.getItem('sc_jump')!=='1') return;
-    var at=+sessionStorage.getItem('sc_jump_at')||0;
-    if(Date.now()-at<1500) return;                // ジャンプ直後(シートが開く前)の誤発動を防ぐ
-    var last=+sessionStorage.getItem('sc_reload_at')||0;
-    if(Date.now()-last<8000) return;              // 連続リロード防止
-    sessionStorage.removeItem('sc_jump');
-    sessionStorage.setItem('sc_reload_at', String(Date.now()));
-  }catch(_){ return; }
-  _scBackChecked=true;
-  try{ sessionStorage.setItem('sc_reloads', String((+sessionStorage.getItem('sc_reloads')||0)+1)); }catch(_){}
-  location.reload();
-}
-// 「戻ってきた」信号は端末・状況で異なるため全経路で拾う（どれか1つでも効けば復旧する）。
-// ※シート表示中は誤発動しない：シートに覆われている間はページに触れられず、hasFocusもfalseのため。
-function initReturnWatch(){
-  var fire=function(){ setTimeout(scRecoverAfterReturn, 60); };
-  window.addEventListener('pageshow', fire);
-  window.addEventListener('focus', fire);
-  document.addEventListener('visibilitychange', function(){ if(!document.hidden) fire(); });
-  document.addEventListener('touchstart', fire, {passive:true});
-  document.addEventListener('click', fire);
-  // フォーカスの復帰をポーリングでも監視（イベントが配信されない端末向けの保険）
-  var hadFocus=true;
-  try{ hadFocus=document.hasFocus(); }catch(_){}
-  setInterval(function(){
-    var f=true; try{ f=document.hasFocus(); }catch(_){}
-    if(f && !hadFocus){ fire(); }
-    hadFocus=f;
-  }, 300);
-}
-// ★ビューポート凍結（iOS 26系WebKitの既知不具合群）への対策：v2.17。
-//   症状=リンク先(アプリ内ブラウザ)から戻る際等にiOSがビューポート更新を配信せず、
-//   寸法(innerWidth/innerHeight/100dvh/100vh)が古いまま凍結する（間欠発生・シミュレータで再現済み）。
-//   【実測で確定した事実】幅ナッジ(viewport再処理)では凍結を解除できない(141回連発でも不変)。
-//   学習型の強制補正は誤学習で恒久破壊を生む(v2.15の失敗・ルール9)。回転だけは必ず直す(iOSが実寸法を再配信)。
-//   【設計＝凍結値に頼らず、汚染されない一次情報(画面定数・物理向き)だけで正しいレイアウトを組む】
-//    1) 高さ凍結(向きは一致): 起動時に1回だけ確定した「帯=screen.height−innerHeight」から期待高さを導き、
-//       不一致の間だけ --vpH をCSSへ注入（縦レイアウトのみ参照・毎回同一定数=冪等・回復で自動解除）
-//    2) 向きごと凍結(横で戻ったら縦のまま等): 凍結寸法に頼るのをやめ、物理向きに対する正しい幅・高さを
-//       viewportメタへ明示指定する【強制寸法モード】でレイアウトを組み直す。
-//       発動=物理向きとレイアウト向きの食い違いを2回連続(約0.8秒)確認した時のみ（回転アニメ中の一瞬では発動しない）。
-//       解除=次の物理回転時（iOSが実寸法を再配信する唯一確実な契機）に通常のwidth=device-widthへ戻す。
-var _vpPulseBusy=false;   // 強制モード切替の直後処理中フラグ（実測記録の汚染防止に他所から参照）
-var _vpStrip=null;        // 起動時に確定するステータスバー帯の高さ（画面定数）
-var _vpForced=false;      // 強制寸法モード中か
-var _vpMismatchTicks=0;
-var VP_BASE='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-function _vpDevOrient(){  // 端末の物理向き（レイアウト非依存の一次情報）
+// ★ビューポート凍結（iOS 26系WebKitの既知不具合）への対策：v2.21【最小構成の実験で原因と解法を実証】
+//   ■実証1: 外部リンク(アプリ内ブラウザ)を開いている間に端末を回すと、戻った時に
+//     「ページの描画幅」だけが回転前の値で凍結する（実測: 端末は横=outer 874x402・
+//      screen.orientationも横なのに、inner が 402x402 のまま＝CSSの向き判定が縦のまま）。
+//     CSS13行の最小ページでも同一症状＝**アプリのコードとは無関係のiOS側の不具合**と確定。
+//   ■実証2: 凍結中に viewport を「width=outerWidth, height=outerHeight」で明示指定すると
+//     **即座に正しいレイアウトへ復帰する**（inner が 750x402 の正規値になる）。
+//     ※v2.17が失敗した原因も判明＝安全領域を引いた750を指定していた（正解はouterの874）。
+//   ■実証3: 復帰後に width=device-width へ戻すと**即座に再凍結する**（79回振動を観測）。
+//     → 上書きは「解除せず維持」し、端末の実寸法(outer)が変わった時だけ張り替える。
+//   ■実証4: 正常時に同じ上書きをしても結果は通常と完全に一致（縦402x812/横750x402）。
+//     ＝この方式は正常時に何の副作用も生まない。
+//   outerWidth/outerHeight は凍結の影響を受けない（実測）ので、これを唯一の真実として使う。
+var _vpPulseBusy=false;   // 他所（実測記録）から参照される互換用フラグ
+var _vpStrip=null;        // 起動時に確定するステータスバー帯の高さ（高さ凍結対策で使用）
+var _vpPin=null;          // 現在の上書き寸法 {w,h,cover}
+function _vpDevOrient(){
   try{ if(screen.orientation && screen.orientation.type) return (screen.orientation.type.indexOf('portrait')===0)?'p':'l'; }catch(_){}
-  return null;
+  return (window.outerWidth<=window.outerHeight)?'p':'l';
 }
-function _vpLayoutOrient(){ // レイアウトが組まれている向き
+function _vpLayoutOrient(){
   try{ return window.matchMedia('(orientation: portrait)').matches?'p':'l'; }catch(_){ return null; }
 }
-function _vpCalibrate(){  // 起動直後(必ず健全)に1回だけ帯の高さを確定
+function _vpCalibrate(){  // 起動直後(必ず健全)に1回だけ帯の高さを確定（高さ凍結の補正に使う）
   if(_vpStrip!==null) return;
   if(_vpDevOrient()!=='p') return;
   var s=(screen.height||0)-window.innerHeight;
   if(s>=0 && s<=120){ _vpStrip=s; }
 }
-function _vpTrueDims(){   // 物理向きに対する正しいレイアウト寸法（画面定数から導出・凍結の影響を受けない）
-  var S=Math.min(screen.width||0,screen.height||0), L=Math.max(screen.width||0,screen.height||0);
-  if(!S||!L||_vpStrip===null) return null;
-  var side=(_vpStrip>=40?_vpStrip:0);  // ノッチ機(帯62)は横向きで左右に同幅の安全帯・非ノッチ機(帯20)は横帯なし
-  if(_vpDevOrient()==='p') return {w:S, h:L-_vpStrip};
-  return {w:L-2*side, h:S};
+// この端末で凍結対策を行うか（ホーム画面アプリのiPhoneのみ。PC/Android/Safariは通常動作のまま）
+function _vpEnabled(){ return isIOS && window.navigator.standalone===true; }
+function _vpBase(cover){
+  return 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'+(cover?', viewport-fit=cover':'');
 }
-// 向きごと凍結の復旧: メディアクエリ評価コンテキストまで凍結しviewport指定でも書換不能（実測）。
-// ページ側で解く手段が無いため自動再読み込みで作り直す（起動時は必ず正常）。放送状態はsc_resumeで自動復帰。
-// ループ防止: 60秒以内の再発動はリロードせず強制寸法モードで粘る。
-function _vpRecover(){
-  if(window._vpReloading) return;
-  var last=0; try{ last=+sessionStorage.getItem('sc_vp_reload')||0; }catch(_){}
-  if(Date.now()-last<60000){ _vpApplyForced(); return; }
-  try{
-    sessionStorage.setItem('sc_vp_reload', String(Date.now()));
-    sessionStorage.setItem('sc_resume','1');
-  }catch(_){}
-  window._vpReloading=true;
-  window._vpReloadCount=(window._vpReloadCount||0)+1;
-  location.reload();
+function _vpFixed(w,h,cover){
+  return 'width='+w+', height='+h+', initial-scale=1.0, maximum-scale=1.0, user-scalable=no'+(cover?', viewport-fit=cover':'');
 }
-function _vpApplyForced(){
-  var t=_vpTrueDims(); if(!t) return;
-  var vp=document.querySelector('meta[name="viewport"]'); if(!vp) return;
-  var want='width='+t.w+', height='+t.h+', initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-  if(vp.getAttribute('content')!==want){
-    window._vpForceCount=(window._vpForceCount||0)+1;
-    _vpPulseBusy=true;
-    vp.setAttribute('content', want);
-    setTimeout(function(){
-      _vpPulseBusy=false;
-      setHdrVar();
-      try{ fitPlayer(); }catch(_){}
-      recordNormBanner(); try{ window.scrollTo(0,0); }catch(_){}
-    },150);
-  }
-  _vpForced=true;
+// 全画面の出入りでviewportを切り替える時も、上書き中ならその寸法を維持する
+function applyViewport(cover){
+  var m=document.querySelector('meta[name="viewport"]'); if(!m) return;
+  var want=_vpPin ? _vpFixed(_vpPin.w,_vpPin.h,cover) : _vpBase(cover);
+  if(_vpPin) _vpPin.cover=cover;
+  if(m.getAttribute('content')!==want) m.setAttribute('content', want);
 }
-function _vpRestoreBase(){  // 回転時に通常指定へ復帰（回転はiOSが実寸法を必ず再配信する）
-  _vpForced=false;
-  if(isExpanded) return;    // 全画面中はopen/closeExpandがviewportを管理
-  var vp=document.querySelector('meta[name="viewport"]'); if(!vp) return;
-  if(vp.getAttribute('content')!==VP_BASE){ vp.setAttribute('content', VP_BASE); }
+function _vpWedged(){
+  var mqLand;
+  try{ mqLand=window.matchMedia('(orientation: landscape)').matches; }catch(_){ return false; }
+  return (window.outerWidth>window.outerHeight)!==mqLand;
 }
 function _vpObserve(){
-  if(document.hidden || isExpanded || _vpPulseBusy) return;
-  var d=_vpDevOrient(), l=_vpLayoutOrient();
-  if(d && l && d!==l){
-    _vpMismatchTicks++;
-    if(_vpMismatchTicks>=2){ _vpRecover(); }
+  if(document.hidden || !_vpEnabled()) return;
+  var m=document.querySelector('meta[name="viewport"]'); if(!m) return;
+  var w=window.outerWidth, h=window.outerHeight;
+  if(!w || !h) return;
+  var cover=isExpanded;
+  if(_vpWedged()){
+    // 凍結を検知：端末の実寸法で上書きし、そのまま維持する（解除すると即再凍結するため）
+    if(!_vpPin || _vpPin.w!==w || _vpPin.h!==h || _vpPin.cover!==cover){
+      _vpPin={w:w,h:h,cover:cover};
+      window._vpFixCount=(window._vpFixCount||0)+1;
+      m.setAttribute('content', _vpFixed(w,h,cover));
+      setTimeout(function(){
+        setHdrVar();
+        try{ fitPlayer(); }catch(_){}
+        if(isExpanded){ repinFsSponsor(); } else { recordNormBanner(); }
+      },200);
+    }
     return;
   }
-  _vpMismatchTicks=0;
-  // 高さ凍結の補正（縦向きのみ。強制モード中でmeta height指定が効いていれば自動的に一致し発動しない）
-  if(d==='p' && _vpStrip!==null){
+  // 正常時：端末の実寸法が変わった（回転した）のに古い上書きが残っていれば解除
+  if(_vpPin && (_vpPin.w!==w || _vpPin.h!==h)){
+    _vpPin=null;
+    m.setAttribute('content', _vpBase(cover));
+    setTimeout(function(){ setHdrVar(); try{ fitPlayer(); }catch(_){} recordNormBanner(); },200);
+    return;
+  }
+  // 高さだけの凍結（向きは一致）：正しい高さをCSSへ注入して吸収する
+  if(!_vpPin && _vpDevOrient()==='p' && _vpStrip!==null){
     var expect=(screen.height||0)-_vpStrip;
     if(expect>300 && Math.abs(window.innerHeight-expect)>2){
       if(getComputedStyle(document.documentElement).getPropertyValue('--vpH').trim()!==expect+'px'){
         document.documentElement.style.setProperty('--vpH', expect+'px');
-        window._vpFixCount=(window._vpFixCount||0)+1;
         setHdrVar();
         try{ fitPlayer(); }catch(_){}
         recordNormBanner(); try{ window.scrollTo(0,0); }catch(_){}
@@ -2137,8 +2079,7 @@ function closeExpand(){
   document.body.classList.remove('fs-open');
   document.documentElement.style.background='';   // ルート背景を通常(深緑)へ復元
   // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
-  (function(){ var vp=document.querySelector('meta[name="viewport"]');
-    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); })();
+  applyViewport(false);  // 通常はcover無し（上書き中ならその寸法は維持）
   // 全画面バナー・映像の表示状態を復元（座標固定/フェード用のインライン指定を全て解除）
   (function(){ var sp=document.getElementById('fs-sponsor');
     if(sp){ sp.style.transition=''; sp.style.opacity=''; sp.style.top=''; sp.style.left=''; sp.style.transform=''; }
@@ -2869,37 +2810,12 @@ function init(){
   // ※シミュレータ実測：アプリ内ブラウザのシートを閉じてもvisibilitychange/pageshow/resizeは
   //   発火しない場合がある（アプリはシートの裏で「表示中」のまま）ため、0.4秒間隔の軽量監視＋
   //   復帰後の最初のタッチでも即チェックして遅延を最小化する。
-  // 実機の状態を画面上に表示する診断モード（?diag=1 の時だけ・通常表示には一切影響しない）
-  if(/[?&]diag=1/.test(location.search)){
-    var dg=document.createElement('div');
-    dg.style.cssText='position:fixed;top:2px;left:2px;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:9px/1.25 monospace;padding:3px 5px;pointer-events:none;white-space:pre;max-width:60vw;';
-    document.body.appendChild(dg);
-    setInterval(function(){
-      var so='-',wo='-',vv='-',hf='-';
-      try{ so=screen.orientation.type; }catch(_){}
-      try{ wo=String(window.orientation); }catch(_){}
-      try{ vv=window.visualViewport.width.toFixed(0)+'x'+window.visualViewport.height.toFixed(0); }catch(_){}
-      try{ hf=String(document.hasFocus()); }catch(_){}
-      var j='-'; try{ j=sessionStorage.getItem('sc_jump')||'なし'; }catch(_){}
-      dg.textContent='in:'+window.innerWidth+'x'+window.innerHeight+' out:'+window.outerWidth+'x'+window.outerHeight
-        +'\nvv:'+vv+' scr:'+screen.width+'x'+screen.height
-        +'\nMQ:'+(window.matchMedia('(orientation: portrait)').matches?'portrait':'landscape')
-        +'\nscrOri:'+so+' winOri:'+wo
-        +'\nfocus:'+hf+' vis:'+document.visibilityState+' jump:'+j
-        +'\n復旧リロード:'+(function(){try{return sessionStorage.getItem('sc_reloads')||0;}catch(_){return '-';}})()+'回 yt:'+(typeof ytReady!=='undefined'?ytReady:'-');
-    },300);
-  }
-  // 新規読み込みで戻ってきた場合＝既にページが作り直されているので復旧リロードは不要（印を消す）。
-  // ページが保存状態から復元された場合はここは実行されず、復帰監視がリロードする。
-  try{ sessionStorage.removeItem('sc_jump'); }catch(_){}
-  initReturnWatch();   // 外部リンクからの復帰を全経路で監視（ブラウザ表示でも有効）
   if(isIOS){
     setInterval(_vpObserve, 400);
     document.addEventListener('touchstart', function(){ _vpObserve(); }, {passive:true});
     window.addEventListener('pageshow', function(){ setTimeout(_vpObserve,100); });
     window.addEventListener('focus', function(){ setTimeout(_vpObserve,100); });
-    // 回転時：強制寸法モードを通常指定へ復帰（回転はiOSが実寸法を必ず再配信する唯一確実な契機）
-    window.addEventListener('orientationchange', function(){ if(_vpForced){ setTimeout(_vpRestoreBase,300); } });
+    window.addEventListener('orientationchange', function(){ setTimeout(_vpObserve,300); setTimeout(_vpObserve,900); });
   }
   // ピンチ拡大縮小の禁止（2026-08-09指示）。iOSはviewportのuser-scalable=noを無視する場合があるため、
   // ピンチジェスチャー自体を止める（gesture*はiOS固有の2本指ピンチイベント＝1本指のタップ/スクロールには無影響）
@@ -2913,13 +2829,6 @@ function init(){
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),powerOn);
-  // 凍結復旧リロード後は放送状態を自動復帰（起動画面を挟まない。再生開始はYT準備完了後の既存リトライに委ねる）
-  try{
-    if(sessionStorage.getItem('sc_resume')==='1'){
-      sessionStorage.removeItem('sc_resume');
-      setTimeout(function(){ try{ powerOn(); }catch(_){} }, 200);
-    }
-  }catch(_){}
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
   (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
   setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
