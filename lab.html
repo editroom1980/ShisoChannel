@@ -989,7 +989,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.37-lab（投稿フォームを追加）</div>
+    <div class="ps-version">version 2.38-lab（3フォーム接続完了）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1473,9 +1473,9 @@ function toggleOpt(name){
 //  URLが未設定の項目は「準備中」と表示し、押しても何も起きないようにする。
 //  開き方はスポンサーバナーと同じ「同じタブで移動」＝戻るとページが復元され再生が続く。
 var FORMS={
-  post:    'https://docs.google.com/forms/d/e/1FAIpQLSePXMWaOUI_N1Qe5qJfNoslJcaRCT4vnc_62APeq2k-PPVARQ/viewform',
-  opinion: '',   // ご意見・ご感想（URLが決まったらここに貼る）
-  fix:     ''    // 動画の修正依頼（URLが決まったらここに貼る）
+  post:    'https://docs.google.com/forms/d/e/1FAIpQLSePXMWaOUI_N1Qe5qJfNoslJcaRCT4vnc_62APeq2k-PPVARQ/viewform', // 動画・写真投稿
+  opinion: 'https://docs.google.com/forms/d/e/1FAIpQLSckm_LxlppJ4OGf_lRss9SLuucTiTLreLWFjSaP87-eYDMvfw/viewform', // ご意見・ご感想
+  fix:     'https://docs.google.com/forms/d/e/1FAIpQLScVXMxAw07pBjwFwhUYBZrkY7IRZlkvYX8-IyOvaiUTqHWotA/viewform'  // 動画の修正を依頼する
 };
 function openForm(key){
   if(isTapBlocked()) return;
