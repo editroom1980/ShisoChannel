@@ -889,8 +889,9 @@ body.iphone-mode #fs-mute{
 .set-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 6px 14px;}
 .set-sec{background:rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;}
 /* 見出しは角丸の長方形で囲って、中の項目と見分けがつくようにする（2026-08-10指示） */
-.set-sec-ttl{display:inline-block;font-size:13px;font-weight:700;color:#fff;letter-spacing:1px;
-  background:rgba(255,255,255,0.13);border-radius:6px;padding:5px 12px;margin-bottom:10px;}
+.set-sec-ttl{display:inline-block;font-size:14px;font-weight:700;color:var(--forest);letter-spacing:2px;
+  background:var(--gold2);border-radius:6px;padding:6px 14px;margin-bottom:12px;
+  box-shadow:0 1px 4px rgba(0,0,0,.25);}
 /* 12色を6列×2行に詰めて、設定全体がスクロールなしで1画面に収まるようにする（2026-08-10指示） */
 .set-colors{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;}
 .set-color{
@@ -991,7 +992,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.39-lab（設定を1画面に・自動再生の修正）</div>
+    <div class="ps-version">version 2.40-lab（明るい色6種追加・見出し強調）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1168,13 +1169,6 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
         <button class="set-sw" id="opt-big" data-opt="big" aria-label="文字を大きくする"></button>
       </div>
 
-      <div class="set-row">
-        <div class="set-row-txt">
-          <div class="set-row-ttl">開いたらすぐ放送を始める</div>
-          <div class="set-row-note">「放送開始」を押さなくても自動で始まります</div>
-        </div>
-        <button class="set-sw" id="opt-auto" data-opt="autostart" aria-label="開いたらすぐ放送を始める"></button>
-      </div>
 
 
     </div>
@@ -1339,7 +1333,15 @@ var BG_COLORS=[
   {id:'slate', name:'青鼠',  bg:'#42586b',band:'#557590',g1:'#324657',g2:'#455d72',g3:'#5b7a94',g4:'#aec0d0',g5:'#e4ebf1'},
   {id:'sepia', name:'鳶茶',  bg:'#5c4436',band:'#815e49',g1:'#594031',g2:'#755543',g3:'#977059',g4:'#d2baad',g5:'#f2e9e4'},
   {id:'olive',name:'うぐいす',bg:'#4a4a30',band:'#6e6e44',g1:'#565634',g2:'#707047',g3:'#91915e',g4:'#cfcfb0',g5:'#f1f1e5'},
-  {id:'ume',   name:'梅',    bg:'#5f4a58',band:'#816076',g1:'#4f3a48',g2:'#684f60',g3:'#87697d',g4:'#c9b5c3',g5:'#efe6ec'}
+  {id:'ume',   name:'梅',    bg:'#5f4a58',band:'#816076',g1:'#4f3a48',g2:'#684f60',g3:'#87697d',g4:'#c9b5c3',g5:'#efe6ec'},
+  // ↓ここから明るめの色（2026-08-10指示）。背景が明るいぶん見出し帯は逆に暗くして、
+  //   帯の上の白文字が読める明るさ（コントラスト比4.5以上）を保っている。
+  {id:'wakakusa',name:'若草',bg:'#5f7a4e',band:'#3f5333',g1:'#415634',g2:'#577147',g3:'#72925d',g4:'#bccfaf',g5:'#e9f1e4'},
+  {id:'oudo',  name:'黄土',  bg:'#8a7340',band:'#5e4e2a',g1:'#604f2a',g2:'#7e6939',g3:'#a4884c',g4:'#d9c9a6',g5:'#f4eee1'},
+  {id:'tsuchi',name:'土',    bg:'#8a6a4a',band:'#604931',g1:'#5c452e',g2:'#785c3f',g3:'#9c7854',g4:'#d4bfaa',g5:'#f2ebe3'},
+  {id:'azuki', name:'小豆',  bg:'#8a5a5a',band:'#633e3e',g1:'#553434',g2:'#704848',g3:'#915f5f',g4:'#cfb0b0',g5:'#f1e5e5'},
+  {id:'sakura',name:'桜鼠',  bg:'#8a6b76',band:'#664c56',g1:'#503a42',g2:'#684f58',g3:'#876973',g4:'#c9b5bc',g5:'#efe6e9'},
+  {id:'fuji',  name:'藤',    bg:'#6f6a9e',band:'#504c7a',g1:'#373455',g2:'#4b4770',g3:'#635f91',g4:'#b3b0cf',g5:'#e6e5f1'}
 ];
 // ══ 2027年1月1日からの表示切り替え（2026-08-10指示）══
 //  ・2026年内 : ロゴの右は「● 試験放送中」（金色の点滅）
@@ -1410,7 +1412,7 @@ function renderBgChoices(){
 // ══ 表示と動作の設定（第2段階・2026-08-10）══
 //  端末に保存し次回も引き継ぐ。既定は全てオフ＝何も設定していない人には従来と完全に同じ動作。
 var OPT_KEY='shisochan_opts';
-var OPTS={big:false, autostart:false};
+var OPTS={big:false};
 var _wakeLock=null;
 function loadOpts(){
   try{ var v=JSON.parse(localStorage.getItem(OPT_KEY)||'null');
@@ -1445,7 +1447,7 @@ function applyOpts(){
 }
 function renderOpts(){
   try{
-    var m={big:'opt-big', autostart:'opt-auto'};
+    var m={big:'opt-big'};
     for(var k in m){
       var el=document.getElementById(m[k]);
       if(el) el.classList.toggle('on', !!OPTS[k]);
@@ -1608,7 +1610,7 @@ function prevSponsor(){ sponsorIndex=(sponsorIndex-1+SPONSORS.length)%SPONSORS.l
 
 // 10秒ごとに自動切り替え（手動操作でリセット）
 function rotateSponsor(){ sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); }
-function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,10000); }
+function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,7000); }  // 7秒ごと（2026-08-10指示）
 
 // フリック（スワイプ）で手動切り替え。タップはクリックで開く
 function attachSponsorSwipe(el){
@@ -1983,15 +1985,9 @@ var ytInitialized=false;
 function onYouTubeIframeAPIReady(){
   if(ytInitialized)return; // キャッシュ等による二重呼び出しを防止
   ytInitialized=true;
-  // ★「開いたらすぐ放送を始める」がONのときは、プレーヤーを作る時点で
-  //   「消音＋自動再生」を指定する。あとから mute() を呼んでも効かず再生が始まらないことを
-  //   実機で確認したため（実測：mute()呼び出し後も isMuted()=false／YT状態=-1 のまま）。
-  //   音は利用者が最初に画面へ触れた時点で戻す。
-  var _pv={autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1,cc_load_policy:0};
-  try{ if(typeof OPTS!=='undefined' && OPTS.autostart){ _pv.autoplay=1; _pv.mute=1; } }catch(_){}
   ytPlayer=new YT.Player('yt-player-api',{
     width:_fitW0,height:_fitH0,
-    playerVars:_pv,
+    playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1,cc_load_policy:0},
     events:{
       onStateChange:function(e){
         var st=e.data;
@@ -2027,7 +2023,6 @@ function onYouTubeIframeAPIReady(){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
           e.target.loadVideoById({videoId:id,startSeconds:sec});
-          if(_autoStartMuting){ try{ e.target.mute(); }catch(_){} }
           try{ e.target.playVideo(); }catch(_){} // 遅延ロード時も再生を試みる
           clearSpinnerTimer();
           spinnerTimer=setTimeout(function(){showSpinner(false);},60000);
@@ -2577,7 +2572,6 @@ function fitTelop(videoW){
   el.style.maxWidth=availW+'px';
 }
 // 出典テロップ：番組(ytId)を新規に読み込んだ時だけ、見始めから10秒表示（同一ytIdの再読込=シークでは出さない）
-var _autoStartMuting=false;   // 自動開始中は動画を読み込むたびに消音する（iOSは音付きの自動再生を許さないため）
 var _telopYtId='';
 function maybeShowTelop(ytId){
   var el=document.getElementById('video-telop'); if(!el) return;
@@ -2617,8 +2611,6 @@ function loadVideo(ytId,sec,msg){
   if(ytReady&&ytPlayer){
     try{ fitPlayer(); }catch(_){} // ロード前に内部サイズ固定を保証
     ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
-    // ★loadVideoByIdは消音状態を解除してしまうため、自動開始中はここで消音し直す（実測で判明）
-    if(_autoStartMuting){ try{ ytPlayer.mute(); }catch(_){} }
     try{ fitPlayer(); }catch(_){}
     setTimeout(function(){
       try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
@@ -3367,7 +3359,7 @@ function init(){
 
   // 設定：表示と動作の切り替えスイッチ
   (function(){
-    var m={'opt-big':'big','opt-auto':'autostart'};
+    var m={'opt-big':'big'};
     for(var id in m){
       (function(id,key){
         var el=document.getElementById(id);
@@ -3389,41 +3381,10 @@ function init(){
     try{ renderForms(); }catch(_){}
   })();
 
-  // ══ 「開いたらすぐ放送を始める」がONのとき ══
-  //  ★iOSは「利用者が画面に触れていない状態での音付き再生」を許可しないため、そのまま
-  //    再生を指示しても始まらず、読み込み中のまま止まってしまう（実機で発生・2026-08-10報告）。
-  //    そこで【音を消した状態で再生を始め】、画面に最初に触れた時点で音を戻す。
-  //    それでも始まらない場合は待たせ続けず、スピナーを消して中央の再生ボタンで始められる状態にする。
-  (function(){
-    if(!OPTS.autostart) return;
-    var start=function(){
-      if(hasPoweredOn) return;
-      if(!ytReady){ setTimeout(start,150); return; }
-      _autoStartMuting=true;   // ★動画を読み込むたびに消音する（loadVideo内で実施）
-      powerOn();
-      // ★読み込みが終わっても再生が始まらないので、消音したうえで再生を短い間隔で試み続ける。
-      //   （実測：動画は読み込めている＝583/780秒 のに YT状態が -1 のまま＝再生だけ始まらない）
-      var tries=0;
-      var kick=function(){
-        var st=-99; try{ st=ytPlayer.getPlayerState(); }catch(_){}
-        if(st===1||st===3){ return; }                 // 始まったら終了
-        try{ ytPlayer.mute(); ytPlayer.playVideo(); }catch(_){}
-        if(++tries<24){ setTimeout(kick,300); }
-        else { try{ clearSpinnerTimer(); showSpinner(false); }catch(_){} }  // 諦めてタップで始められる状態に
-      };
-      setTimeout(kick,400);
-      // 最初に画面へ触れたら音を戻す（利用者が自分で消音していた場合はそのまま）
-      var unmute=function(){
-        _autoStartMuting=false;
-        try{ if(!isMuted && ytPlayer) ytPlayer.unMute(); }catch(_){}
-        document.removeEventListener('touchstart',unmute,true);
-        document.removeEventListener('click',unmute,true);
-      };
-      document.addEventListener('touchstart',unmute,true);
-      document.addEventListener('click',unmute,true);
-    };
-    setTimeout(start,300);
-  })();
+  // ※「開いたらすぐ放送を始める」は廃止（2026-08-10）。
+  //   iOSは利用者が画面に触れていない状態での音付き再生を許可せず（ホーム画面アプリでも例外なし）、
+  //   消音でしか自動再生できないため「音の出ない放送が勝手に始まる」状態にしかならない。
+  //   放送開始ボタンを一度押す今の形なら、その操作をきっかけに音付きで再生できる。
 
   // 画面を消さない設定は、他アプリから戻った時に取り直す必要がある
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) applyWakeLock(); });
