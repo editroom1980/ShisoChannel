@@ -83,6 +83,8 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 /* 「試験放送中」はON AIRと同じ作り＝頭に●が付いて点滅する。●の色は文字と同じ金色（2026-08-10指示） */
 .test-badge{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
 .tdot{width:6px;height:6px;background:var(--gold2);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;}
+/* バッジを設定ボタン側へ2px寄せる（2026-08-10指示）。右側全体の幅は固定なのでバナー位置は動かない */
+.test-badge,.h-right .onair-badge{margin-right:-2px;}
 /* 2027年1月1日から「試験放送中」を消して同じ場所に「● ON AIR」を出す（JSがbodyへonair-modeを付与） */
 .h-right .onair-badge{display:none;}
 body.onair-mode .test-badge{display:none;}
@@ -110,7 +112,11 @@ body.onair-mode .h-right .onair-badge{display:flex;}
   color:rgba(255,255,255,0.85);cursor:pointer;flex-shrink:0;
   -webkit-tap-highlight-color:transparent;font-family:inherit;
 }
-.h-gear svg{width:18px;height:18px;display:block;}
+/* ★歯車の大きさは「その向きでヘッダーを高くしない上限」まで。ここを超えるとヘッダーが厚くなり
+   縦向きでバナーが下へ押し出される（実測で確認済み）。
+   縦向き=1段目の高さ(バッジ19px)まで／横向き・iPadはヘッダー内にバナー(33px)があるためそこまで広げられる。 */
+.h-gear svg{width:19px;height:19px;display:block;}
+body.ori-l .h-gear svg, body.ori-tp .h-gear svg, body.ori-tl .h-gear svg{width:30px;height:30px;}
 /* 見た目の高さを変えずに指で押せる範囲だけ広げる */
 .h-gear::before{content:'';position:absolute;top:-12px;bottom:-12px;left:-6px;right:-6px;}
 .h-gear:active{opacity:0.55;}
@@ -553,7 +559,7 @@ body.ori-p .news-item{flex-direction:row;align-items:center;gap:7px;}body.ori-p 
     padding:0 6px;
     padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
-  .h-logo-main{font-size:15px;}
+  .h-logo-main{font-size:16px;}
   /* 時計は箱の幅を最大値(88:88:88=69px)+余裕で固定：数字ごとの字幅差(最大12.6px/秒)で隣のバナーが押されるのを構造的に排除 */
   .h-time{font-size:15px;min-width:72px;text-align:right;}
   .onair-badge{padding:2px 7px;font-size:9px;}
@@ -635,7 +641,7 @@ body.ori-l{overflow:hidden;height:100%;}
   /* ①文字サイズは縦向きと完全に同一（15/15/9/9）。max-width:840だけに頼ると全画面(cover)中は
      内部画面幅が750→874に広がって条件から外れ、ヘッダーがPC文字で別レイアウトになる
      （v2.11の回転バナー位置ズレの原因）。この横向きブロック(高さ500px以下)は874でも効くためここに明記 */
-  body.ori-l .h-logo-main{font-size:15px;}body.ori-l .h-time{font-size:15px;min-width:72px;text-align:right;}body.ori-l .onair-badge{padding:2px 7px;font-size:9px;}body.ori-l .test-badge{font-size:9px;}
+  body.ori-l .h-logo-main{font-size:16px;}body.ori-l .h-time{font-size:15px;min-width:72px;text-align:right;}body.ori-l .onair-badge{padding:2px 7px;font-size:9px;}body.ori-l .test-badge{font-size:9px;}
   /* ●LIVEと番組タイトルバー：コンパクト表示 */
   body.ori-l .viewing-bar{
     height:34px;
@@ -787,6 +793,7 @@ body.ori-tp .header, body.ori-tl .header{
    そちらが order:2 を与えるためバナーが時計の右端へ回ってしまう（実測確認済み）。 */
 body.ori-tp .h-banner, body.ori-tl .h-banner{ order:0; flex:1 1 auto; flex-basis:auto; padding:0; }
 body.ori-tp .sponsor-img, body.ori-tl .sponsor-img{ width:390px; }
+body.ori-tp .h-logo-main, body.ori-tl .h-logo-main{ font-size:16px; }   /* 縦横共通で16px（2026-08-10指示） */
 body.ori-tp .h-date, body.ori-tl .h-date{ display:none; }
 body.ori-tp .h-time, body.ori-tl .h-time{ font-size:20px; min-width:96px; text-align:right; }
 
@@ -893,6 +900,24 @@ body.iphone-mode #fs-mute{
 .set-color.on i{border-color:var(--gold2);box-shadow:0 0 0 2px var(--gold2);}
 .set-color span{font-size:11px;color:rgba(255,255,255,0.75);}
 .set-color.on span{color:var(--gold2);font-weight:700;}
+/* 設定項目の行（左に説明・右に切り替えスイッチ） */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.10);}
+.set-row:last-child{border-bottom:none;padding-bottom:0;}
+.set-row-txt{flex:1 1 auto;min-width:0;padding-right:12px;}
+.set-row-ttl{font-size:13px;font-weight:600;color:#fff;line-height:1.4;}
+.set-row-note{font-size:11px;color:rgba(255,255,255,0.5);margin-top:3px;line-height:1.5;}
+.set-sw{position:relative;width:52px;height:31px;border-radius:16px;border:none;flex-shrink:0;cursor:pointer;
+  background:rgba(255,255,255,0.22);transition:background .2s;-webkit-tap-highlight-color:transparent;padding:0;}
+.set-sw::after{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;
+  background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.set-sw.on{background:var(--gold);}
+.set-sw.on::after{transform:translateX(21px);}
+/* 「文字を大きくする」がONのとき（番組表とお知らせのみ。動画やヘッダーの寸法は変えない） */
+body.big-text .pname{font-size:14px;}
+body.big-text .news-ttl{font-size:14px;}
+body.big-text .pcat,body.big-text .pdur{font-size:12px;}
+body.big-text .time-chip-item{font-size:11px;}
+body.ori-l.big-text .pname,body.ori-tl.big-text .pname{font-size:13px;}
 
 /* 全画面時のカーソル自動非表示 */
 body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
@@ -946,7 +971,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.34-lab（設定12色・放送中表示を右へ）</div>
+    <div class="ps-version">version 2.35-lab（設定に表示と動作を追加）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1111,6 +1136,43 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
       <div class="set-sec-ttl">背景の色</div>
       <div class="set-sec-note">アプリ全体の背景色を選べます</div>
       <div class="set-colors" id="set-colors"></div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-sec-ttl">表示と動作</div>
+      <div class="set-sec-note">お好みに合わせて切り替えられます</div>
+
+      <div class="set-row">
+        <div class="set-row-txt">
+          <div class="set-row-ttl">文字を大きくする</div>
+          <div class="set-row-note">番組表とお知らせの文字を一段階大きく表示します</div>
+        </div>
+        <button class="set-sw" id="opt-big" data-opt="big" aria-label="文字を大きくする"></button>
+      </div>
+
+      <div class="set-row">
+        <div class="set-row-txt">
+          <div class="set-row-ttl">開いたらすぐ放送を始める</div>
+          <div class="set-row-note">「放送開始」を押さなくても自動で始まります</div>
+        </div>
+        <button class="set-sw" id="opt-auto" data-opt="autostart" aria-label="開いたらすぐ放送を始める"></button>
+      </div>
+
+      <div class="set-row">
+        <div class="set-row-txt">
+          <div class="set-row-ttl">広告の自動切り替えを止める</div>
+          <div class="set-row-note">10秒ごとの切り替えを止めます（指で左右になぞると切り替わります）</div>
+        </div>
+        <button class="set-sw" id="opt-banner" data-opt="stopbanner" aria-label="広告の自動切り替えを止める"></button>
+      </div>
+
+      <div class="set-row">
+        <div class="set-row-txt">
+          <div class="set-row-ttl">見ている間は画面を消さない</div>
+          <div class="set-row-note">視聴中に画面が暗くなるのを防ぎます（対応している端末のみ）</div>
+        </div>
+        <button class="set-sw" id="opt-awake" data-opt="awake" aria-label="見ている間は画面を消さない"></button>
+      </div>
     </div>
   </div>
 </div>
@@ -1325,11 +1387,65 @@ function renderBgChoices(){
   }
   box.innerHTML=h;
 }
+// ══ 表示と動作の設定（第2段階・2026-08-10）══
+//  端末に保存し次回も引き継ぐ。既定は全てオフ＝何も設定していない人には従来と完全に同じ動作。
+var OPT_KEY='shisochan_opts';
+var OPTS={big:false, autostart:false, stopbanner:false, awake:false};
+var _wakeLock=null;
+function loadOpts(){
+  try{ var v=JSON.parse(localStorage.getItem(OPT_KEY)||'null');
+    if(v) for(var k in OPTS){ if(k in v) OPTS[k]=!!v[k]; } }catch(_){}
+}
+function saveOpts(){ try{ localStorage.setItem(OPT_KEY, JSON.stringify(OPTS)); }catch(_){} }
+// 画面を消さない（対応端末のみ。非対応でも何も起きない）
+function applyWakeLock(){
+  try{
+    if(!('wakeLock' in navigator)) return;
+    if(OPTS.awake && !document.hidden){
+      if(!_wakeLock){
+        navigator.wakeLock.request('screen').then(function(w){
+          _wakeLock=w;
+          try{ w.addEventListener('release', function(){ _wakeLock=null; }); }catch(_){}
+        }).catch(function(){});
+      }
+    }else if(_wakeLock){
+      try{ _wakeLock.release(); }catch(_){}
+      _wakeLock=null;
+    }
+  }catch(_){}
+}
+function applyOpts(){
+  try{
+    document.body.classList.toggle('big-text', !!OPTS.big);
+    // 広告の自動切り替え
+    if(OPTS.stopbanner){ if(_sponsorTimer){ clearInterval(_sponsorTimer); _sponsorTimer=null; } }
+    else if(!_sponsorTimer){ resetSponsorTimer(); }
+    applyWakeLock();
+    // 文字サイズが変わると番組表の高さ配分が変わるので測り直す
+    try{ setHdrVar(); fitPlayer(); }catch(_){}
+  }catch(_){}
+}
+function renderOpts(){
+  try{
+    var m={big:'opt-big', autostart:'opt-auto', stopbanner:'opt-banner', awake:'opt-awake'};
+    for(var k in m){
+      var el=document.getElementById(m[k]);
+      if(el) el.classList.toggle('on', !!OPTS[k]);
+    }
+  }catch(_){}
+}
+function toggleOpt(name){
+  if(!(name in OPTS)) return;
+  OPTS[name]=!OPTS[name];
+  saveOpts(); applyOpts(); renderOpts();
+}
+
 function openSettings(){
   if(isTapBlocked()) return;
   var p=document.getElementById('settings-panel');
   if(!p) return;
   renderBgChoices();
+  renderOpts();
   p.classList.add('open');
 }
 function closeSettings(){
@@ -1342,6 +1458,7 @@ function closeSettings(){
 // 起動時：保存された色を復元（未保存なら深緑のまま＝従来と完全に同一）
 (function initBg(){
   try{ var v=localStorage.getItem(BG_KEY); if(v) applyBg(v,false); }catch(_){}
+  try{ loadOpts(); }catch(_){}
 })();
 
 // ══ ヘッダー左右のつり合わせ（バナー位置を現行から1pxも動かさないための処理）══
@@ -3193,6 +3310,31 @@ function init(){
       if(b) applyBg(b.getAttribute('data-bg'));
     });
   })();
+
+  // 設定：表示と動作の切り替えスイッチ
+  (function(){
+    var m={'opt-big':'big','opt-auto':'autostart','opt-banner':'stopbanner','opt-awake':'awake'};
+    for(var id in m){
+      (function(id,key){
+        var el=document.getElementById(id);
+        if(el) el.addEventListener('click', function(){ toggleOpt(key); });
+      })(id,m[id]);
+    }
+    try{ applyOpts(); renderOpts(); }catch(_){}
+  })();
+
+  // 「開いたらすぐ放送を始める」がONなら、YT準備でき次第そのまま開始（TVモードと同じ入口）
+  (function(){
+    if(!OPTS.autostart) return;
+    var t=function(){
+      if(hasPoweredOn) return;
+      if(ytReady){ powerOn(); } else { setTimeout(t,150); }
+    };
+    setTimeout(t,300);
+  })();
+
+  // 画面を消さない設定は、他アプリから戻った時に取り直す必要がある
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) applyWakeLock(); });
 
   // fs-ctrl-bar の初期化
   addTap(document.getElementById('fs-play'), togglePlayPause);
