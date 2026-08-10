@@ -915,6 +915,21 @@ body.iphone-mode #fs-mute{
   background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
 .set-sw.on{background:var(--gold);}
 .set-sw.on::after{transform:translateX(21px);}
+/* 投稿・お問い合わせのボタン（Googleフォームへ） */
+.set-link{display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:13px 0;background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.10);
+  cursor:pointer;font-family:inherit;text-align:left;-webkit-tap-highlight-color:transparent;}
+.set-link:last-child{border-bottom:none;padding-bottom:0;}
+.set-link:active{opacity:0.55;}
+.set-link-txt{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.set-link-txt b{font-size:13px;font-weight:600;color:#fff;line-height:1.4;}
+.set-link-txt i{font-size:11px;font-style:normal;color:rgba(255,255,255,0.5);line-height:1.5;}
+.set-link-arw{font-size:20px;color:rgba(255,255,255,0.45);flex-shrink:0;padding-left:12px;}
+/* 準備中（リンク先が未設定）のときは押せないことが分かる見た目にする */
+.set-link.soon{cursor:default;}
+.set-link.soon .set-link-txt b{color:rgba(255,255,255,0.45);}
+.set-link.soon .set-link-arw{visibility:hidden;}
+.set-link.soon .set-link-txt i::after{content:'（準備中）';color:var(--gold2);}
 /* 「文字を大きくする」がONのとき（番組表とお知らせのみ。動画やヘッダーの寸法は変えない） */
 body.big-text .pname{font-size:14px;}
 body.big-text .news-ttl{font-size:14px;}
@@ -974,7 +989,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.36-lab（ロゴ20px・画面を消さないを標準に）</div>
+    <div class="ps-version">version 2.37-lab（投稿フォームを追加）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1169,6 +1184,23 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
         <button class="set-sw" id="opt-banner" data-opt="stopbanner" aria-label="広告の自動切り替えを止める"></button>
       </div>
 
+    </div>
+
+    <div class="set-sec">
+      <div class="set-sec-ttl">投稿・お問い合わせ</div>
+      <div class="set-sec-note">写真や動画の投稿、ご意見をお寄せいただけます</div>
+      <button class="set-link" id="lnk-post">
+        <span class="set-link-txt"><b>動画・写真を投稿する</b><i>番組で紹介させていただきます</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
+      <button class="set-link" id="lnk-opinion">
+        <span class="set-link-txt"><b>ご意見・ご感想を送る</b><i>番組やアプリについてお聞かせください</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
+      <button class="set-link" id="lnk-fix">
+        <span class="set-link-txt"><b>動画の修正を依頼する</b><i>内容の誤りなどをお知らせください</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
     </div>
   </div>
 </div>
@@ -1437,12 +1469,38 @@ function toggleOpt(name){
   saveOpts(); applyOpts(); renderOpts();
 }
 
+// ══ 投稿・お問い合わせ（Googleフォーム）══
+//  URLが未設定の項目は「準備中」と表示し、押しても何も起きないようにする。
+//  開き方はスポンサーバナーと同じ「同じタブで移動」＝戻るとページが復元され再生が続く。
+var FORMS={
+  post:    'https://docs.google.com/forms/d/e/1FAIpQLSePXMWaOUI_N1Qe5qJfNoslJcaRCT4vnc_62APeq2k-PPVARQ/viewform',
+  opinion: '',   // ご意見・ご感想（URLが決まったらここに貼る）
+  fix:     ''    // 動画の修正依頼（URLが決まったらここに貼る）
+};
+function openForm(key){
+  if(isTapBlocked()) return;
+  var url=FORMS[key];
+  if(!url) return;                       // 準備中は何もしない
+  try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+  location.href=url;
+}
+function renderForms(){
+  try{
+    var m={post:'lnk-post', opinion:'lnk-opinion', fix:'lnk-fix'};
+    for(var k in m){
+      var el=document.getElementById(m[k]);
+      if(el) el.classList.toggle('soon', !FORMS[k]);
+    }
+  }catch(_){}
+}
+
 function openSettings(){
   if(isTapBlocked()) return;
   var p=document.getElementById('settings-panel');
   if(!p) return;
   renderBgChoices();
   renderOpts();
+  renderForms();
   p.classList.add('open');
 }
 function closeSettings(){
@@ -3318,6 +3376,18 @@ function init(){
       })(id,m[id]);
     }
     try{ applyOpts(); renderOpts(); }catch(_){}
+  })();
+
+  // 設定：投稿・お問い合わせのボタン
+  (function(){
+    var m={'lnk-post':'post','lnk-opinion':'opinion','lnk-fix':'fix'};
+    for(var id in m){
+      (function(id,key){
+        var el=document.getElementById(id);
+        if(el) el.addEventListener('click', function(){ openForm(key); });
+      })(id,m[id]);
+    }
+    try{ renderForms(); }catch(_){}
   })();
 
   // 「開いたらすぐ放送を始める」がONなら、YT準備でき次第そのまま開始（TVモードと同じ入口）
