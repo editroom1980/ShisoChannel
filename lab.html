@@ -83,8 +83,9 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 /* 「試験放送中」はON AIRと同じ作り＝頭に●が付いて点滅する。●の色は文字と同じ金色（2026-08-10指示） */
 .test-badge{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
 .tdot{width:6px;height:6px;background:var(--gold2);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;}
-/* バッジを設定ボタン側へ2px寄せる（2026-08-10指示）。右側全体の幅は固定なのでバナー位置は動かない */
-.test-badge,.h-right .onair-badge{margin-right:-2px;}
+/* バッジを設定ボタン側へ8px寄せる（2026-08-10指示 2px→5px→8px＝歯車との間を6pxに揃える）。
+   右側全体の幅はfixHeaderBalanceで固定しているのでバナー位置は動かない */
+.test-badge,.h-right .onair-badge{margin-right:-8px;}
 /* 2027年1月1日から「試験放送中」を消して同じ場所に「● ON AIR」を出す（JSがbodyへonair-modeを付与） */
 .h-right .onair-badge{display:none;}
 body.onair-mode .test-badge{display:none;}
@@ -1016,7 +1017,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.42-lab（設定を1画面に・歯車拡大・12色）</div>
+    <div class="ps-version">version 2.44-lab（バッジ位置6px・お知らせ補足文）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1337,7 +1338,7 @@ function renderCityNews(){
     +'</div>';
   if(note){
     if(n.warn){ note.textContent = (n.date? n.date+'　':'')+(n.src||'出典：気象庁'); }
-    else if(n.tag){ note.textContent = '出典：宍粟市公式サイト（タップで詳細へ）'; }
+    else if(n.tag){ note.textContent = 'タップして詳細へ（出典：宍粟市公式サイト）'; }
     else { note.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示'; }
   }
   box.style.display='';
