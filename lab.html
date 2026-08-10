@@ -876,7 +876,7 @@ body.iphone-mode #fs-mute{
 #settings-panel.open{display:flex;}
 .set-head{
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 6px;flex-shrink:0;
+  padding:6px 6px;flex-shrink:0;
   border-bottom:1px solid rgba(255,255,255,0.12);
 }
 .set-ttl{font-size:15px;font-weight:700;color:#fff;letter-spacing:3px;}
@@ -886,25 +886,27 @@ body.iphone-mode #fs-mute{
   -webkit-tap-highlight-color:transparent;font-family:inherit;
 }
 .set-close:active{opacity:0.55;}
-.set-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 6px 24px;}
-.set-sec{background:rgba(255,255,255,0.06);border-radius:8px;padding:14px;margin-bottom:12px;}
-.set-sec-ttl{font-size:13px;font-weight:700;color:#fff;letter-spacing:1px;margin-bottom:4px;}
-.set-sec-note{font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:12px;line-height:1.5;}
-.set-colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
+.set-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 6px 14px;}
+.set-sec{background:rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:10px;}
+/* 見出しは角丸の長方形で囲って、中の項目と見分けがつくようにする（2026-08-10指示） */
+.set-sec-ttl{display:inline-block;font-size:13px;font-weight:700;color:#fff;letter-spacing:1px;
+  background:rgba(255,255,255,0.13);border-radius:6px;padding:5px 12px;margin-bottom:10px;}
+/* 12色を6列×2行に詰めて、設定全体がスクロールなしで1画面に収まるようにする（2026-08-10指示） */
+.set-colors{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;}
 .set-color{
-  display:flex;flex-direction:column;align-items:center;gap:6px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
   background:none;border:none;padding:0;cursor:pointer;font-family:inherit;
   -webkit-tap-highlight-color:transparent;
 }
 .set-color i{
-  display:block;width:100%;height:44px;border-radius:6px;
+  display:block;width:100%;height:30px;border-radius:5px;
   border:2px solid rgba(255,255,255,0.25);
 }
 .set-color.on i{border-color:var(--gold2);box-shadow:0 0 0 2px var(--gold2);}
-.set-color span{font-size:11px;color:rgba(255,255,255,0.75);}
+.set-color span{font-size:10px;color:rgba(255,255,255,0.75);white-space:nowrap;}
 .set-color.on span{color:var(--gold2);font-weight:700;}
 /* 設定項目の行（左に説明・右に切り替えスイッチ） */
-.set-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.10);}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.10);}
 .set-row:last-child{border-bottom:none;padding-bottom:0;}
 .set-row-txt{flex:1 1 auto;min-width:0;padding-right:12px;}
 .set-row-ttl{font-size:13px;font-weight:600;color:#fff;line-height:1.4;}
@@ -917,7 +919,7 @@ body.iphone-mode #fs-mute{
 .set-sw.on::after{transform:translateX(21px);}
 /* 投稿・お問い合わせのボタン（Googleフォームへ） */
 .set-link{display:flex;align-items:center;justify-content:space-between;width:100%;
-  padding:13px 0;background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.10);
+  padding:10px 0;background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.10);
   cursor:pointer;font-family:inherit;text-align:left;-webkit-tap-highlight-color:transparent;}
 .set-link:last-child{border-bottom:none;padding-bottom:0;}
 .set-link:active{opacity:0.55;}
@@ -989,7 +991,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.38-lab（3フォーム接続完了）</div>
+    <div class="ps-version">version 2.39-lab（設定を1画面に・自動再生の修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1152,13 +1154,11 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   <div class="set-body">
     <div class="set-sec">
       <div class="set-sec-ttl">背景の色</div>
-      <div class="set-sec-note">アプリ全体の背景色を選べます</div>
       <div class="set-colors" id="set-colors"></div>
     </div>
 
     <div class="set-sec">
       <div class="set-sec-ttl">表示と動作</div>
-      <div class="set-sec-note">お好みに合わせて切り替えられます</div>
 
       <div class="set-row">
         <div class="set-row-txt">
@@ -1176,29 +1176,21 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
         <button class="set-sw" id="opt-auto" data-opt="autostart" aria-label="開いたらすぐ放送を始める"></button>
       </div>
 
-      <div class="set-row">
-        <div class="set-row-txt">
-          <div class="set-row-ttl">広告の自動切り替えを止める</div>
-          <div class="set-row-note">10秒ごとの切り替えを止めます（指で左右になぞると切り替わります）</div>
-        </div>
-        <button class="set-sw" id="opt-banner" data-opt="stopbanner" aria-label="広告の自動切り替えを止める"></button>
-      </div>
 
     </div>
 
     <div class="set-sec">
       <div class="set-sec-ttl">投稿・お問い合わせ</div>
-      <div class="set-sec-note">写真や動画の投稿、ご意見をお寄せいただけます</div>
       <button class="set-link" id="lnk-post">
-        <span class="set-link-txt"><b>動画・写真を投稿する</b><i>番組で紹介させていただきます</i></span>
+        <span class="set-link-txt"><b>動画・写真を投稿する</b><i>しそチャンNETで紹介させていただく動画や写真を募集しています</i></span>
         <span class="set-link-arw">›</span>
       </button>
       <button class="set-link" id="lnk-opinion">
-        <span class="set-link-txt"><b>ご意見・ご感想を送る</b><i>番組やアプリについてお聞かせください</i></span>
+        <span class="set-link-txt"><b>ご意見・ご感想を送る</b><i>番組やアプリに関するご意見・ご感想をお伝えください</i></span>
         <span class="set-link-arw">›</span>
       </button>
       <button class="set-link" id="lnk-fix">
-        <span class="set-link-txt"><b>動画の修正を依頼する</b><i>内容の誤りなどをお知らせください</i></span>
+        <span class="set-link-txt"><b>動画の修正を依頼する</b><i>誤った内容の修正や、写り込みを削除してほしい場合などにお知らせください</i></span>
         <span class="set-link-arw">›</span>
       </button>
     </div>
@@ -1418,7 +1410,7 @@ function renderBgChoices(){
 // ══ 表示と動作の設定（第2段階・2026-08-10）══
 //  端末に保存し次回も引き継ぐ。既定は全てオフ＝何も設定していない人には従来と完全に同じ動作。
 var OPT_KEY='shisochan_opts';
-var OPTS={big:false, autostart:false, stopbanner:false};
+var OPTS={big:false, autostart:false};
 var _wakeLock=null;
 function loadOpts(){
   try{ var v=JSON.parse(localStorage.getItem(OPT_KEY)||'null');
@@ -1446,9 +1438,6 @@ function applyWakeLock(){
 function applyOpts(){
   try{
     document.body.classList.toggle('big-text', !!OPTS.big);
-    // 広告の自動切り替え
-    if(OPTS.stopbanner){ if(_sponsorTimer){ clearInterval(_sponsorTimer); _sponsorTimer=null; } }
-    else if(!_sponsorTimer){ resetSponsorTimer(); }
     applyWakeLock();
     // 文字サイズが変わると番組表の高さ配分が変わるので測り直す
     try{ setHdrVar(); fitPlayer(); }catch(_){}
@@ -1456,7 +1445,7 @@ function applyOpts(){
 }
 function renderOpts(){
   try{
-    var m={big:'opt-big', autostart:'opt-auto', stopbanner:'opt-banner'};
+    var m={big:'opt-big', autostart:'opt-auto'};
     for(var k in m){
       var el=document.getElementById(m[k]);
       if(el) el.classList.toggle('on', !!OPTS[k]);
@@ -1994,9 +1983,15 @@ var ytInitialized=false;
 function onYouTubeIframeAPIReady(){
   if(ytInitialized)return; // キャッシュ等による二重呼び出しを防止
   ytInitialized=true;
+  // ★「開いたらすぐ放送を始める」がONのときは、プレーヤーを作る時点で
+  //   「消音＋自動再生」を指定する。あとから mute() を呼んでも効かず再生が始まらないことを
+  //   実機で確認したため（実測：mute()呼び出し後も isMuted()=false／YT状態=-1 のまま）。
+  //   音は利用者が最初に画面へ触れた時点で戻す。
+  var _pv={autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1,cc_load_policy:0};
+  try{ if(typeof OPTS!=='undefined' && OPTS.autostart){ _pv.autoplay=1; _pv.mute=1; } }catch(_){}
   ytPlayer=new YT.Player('yt-player-api',{
     width:_fitW0,height:_fitH0,
-    playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1,cc_load_policy:0},
+    playerVars:_pv,
     events:{
       onStateChange:function(e){
         var st=e.data;
@@ -2032,6 +2027,7 @@ function onYouTubeIframeAPIReady(){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
           e.target.loadVideoById({videoId:id,startSeconds:sec});
+          if(_autoStartMuting){ try{ e.target.mute(); }catch(_){} }
           try{ e.target.playVideo(); }catch(_){} // 遅延ロード時も再生を試みる
           clearSpinnerTimer();
           spinnerTimer=setTimeout(function(){showSpinner(false);},60000);
@@ -2581,6 +2577,7 @@ function fitTelop(videoW){
   el.style.maxWidth=availW+'px';
 }
 // 出典テロップ：番組(ytId)を新規に読み込んだ時だけ、見始めから10秒表示（同一ytIdの再読込=シークでは出さない）
+var _autoStartMuting=false;   // 自動開始中は動画を読み込むたびに消音する（iOSは音付きの自動再生を許さないため）
 var _telopYtId='';
 function maybeShowTelop(ytId){
   var el=document.getElementById('video-telop'); if(!el) return;
@@ -2620,6 +2617,8 @@ function loadVideo(ytId,sec,msg){
   if(ytReady&&ytPlayer){
     try{ fitPlayer(); }catch(_){} // ロード前に内部サイズ固定を保証
     ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
+    // ★loadVideoByIdは消音状態を解除してしまうため、自動開始中はここで消音し直す（実測で判明）
+    if(_autoStartMuting){ try{ ytPlayer.mute(); }catch(_){} }
     try{ fitPlayer(); }catch(_){}
     setTimeout(function(){
       try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
@@ -3368,7 +3367,7 @@ function init(){
 
   // 設定：表示と動作の切り替えスイッチ
   (function(){
-    var m={'opt-big':'big','opt-auto':'autostart','opt-banner':'stopbanner'};
+    var m={'opt-big':'big','opt-auto':'autostart'};
     for(var id in m){
       (function(id,key){
         var el=document.getElementById(id);
@@ -3390,14 +3389,40 @@ function init(){
     try{ renderForms(); }catch(_){}
   })();
 
-  // 「開いたらすぐ放送を始める」がONなら、YT準備でき次第そのまま開始（TVモードと同じ入口）
+  // ══ 「開いたらすぐ放送を始める」がONのとき ══
+  //  ★iOSは「利用者が画面に触れていない状態での音付き再生」を許可しないため、そのまま
+  //    再生を指示しても始まらず、読み込み中のまま止まってしまう（実機で発生・2026-08-10報告）。
+  //    そこで【音を消した状態で再生を始め】、画面に最初に触れた時点で音を戻す。
+  //    それでも始まらない場合は待たせ続けず、スピナーを消して中央の再生ボタンで始められる状態にする。
   (function(){
     if(!OPTS.autostart) return;
-    var t=function(){
+    var start=function(){
       if(hasPoweredOn) return;
-      if(ytReady){ powerOn(); } else { setTimeout(t,150); }
+      if(!ytReady){ setTimeout(start,150); return; }
+      _autoStartMuting=true;   // ★動画を読み込むたびに消音する（loadVideo内で実施）
+      powerOn();
+      // ★読み込みが終わっても再生が始まらないので、消音したうえで再生を短い間隔で試み続ける。
+      //   （実測：動画は読み込めている＝583/780秒 のに YT状態が -1 のまま＝再生だけ始まらない）
+      var tries=0;
+      var kick=function(){
+        var st=-99; try{ st=ytPlayer.getPlayerState(); }catch(_){}
+        if(st===1||st===3){ return; }                 // 始まったら終了
+        try{ ytPlayer.mute(); ytPlayer.playVideo(); }catch(_){}
+        if(++tries<24){ setTimeout(kick,300); }
+        else { try{ clearSpinnerTimer(); showSpinner(false); }catch(_){} }  // 諦めてタップで始められる状態に
+      };
+      setTimeout(kick,400);
+      // 最初に画面へ触れたら音を戻す（利用者が自分で消音していた場合はそのまま）
+      var unmute=function(){
+        _autoStartMuting=false;
+        try{ if(!isMuted && ytPlayer) ytPlayer.unMute(); }catch(_){}
+        document.removeEventListener('touchstart',unmute,true);
+        document.removeEventListener('click',unmute,true);
+      };
+      document.addEventListener('touchstart',unmute,true);
+      document.addEventListener('click',unmute,true);
     };
-    setTimeout(t,300);
+    setTimeout(start,300);
   })();
 
   // 画面を消さない設定は、他アプリから戻った時に取り直す必要がある
