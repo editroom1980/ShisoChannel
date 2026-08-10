@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1e3a28">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="しそチャンNET">
+<title>しそチャンNET の使い方</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+:root{
+  --forest:#1e3a28;--green2:#3d7a54;--green4:#a8d5b5;--green5:#e4f2e8;
+  --gold:#c8992a;--gold2:#e8b84a;--white:#fff;--band:#2f5f42;
+  --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--forest);}
+body{
+  background:var(--forest);color:#fff;
+  font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;
+  font-size:16px;line-height:1.8;
+  -webkit-text-size-adjust:100%;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:calc(env(safe-area-inset-bottom) + 24px);
+  padding-left:max(14px, env(safe-area-inset-left));
+  padding-right:max(14px, env(safe-area-inset-right));
+}
+
+/* ── 上部の戻るバー（常に出しておく） ── */
+.topbar{
+  position:sticky;top:0;z-index:10;
+  margin:0 -14px 18px;padding:10px 14px;
+  background:var(--forest);
+  border-bottom:1px solid rgba(255,255,255,0.15);
+  display:flex;align-items:center;gap:12px;
+}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--gold);color:var(--forest);
+  border:none;border-radius:6px;padding:10px 16px;
+  font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.back-btn:active{opacity:.8;}
+.topbar-ttl{font-size:15px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:1px;}
+
+h1{font-size:24px;font-weight:700;letter-spacing:1px;margin:6px 0 4px;}
+.lead{font-size:15px;color:rgba(255,255,255,.72);margin-bottom:26px;line-height:1.7;}
+
+/* ── 各項目 ── */
+section{margin-bottom:30px;}
+h2{
+  display:inline-block;font-size:17px;font-weight:700;letter-spacing:1px;
+  color:var(--forest);background:var(--gold2);
+  border-radius:6px;padding:6px 14px;margin-bottom:14px;
+  box-shadow:0 1px 4px rgba(0,0,0,.25);
+}
+p{margin-bottom:12px;}
+.note{
+  background:rgba(255,255,255,.07);border-left:4px solid var(--gold2);
+  border-radius:0 6px 6px 0;padding:12px 14px;margin:14px 0;
+  font-size:15px;line-height:1.7;color:rgba(255,255,255,.9);
+}
+.note b{color:var(--gold2);}
+
+/* ── 番号つきの説明 ── */
+ol.steps{list-style:none;counter-reset:s;margin:14px 0;}
+ol.steps li{
+  counter-increment:s;position:relative;
+  padding:12px 0 12px 44px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+ol.steps li:last-child{border-bottom:none;}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:12px;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--gold2);color:var(--forest);
+  font-weight:700;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+}
+ol.steps b{display:block;font-size:16px;margin-bottom:2px;}
+ol.steps span{font-size:14px;color:rgba(255,255,255,.68);line-height:1.6;}
+
+/* ── 図 ── */
+figure{margin:16px 0 18px;}
+figure svg{width:100%;height:auto;display:block;border-radius:8px;background:#16301f;}
+figcaption{font-size:13px;color:rgba(255,255,255,.55);margin-top:8px;text-align:center;}
+
+/* ── ボタンの説明表 ── */
+.btns{margin:14px 0;}
+.btns div{
+  display:flex;align-items:center;gap:14px;
+  padding:11px 0;border-bottom:1px solid rgba(255,255,255,.12);
+}
+.btns div:last-child{border-bottom:none;}
+.btns i{
+  flex-shrink:0;width:46px;height:46px;border-radius:8px;
+  background:#fff;color:var(--green2);
+  display:flex;align-items:center;justify-content:center;
+}
+.btns i svg{width:28px;height:28px;fill:currentColor;}
+.btns p{margin:0;font-size:15px;line-height:1.6;}
+.btns p b{display:block;font-size:16px;}
+.btns p span{font-size:14px;color:rgba(255,255,255,.68);}
+
+hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
+.foot{font-size:14px;color:rgba(255,255,255,.5);line-height:1.8;text-align:center;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="back-btn" onclick="goBack()">◀ もどる</button>
+  <span class="topbar-ttl">使い方</span>
+</div>
+
+<h1>しそチャンNET の使い方</h1>
+<p class="lead">はじめての方でも迷わないように、画面の見かたと操作を順にご説明します。</p>
+
+<!-- ══ 1 ══ -->
+<section>
+  <h2>しそチャンNET とは</h2>
+  <p>宍粟市のできごとや行事をお届けする、インターネットの放送局です。</p>
+  <div class="note">
+    放送は毎日 <b>朝6時から夜12時まで</b>。<br>
+    テレビと同じように、時間になると番組がひとりでに切り替わります。
+  </div>
+</section>
+
+<!-- ══ 2 ══ -->
+<section>
+  <h2>放送をはじめる</h2>
+  <p>アプリを開くと、下のような画面が出ます。まん中の金色のボタンを押してください。</p>
+  <figure>
+    <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="起動画面のイメージ">
+      <rect width="300" height="300" fill="#1e3a28"/>
+      <text x="150" y="92" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">しそチャン<tspan fill="#e8b84a">NET</tspan></text>
+      <rect x="108" y="106" width="84" height="20" rx="4" fill="none" stroke="#e8b84a" stroke-width="1.5"/>
+      <text x="150" y="120" text-anchor="middle" font-size="10" font-weight="700" fill="#e8b84a">試験放送中</text>
+      <text x="150" y="158" text-anchor="middle" font-size="13" fill="rgba(255,255,255,.65)">2026年8月10日</text>
+      <text x="150" y="186" text-anchor="middle" font-size="26" fill="#fff" letter-spacing="2">10:30:00</text>
+      <rect x="88" y="208" width="124" height="40" rx="5" fill="#c8992a"/>
+      <text x="150" y="234" text-anchor="middle" font-size="15" font-weight="700" fill="#1e3a28">▶ 放送開始</text>
+      <path d="M150 268 L150 254 M144 260 L150 254 L156 260" stroke="#e8b84a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <text x="150" y="284" text-anchor="middle" font-size="12" fill="#e8b84a">ここを押します</text>
+    </svg>
+    <figcaption>アプリを開いたときの画面</figcaption>
+  </figure>
+  <p>押すと、いま放送している番組がすぐに始まります。</p>
+</section>
+
+<!-- ══ 3 ══ -->
+<section>
+  <h2>画面の見かた</h2>
+  <figure>
+    <svg viewBox="0 0 416 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="放送中の画面の各部の名前">
+      <rect width="416" height="560" fill="#1e3a28"/>
+      <!-- ヘッダー -->
+      <text x="10" y="26" font-size="15" font-weight="700" fill="#fff">しそチャン<tspan fill="#e8b84a">NET</tspan></text>
+      <rect x="243" y="10" width="72" height="18" rx="4" fill="rgba(0,0,0,.2)" stroke="#e8b84a" stroke-width="1.2"/>
+      <circle cx="253" cy="19" r="3" fill="#e8b84a"/>
+      <text x="262" y="23" font-size="8.5" font-weight="700" fill="#e8b84a">試験放送中</text>
+      <circle cx="336" cy="19" r="8" fill="none" stroke="#fff" stroke-width="1.6"/>
+      <circle cx="336" cy="19" r="3" fill="none" stroke="#fff" stroke-width="1.6"/>
+      <!-- バナー -->
+      <rect x="8" y="34" width="377" height="32" rx="4" fill="#c9a06a"/>
+      <text x="196" y="55" text-anchor="middle" font-size="12" font-weight="700" fill="#5c4436">広　告</text>
+      <!-- タイトルバー -->
+      <rect x="8" y="72" width="377" height="30" rx="5" fill="#fff"/>
+      <circle cx="24" cy="87" r="4" fill="#b83030"/>
+      <text x="34" y="91" font-size="10" font-weight="700" fill="#b83030">LIVE</text>
+      <text x="72" y="91" font-size="11" font-weight="700" fill="#1a2520">四季で見る宍粟市</text>
+      <!-- 映像 -->
+      <rect x="8" y="102" width="377" height="212" fill="#0d1b12"/>
+      <path d="M176 194 L176 222 L204 208 Z" fill="rgba(255,255,255,.55)"/>
+      <!-- 操作バー -->
+      <rect x="8" y="316" width="377" height="40" rx="5" fill="#fff"/>
+      <path d="M22 329 L22 343 L34 336 Z" fill="#3d7a54"/>
+      <text x="55" y="341" font-size="13" fill="#3d7a54">↺30</text>
+      <text x="94" y="341" font-size="13" fill="#3d7a54">↻30</text>
+      <rect x="130" y="334" width="170" height="4" rx="2" fill="#e4f2e8"/>
+      <rect x="130" y="334" width="70" height="4" rx="2" fill="#3d7a54"/>
+      <path d="M316 330 L316 342 L322 342 L330 348 L330 324 L322 330 Z" fill="#3d7a54"/>
+      <rect x="350" y="328" width="16" height="16" fill="none" stroke="#3d7a54" stroke-width="2.4"/>
+      <!-- 番組表 -->
+      <rect x="8" y="362" width="377" height="130" rx="5" fill="#fff"/>
+      <rect x="8" y="362" width="377" height="28" rx="5" fill="#2f5f42"/>
+      <rect x="8" y="380" width="377" height="10" fill="#2f5f42"/>
+      <text x="20" y="381" font-size="11" font-weight="700" fill="#fff" letter-spacing="2">番 組 表</text>
+      <text x="94" y="381" font-size="9" fill="rgba(255,255,255,.6)">好きな番組をタップして視聴できます</text>
+      <text x="20" y="408" font-size="9" fill="#8aa090">06:00 | 07:00 | 08:00 | 09:00 | 10:00 | 11:00</text>
+      <text x="20" y="426" font-size="11" font-weight="700" fill="#1a2520">しそチャンNET始まります！</text>
+      <text x="20" y="441" font-size="9.5" fill="#3d7a54">お知らせ<tspan fill="#8aa090"> / 12分</tspan></text>
+      <line x1="14" y1="450" x2="379" y2="450" stroke="#d4e0d6"/>
+      <text x="20" y="466" font-size="9" fill="#8aa090">06:12 | 07:12 | 08:12 | 09:12 | 10:12 | 11:12</text>
+      <text x="20" y="484" font-size="11" font-weight="700" fill="#1a2520">第50回 妙見夏まつり</text>
+      <!-- お知らせ -->
+      <rect x="8" y="498" width="377" height="54" rx="5" fill="#fff"/>
+      <rect x="8" y="498" width="377" height="24" rx="5" fill="#2f5f42"/>
+      <rect x="8" y="512" width="377" height="10" fill="#2f5f42"/>
+      <text x="20" y="515" font-size="10" font-weight="700" fill="#fff" letter-spacing="1">お知らせ・イベント</text>
+      <rect x="18" y="530" width="42" height="14" rx="3" fill="#a8d5b5"/>
+      <text x="39" y="540" text-anchor="middle" font-size="8.5" font-weight="700" fill="#1e3a28">くらし</text>
+      <text x="68" y="540" font-size="10" fill="#1a2520">地域公共交通会議のお知らせ</text>
+      <!-- 番号 -->
+      <g font-size="13" font-weight="700">
+        <circle cx="400" cy="19"  r="11" fill="#e8b84a"/><text x="400" y="24" text-anchor="middle" fill="#1e3a28">1</text>
+        <circle cx="400" cy="50"  r="11" fill="#e8b84a"/><text x="400" y="55" text-anchor="middle" fill="#1e3a28">2</text>
+        <circle cx="400" cy="87"  r="11" fill="#e8b84a"/><text x="400" y="92" text-anchor="middle" fill="#1e3a28">3</text>
+        <circle cx="400" cy="208" r="11" fill="#e8b84a"/><text x="400" y="213" text-anchor="middle" fill="#1e3a28">4</text>
+        <circle cx="400" cy="336" r="11" fill="#e8b84a"/><text x="400" y="341" text-anchor="middle" fill="#1e3a28">5</text>
+        <circle cx="400" cy="376" r="11" fill="#e8b84a"/><text x="400" y="381" text-anchor="middle" fill="#1e3a28">6</text>
+        <circle cx="400" cy="510" r="11" fill="#e8b84a"/><text x="400" y="515" text-anchor="middle" fill="#1e3a28">7</text>
+      </g>
+    </svg>
+    <figcaption>放送中の画面（番号は下の説明に対応しています）</figcaption>
+  </figure>
+  <ol class="steps">
+    <li><b>アプリの名前と設定ボタン</b><span>右はしの歯車を押すと、色や文字の大きさを変えられます。</span></li>
+    <li><b>広告</b><span>市内のお店などの広告です。7秒ごとに変わります。指で左右になぞると、前や次の広告を見られます。押すとお店のページが開きます。</span></li>
+    <li><b>いま放送中の番組名</b><span>左の「● LIVE」が赤く光っていれば、今の放送を見ています。</span></li>
+    <li><b>映像</b><span>ここに番組が映ります。</span></li>
+    <li><b>操作ボタン</b><span>再生・停止、30秒の送り戻し、音量、画面いっぱい表示。</span></li>
+    <li><b>番組表</b><span>今日の放送予定です。番組名を押すと、その番組が見られます。</span></li>
+    <li><b>お知らせ・イベント</b><span>宍粟市からの新しいお知らせです。押すと市のページが開きます。</span></li>
+  </ol>
+</section>
+
+<!-- ══ 4 ══ -->
+<section>
+  <h2>ボタンの使いかた</h2>
+  <div class="btns">
+    <div>
+      <i><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></i>
+      <p><b>再生・一時停止</b><span>止めたいときに押します。もう一度押すと続きから始まります。</span></p>
+    </div>
+    <div>
+      <i><svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg></i>
+      <p><b>30秒もどる</b><span>聞きのがしたときに押します。</span></p>
+    </div>
+    <div>
+      <i><svg viewBox="0 0 24 24"><g transform="scale(-1,1) translate(-24,0)"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></g><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg></i>
+      <p><b>30秒すすむ</b><span>先へ飛ばしたいときに押します。</span></p>
+    </div>
+    <div>
+      <i><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></i>
+      <p><b>音を消す・出す</b><span>押すたびに切り替わります。</span></p>
+    </div>
+    <div>
+      <i><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></i>
+      <p><b>画面いっぱいに広げる</b><span>映像だけを大きく映します。</span></p>
+    </div>
+  </div>
+  <div class="note">
+    細長い横棒（バー）は、番組がどこまで進んだかを表します。<br>
+    <b>指でなぞると</b>、好きなところへ動かせます。
+  </div>
+</section>
+
+<!-- ══ 5 ══ -->
+<section>
+  <h2>大きな画面で見る</h2>
+  <p>操作ボタンの右はしにある<b>「四すみの印」</b>を押すと、映像が画面いっぱいになります。</p>
+  <ol class="steps">
+    <li><b>もとに戻すとき</b><span>画面を軽く触ると、下にボタンが出てきます。いちばん右の印を押してください。</span></li>
+    <li><b>もっと大きく見たいとき</b><span>スマホを横向きにすると、映像がさらに大きくなります。</span></li>
+  </ol>
+</section>
+
+<!-- ══ 6 ══ -->
+<section>
+  <h2>見たい番組を選ぶ</h2>
+  <ol class="steps">
+    <li><b>番組名を押す</b><span>その番組が、はじめから始まります。</span></li>
+    <li><b>時刻の数字を押す</b><span>その時間に放送された分を見られます。</span></li>
+    <li><b>今の放送に戻る</b><span>画面の左上にある「● LIVE」を押すと、いま放送中の番組に戻ります。</span></li>
+  </ol>
+</section>
+
+<!-- ══ 7 ══ -->
+<section>
+  <h2>お知らせを読む</h2>
+  <p>宍粟市のホームページから、新しいお知らせを自動で取り込んで表示しています。</p>
+  <ol class="steps">
+    <li><b>押すと詳しく読めます</b><span>宍粟市のページが開きます。読み終わったら、画面の左上にある「戻る」で帰ってこられます。</span></li>
+    <li><b>次のお知らせを見る</b><span>指で左右になぞると切り替わります。しばらく待っても自動で切り替わります。</span></li>
+  </ol>
+  <div class="note">
+    大雨や台風などの<b>警報が出たとき</b>は、赤い色でいちばん先にお知らせします。
+  </div>
+</section>
+
+<!-- ══ 8 ══ -->
+<section>
+  <h2>見やすさを変える</h2>
+  <p>画面の右上にある<b>歯車のボタン</b>を押すと、設定の画面が開きます。</p>
+  <ol class="steps">
+    <li><b>背景の色</b><span>18色から選べます。明るい色も暗い色もあります。</span></li>
+    <li><b>文字の大きさ</b><span>番組表とお知らせの文字を大きくできます。</span></li>
+    <li><b>投稿・お問い合わせ</b><span>動画や写真の投稿、ご意見、修正のお願いができます。</span></li>
+  </ol>
+</section>
+
+<!-- ══ 9 ══ -->
+<section>
+  <h2>ホーム画面に置いて使う</h2>
+  <p>ホーム画面に置くと、ふつうのアプリと同じように、ひと押しで開けるようになります。</p>
+  <div class="note">
+    <b>iPhone・iPad の場合</b><br>
+    ① Safari でこのページを開く<br>
+    ② 画面の下（または右上）にある <b>共有ボタン（□に↑の印）</b> を押す<br>
+    ③ 一覧から <b>「ホーム画面に追加」</b> を選ぶ<br>
+    ④ 右上の <b>「追加」</b> を押す
+  </div>
+  <div class="note">
+    <b>Android の場合</b><br>
+    ① Chrome でこのページを開く<br>
+    ② 右上の <b>「︙」</b>（点が3つ）を押す<br>
+    ③ <b>「ホーム画面に追加」</b> を選ぶ
+  </div>
+</section>
+
+<hr>
+
+<!-- ══ 10 ══ -->
+<section>
+  <h2>困ったときは</h2>
+  <ol class="steps">
+    <li><b>映像が始まらない</b><span>アプリをいったん閉じて、開き直してみてください。それでも直らないときは、電波の入りやすい場所でお試しください。</span></li>
+    <li><b>音が出ない</b><span>本体の音量が下がっていないか、消音になっていないかをご確認ください。アプリの音量ボタンも押してみてください。</span></li>
+    <li><b>画面がおかしい</b><span>スマホを一度 縦→横→縦 と回すと直ることがあります。</span></li>
+    <li><b>それでも解決しないとき</b><span>設定の「ご意見・ご感想を送る」からお知らせください。</span></li>
+  </ol>
+</section>
+
+<p class="foot">
+  しそチャンNET<br>
+  お問い合わせは、アプリの設定画面からお願いします。
+</p>
+
+<script>
+// 「もどる」：直前がアプリなら戻る。直接開かれた場合はアプリのトップへ。
+function goBack(){
+  try{
+    if(document.referrer && history.length>1){ history.back(); return; }
+  }catch(_){}
+  location.href='./';
+}
+// 右クリック・長押しメニューは出さない（アプリ本体と同じ扱い）
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+// ピンチでの拡大縮小を止める（アプリ本体と同じ）
+['gesturestart','gesturechange'].forEach(function(ev){
+  document.addEventListener(ev, function(e){ e.preventDefault(); }, {passive:false});
+});
+</script>
+</body>
+</html>

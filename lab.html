@@ -933,12 +933,38 @@ body.iphone-mode #fs-mute{
 .set-link.soon .set-link-txt b{color:rgba(255,255,255,0.45);}
 .set-link.soon .set-link-arw{visibility:hidden;}
 .set-link.soon .set-link-txt i::after{content:'（準備中）';color:var(--gold2);}
-/* 「文字を大きくする」がONのとき（番組表とお知らせのみ。動画やヘッダーの寸法は変えない） */
-body.big-text .pname{font-size:14px;}
-body.big-text .news-ttl{font-size:14px;}
-body.big-text .pcat,body.big-text .pdur{font-size:12px;}
-body.big-text .time-chip-item{font-size:11px;}
-body.ori-l.big-text .pname,body.ori-tl.big-text .pname{font-size:13px;}
+/* 使い方（設定の先頭に置く案内）は目立たせる */
+.set-link-lead{padding:4px 0;}
+.set-link-lead .set-link-txt b{font-size:15px;color:var(--gold2);}
+/* 3つから選ぶボタン（文字の大きさ・送り戻しの秒数） */
+.set-row-col{flex-direction:column;align-items:stretch;gap:10px;}
+.set-row-col .set-row-txt{padding-right:0;}
+.set-seg{display:flex;gap:8px;}
+.set-seg button{
+  flex:1;padding:9px 0;border-radius:6px;cursor:pointer;font-family:inherit;
+  border:2px solid rgba(255,255,255,.25);background:none;
+  color:rgba(255,255,255,.8);font-size:14px;font-weight:600;
+  -webkit-tap-highlight-color:transparent;
+}
+.set-seg button.on{background:var(--gold);border-color:var(--gold);color:var(--forest);font-weight:700;}
+.set-seg button:active{opacity:.7;}
+/* アプリについて */
+.set-about{margin-bottom:6px;}
+.set-about div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;
+  border-bottom:1px solid rgba(255,255,255,.08);font-size:14px;}
+.set-about div:last-child{border-bottom:none;}
+.set-about span{color:rgba(255,255,255,.55);flex-shrink:0;}
+.set-about b{color:#fff;font-weight:600;text-align:right;}
+.set-link-reset{border-top:1px solid rgba(255,255,255,.10);margin-top:6px;padding-top:12px;}
+.set-link-reset .set-link-txt b{color:#ffb4b4;}
+/* 文字の大きさ（0=標準 / 1=大 / 2=特大） */
+body.text-1 .pname{font-size:14px;} body.text-1 .news-ttl{font-size:14px;}
+body.text-1 .pcat,body.text-1 .pdur{font-size:12px;} body.text-1 .time-chip-item{font-size:11px;}
+body.ori-l.text-1 .pname,body.ori-tl.text-1 .pname{font-size:13px;}
+body.text-2 .pname{font-size:16px;} body.text-2 .news-ttl{font-size:16px;}
+body.text-2 .pcat,body.text-2 .pdur{font-size:13px;} body.text-2 .time-chip-item{font-size:12px;}
+body.text-2 #viewing-title{font-size:14px;}
+body.ori-l.text-2 .pname,body.ori-tl.text-2 .pname{font-size:14px;}
 
 /* 全画面時のカーソル自動非表示 */
 body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
@@ -992,7 +1018,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.40-lab（明るい色6種追加・見出し強調）</div>
+    <div class="ps-version">version 2.41-lab（使い方ページ・設定の拡充）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1154,6 +1180,13 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   </div>
   <div class="set-body">
     <div class="set-sec">
+      <button class="set-link set-link-lead" id="lnk-help">
+        <span class="set-link-txt"><b>アプリの使い方</b><i>画面の見かたと操作を、図を使って説明しています</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
+    </div>
+
+    <div class="set-sec">
       <div class="set-sec-ttl">背景の色</div>
       <div class="set-colors" id="set-colors"></div>
     </div>
@@ -1161,16 +1194,33 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
     <div class="set-sec">
       <div class="set-sec-ttl">表示と動作</div>
 
-      <div class="set-row">
+      <div class="set-row set-row-col">
         <div class="set-row-txt">
-          <div class="set-row-ttl">文字を大きくする</div>
-          <div class="set-row-note">番組表とお知らせの文字を一段階大きく表示します</div>
+          <div class="set-row-ttl">文字の大きさ</div>
+          <div class="set-row-note">番組表とお知らせの文字の大きさを変えられます</div>
         </div>
-        <button class="set-sw" id="opt-big" data-opt="big" aria-label="文字を大きくする"></button>
+        <div class="set-seg" id="seg-text">
+          <button data-v="0">標準</button><button data-v="1">大</button><button data-v="2">特大</button>
+        </div>
       </div>
 
+      <div class="set-row set-row-col">
+        <div class="set-row-txt">
+          <div class="set-row-ttl">送り・戻しの秒数</div>
+          <div class="set-row-note">映像の下にある送り・戻しボタンの秒数です</div>
+        </div>
+        <div class="set-seg" id="seg-skip">
+          <button data-v="10">10秒</button><button data-v="15">15秒</button><button data-v="30">30秒</button>
+        </div>
+      </div>
 
-
+      <div class="set-row">
+        <div class="set-row-txt">
+          <div class="set-row-ttl">お知らせの自動切り替えを止める</div>
+          <div class="set-row-note">読んでいる途中で切り替わらなくなります（指で左右になぞると切り替わります）</div>
+        </div>
+        <button class="set-sw" id="opt-news" aria-label="お知らせの自動切り替えを止める"></button>
+      </div>
     </div>
 
     <div class="set-sec">
@@ -1188,6 +1238,20 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
         <span class="set-link-arw">›</span>
       </button>
     </div>
+
+    <div class="set-sec">
+      <div class="set-sec-ttl">アプリについて</div>
+      <div class="set-about">
+        <div><span>アプリの名前</span><b>しそチャンNET</b></div>
+        <div><span>バージョン</span><b id="about-ver">-</b></div>
+        <div><span>放送時間</span><b>毎日 6:00 〜 24:00</b></div>
+        <div><span>お知らせの出典</span><b>宍粟市公式サイト／気象庁</b></div>
+      </div>
+      <button class="set-link set-link-reset" id="lnk-reset">
+        <span class="set-link-txt"><b>設定をすべて元に戻す</b><i>色や文字の大きさなど、この画面の設定を最初の状態に戻します</i></span>
+      </button>
+    </div>
+  </div>
   </div>
 </div>
 
@@ -1294,6 +1358,7 @@ function rotateCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityN
 function prevCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex-1+L.length)%L.length; renderCityNews(); }
 // お知らせをスワイプで前後に切替（バナーと同様）＋タップでリンク先へ（スワイプ直後の誤タップは抑止）
 var _newsTapSuppress=false;
+var _newsTimer=null;   // お知らせの自動切り替え（設定で止められる）
 function attachNewsSwipe(el){
   if(!el) return; var x0=null,y0=null;
   el.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; y0=e.touches[0].clientY; },{passive:true});
@@ -1409,18 +1474,30 @@ function renderBgChoices(){
   }
   box.innerHTML=h;
 }
-// ══ 表示と動作の設定（第2段階・2026-08-10）══
-//  端末に保存し次回も引き継ぐ。既定は全てオフ＝何も設定していない人には従来と完全に同じ動作。
+// ══ 表示と動作の設定 ══
+//  端末に保存し次回も引き継ぐ。既定値は「今までと同じ動作」＝設定していない人には変化がない。
 var OPT_KEY='shisochan_opts';
-var OPTS={big:false};
+var OPTS={
+  text:0,          // 文字の大きさ 0=標準 1=大 2=特大
+  skip:30,         // 送り・戻しの秒数（10/15/30）
+  stopnews:false,  // お知らせの自動切り替えを止める
+  vol:null,        // 前回の音量（null=未保存）
+  muted:false      // 前回の消音状態
+};
 var _wakeLock=null;
 function loadOpts(){
   try{ var v=JSON.parse(localStorage.getItem(OPT_KEY)||'null');
-    if(v) for(var k in OPTS){ if(k in v) OPTS[k]=!!v[k]; } }catch(_){}
+    if(v){
+      if(typeof v.text==='number')  OPTS.text=Math.max(0,Math.min(2,v.text|0));
+      if(v.skip===10||v.skip===15||v.skip===30) OPTS.skip=v.skip;
+      OPTS.stopnews=!!v.stopnews;
+      if(typeof v.vol==='number')   OPTS.vol=Math.max(0,Math.min(100,v.vol));
+      OPTS.muted=!!v.muted;
+    } }catch(_){}
 }
 function saveOpts(){ try{ localStorage.setItem(OPT_KEY, JSON.stringify(OPTS)); }catch(_){} }
-// 見ている間は画面を消さない（2026-08-10指示で既定の動作に。設定項目からは外した）。
-// 対応していない端末では何も起きない＝従来どおり。
+
+// 見ている間は画面を消さない（既定の動作。対応していない端末では何も起きない）
 function applyWakeLock(){
   try{
     if(!('wakeLock' in navigator)) return;
@@ -1431,33 +1508,84 @@ function applyWakeLock(){
           try{ w.addEventListener('release', function(){ _wakeLock=null; }); }catch(_){}
         }).catch(function(){});
       }
-    }else if(_wakeLock){
-      try{ _wakeLock.release(); }catch(_){}
-      _wakeLock=null;
-    }
+    }else if(_wakeLock){ try{ _wakeLock.release(); }catch(_){} _wakeLock=null; }
   }catch(_){}
 }
+
+// 送り・戻しボタンの秒数を反映（ボタンの中の数字も書き換える）
+function applySkip(){
+  try{
+    var n=OPTS.skip;
+    ['ctrl-back30','ctrl-fwd30','fs-back30','fs-fwd30'].forEach(function(id){
+      var b=document.getElementById(id); if(!b) return;
+      var back=(id.indexOf('back')>=0);
+      b.setAttribute('onclick','seekRel('+(back?-n:n)+')');
+      b.setAttribute('title', n+'秒'+(back?'戻る':'進む'));
+      var t=b.querySelector('text'); if(t) t.textContent=String(n);
+    });
+  }catch(_){}
+}
+// 音量を思い出す（YouTubeの準備ができてから呼ぶ）
+function applySavedVolume(){
+  try{
+    if(!ytPlayer||!ytReady) return;
+    if(OPTS.vol!==null){
+      ytPlayer.setVolume(OPTS.vol); lastVol=OPTS.vol||lastVol;
+      var vs=document.getElementById('vol-slider');    if(vs) vs.value=OPTS.vol;
+      var fv=document.getElementById('fs-vol-slider'); if(fv) fv.value=OPTS.vol;
+    }
+    if(OPTS.muted){ isMuted=true; ytPlayer.mute(); }
+  }catch(_){}
+}
+// 音量が変わったら覚えておく（音量スライダー・消音ボタンから呼ばれる）
+// ★YouTube側の getVolume() は指示した値がすぐには返ってこないことがある（実測で45にしても100が返った）。
+//   画面のスライダーの値をそのまま覚える方が確実なので、そちらを使う。
+function rememberVolume(){
+  try{
+    var el=document.getElementById('vol-slider');
+    var v=el?parseInt(el.value,10):NaN;
+    if(!isNaN(v)) OPTS.vol=Math.max(0,Math.min(100,v));
+    OPTS.muted=!!isMuted;
+    saveOpts();
+  }catch(_){}
+}
+
 function applyOpts(){
   try{
-    document.body.classList.toggle('big-text', !!OPTS.big);
+    var b=document.body;
+    b.classList.toggle('text-1', OPTS.text===1);
+    b.classList.toggle('text-2', OPTS.text===2);
+    // お知らせの自動切り替え
+    if(OPTS.stopnews){ if(_newsTimer){ clearInterval(_newsTimer); _newsTimer=null; } }
+    else if(!_newsTimer){ _newsTimer=setInterval(rotateCityNews, 8000); }
+    applySkip();
     applyWakeLock();
-    // 文字サイズが変わると番組表の高さ配分が変わるので測り直す
     try{ setHdrVar(); fitPlayer(); }catch(_){}
   }catch(_){}
 }
 function renderOpts(){
   try{
-    var m={big:'opt-big'};
-    for(var k in m){
-      var el=document.getElementById(m[k]);
-      if(el) el.classList.toggle('on', !!OPTS[k]);
-    }
+    var seg=function(id,val){
+      var box=document.getElementById(id); if(!box) return;
+      var bs=box.getElementsByTagName('button');
+      for(var i=0;i<bs.length;i++){ bs[i].classList.toggle('on', bs[i].getAttribute('data-v')==String(val)); }
+    };
+    seg('seg-text', OPTS.text);
+    seg('seg-skip', OPTS.skip);
+    var n=document.getElementById('opt-news'); if(n) n.classList.toggle('on', !!OPTS.stopnews);
+    var v=document.getElementById('about-ver');
+    if(v){ var m=(document.querySelector('.ps-version')||{}).textContent||''; v.textContent=(m.match(/version\s*([0-9.]+[^（(]*)/)||[])[1]||'-'; }
   }catch(_){}
 }
-function toggleOpt(name){
-  if(!(name in OPTS)) return;
-  OPTS[name]=!OPTS[name];
-  saveOpts(); applyOpts(); renderOpts();
+// 設定をすべて最初の状態へ
+function resetAllSettings(){
+  try{
+    localStorage.removeItem(OPT_KEY);
+    localStorage.removeItem(BG_KEY);
+  }catch(_){}
+  OPTS={text:0,skip:30,stopnews:false,vol:null,muted:false};
+  applyBg('forest');
+  applyOpts(); renderOpts();
 }
 
 // ══ 投稿・お問い合わせ（Googleフォーム）══
@@ -2016,6 +2144,7 @@ function onYouTubeIframeAPIReady(){
       },
       onReady:function(e){
         ytReady=true;ytPlayer=e.target;
+        try{ applySavedVolume(); }catch(_){}   // 前回の音量・消音状態を思い出す
         armStartBtn();   // API準備完了 → 放送開始ボタンを有効化
         killCaptions();  // 字幕を無効化
         try{ fitPlayer(); }catch(_){} // ★動画ロード前に内部サイズを1920x1080へ固定（回転ズレ根治の肝）
@@ -3114,6 +3243,7 @@ function toggleMute(){
     var vs2=document.getElementById('vol-slider');if(vs2)vs2.value=lastVol;
     var fvs2=document.getElementById('fs-vol-slider');if(fvs2)fvs2.value=lastVol;
   }
+  try{ rememberVolume(); }catch(_){}   // 消音の状態も覚えておく
 }
 
 function onVolSlider(){
@@ -3140,6 +3270,7 @@ function onVolSlider(){
   // fs-vol-sliderも同期
   var fvs=document.getElementById('fs-vol-slider');
   if(fvs&&fvs!==v)fvs.value=val;
+  try{ rememberVolume(); }catch(_){}   // 次に開いたときも同じ音量にする
 }
 
 
@@ -3186,7 +3317,7 @@ function init(){
   setInterval(loadCivicNews, 300000);   // 5分ごと（元データはActionsが30分ごとに更新）
   loadJmaWarn();                        // 気象庁の警報（発表中は優先表示）
   setInterval(loadJmaWarn, 300000);     // 5分ごと
-  setInterval(rotateCityNews, 8000);
+  _newsTimer=setInterval(rotateCityNews, 8000);
   window.addEventListener('load', setHdrVar);
   window.addEventListener('resize', setHdrVar); // 回転・画面サイズ変化でヘッダー実高を追従（測り直し漏れの根治）
   // 回転時：全画面中はバナー固定座標を置き直し／通常表示中は「その向きの通常時バナー座標」を保存
@@ -3357,16 +3488,43 @@ function init(){
     });
   })();
 
-  // 設定：表示と動作の切り替えスイッチ
+  // 設定：文字の大きさ／送り戻しの秒数（3つから選ぶ）
   (function(){
-    var m={'opt-big':'big'};
-    for(var id in m){
-      (function(id,key){
-        var el=document.getElementById(id);
-        if(el) el.addEventListener('click', function(){ toggleOpt(key); });
-      })(id,m[id]);
-    }
+    var bind=function(id,key,isNum){
+      var box=document.getElementById(id); if(!box) return;
+      box.addEventListener('click', function(e){
+        var t=e.target; if(t.tagName!=='BUTTON') return;
+        var v=t.getAttribute('data-v'); if(v===null) return;
+        OPTS[key]=isNum?parseInt(v,10):v;
+        saveOpts(); applyOpts(); renderOpts();
+      });
+    };
+    bind('seg-text','text',true);
+    bind('seg-skip','skip',true);
+    var nb=document.getElementById('opt-news');
+    if(nb) nb.addEventListener('click', function(){ OPTS.stopnews=!OPTS.stopnews; saveOpts(); applyOpts(); renderOpts(); });
     try{ applyOpts(); renderOpts(); }catch(_){}
+  })();
+
+  // 設定：アプリの使い方（別ページ）
+  (function(){
+    var h=document.getElementById('lnk-help');
+    if(h) h.addEventListener('click', function(){
+      if(isTapBlocked()) return;
+      try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+      location.href='help.html';
+    });
+  })();
+
+  // 設定：すべて元に戻す
+  (function(){
+    var r=document.getElementById('lnk-reset');
+    if(r) r.addEventListener('click', function(){
+      if(isTapBlocked()) return;
+      if(window.confirm('色や文字の大きさなど、この画面の設定を最初の状態に戻します。よろしいですか？')){
+        resetAllSettings();
+      }
+    });
   })();
 
   // 設定：投稿・お問い合わせのボタン
