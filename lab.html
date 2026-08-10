@@ -90,7 +90,12 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 body.onair-mode .test-badge{display:none;}
 body.onair-mode .h-right .onair-badge{display:flex;}
 .ps-test-badge{display:inline-block;border:2px solid var(--gold2);color:var(--gold2);font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 16px;border-radius:6px;margin-top:16px;}
-.h-logo-main{font-family:'CorpLogoB','Zen Kaku Gothic New',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:0.077em;}
+/* ★ロゴは縦横・機種を問わず20pxで統一（2026-08-10指示）。
+   箱の高さを19px（＝ヘッダー1段目の高さ＝試験放送中バッジと同じ）に固定することで、
+   文字を大きくしてもヘッダーが厚くならず、バナーの位置が1pxも動かない（実測で確認）。
+   これ以上大きくすると文字が箱から大きくはみ出し、画面上端で切れる。 */
+.h-logo-main{font-family:'CorpLogoB','Zen Kaku Gothic New',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:0.077em;
+  height:19px;line-height:19px;display:flex;align-items:center;}
 .h-logo-main em{color:var(--gold2);font-style:normal;font-size:1.125em;vertical-align:-0.062em;}
 /* 中身は右詰め。幅は fixHeaderBalance が現行と同じ値に保つので、余った分は左側に空くだけ＝
    歯車は常に右端、その左隣に「● 試験放送中（2027年〜は ● ON AIR）」が並ぶ */
@@ -559,7 +564,6 @@ body.ori-p .news-item{flex-direction:row;align-items:center;gap:7px;}body.ori-p 
     padding:0 6px;
     padding-top:max(0px, calc(env(safe-area-inset-top) - 8px));
   }
-  .h-logo-main{font-size:16px;}
   /* 時計は箱の幅を最大値(88:88:88=69px)+余裕で固定：数字ごとの字幅差(最大12.6px/秒)で隣のバナーが押されるのを構造的に排除 */
   .h-time{font-size:15px;min-width:72px;text-align:right;}
   .onair-badge{padding:2px 7px;font-size:9px;}
@@ -641,7 +645,7 @@ body.ori-l{overflow:hidden;height:100%;}
   /* ①文字サイズは縦向きと完全に同一（15/15/9/9）。max-width:840だけに頼ると全画面(cover)中は
      内部画面幅が750→874に広がって条件から外れ、ヘッダーがPC文字で別レイアウトになる
      （v2.11の回転バナー位置ズレの原因）。この横向きブロック(高さ500px以下)は874でも効くためここに明記 */
-  body.ori-l .h-logo-main{font-size:16px;}body.ori-l .h-time{font-size:15px;min-width:72px;text-align:right;}body.ori-l .onair-badge{padding:2px 7px;font-size:9px;}body.ori-l .test-badge{font-size:9px;}
+  body.ori-l .h-time{font-size:15px;min-width:72px;text-align:right;}body.ori-l .onair-badge{padding:2px 7px;font-size:9px;}body.ori-l .test-badge{font-size:9px;}
   /* ●LIVEと番組タイトルバー：コンパクト表示 */
   body.ori-l .viewing-bar{
     height:34px;
@@ -793,7 +797,6 @@ body.ori-tp .header, body.ori-tl .header{
    そちらが order:2 を与えるためバナーが時計の右端へ回ってしまう（実測確認済み）。 */
 body.ori-tp .h-banner, body.ori-tl .h-banner{ order:0; flex:1 1 auto; flex-basis:auto; padding:0; }
 body.ori-tp .sponsor-img, body.ori-tl .sponsor-img{ width:390px; }
-body.ori-tp .h-logo-main, body.ori-tl .h-logo-main{ font-size:16px; }   /* 縦横共通で16px（2026-08-10指示） */
 body.ori-tp .h-date, body.ori-tl .h-date{ display:none; }
 body.ori-tp .h-time, body.ori-tl .h-time{ font-size:20px; min-width:96px; text-align:right; }
 
@@ -971,7 +974,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.35-lab（設定に表示と動作を追加）</div>
+    <div class="ps-version">version 2.36-lab（ロゴ20px・画面を消さないを標準に）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1166,13 +1169,6 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
         <button class="set-sw" id="opt-banner" data-opt="stopbanner" aria-label="広告の自動切り替えを止める"></button>
       </div>
 
-      <div class="set-row">
-        <div class="set-row-txt">
-          <div class="set-row-ttl">見ている間は画面を消さない</div>
-          <div class="set-row-note">視聴中に画面が暗くなるのを防ぎます（対応している端末のみ）</div>
-        </div>
-        <button class="set-sw" id="opt-awake" data-opt="awake" aria-label="見ている間は画面を消さない"></button>
-      </div>
     </div>
   </div>
 </div>
@@ -1390,18 +1386,19 @@ function renderBgChoices(){
 // ══ 表示と動作の設定（第2段階・2026-08-10）══
 //  端末に保存し次回も引き継ぐ。既定は全てオフ＝何も設定していない人には従来と完全に同じ動作。
 var OPT_KEY='shisochan_opts';
-var OPTS={big:false, autostart:false, stopbanner:false, awake:false};
+var OPTS={big:false, autostart:false, stopbanner:false};
 var _wakeLock=null;
 function loadOpts(){
   try{ var v=JSON.parse(localStorage.getItem(OPT_KEY)||'null');
     if(v) for(var k in OPTS){ if(k in v) OPTS[k]=!!v[k]; } }catch(_){}
 }
 function saveOpts(){ try{ localStorage.setItem(OPT_KEY, JSON.stringify(OPTS)); }catch(_){} }
-// 画面を消さない（対応端末のみ。非対応でも何も起きない）
+// 見ている間は画面を消さない（2026-08-10指示で既定の動作に。設定項目からは外した）。
+// 対応していない端末では何も起きない＝従来どおり。
 function applyWakeLock(){
   try{
     if(!('wakeLock' in navigator)) return;
-    if(OPTS.awake && !document.hidden){
+    if(!document.hidden){
       if(!_wakeLock){
         navigator.wakeLock.request('screen').then(function(w){
           _wakeLock=w;
@@ -1427,7 +1424,7 @@ function applyOpts(){
 }
 function renderOpts(){
   try{
-    var m={big:'opt-big', autostart:'opt-auto', stopbanner:'opt-banner', awake:'opt-awake'};
+    var m={big:'opt-big', autostart:'opt-auto', stopbanner:'opt-banner'};
     for(var k in m){
       var el=document.getElementById(m[k]);
       if(el) el.classList.toggle('on', !!OPTS[k]);
@@ -3313,7 +3310,7 @@ function init(){
 
   // 設定：表示と動作の切り替えスイッチ
   (function(){
-    var m={'opt-big':'big','opt-auto':'autostart','opt-banner':'stopbanner','opt-awake':'awake'};
+    var m={'opt-big':'big','opt-auto':'autostart','opt-banner':'stopbanner'};
     for(var id in m){
       (function(id,key){
         var el=document.getElementById(id);
