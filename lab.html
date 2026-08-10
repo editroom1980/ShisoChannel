@@ -80,14 +80,40 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
   body.ori-p .h-banner{order:2;flex-basis:100%;padding:6px 0 0;}
 
 /* 試験放送中バッジ（ヘッダー用・起動画面用）＋番組表の時刻非表示 */
-.test-badge{border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
+/* 「試験放送中」はON AIRと同じ作り＝頭に●が付いて点滅する。●の色は文字と同じ金色（2026-08-10指示） */
+.test-badge{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--gold2);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:4px;white-space:nowrap;background:rgba(0,0,0,0.15);flex-shrink:0;}
+.tdot{width:6px;height:6px;background:var(--gold2);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;}
+/* 2027年1月1日から「試験放送中」を消して同じ場所に「● ON AIR」を出す（JSがbodyへonair-modeを付与） */
+.h-right .onair-badge{display:none;}
+body.onair-mode .test-badge{display:none;}
+body.onair-mode .h-right .onair-badge{display:flex;}
 .ps-test-badge{display:inline-block;border:2px solid var(--gold2);color:var(--gold2);font-size:13px;font-weight:700;letter-spacing:2px;padding:5px 16px;border-radius:6px;margin-top:16px;}
 .h-logo-main{font-family:'CorpLogoB','Zen Kaku Gothic New',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:0.077em;}
 .h-logo-main em{color:var(--gold2);font-style:normal;font-size:1.125em;vertical-align:-0.062em;}
-.h-right{display:flex;align-items:center;gap:14px;flex-shrink:0;}
-.h-datetime{display:flex;flex-direction:column;align-items:flex-end;}
+/* 中身は右詰め。幅は fixHeaderBalance が現行と同じ値に保つので、余った分は左側に空くだけ＝
+   歯車は常に右端、その左隣に「● 試験放送中（2027年〜は ● ON AIR）」が並ぶ */
+.h-right{display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-shrink:0;}
+/* 情報バーの時計は廃止し、同じ位置に設定ボタン（歯車）を置く（2026-08-10指示）。
+   ★歯車には「時計が占めていた箱幅」をそのまま与える。ヘッダー右側の幅が変わらないので
+     バナーの中央位置が1pxも動かない（全ての向き・全画面でも同じ）。要素自体は残してあるので
+     updateClockの更新先も従来どおり（非表示なので画面には出ない）。 */
+.h-datetime{display:none;}
 .h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
 .h-time{font-size:22px;font-weight:300;color:rgba(255,255,255,0.85);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1.1;}
+.h-gear{
+  /* ★高さは持たせない。ここで高さを作るとヘッダー1段目が厚くなり、
+     縦向きで2段目のバナーが下へ押し出されてしまう（実測で15pxズレた）。
+     アイコンはON AIRバッジ(19px)より低い18pxにし、タップ領域は擬似要素で広げる。 */
+  height:auto;line-height:0;position:relative;
+  display:flex;align-items:center;justify-content:flex-end;
+  background:none;border:none;padding:0;margin:0;
+  color:rgba(255,255,255,0.85);cursor:pointer;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;font-family:inherit;
+}
+.h-gear svg{width:18px;height:18px;display:block;}
+/* 見た目の高さを変えずに指で押せる範囲だけ広げる */
+.h-gear::before{content:'';position:absolute;top:-12px;bottom:-12px;left:-6px;right:-6px;}
+.h-gear:active{opacity:0.55;}
 .onair-badge{display:flex;align-items:center;gap:6px;border:1px solid var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:2px;letter-spacing:2px;background:rgba(184,48,48,0.2);}
 .onair-badge.off{border-color:var(--text3);background:rgba(100,100,100,0.15);}
 .bdot{width:6px;height:6px;background:#ff6060;border-radius:50%;animation:blink 1.4s infinite;}
@@ -825,6 +851,49 @@ body.iphone-mode #ctrl-mute{
 body.iphone-mode #fs-mute{
   margin-left:7px;
 }
+/* ══ 設定画面（かぶせて表示するパネル） ══
+   z-index:600 … 疑似全画面(500)より上、起動画面(999)より下。
+   全画面中はヘッダーが隠れて歯車を押せないため、全画面と同時に開くことはない。 */
+#settings-panel{
+  position:fixed;inset:0;z-index:600;
+  background:var(--forest);
+  display:none;flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+  padding-left:max(6px, env(safe-area-inset-left));
+  padding-right:max(6px, env(safe-area-inset-right));
+}
+#settings-panel.open{display:flex;}
+.set-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 6px;flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,0.12);
+}
+.set-ttl{font-size:15px;font-weight:700;color:#fff;letter-spacing:3px;}
+.set-close{
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;color:rgba(255,255,255,0.8);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;font-family:inherit;
+}
+.set-close:active{opacity:0.55;}
+.set-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 6px 24px;}
+.set-sec{background:rgba(255,255,255,0.06);border-radius:8px;padding:14px;margin-bottom:12px;}
+.set-sec-ttl{font-size:13px;font-weight:700;color:#fff;letter-spacing:1px;margin-bottom:4px;}
+.set-sec-note{font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:12px;line-height:1.5;}
+.set-colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
+.set-color{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:none;border:none;padding:0;cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+.set-color i{
+  display:block;width:100%;height:44px;border-radius:6px;
+  border:2px solid rgba(255,255,255,0.25);
+}
+.set-color.on i{border-color:var(--gold2);box-shadow:0 0 0 2px var(--gold2);}
+.set-color span{font-size:11px;color:rgba(255,255,255,0.75);}
+.set-color.on span{color:var(--gold2);font-weight:700;}
+
 /* 全画面時のカーソル自動非表示 */
 body.cursor-hidden,body.cursor-hidden *{cursor:none !important;}
 
@@ -877,7 +946,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.31-lab（全画面解除の上ズレ根治・iPadレイアウト)</div>
+    <div class="ps-version">version 2.34-lab（設定12色・放送中表示を右へ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -894,7 +963,6 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   <header class="header">
     <div class="h-logo">
       <div class="h-logo-main">しそチャン<em>NET</em></div>
-      <span class="test-badge">試験放送中</span>
     </div>
     <!-- スポンサーバナー（情報バー内・2300×210の横長） -->
     <div class="h-banner" id="sponsor-banner" onclick="openSponsorLink()">
@@ -905,10 +973,16 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
         <div class="h-date" id="h-date">—</div>
         <div class="h-time" id="h-time">00:00:00</div>
       </div>
+      <!-- 2026年内はこちら（金色の●が点滅）／2027年1月1日から下のON AIRへ自動で入れ替わる -->
+      <span class="test-badge" id="test-badge"><i class="tdot"></i>試験放送中</span>
       <div class="onair-badge" id="onair-badge">
         <div class="bdot" id="bdot"></div>
         <span>ON AIR</span>
       </div>
+      <!-- 設定ボタン（歯車）。左右の幅は fixHeaderBalance が現行値に合わせるのでバナー位置は動かない -->
+      <button class="h-gear" id="h-gear" onclick="openSettings()" title="設定" aria-label="設定">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -1020,6 +1094,23 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
     <div class="newsbar" id="sb-news" style="display:none">
       <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div><span class="sb-note" id="sb-news-note"></span></div>
       <div class="news-body" id="sb-news-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 設定画面（アプリの上にかぶせるパネル。別ページにすると戻る時に再読み込みされ動画が止まるため） ══ -->
+<div id="settings-panel">
+  <div class="set-head">
+    <div class="set-ttl">設 定</div>
+    <button class="set-close" id="set-close" onclick="closeSettings()" aria-label="閉じる">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  </div>
+  <div class="set-body">
+    <div class="set-sec">
+      <div class="set-sec-ttl">背景の色</div>
+      <div class="set-sec-note">アプリ全体の背景色を選べます</div>
+      <div class="set-colors" id="set-colors"></div>
     </div>
   </div>
 </div>
@@ -1143,8 +1234,153 @@ function attachNewsSwipe(el){
     if(n && n.url){ location.href=n.url; }
   });
 }
+// ══════════════════════════════════════════════
+//  設定画面（2026-08-10・第1段階：背景色）
+//  ・別ページではなく「かぶせるパネル」。動画を止めずに開閉できる
+//  ・選んだ色は端末に保存（localStorage）し、次回起動時に復元する
+//  ・色は全て暗い系に限定（白文字が読めなくなるため）。背景に合わせて見出し帯も連動させる
+// ══════════════════════════════════════════════
+// 各色は「背景bg／見出し帯band／アクセント5段階g1〜g5」をひと組で持つ。
+// g1〜g5 は元の緑系(--green〜--green5)の置き換え＝放送中の行・時刻チップ・ジャンルタグ等も色が揃う。
+// 色の作り方: 背景の色相を保ったまま、緑系と同じ明度・彩度の関係を再現している。
+// 帯は必ず背景より明るく、かつ帯の上の白文字が読める明るさ（コントラスト比4.5以上）に収めてある。
+// ※深緑は現行の色をそのまま使う（既存の見た目を1色も変えないため）。
+var BG_COLORS=[
+  {id:'forest',name:'深緑',  bg:'#1e3a28',band:'#2f5f42',g1:'#2d5c3e',g2:'#3d7a54',g3:'#52a070',g4:'#a8d5b5',g5:'#e4f2e8'},
+  {id:'navy',  name:'紺',    bg:'#1b2a44',band:'#2c436b',g1:'#273d62',g2:'#365281',g3:'#486ba8',g4:'#a4b8db',g5:'#e1e8f4'},
+  {id:'teal',  name:'藍',    bg:'#12303a',band:'#26505e',g1:'#275462',g2:'#366f81',g3:'#4890a8',g4:'#a4cddb',g5:'#e1eff4'},
+  {id:'sumi',  name:'墨',    bg:'#22262a',band:'#3a424a',g1:'#3c454e',g2:'#515c66',g3:'#6b7884',g4:'#b7bfc8',g5:'#e7ebee'},
+  {id:'brown', name:'濃茶',  bg:'#33261c',band:'#59412f',g1:'#5b422f',g2:'#775840',g3:'#9b7355',g4:'#d4bdab',g5:'#f2eae3'},
+  {id:'wine',  name:'えんじ',bg:'#3a1f22',band:'#603136',g1:'#5c2e33',g2:'#793f45',g3:'#9c535c',g4:'#d5aaaf',g5:'#f2e3e5'},
+  {id:'plum',  name:'濃紫',  bg:'#2e2440',band:'#473765',g1:'#3f305a',g2:'#544176',g3:'#6e5699',g4:'#baabd3',g5:'#e9e3f2'},
+  {id:'moss',  name:'苔緑',  bg:'#405c42',band:'#557f58',g1:'#365338',g2:'#4a6d4d',g3:'#628d65',g4:'#b2cdb4',g5:'#e5f0e6'},
+  {id:'slate', name:'青鼠',  bg:'#42586b',band:'#557590',g1:'#324657',g2:'#455d72',g3:'#5b7a94',g4:'#aec0d0',g5:'#e4ebf1'},
+  {id:'sepia', name:'鳶茶',  bg:'#5c4436',band:'#815e49',g1:'#594031',g2:'#755543',g3:'#977059',g4:'#d2baad',g5:'#f2e9e4'},
+  {id:'olive',name:'うぐいす',bg:'#4a4a30',band:'#6e6e44',g1:'#565634',g2:'#707047',g3:'#91915e',g4:'#cfcfb0',g5:'#f1f1e5'},
+  {id:'ume',   name:'梅',    bg:'#5f4a58',band:'#816076',g1:'#4f3a48',g2:'#684f60',g3:'#87697d',g4:'#c9b5c3',g5:'#efe6ec'}
+];
+// ══ 2027年1月1日からの表示切り替え（2026-08-10指示）══
+//  ・2026年内 : ロゴの右は「● 試験放送中」（金色の点滅）
+//  ・2027年〜 : 同じ場所が「● ON AIR」（赤の点滅）に変わり、試験放送中は消える
+//  端末の日付で自動的に切り替わる（アプリの更新は不要）。日付をまたいでも直るよう定期的に見直す。
+var ONAIR_SWITCH_AT=new Date(2027,0,1,0,0,0);
+function applyBadgeMode(){
+  try{
+    var after=(new Date()>=ONAIR_SWITCH_AT);
+    var b=document.body; if(!b) return;
+    if(b.classList.contains('onair-mode')!==after){
+      b.classList.toggle('onair-mode', after);
+      try{ setHdrVar(); }catch(_){}
+    }
+  }catch(_){}
+}
+
+var BG_KEY='shisochan_bg';
+var _bgNow=BG_COLORS[0];
+// 今の背景色（全画面の解除オーバーレイや帯色の指定から参照する）
+function curBg(){ return (_bgNow && _bgNow.bg) || '#1e3a28'; }
+// ★画面最上部の帯（ステータスバー域）の色を採取し直させる。
+//   iOSは帯の色を「上端付近にある要素の背景色」から決めるが、色を変えただけでは採取し直さない
+//   （変更直後だけ前の色が残る）。上端に新しい色の"高さ1px"の板を一瞬だけ置いて採取をやり直させる。
+//   高さ1px・指も通す(pointer-events:none)・0.12秒で自動的に消える＝見た目にも操作にも影響しない。
+//   失敗しても何も起きないよう全体をtry/catchで囲む（安全側）。
+// ★画面最上部の帯（iOSが塗る時計・Wi-Fi表示の部分）について（2026-08-10・実機で数値確認）
+//   色を変えるとアプリ本体（ヘッダー・背景・番組表・アクセント）は即座に変わるが、
+//   この帯だけは前の色のまま残り、アプリを開き直すと正しい色になる。
+//   即時に変える方法として次の3つを実機で試したが、いずれも効果がなかった：
+//     ①上端に新しい色の細い板を一瞬置く ②theme-colorのmetaを作り直す ③ヘッダーを1フレーム外して戻す
+//     （実測: 帯 rgb(27,42,68)=前の色 / 本体 rgb(18,48,58)=新しい色 のまま）
+//   残る手段は viewport-fit の付け外しだが、これは v2.21 で「拡大表示のまま戻らない・
+//   全画面が解除できない」という重い故障を招いた操作なので使わない。
+//   → 帯の色は「アプリを開き直すと反映」で運用する。
+function applyBg(id, save){
+  var c=null;
+  for(var i=0;i<BG_COLORS.length;i++) if(BG_COLORS[i].id===id) c=BG_COLORS[i];
+  if(!c) c=BG_COLORS[0];
+  _bgNow=c;
+  var de=document.documentElement;
+  de.style.setProperty('--forest', c.bg);
+  de.style.setProperty('--band',   c.band);
+  // アクセント5段階も差し替える（放送中の行・時刻チップ・ジャンルタグ・シークバー等の色が背景と揃う）
+  de.style.setProperty('--green',  c.g1);
+  de.style.setProperty('--green2', c.g2);
+  de.style.setProperty('--green3', c.g3);
+  de.style.setProperty('--green4', c.g4);
+  de.style.setProperty('--green5', c.g5);
+  if(!isExpanded){                      // 全画面中は帯を黒のままにする
+    try{ setThemeColor(c.bg); }catch(_){}
+
+  }
+  if(save!==false){ try{ localStorage.setItem(BG_KEY, c.id); }catch(_){} }
+  try{ renderBgChoices(); }catch(_){}
+}
+function renderBgChoices(){
+  var box=document.getElementById('set-colors');
+  if(!box) return;
+  var h='';
+  for(var i=0;i<BG_COLORS.length;i++){
+    var c=BG_COLORS[i];
+    h+='<button class="set-color'+(c.id===_bgNow.id?' on':'')+'" data-bg="'+c.id+'" aria-label="'+c.name+'">'
+      +'<i style="background:'+c.bg+'"></i><span>'+c.name+'</span></button>';
+  }
+  box.innerHTML=h;
+}
+function openSettings(){
+  if(isTapBlocked()) return;
+  var p=document.getElementById('settings-panel');
+  if(!p) return;
+  renderBgChoices();
+  p.classList.add('open');
+}
+function closeSettings(){
+  var p=document.getElementById('settings-panel');
+  if(p) p.classList.remove('open');
+  // 閉じた直後にレイアウトを測り直す（背景色を変えても寸法は変わらないが念のため揃える）
+  try{ setHdrVar(); }catch(_){}
+  try{ fitPlayer(); }catch(_){}
+}
+// 起動時：保存された色を復元（未保存なら深緑のまま＝従来と完全に同一）
+(function initBg(){
+  try{ var v=localStorage.getItem(BG_KEY); if(v) applyBg(v,false); }catch(_){}
+})();
+
+// ══ ヘッダー左右のつり合わせ（バナー位置を現行から1pxも動かさないための処理）══
+//  バナーは「ロゴ群」と「右側(歯車)」の間の残りスペースの中央に置かれるので、
+//  その位置は【ロゴ群の幅 − 右側の幅】だけで決まる（式を展開すると差の1/2だけ動く）。
+//  そこで、現行(v2.32=時計とON AIRがあった状態)で実測したこの差を保つように、
+//  歯車の箱幅を毎回計算して与える。●の追加や2027年の表示切替で左が広がっても、
+//  右も同じだけ広がるため差が一定＝バナーの位置は完全に据え置きになる。
+//  ※iPhone縦はバナーが2段目の全幅なので元から影響を受けない（それでも計算は無害）。
+//  バッジを右側（歯車の左隣）へ移した分、左のロゴ群は細く・右側は太くなる。そのままだとバナーがずれるため、
+//  左右それぞれに「現行(v2.32=時計とON AIRがあった状態)で実測した幅」を最低幅として与えて据え置く。
+//  余った幅はロゴ群では右側に、右側では左側に空くだけなので、見た目は変わらない（背景色のまま）。
+var HDR_FIX={
+  p: {logo:171.89, right:155.39},   // iPhone縦
+  l: {logo:171.89, right:155.39},   // iPhone横
+  tp:{logo:171.89, right:179.39},   // iPad縦
+  tl:{logo:209.52, right:188.64},   // iPad横
+  pc:{logo:209.52, right:186.20}    // PC
+};
+function fixHeaderBalance(){
+  try{
+    var lg=document.querySelector('.h-logo'), rt=document.querySelector('.h-right');
+    if(!lg||!rt) return;
+    var b=document.body, key='pc';
+    if(b.classList.contains('ori-tl'))      key='tl';
+    else if(b.classList.contains('ori-tp')) key='tp';
+    else if(b.classList.contains('ori-l'))  key='l';
+    else if(b.classList.contains('ori-p'))  key='p';
+    var f=HDR_FIX[key];
+    if(!f) return;
+    if(lg.style.minWidth!==f.logo+'px')  lg.style.minWidth=f.logo+'px';
+    if(rt.style.minWidth!==f.right+'px') rt.style.minWidth=f.right+'px';
+  }catch(_){}
+}
+
 // 情報バーの実高さを CSS変数 --hdr-h に反映（バナー込みの高さでiPhone縦の本文高さを正しく計算）
 function setHdrVar(){
+  // ★先にヘッダー左右のつり合わせ（バナー位置の据え置き）を済ませてから高さを測る
+  try{ fixHeaderBalance(); }catch(_){}
   // 高さ0＝非表示中(起動画面表示中など)の測定は無効。0を記録するとiPhone縦の本文が画面より縦長になり
   // 「本文が固定ヘッダーの裏に潜る上ズレ」の原因になるため、表示中(>0)のみ反映する
   try{ var h=document.querySelector('.header'); if(h && h.offsetHeight>0) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight+'px'); }catch(_){}
@@ -2064,7 +2300,7 @@ function closeExpand(){
   //   黒(全画面)→緑→通常画面 の一方向切替になり、通常画面の上で緑が点滅して見える構造自体を排除。
   //   1フレーム描画後に外す＝外れた瞬間に帯が緑を採取して深緑に塗り直される(実機確定の機構・物理最速)。
   var _exitOv=document.createElement('div');
-  _exitOv.style.cssText='position:fixed;inset:0;background:#1e3a28;z-index:99998;pointer-events:none;';
+  _exitOv.style.cssText='position:fixed;inset:0;background:'+curBg()+';z-index:99998;pointer-events:none;';
   document.body.appendChild(_exitOv);
   wrap.classList.remove('expanded');
   document.body.classList.remove('fs-open');
@@ -2079,7 +2315,7 @@ function closeExpand(){
     if(yt){ yt.style.transition=''; yt.style.opacity=''; } })();
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
     try{_exitOv.remove();}catch(_){}
-    setThemeColor('#1e3a28');
+    setThemeColor(curBg());
   }); });
   // fs-ctrl-barを非表示
   var fsBarT=document.getElementById('fs-ctrl-bar');
@@ -2585,6 +2821,7 @@ function periodicCheck(){
   if(wasOff){ playSchedule(pos.c,pos.p); }
 }
 function updateClock(){
+  applyBadgeMode();   // 日付が2027/1/1をまたいだ瞬間に表示を切り替える（変化時のみDOMを触る）
   var d=new Date();
   var t=f2(d.getHours())+':'+f2(d.getMinutes())+':'+f2(d.getSeconds());
   var ds=d.getFullYear()+'/'+f2(d.getMonth()+1)+'/'+f2(d.getDate());
@@ -2778,6 +3015,9 @@ function init(){
   if(isIOS){ document.body.classList.add('iphone-mode'); }
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+  applyBadgeMode();
+  // ロゴの書体(CorpLogoB)が後から読み込まれるとロゴ群の幅が変わるので、その時点で測り直す
+  try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ try{ setHdrVar(); fitPlayer(); }catch(_){} }); }catch(_){}
   renderSB();renderCityNews();updateClock();setHdrVar();
   loadCivicNews();                      // 市公式サイトの新着(city_news.json)
   setInterval(loadCivicNews, 300000);   // 5分ごと（元データはActionsが30分ごとに更新）
@@ -2942,6 +3182,17 @@ function init(){
 
   // ctrl-play: onclick属性のみ使用（addTapのtouchend+preventDefaultがiOSで
   // ytPlayer.playVideo()のジェスチャーチェーンを切る可能性があるため除外）
+
+  // 設定：背景色の選択（ボタンは動的生成なので親で受ける）
+  (function(){
+    var box=document.getElementById('set-colors');
+    if(!box) return;
+    box.addEventListener('click', function(e){
+      var t=e.target, b=null;
+      while(t && t!==box){ if(t.classList && t.classList.contains('set-color')){ b=t; break; } t=t.parentNode; }
+      if(b) applyBg(b.getAttribute('data-bg'));
+    });
+  })();
 
   // fs-ctrl-bar の初期化
   addTap(document.getElementById('fs-play'), togglePlayPause);
