@@ -9,6 +9,9 @@
 <title>しそチャンNET LAB（操作改善テスト）</title>
 <link rel="apple-touch-icon" href="icon-180.png?v=132">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
+<!-- Android(Chrome)はapple-*のmetaを見ない。ホーム画面に追加した時にアドレスバーを消して
+     アプリとして開くにはmanifestが要る（iOSは従来どおり上のmetaで動く） -->
+<link rel="manifest" href="manifest-lab.json?v=245">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
@@ -1017,7 +1020,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.44-lab（バッジ位置6px・お知らせ補足文）</div>
+    <div class="ps-version">version 2.45-lab（Android対応・軽量化・番組名の無害化）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1247,6 +1250,16 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ══════════════════════════════════════════════
+//  共通の小道具
+// ══════════════════════════════════════════════
+// 外から来た文字（お知らせの見出し・番組名など）をHTMLに流し込む前に無害化する。
+// 「A&B」「＜特集＞」のような記号が入っても、記号のまま表示され、表示が壊れない。
+function escHtml(t){
+  return String(t==null?'':t)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
 //  スポンサー定義（仮データ・将来スプレッドシート化）
 // ══════════════════════════════════════════════
 // ★2026-08-10の点検で削除：仮バナーをSVGで生成する makeBanner / makeBannerCompact（計62行）は、
@@ -1329,7 +1342,7 @@ function renderCityNews(){
   // タグ表記: 市新着はtag(くらし/イベント/募集/重要)・警報はtag=警報・旧形式(Firestore/サンプル)はtypeから
   var tag = n.tag || (n.type==='event' ? 'イベント' : 'お知らせ');
   var tagCls = n.warn ? 'warn' : ((tag==='イベント'||tag==='募集') ? 'event' : (tag==='重要' ? 'warn' : 'notice'));
-  var esc=function(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var esc=escHtml;   // 共通の無害化（お知らせ・番組表で同じものを使う）
   // 1件ずつ順番に切り替え表示。日付行は廃止(2026-08-09指示=更新日のみで不要・縦幅節約)・タイトルは1行省略。
   // 出典は見出し帯の補足文(.sb-note)へ移動（縦向きのみ表示・警報時は発表時刻も添える）
   body.innerHTML='<div class="news-item">'
@@ -2412,10 +2425,23 @@ function applyOrientationClass(){
     });
   }catch(_){}
 }
+// ══ 見た目を更新するだけのタイマーの置き場（2026-08-10）══
+//  他のアプリを見ている間（document.hidden）は、画面を描き直しても誰も見ていないので止めて電池を節約する。
+//  止めてよいのは【見た目だけ】のもの。番組の切り替え(periodicCheck)・通信・計測は止めない。
+//  ・再開時は必ず1回実行してから間隔を張り直すので、時計や向きが古いまま見えることはない。
+//  ・張り直しは「今動いていないものだけ」＝何度呼ばれても二重に増えない（誤発動しても壊れない）。
+//  ・visibilitychangeが来ない環境では今までどおり動き続けるだけで、悪化はしない。
+var _uiTimers=[];
+function uiInterval(fn,ms){ var t={fn:fn,ms:ms,id:setInterval(fn,ms)}; _uiTimers.push(t); return t; }
+function _uiTimersStop(){ for(var i=0;i<_uiTimers.length;i++){ var t=_uiTimers[i]; if(t.id){ clearInterval(t.id); t.id=null; } } }
+function _uiTimersStart(){ for(var i=0;i<_uiTimers.length;i++){ var t=_uiTimers[i]; if(!t.id){ try{ t.fn(); }catch(_){} t.id=setInterval(t.fn,t.ms); } } }
+document.addEventListener('visibilitychange',function(){ if(document.hidden){ _uiTimersStop(); } else { _uiTimersStart(); } });
+window.addEventListener('pageshow',function(){ _uiTimersStart(); });
+
 applyOrientationClass();
 window.addEventListener('orientationchange', function(){ applyOrientationClass(); setTimeout(applyOrientationClass,200); setTimeout(applyOrientationClass,600); });
 window.addEventListener('resize', applyOrientationClass);
-setInterval(applyOrientationClass, 500);   // 凍結からの復帰も含め常に正しい向きへ追従
+uiInterval(applyOrientationClass, 500);   // 凍結からの復帰も含め常に正しい向きへ追従
 
 // ══ ビューポート凍結の検知と復旧（2026-08-10・実機の生データで機構を確定）══
 //  【実機で確定した凍結の3形態】(?debug=1の実測)
@@ -2515,7 +2541,7 @@ function fixFrozenHeight(){
     }
   }catch(_){}
 }
-setInterval(fixFrozenHeight, 400);
+uiInterval(fixFrozenHeight, 400);
 
 // ══ タップの突き抜け防止（2026-08-10）══
 //  全画面の解除ボタンを押すと、ボタンが消えた直後に同じ指のタップが真下の要素
@@ -2958,9 +2984,11 @@ function renderSB(){
       // 番組情報
       var pinfo=document.createElement('div');
       pinfo.className='pinfo';
+      // 番組名・分類はFirestoreから来る文字列。「A&B」「＜特集＞」のような記号が入っても
+      // 表示が壊れないよう、HTMLとして解釈されない形に直してから流し込む（お知らせ側と同じ扱い）
       pinfo.innerHTML=
-        '<div class="pname">'+prog.title+'</div>'+
-        '<div class="pmeta"><span class="pcat">'+prog.cat+'</span>'+
+        '<div class="pname">'+escHtml(prog.title)+'</div>'+
+        '<div class="pmeta"><span class="pcat">'+escHtml(prog.cat)+'</span>'+
         '<span class="pdur">/ '+prog.dur+'分</span></div>';
       addTap(pinfo,function(){playManual(pIdx);});
 
@@ -3319,9 +3347,13 @@ function init(){
   };
   window.addEventListener('resize', _fsRepinOnRotate);
   window.addEventListener('orientationchange', _fsRepinOnRotate);
-  // ビューポート凍結の監視（ホーム画面アプリのiPhoneのみ・0.4秒間隔の軽量チェック）
+  // 起動直後の縦向きで安全領域の上端を1回だけ記録する（凍結判定の材料）。
+  // 記録できた時点で役目は終わりなので、そこでタイマーを止める（以後ずっと空回りさせない）。
   if(isIOS){
-    setInterval(_vpWatch, 400);
+    var _vpTimer=setInterval(function(){
+      _vpWatch();
+      if(_vpSaTop0!==null){ clearInterval(_vpTimer); _vpTimer=null; }
+    }, 400);
   }
   // ビューポート凍結の監視（ホーム画面アプリのiPhoneのみ）。
   // ※シミュレータ実測：アプリ内ブラウザのシートを閉じてもvisibilitychange/pageshow/resizeは
@@ -3342,9 +3374,11 @@ function init(){
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
   (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
   setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
-  setInterval(updateClock,1000);
-  setInterval(periodicCheck,10000);
-  setInterval(updateSeekBar,100);
+  uiInterval(updateClock,1000);
+  setInterval(periodicCheck,10000);   // 番組の切り替えの要。裏に回っても止めない
+  // シークバーと再生アイコンの追従。0.1秒ごとにYouTubeへ状態を聞いていたが、
+  // 目で見て違いが出ない範囲で0.25秒に緩めた（問い合わせ回数が毎秒10回→4回）
+  uiInterval(updateSeekBar,250);
   // プレイヤー枠のサイズ変化(回転/全画面/レイアウト変化)を常時監視してtransformを更新。
   // iframeの内部サイズ(1920x1080)は変えないので、YouTubeは作り直し不要のまま＝ズレない。
   if(window.ResizeObserver){
