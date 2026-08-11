@@ -1032,24 +1032,34 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
      それぞれ専用の指定を持つため :not() で明確に除外＝1pxも変えない。
    ══════════════════════════════════════════════════════════════════ */
 @media (min-width:1000px) and (min-height:600px){
-  /* 動画の高さ = 使える高さ - 上下padding32 - gap16 - お知らせ枠106 - タイトルバー44 - 操作バー44 = -242px
-     動画の幅 = その高さ × 16/9。これで縦がぴったり収まる */
+  /* バナーを小さくして、浮いた高さを動画に回す（1068px→860px・約20%減）。
+     ヘッダーの実高さは setHdrVar() が --hdr-h に実測して入れるため、下の計算式が自動で追従する */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode){
+    --banner-w:860px;
+  }
+  /* ★動画エリア(player)は grid-template-areas で上下2行にまたがるため、
+     お知らせ枠のぶんを引いてはいけない（引くと動画の下に余白が残る）。
+     動画の高さ = 使える高さ - 上下padding32 - タイトルバー44 - 操作バー44 = -120px
+     動画の幅 = その高さ × 16/9。これで動画が縦いっぱいに入り、余白ゼロで収まる */
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .page{
     height:calc(100vh - var(--hdr-h, 97px));
     box-sizing:border-box;
     padding-bottom:16px;
     overflow:hidden;
-    grid-template-columns:calc((100vh - var(--hdr-h, 97px) - 242px) * 16 / 9) 1fr;
+    grid-template-columns:calc((100vh - var(--hdr-h, 97px) - 120px) * 16 / 9) 1fr;
   }
   /* 番組表は右カラムいっぱいに伸ばし、内側だけスクロールさせる（外にはみ出さない） */
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .sidebar{
     height:100%;max-height:100%;overflow:hidden;position:static;
   }
-  /* お知らせのタイトル：1行省略をやめ、2行まで折り返して全文を見せる */
+  /* お知らせのタイトル：1行省略をやめ、3行まで折り返して全文を見せる。
+     動画を優先して右カラムを詰めたぶん1行に入る文字数が減るため2行→3行に。
+     min-heightで高さを3行分に固定＝8秒ごとの切り替えで枠が伸び縮みしない（番組表がガタつかない） */
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .news-ttl{
     white-space:normal;
-    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;
     overflow:hidden;
+    min-height:calc(1.35em * 3);
   }
 }
 </style>
@@ -1060,7 +1070,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.47-lab（テレビ対応：色反転とお知らせ）</div>
+    <div class="ps-version">version 2.48-lab（テレビ対応：余白ゼロ・バナー縮小）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
