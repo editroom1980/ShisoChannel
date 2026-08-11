@@ -1023,7 +1023,12 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
    上部の帯自体はfitPlayerが既に確保済み(topBand)なので、表示指定を足すだけで直る */
 body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap.expanded .fs-sponsor,
 body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap:fullscreen .fs-sponsor,
-body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
+body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap:-webkit-full-screen .fs-sponsor{
+  display:block; top:6px;
+  /* 全画面のバナーは通常の3/4に（動画の表示領域を少しでも広げる・2026-08-11指示）。
+     帯の高さ(topBand)はJSがバナーの実寸を測って決めるので、自動で追従する */
+  width:calc(var(--banner-w) * 0.75);
+}
 
 /* ══ サイト表示の窓（TV・PC用）══
    お知らせ・バナー・投稿フォームのリンク先を、ページを離れずこの窓の中で開く。
@@ -1275,7 +1280,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.56-lab（TV固定を根治・窓のリモコン操作・設定を左右独立）</div>
+    <div class="ps-version">version 2.57-lab（音量表示の不一致・全画面バナー3/4）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1471,7 +1476,7 @@ html.tvpc #settings-panel .set-link{
       </div>
 
       <div class="set-row">
-        <div class="set-line"><b>音量を記憶する</b><i>切ると毎回この端末の音量</i></div>
+        <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
         <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
       </div>
     </div>
@@ -1960,16 +1965,34 @@ function applySkip(){
   }catch(_){}
 }
 // 音量を思い出す（YouTubeの準備ができてから呼ぶ）
+// 音量アイコンの絵（消音/音あり）。3か所に同じものが書かれていたのを1つにまとめた（2026-08-11）
+var VOL_MUTE_PATH='<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+var VOL_ON_PATH='<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
+// 消音の見た目（アイコンとスライダー）を今の状態に合わせる。
+// ★これを呼んでいなかったため、記憶した消音を思い出しても絵だけ「音あり」のままになり、
+//   1回押しても何も起きないように見えていた（2026-08-11実機で判明。iPhone版も同じ症状）
+function syncVolumeUI(){
+  try{
+    var icon=document.getElementById('ctrl-vol-icon');
+    var fsIcon=document.getElementById('fs-vol-icon');
+    var p=isMuted?VOL_MUTE_PATH:VOL_ON_PATH;
+    if(icon) icon.innerHTML=p;
+    if(fsIcon) fsIcon.innerHTML=p;
+    var v=isMuted?0:(OPTS.vol!==null?OPTS.vol:lastVol);
+    var vs=document.getElementById('vol-slider');    if(vs) vs.value=v;
+    var fv=document.getElementById('fs-vol-slider'); if(fv) fv.value=v;
+  }catch(_){}
+}
 function applySavedVolume(){
   try{
     if(!ytPlayer||!ytReady) return;
-    if(!OPTS.volsave) return;   // 「音量を記憶する」がオフなら思い出さない（毎回この端末の初期音量）
+    if(!OPTS.volsave){ isMuted=false; syncVolumeUI(); return; }  // オフなら記憶を使わない（見た目も音ありへ）
     if(OPTS.vol!==null){
       ytPlayer.setVolume(OPTS.vol); lastVol=OPTS.vol||lastVol;
-      var vs=document.getElementById('vol-slider');    if(vs) vs.value=OPTS.vol;
-      var fv=document.getElementById('fs-vol-slider'); if(fv) fv.value=OPTS.vol;
     }
     if(OPTS.muted){ isMuted=true; ytPlayer.mute(); }
+    else { isMuted=false; ytPlayer.unMute(); }
+    syncVolumeUI();   // 音の状態と絵を必ず一致させる
   }catch(_){}
 }
 // 音量が変わったら覚えておく（音量スライダー・消音ボタンから呼ばれる）
@@ -1980,7 +2003,8 @@ function rememberVolume(){
     if(!OPTS.volsave) return;   // 「音量を記憶する」がオフなら覚えない
     var el=document.getElementById('vol-slider');
     var v=el?parseInt(el.value,10):NaN;
-    if(!isNaN(v)) OPTS.vol=Math.max(0,Math.min(100,v));
+    // 消音中はスライダーが0なので覚えない（覚えると解除しても無音のままになる）
+    if(!isNaN(v) && !isMuted) OPTS.vol=Math.max(0,Math.min(100,v));
     OPTS.muted=!!isMuted;
     saveOpts();
   }catch(_){}
@@ -2629,7 +2653,7 @@ function onYouTubeIframeAPIReady(){
         if(pendingYtId){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
-          e.target.loadVideoById({videoId:id,startSeconds:sec});
+          e.target.loadVideoById({videoId:id,startSeconds:sec,suggestedQuality:'hd1080'});
           try{ e.target.playVideo(); }catch(_){} // 遅延ロード時も再生を試みる
           clearSpinnerTimer();
           spinnerTimer=setTimeout(function(){showSpinner(false);},60000);
@@ -3274,7 +3298,10 @@ function loadVideo(ytId,sec,msg){
   vCurrentId=ytId; vCurrentSec=sec; // 現在の動画情報を保存
   if(ytReady&&ytPlayer){
     try{ fitPlayer(); }catch(_){} // ロード前に内部サイズ固定を保証
-    ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
+    // suggestedQuality は「この画質を希望する」という提案（強制ではない）。
+    // 画質を強制するAPIはYouTubeが廃止済みで存在しないため、これが唯一できる働きかけ。
+    // 実際の画質はYouTubeが回線速度とプレーヤーの大きさを見て決める（2026-08-11調査）
+    ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec,suggestedQuality:'hd1080'});
     try{ fitPlayer(); }catch(_){}
     setTimeout(function(){
       try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
@@ -3784,28 +3811,19 @@ function togglePlayPause(){
 function toggleMute(){
   if(!ytPlayer)return;
   isMuted=!isMuted;
-  var icon=document.getElementById('ctrl-vol-icon');
-  var fsIcon=document.getElementById('fs-vol-icon');
-  var mutePath='<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
-  var volPath='<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
   if(isMuted){
-    lastVol=ytPlayer.getVolume();
+    var gv=NaN; try{ gv=ytPlayer.getVolume(); }catch(_){}
+    if(!isNaN(gv)&&gv>0) lastVol=gv;   // 0を覚えると解除しても無音のままになるので弾く
     ytPlayer.mute();
-    if(icon)icon.innerHTML=mutePath;
-    if(fsIcon)fsIcon.innerHTML=mutePath;
-    // スライダーを0に
-    var vs=document.getElementById('vol-slider');if(vs)vs.value=0;
-    var fvs=document.getElementById('fs-vol-slider');if(fvs)fvs.value=0;
   }else{
+    if(!lastVol||lastVol<=0) lastVol=50;  // 記憶が0/未設定なら聞こえる音量に戻す
     ytPlayer.unMute();
     ytPlayer.setVolume(lastVol);
-    if(icon)icon.innerHTML=volPath;
-    if(fsIcon)fsIcon.innerHTML=volPath;
-    // スライダーを前の音量に戻す
-    var vs2=document.getElementById('vol-slider');if(vs2)vs2.value=lastVol;
-    var fvs2=document.getElementById('fs-vol-slider');if(fvs2)fvs2.value=lastVol;
+    // 見た目(スライダー)を合わせるための代入。「記憶する」がオフの時は保存対象に触れない
+    if(OPTS.volsave) OPTS.vol=lastVol;
   }
-  try{ rememberVolume(); }catch(_){}   // 消音の状態も覚えておく
+  syncVolumeUI();                         // アイコンとスライダーを今の状態に一致させる
+  try{ rememberVolume(); }catch(_){}      // 消音の状態も覚えておく
 }
 
 function onVolSlider(){
@@ -3813,25 +3831,23 @@ function onVolSlider(){
   if(!v||!ytPlayer)return;
   var val=parseInt(v.value);
   ytPlayer.setVolume(val);
-  var icon=document.getElementById('ctrl-vol-icon');
-  var fsIcon=document.getElementById('fs-vol-icon');
-  var mutePath='<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
-  var volPath='<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
   if(val===0){
     isMuted=true;
     ytPlayer.mute();
-    if(icon)icon.innerHTML=mutePath;
-    if(fsIcon)fsIcon.innerHTML=mutePath;
   }else{
     isMuted=false;
     lastVol=val;
+    if(OPTS.volsave) OPTS.vol=val;   // 「記憶する」がオフの時は保存対象に触れない
     ytPlayer.unMute();
-    if(icon)icon.innerHTML=volPath;
-    if(fsIcon)fsIcon.innerHTML=volPath;
   }
   // fs-vol-sliderも同期
   var fvs=document.getElementById('fs-vol-slider');
   if(fvs&&fvs!==v)fvs.value=val;
+  var icon=document.getElementById('ctrl-vol-icon');
+  var fsIcon=document.getElementById('fs-vol-icon');
+  var p=isMuted?VOL_MUTE_PATH:VOL_ON_PATH;
+  if(icon) icon.innerHTML=p;
+  if(fsIcon) fsIcon.innerHTML=p;
   try{ rememberVolume(); }catch(_){}   // 次に開いたときも同じ音量にする
 }
 
