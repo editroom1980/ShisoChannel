@@ -1145,9 +1145,23 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
   box-shadow:0 8px 30px rgba(0,0,0,.5);text-align:center;
   word-break:normal;overflow-wrap:anywhere;line-break:strict;}
 #reg-body{display:inline-block;text-align:left;max-width:100%;}
+/* 探してもらうマークは、言葉ではなく実物の形で見せる（□に↑では伝わらないため） */
+#reg-icon{display:none;margin:0 auto 10px;width:64px;height:64px;border-radius:14px;
+  background:#f2f4f3;color:#1a2520;align-items:center;justify-content:center;}
+#reg-icon.on{display:flex;}
+#reg-icon svg{width:38px;height:38px;display:block;}
 #reg-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
 #reg-txt{font-size:16px;line-height:1.65;}
 #reg-btns{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+/* ★横向きのiPhoneなど画面が低い時だけ、実測ではみ出した場合に詰める（regFit が付ける）。
+   @media(height)は使わない＝iOSがアプリ内ブラウザ復帰時に判定を凍らせるため */
+#reg-box.tight{padding:12px 16px 12px;}
+#reg-box.tight #reg-icon{width:44px;height:44px;margin-bottom:6px;border-radius:11px;}
+#reg-box.tight #reg-icon svg{width:27px;height:27px;}
+#reg-box.tight #reg-ttl{font-size:16px;margin-bottom:3px;}
+#reg-box.tight #reg-txt{font-size:15px;line-height:1.45;}
+#reg-box.tight #reg-btns{margin-top:10px;gap:6px;}
+#reg-box.tight .reg-btn{padding:9px 14px;font-size:15px;}
 .reg-btn{border:0;border-radius:10px;padding:13px 14px;font-family:inherit;
   font-size:16px;font-weight:700;cursor:pointer;background:#ececec;color:#41504a;}
 .reg-btn.go{background:var(--gold);color:#fff;}
@@ -1340,7 +1354,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.63-lab（番組表の枠を見出しごとに）</div>
+    <div class="ps-version">version 2.68-lab（Android実機で確認し手順を補強）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1462,7 +1476,7 @@ html.tvpc #settings-panel .set-link{
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><g transform="scale(-1,1) translate(-24,0)"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></g><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
         </button>
         <!-- シークバー -->
-        <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
+        <div class="bar-bg" id="seek-bar"><div class="bar-fill" id="p-bar"></div></div>
         <!-- 音量 -->
         <button class="ctrl-btn" id="ctrl-mute" onclick="toggleMute()" title="ミュート">
           <svg id="ctrl-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
@@ -1602,6 +1616,7 @@ html.tvpc #settings-panel .set-link{
 <!-- ホーム画面への登録案内 -->
 <div id="reg">
   <div id="reg-box">
+    <div id="reg-icon"></div>
     <div id="reg-body">
       <div id="reg-ttl"></div>
       <div id="reg-txt"></div>
@@ -1645,7 +1660,7 @@ function escHtml(t){
 var TOUR_KEY='shisochan_tour';
 var TOUR=[
   {id:'ps-btn',         t:'放送開始',       d:'いま放送中の番組を再生します。', power:1},
-  {id:'sponsor-banner', t:'スポンサー広告', d:'地元企業からの広告です。',
+  {id:'sponsor-img',    t:'スポンサー広告', d:'地元企業からの広告です。',
                                             d2:'押すと各社のページが開きます。'},
   {id:'live-tap',       t:'放送中の表示',   d:'いま放送中かどうかを示します。',
                                             d2:'押すと放送中の番組に戻ります。'},
@@ -1654,6 +1669,8 @@ var TOUR=[
                                             d2:'秒数は設定で変更できます。'},
   {id:'ctrl-fwd30',     t:'早送り',         d:'ボタンの秒数だけ先へ進みます。',
                                             d2:'秒数は設定で変更できます。'},
+  {id:'seek-bar',       t:'再生位置',       d:'いま流れている場所です。',
+                                            d2:'なぞると見たい場面へ動きます。'},
   {id:'ctrl-mute',      t:'消音',           d:'押すと音が消え、もう一度押すと',
                                             d2:'元の音量に戻ります。'},
   {id:'vol-slider',     t:'音量',           d:'左右に動かして音量を調整します。'},
@@ -1749,7 +1766,7 @@ function tourPoint(i, counter, noScroll){
   //   （2026-08-12 実機写真で判明：上6px・下1pxのように偏っていた）。
   //   入る分だけ同じ幅を四方に取り、足りなければ全体を縮める。
   //   小さいボタンは大きめの輪で目立たせ、大きな四角は細めに当てて正確に見せる。
-  var P=small?16:8;
+  var P=6;   // ★対象にぴったり付ける。以前は16/8で、囲いが緩く見えた（2026-08-12指示）
   var pad=Math.min(P, Math.max(0,r.left), Math.max(0,r.top),
                       Math.max(0,innerWidth-r.right), Math.max(0,innerHeight-r.bottom));
   var hl=r.left-pad, ht=r.top-pad, hr=r.right+pad, hb=r.bottom+pad;
@@ -1962,6 +1979,7 @@ function tourAskIfFirst(){
   e.w.addEventListener('click', function(){ if(_tourMode===2||_tourMode===3) tourNext(); });
   // 画面の向きや大きさが変わったら、光らせる位置を測り直す
   window.addEventListener('resize', function(){
+    if(_regAt){ try{ regFit(); }catch(_){} }
     if(_tourMode===2){ tourPoint(0,''); return; }
     if(_tourMode!==3) return;
     // 回すと項目が増減する（縦のiPhoneには音量つまみが無い）ので数え直し、
@@ -1995,6 +2013,8 @@ function tourAskIfFirst(){
 // ══════════════════════════════════════════════
 var REG_KEY='shisochan_reg';
 var _regPrompt=null, _regAt=null, _regSeen=false;
+// ?reg=1 で「まだ一度も見ていない状態」に戻す（実機で自動表示を確かめるため。?debug=1と同じ使い方）
+try{ if(/[?&]reg=1(&|$)/.test(location.search)) localStorage.removeItem(REG_KEY); }catch(_){}
 
 // ★イベントは読み込み後しばらくして届くので、必ず先に受け口を用意しておく
 window.addEventListener('beforeinstallprompt', function(e){
@@ -2019,6 +2039,27 @@ function regInApp(){                      // LINEやXの中のブラウザか（
   var u=navigator.userAgent;
   return /Line\/|FBAN|FBAV|Instagram|Twitter for|MicroMessenger/.test(u);
 }
+// ★iPhone・iPadか。全体で使う isIOS は「iPad」の文字を探すため iPad で外れる。
+//   iPadOS 13以降のSafariは自分を Macintosh と名乗るため（2026-08-12 iPadOS 26.5の
+//   シミュレータで実測：UA=Macintosh / maxTouchPoints=5 / platform=MacIntel）。
+//   指で触れるMacは存在しないので「Macを名乗る＋タッチ点2つ以上」でiPadと判る。
+//   ここだけの判定にする＝再生や画面レイアウトの既存挙動には一切触らない
+function regIsApple(){
+  var u=navigator.userAgent;
+  if(/iPhone|iPod|iPad/.test(u)) return true;
+  try{ if(/Mac/.test(u) && navigator.maxTouchPoints>1) return true; }catch(_){}
+  return false;
+}
+function regIsPc(){                       // パソコン＝ホーム画面が無い端末
+  var u=navigator.userAgent;
+  if(/Android|iPhone|iPod|iPad|Mobile/.test(u)) return false;
+  // ★タッチ画面のWindowsノートをAndroid扱いしないよう、OS名でも見る。
+  //   Macを名乗るiPadだけは除く（regIsAppleと同じ判定）
+  if(/Windows NT|CrOS|X11/.test(u)) return true;
+  if(/Macintosh/.test(u)){ try{ return !(navigator.maxTouchPoints>1); }catch(_){ return true; } }
+  try{ if(navigator.maxTouchPoints>0) return false; }catch(_){}
+  return !('ontouchstart' in window);
+}
 
 //  画面の定義。d は行ごとの配列（折り返しを決め打ちするため）
 var REG={
@@ -2033,42 +2074,49 @@ var REG={
  already:{t:'すでに登録できています',
         d:['いまホーム画面のアイコンから','開いています。このままお使い','ください。'],
         b:[{l:'とじる',go:null,p:1}]},
+ // ★Chromeの追加のあと、端末側からもう一度「ホーム画面に追加」と聞かれることがある
+ //   （2026-08-12 Android 15 + Chrome の実機エミュレータで確認）。ここで終わったと
+ //   思って閉じるとアイコンが置かれないため、その場合の逃げ道も書く
  okAdded:{t:'追加できました',
-        d:['ホーム画面のアイコンから','開いてお使いください。'],
+        d:['ホーム画面のアイコンから','開いてお使いください。','見当たらない時は、もう一度','「ホーム画面に追加」を押す。'],
         b:[{l:'とじる',go:null,p:1}]},
 
- // ── iPhone・iPad
- iBrowser:{t:'いま何で見ていますか',
-        d:['お使いのブラウザを','選んでください。'],
-        b:[{l:'Safari',go:'iShare'},{l:'Chrome',go:'iChrome'},
-           {l:'LINEやXの中',go:'inApp'},{l:'わからない',go:'iShare'}]},
+ // ── LINEやXの中で開いている場合（OSに関係なく、まず開き直してもらう）
  inApp:{t:'このままでは追加できません',
         d:['LINEなどの中で見ているため','ホーム画面に置けません。'],
         b:[{l:'開き直し方を見る',go:'inApp2',p:1},{l:'とじる',go:null}]},
  inApp2:{t:'ブラウザで開き直します',
         d:['右下などにある「…」を押し','ブラウザで開くを選んでから','もう一度お試しください。'],
         b:[{l:'とじる',go:null,p:1}]},
- iShare:{t:'共有ボタンを探します',
-        d:['□に↑のマークが','どこにありますか。'],
-        b:[{l:'画面の下にある',go:'iList'},{l:'右上にある',go:'iList'},
+
+ // ── iPhone・iPad
+ iBrowser:{t:'いま何で見ていますか',
+        d:['お使いのブラウザを','選んでください。'],
+        b:[{l:'Safari',go:'iShare'},{l:'Chrome',go:'iShare'},
+           {l:'LINEやXの中',go:'inApp'},{l:'わからない',go:'iShare'}]},
+ iShare:{t:'このマークを探します', ic:'share',
+        d:['画面のどこにありますか。'],
+        b:[{l:'画面の下にある',go:'iSteps'},{l:'右上にある',go:'iSteps'},
            {l:'見当たらない',go:'iDots'}]},
- iDots:{t:'「…」を押してください',
-        d:['画面の下か右下にある','「…」の中に共有があります。'],
-        b:[{l:'押せた',go:'iList',p:1}]},
- iChrome:{t:'共有ボタンを押します',
-        d:['画面の上のアドレスの右に','ある□に↑を押します。'],
-        b:[{l:'押せた',go:'iList',p:1}]},
- iList:{t:'下までスクロールします',
-        d:['出てきた一覧を下へたどり','「ホーム画面に追加」を','押してください。'],
-        b:[{l:'押せた',go:'iDone',p:1},{l:'見当たらない',go:'iEdit'}]},
- iEdit:{t:'一覧に足します',
-        d:['一覧の一番下にある','「アクションを編集」から','追加できます。'],
+ iDots:{t:'このマークを探します', ic:'dots',
+        d:['画面の下か右下にあります。','まだ押さないでください。'],
+        b:[{l:'見つかった',go:'iSteps2',p:1},{l:'それも無い',go:'iSafari'}]},
+ // ★マークを押すと画面を覆うメニューや一覧が出て、この案内は指で触れなくなる。
+ //   途中で「押せた」を押させると、その瞬間にメニューが閉じて続きができない
+ //   （2026-08-12 実機で発生）。だから押す前に最後までの手順を全部見せる。
+ iSteps:{t:'この順に押していきます', ic:'share',
+        d:['① このマークを押す','②「ホーム画面に追加」','③ 右上の「追加」',
+           '※見えない時は「表示を増やす」','　か、一覧を下へたどる'],
+        b:[{l:'とじる',go:null,p:1},{l:'見つからない時',go:'iEdit'}]},
+ iSteps2:{t:'この順に押していきます', ic:'dots',
+        d:['① このマークを押す','②「共有」を押す','③「ホーム画面に追加」','④ 右上の「追加」',
+           '※見えない時は「表示を増やす」'],
+        b:[{l:'とじる',go:null,p:1},{l:'見つからない時',go:'iEdit'}]},
+ iEdit:{t:'一覧に見当たらない時',
+        d:['一覧の一番下にある','「アクションを編集」を押すと','足すことができます。'],
         b:[{l:'とじる',go:null,p:1},{l:'それでも無い',go:'iSafari'}]},
  iSafari:{t:'Safariで開き直します',
         d:['古い機種では、Safari以外だと','ホーム画面に追加できません。','Safariで開いてお試しください。'],
-        b:[{l:'とじる',go:null,p:1}]},
- iDone:{t:'最後に「追加」を押します',
-        d:['右上の「追加」を押すと','ホーム画面に置かれます。'],
         b:[{l:'とじる',go:null,p:1}]},
 
  // ── Android系でボタンが使えない場合／その他
@@ -2076,24 +2124,42 @@ var REG={
         d:['お使いのブラウザを','選んでください。'],
         b:[{l:'Chrome',go:'aChrome'},{l:'Edge',go:'aEdge'},
            {l:'Galaxyの標準ブラウザ',go:'aSams'},{l:'その他・わからない',go:'aOther'}]},
- aChrome:{t:'メニューを下まで見ます',
-        d:['右上の「⋮」を押し、','下までスクロールすると','「ホーム画面に追加」があります。'],
+ // ★このアプリはPWAの条件を満たすため、Chromeの表記は「ホーム画面に追加」ではなく
+ //   「アプリをインストール」に変わることがある（サイトごとに自動で振り分けられる）。
+ //   どちらが出ても迷わないよう両方を書く
+ aChrome:{t:'メニューから入れます', ic:'menu',
+        d:['右上の「⋮」を押し、','「アプリをインストール」か','「ホーム画面に追加」を押す。'],
         b:[{l:'とじる',go:null,p:1}]},
- aEdge:{t:'アプリとして入れます',
-        d:['右上のメニューを開き','「アプリとしてインストール」','を押してください。'],
+ // ★Edgeは画面の下にメニューがある機種が多く、位置を決め打ちしない（⋮の絵も出さない）
+ aEdge:{t:'メニューから入れます',
+        d:['メニュー（画面の下か右上）を','開いて「ホーム画面に追加」を','押してください。'],
         b:[{l:'とじる',go:null,p:1}]},
  aSams:{t:'下のメニューから足します',
-        d:['画面の下の「≡」を押し','「ページを追加」→','「ホーム画面」の順です。'],
+        d:['画面の右下の「≡」を押し、','「ページを追加」を押します。','次に「ホーム画面」→「追加」。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ pc:{t:'パソコンでご覧の場合',
+        d:['パソコンにはホーム画面が','ありません。お気に入りに','入れてお使いください。'],
         b:[{l:'とじる',go:null,p:1}]},
  aOther:{t:'メニューの中を探します',
         d:['メニューを開いて','「ホーム画面」「追加」','「インストール」を探します。'],
         b:[{l:'とじる',go:null,p:1}]}
 };
 
+// 探してもらうマークの絵。iOSの共有・iOS26の「…」・Androidの「⋮」
+var REG_ICON={
+ share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+
+       '<path d="M12 3v11"/><path d="M8.2 6.8 12 3l3.8 3.8"/>'+
+       '<path d="M7 10H5.6A1.6 1.6 0 0 0 4 11.6v7.8A1.6 1.6 0 0 0 5.6 21h12.8a1.6 1.6 0 0 0 1.6-1.6v-7.8A1.6 1.6 0 0 0 18.4 10H17"/></svg>',
+ dots:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">'+
+      '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="12" r="1.15" fill="currentColor" stroke="none"/>'+
+      '<circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>',
+ menu:'<svg viewBox="0 0 24 24" fill="currentColor">'+
+      '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>'
+};
 function regEls(){
   return {w:document.getElementById('reg'), box:document.getElementById('reg-box'),
     ttl:document.getElementById('reg-ttl'), txt:document.getElementById('reg-txt'),
-    btns:document.getElementById('reg-btns')};
+    btns:document.getElementById('reg-btns'), icon:document.getElementById('reg-icon')};
 }
 function regShow(key){
   var e=regEls(); if(!e.w) return;
@@ -2102,13 +2168,16 @@ function regShow(key){
     //   （その中のブラウザにはホーム画面へ追加する機能が無い）
     if(regInApp())            key='inApp';
     else if(_regPrompt)       key='oneTap';
-    else if(isIOS)            key='iBrowser';
+    else if(regIsApple())     key='iBrowser';   // ★isIOSではなく専用判定。iPadで外れていた
+    else if(regIsPc())        key='pc';
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
+  if(sc.ic && REG_ICON[sc.ic]){ e.icon.innerHTML=REG_ICON[sc.ic]; e.icon.classList.add('on'); }
+  else { e.icon.textContent=''; e.icon.classList.remove('on'); }
   e.ttl.textContent=sc.t;
   tourLines(e.txt, sc.d);
   e.btns.textContent='';
@@ -2119,10 +2188,18 @@ function regShow(key){
     el.addEventListener('click', function(ev){ ev.stopPropagation(); regPick(b); });
     e.btns.appendChild(el);
   });
+  regFit();
   if(uiNeedsFocus()){
     var first=e.btns.querySelector('.reg-btn.go')||e.btns.firstChild;
     try{ if(first) first.focus({preventScroll:true}); }catch(_){ }
   }
+}
+// 箱の高さを実測し、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
+function regFit(){
+  var e=regEls(); if(!e.box) return;
+  e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
+  e.box.classList.remove('tight');
+  if(e.box.getBoundingClientRect().height > innerHeight-12) e.box.classList.add('tight');
 }
 function regPick(b){
   if(b.go==='@prompt'){ regDoPrompt(); return; }
@@ -2140,11 +2217,42 @@ function regDoPrompt(){
     }).catch(function(){ regShow('aBrowser'); });
   }catch(_){ regShow('aBrowser'); }
 }
+// ★閉じ方で記録を分ける。'done'=手順まで見た（もう自動では出さない）／
+//   数字='あとにする'で閉じた回数。次の起動でまた出す。3回ことわられたら出さない
+//   （以前は「あとにする」でも done にしていたため、二度と出なかった）
 function regEnd(){
   var e=regEls(); if(!e.w) return;
+  var at=_regAt;
   e.w.classList.remove('on');
   _regAt=null;
-  try{ localStorage.setItem(REG_KEY,'done'); }catch(_){}
+  try{
+    // ★すでに'done'の人は何をしても'done'のまま。設定から開いて閉じた時に
+    //   数字へ戻してしまい、案内がまた出るようになるのを防ぐ
+    if(localStorage.getItem(REG_KEY)!=='done'){
+      if(at && at!=='start'){ localStorage.setItem(REG_KEY,'done'); }
+      else{
+        var n=parseInt(localStorage.getItem(REG_KEY),10); n=(n>0?n:0)+1;
+        localStorage.setItem(REG_KEY, n>=3 ? 'done' : String(n));
+      }
+    }
+  }catch(_){}
+}
+function regDone(){                       // もう自動で出さない状態か
+  try{ return localStorage.getItem(REG_KEY)==='done'; }catch(_){ return false; }
+}
+//  ★3秒後に1回だけだと、その瞬間に条件が揃っていないと二度と出なかった
+//    （使い方の説明が出ている・全画面で見ている 等）。5秒ごとに1分間ためす
+var _regSched=false;
+function regSchedule(){
+  if(_regSched) return;        // powerOnは復帰経路からも呼ばれる＝二重に仕掛けない
+  _regSched=true;
+  setTimeout(function(){ try{ regMaybeOffer(); }catch(_){} }, 3000);
+  var n=0;
+  var iv=setInterval(function(){
+    n++;
+    try{ regMaybeOffer(); }catch(_){}
+    if(_regSeen || regDone() || n>12) clearInterval(iv);
+  }, 5000);
 }
 //  出してよい場面かを見て、最初の画面を出す
 function regMaybeOffer(){
@@ -2155,7 +2263,7 @@ function regMaybeOffer(){
   if(isExpanded) return;                // 全画面で見ている最中は割り込まない
   // ★テレビ・パソコンには「ホーム画面」が無い。TVは電気店が設置するので案内も不要
   try{ if(isSilk || isTvPcMode()) return; }catch(_){}
-  try{ if(localStorage.getItem(REG_KEY)) return; }catch(_){}
+  if(regDone()) return;                 // 手順まで見た人・3回ことわった人には出さない
   _regSeen=true;
   regShow('start');
 }
@@ -2636,6 +2744,11 @@ function rememberVolume(){
 function applyOpts(){
   try{
     var b=document.body;
+    // すでにホーム画面から開いている人には「ホーム画面に登録する」を出さない
+    try{
+      var lr=document.getElementById('lnk-reg');
+      if(lr) lr.style.display = regHome() ? 'none' : '';
+    }catch(_){}
     b.classList.toggle('text-1', OPTS.text===1);
     b.classList.toggle('text-2', OPTS.text===2);
     // お知らせの自動切り替え
@@ -3336,9 +3449,18 @@ function fitPlayer(){
       yt.style.right='auto'; yt.style.bottom='auto';
       yt.style.width=_fitW0+'px'; yt.style.height=_fitH0+'px';
       yt.style.transformOrigin='0 0';
-      if(cw>0&&ch>0){
-        var scN=Math.min(cw/_fitW0, ch/_fitH0);
-        var txN=Math.round((cw-_fitW0*scN)/2), tyN=Math.round((ch-_fitH0*scN)/2);
+      // ★右端の黒帯の根治（2026-08-12 Google TVで発生・ブラウザ実測で再現）。
+      //   原因は clientWidth/clientHeight が整数に丸められること。枠の実寸が981.328pxでも
+      //   981として縮小率を決めるため、右に0.33px・下に0.17pxの黒が残る。
+      //   TVは1CSSpxが約2物理pxなので、これが2pxの黒帯として見えていた。
+      //   ①小数のまま測る ②平行移動を丸めない ③通常表示と同じだけ外へはみ出させる
+      //     （はみ出しは枠のoverflow:hiddenで切られる。16:9の比は 6:3.375 で厳密に保つ）
+      var _pr=pw.getBoundingClientRect();
+      var cwF=_pr.width, chF=_pr.height;
+      var OSW=6, OSH=OSW*(_fitH0/_fitW0);
+      if(cwF>0&&chF>0){
+        var scN=Math.min((cwF+OSW)/_fitW0, (chF+OSH)/_fitH0);
+        var txN=(cwF-_fitW0*scN)/2, tyN=(chF-_fitH0*scN)/2;
         yt.style.transform='translate('+txN+'px,'+tyN+'px) scale('+scN+')';
       }
       if(cw>0){
@@ -4372,7 +4494,7 @@ function powerOn(){
     });
   }
   // 放送が始まってから登録案内を出す（何のアプリか分かってから勧めるため）
-  setTimeout(function(){ try{ regMaybeOffer(); }catch(_){} }, 3000);
+  try{ regSchedule(); }catch(_){}
   // Silk/FireTVのみ: ユーザージェスチャー直後にブラウザUIを非表示にする
   // PC・iOS版には一切影響しない（isSilkがfalseのため実行されない）
   if(isSilk){
