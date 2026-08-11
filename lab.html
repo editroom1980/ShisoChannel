@@ -1019,6 +1019,11 @@ body.ori-p .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; }body.ip
 body.ori-l .player-wrap.expanded .fs-sponsor,
 body.ori-l .player-wrap:fullscreen .fs-sponsor,
 body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
+/* 全画面・TV/PC: 表示指定がスマホ縦横にしか無く、TVの全画面でバナーが出ていなかった(2026-08-11実機で判明)。
+   上部の帯自体はfitPlayerが既に確保済み(topBand)なので、表示指定を足すだけで直る */
+body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap.expanded .fs-sponsor,
+body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap:fullscreen .fs-sponsor,
+body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
 
 /* ══ サイト表示の窓（TV・PC用）══
    お知らせ・バナー・投稿フォームのリンク先を、ページを離れずこの窓の中で開く。
@@ -1029,11 +1034,14 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;}
 #site-viewer::-webkit-scrollbar{width:0;height:0;display:none;}
 #site-viewer.open{display:block;}
-/* 窓は縦に長く(2.5画面分)開き、中身を「窓ごと」スクロールして読む方式。
-   相手サイトの中のスクロールは外から操作できない(Webの安全規約)ため、
-   ▲▼ボタン(自前=TVブラウザでも確実に効く)で窓自体を送る。下端に近づくと自動延長 */
-#sv-frame{width:100%;height:250vh;border:0;display:block;background:#fff;}
-/* 丸ボタン3つ(iPhoneのアプリ内ブラウザと同じ「⚪︎に＜」意匠・2026-08-11指示)。
+/* 窓は最初から固定の長さ(4500px)で開き、中身を「窓ごと」スクロールして読む方式。
+   相手サイトの中のスクロールは外から操作できない(Webの安全規約)ため。
+   ※旧・自動延長は廃止(2026-08-11)：延長の瞬間に中のページが作り直され、
+     見ていた位置が飛ぶ「途中ジャンプ」の原因だった。固定長なら一切動かない。
+   ※画面の高さ基準で作られた今風サイト(スポンサー各社)はこの方式と原理的に相性が悪いため
+     窓を使わず直接ジャンプに変更(EMBED_OK参照) */
+#sv-frame{width:100%;height:4500px;border:0;display:block;background:#fff;}
+/* 丸ボタン3つ(⚪︎に＜の意匠)。右下に縦一列で集約し、マウスの居る四隅に移動する(2026-08-11指示)。
    窓がスクロールしても付いてくるよう固定配置 */
 #sv-back,#sv-up,#sv-down{
   position:fixed;z-index:2;width:60px;height:60px;border-radius:50%;
@@ -1041,11 +1049,29 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   background:rgba(250,250,250,0.95);color:#222;border:0;padding:0;cursor:pointer;
   box-shadow:0 3px 12px rgba(0,0,0,0.35);
 }
-#sv-back{left:24px;bottom:24px;}
-#sv-up{right:24px;bottom:96px;}
-#sv-down{right:24px;bottom:24px;}
+/* 既定=右下: 上から ▲ ▼ ◀ の縦一列 */
+#sv-up{right:24px;bottom:168px;}
+#sv-down{right:24px;bottom:96px;}
+#sv-back{right:24px;bottom:24px;}
+/* 左下 */
+#site-viewer.sv-bl #sv-up{right:auto;left:24px;}
+#site-viewer.sv-bl #sv-down{right:auto;left:24px;}
+#site-viewer.sv-bl #sv-back{right:auto;left:24px;}
+/* 右上 */
+#site-viewer.sv-tr #sv-up{bottom:auto;top:24px;}
+#site-viewer.sv-tr #sv-down{bottom:auto;top:96px;}
+#site-viewer.sv-tr #sv-back{bottom:auto;top:168px;}
+/* 左上 */
+#site-viewer.sv-tl #sv-up{right:auto;left:24px;bottom:auto;top:24px;}
+#site-viewer.sv-tl #sv-down{right:auto;left:24px;bottom:auto;top:96px;}
+#site-viewer.sv-tl #sv-back{right:auto;left:24px;bottom:auto;top:168px;}
 #sv-back svg,#sv-up svg,#sv-down svg{width:30px;height:30px;fill:#222;display:block;}
 #sv-back:active,#sv-up:active,#sv-down:active{opacity:0.6;}
+
+/* TV/PCモード中はページ自体をスクロール不能にする(2026-08-11指示の「完全固定」)。
+   URLバーの出没で縦にはみ出てもスクロールバーが現れない＝バーが画面幅を奪って
+   vw基準のロゴ・バナーが動く連鎖を根絶。クラスはJS(updateTvH)がisTvPcMode()の時だけ付ける */
+html.tvpc, html.tvpc body{overflow:hidden;}
 
 /* iPhone横向きの設定画面（2026-08-11指示の配置）：
    上段＝3ブロックを同じ大きさで横に並べる
@@ -1062,17 +1088,23 @@ body.ori-l #settings-panel .set-sec{margin-bottom:0;padding:7px;}
 body.ori-l #settings-panel .set-sec:nth-of-type(1){grid-column:1;grid-row:1;border-radius:8px 8px 0 0;}
 body.ori-l #settings-panel .set-sec:nth-of-type(2){grid-column:1;grid-row:2;border-radius:0 0 8px 8px;margin-top:-6px;}
 body.ori-l #settings-panel .set-sec:nth-of-type(3){grid-column:2;grid-row:1 / span 2;}
-body.ori-l #settings-panel .set-sec:nth-of-type(4){grid-column:3;grid-row:1 / span 2;}
-/* 下段：アプリについて＝横一本の帯。中身（バージョン・放送時間・出典・リセット）も横並び */
+body.ori-l #settings-panel .set-sec:nth-of-type(4){
+  grid-column:3;grid-row:1 / span 2;
+  /* カードの縦の余りを項目の間隔に均等配分＝投稿・お問い合わせの間隔を広げる(2026-08-11指示) */
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+/* 下段：アプリについて＝薄い帯(1行目)＋その下に「設定をすべて元に戻す」ボタンと説明を横並び(2行目)
+   （2026-08-11指示：帯はもっと薄く・リセットは帯の下・説明はボタンの横） */
 body.ori-l #settings-panel .set-sec:nth-of-type(5){
   grid-column:1 / span 3;grid-row:3;
-  display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:6px 10px;
+  display:grid;grid-template-columns:auto 1fr;gap:3px 12px;align-items:center;padding:4px 10px;
 }
-body.ori-l #settings-panel .set-sec:nth-of-type(5) .set-hd{margin:0;flex-shrink:0;}
-body.ori-l #settings-panel .set-about{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;}
+body.ori-l #settings-panel .set-sec:nth-of-type(5) .set-hd{grid-area:1/1;margin:0;}
+body.ori-l #settings-panel .set-about{grid-area:1/2;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;}
 body.ori-l #settings-panel .set-about div{display:flex;gap:6px;padding:0;border:0;font-size:11px;align-items:baseline;}
-body.ori-l #settings-panel .set-link-reset{width:auto;margin-left:auto;padding:4px 10px;}
-body.ori-l #settings-panel .set-link-reset .set-link-txt i{display:none;}
+body.ori-l #settings-panel .set-link-reset{grid-area:2/1/3/3;width:auto;margin:0;padding:1px 0 2px;}
+body.ori-l #settings-panel .set-link-reset .set-link-txt{display:flex;flex-direction:row;align-items:baseline;gap:12px;}
+body.ori-l #settings-panel .set-link-reset .set-link-txt i{display:inline;font-size:10px;}
 /* 各ブロック内の圧縮（横402pxの高さに収めるため） */
 body.ori-l #settings-panel .set-link{padding:6px 8px;}
 body.ori-l #settings-panel .set-link-txt b{font-size:13px;}
@@ -1156,13 +1188,35 @@ body.ori-l #settings-panel .set-hd{margin-bottom:5px;}
     overflow:hidden;
     min-height:calc(1.35em * 3);
   }
-  /* 設定画面：横幅を活かして2列に並べ、全項目を1画面に収める（2026-08-11指示。
-     TVブラウザは内側スクロールを回せないため「スクロール不要にする」のが根本対処） */
+  /* 設定画面：明示配置の2列グリッドで全項目を1画面に収める（2026-08-11指示。
+     TVブラウザは内側スクロールを回せないため「スクロール不要にする」のが根本対処）。
+     左列=使い方/背景の色/表示と動作、右列=投稿(左列2段分の高さ)+アプリについて。
+     行の高さを左右で共有するので下端が自動で揃い、投稿カードが伸びた分は
+     space-betweenで項目の間隔に均等配分される（間隔を開ける+縦幅を揃える指示を同時達成） */
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-body{
-    column-count:2;column-gap:12px;
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto 1fr;
+    gap:12px;align-items:stretch;
   }
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-sec{
-    break-inside:avoid;-webkit-column-break-inside:avoid;
+    margin-bottom:0;
+  }
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-sec:nth-of-type(1){grid-column:1;grid-row:1;}
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-sec:nth-of-type(2){grid-column:1;grid-row:2;}
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-sec:nth-of-type(3){
+    grid-column:1;grid-row:3;
+    display:flex;flex-direction:column;justify-content:space-between;
+  }
+  /* 項目そのものにも余裕を持たせる(投稿リンク等の間隔を開ける指示・TV/PCのみ) */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-link{
+    padding:12px 10px;
+  }
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-sec:nth-of-type(4){
+    grid-column:2;grid-row:1 / span 2;
+    display:flex;flex-direction:column;justify-content:space-between;
+  }
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-sec:nth-of-type(5){
+    grid-column:2;grid-row:3;
+    display:flex;flex-direction:column;justify-content:space-between;
   }
 }
 </style>
@@ -1173,7 +1227,7 @@ body.ori-l #settings-panel .set-hd{margin-bottom:5px;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.52-lab（松本工務店バナー差し替え）</div>
+    <div class="ps-version">version 2.53-lab（TV：完全固定・窓の安定化・画質1080p）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1439,10 +1493,12 @@ function isTvPcMode(){
     !c.contains('ori-p') && !c.contains('ori-l') &&
     !c.contains('ori-tp') && !c.contains('ori-tl') && !c.contains('silk-mode');
 }
-// 窓への埋め込みを許しているサイトだけ（2026-08-11に全リンク先のヘッダーを実測して確定）。
-// Instagram・READYFORは拒否のため、この表に無い相手は従来どおりページ遷移になる
-var EMBED_OK=['city.shiso.lg.jp','docs.google.com','matsukou.hyogo.jp',
-              'kawamoto-sekizai.com','cafesansyo.com','tonkotsuramen-tsubaki-shiso.com'];
+// 窓で開くのは「昔ながらの素直な構造」のサイトだけ（2026-08-11に実機検証で確定）。
+//  ・市のお知らせ(city.shiso.lg.jp)と投稿フォーム(docs.google.com)＝窓と相性が良い
+//  ・スポンサー各社のサイトは「画面の高さ」基準の今風構造のため、窓を縦に伸ばすと
+//    中身も一緒に伸びて永遠にスクロールが追いつかない(松本工務店で実機確認)。
+//    → 窓を使わず直接ジャンプ(復帰フラグで戻り時に自動再開)。Instagram・READYFORも同様
+var EMBED_OK=['city.shiso.lg.jp','docs.google.com'];
 function canEmbed(url){
   try{
     var h=new URL(url,location.href).hostname;
@@ -1469,6 +1525,7 @@ function openSiteViewer(url){
   f.id='sv-frame'; f.title='リンク先のページ';
   f.src=url;
   v.insertBefore(f, v.firstChild);
+  ['sv-bl','sv-tr','sv-tl'].forEach(function(c){ v.classList.remove(c); });  // ボタンは毎回右下(既定)から
   v.classList.add('open');
   v.scrollTop=0;
   // 履歴に1段積む＝端末・ブラウザの「戻る」でも窓が閉じる（ページを離れない）
@@ -1486,27 +1543,33 @@ function closeSiteViewer(fromPop){
   else { _svPushed=false; }
 }
 // ▲▼ボタン：窓を1画面分ずつ送る。相手サイトの中のスクロールは外から操作できない
-// (Webの安全規約)ため、縦に長い窓を「窓ごと」動かす方式。TVブラウザでも確実に効く
+// (Webの安全規約)ため、縦に長い窓を「窓ごと」動かす方式。TVブラウザでも確実に効く。
+// ※窓の長さは固定(4500px)。旧・自動延長は「延長の瞬間に中のページが作り直され
+//   見ていた位置が飛ぶ」原因だったため廃止(2026-08-11)
 function svScroll(dir){
   var v=document.getElementById('site-viewer');
   if(!v||!v.classList.contains('open')) return;
-  _svExtend(v);
   // 即時スクロール（1押し=0.8画面）。なめらか送り(smooth)はTVブラウザ側の対応が
   // 保証できず検証も不能なため使わない。押すたびに確実に1段進む方が高齢者にも明快
   v.scrollTop += dir*Math.round(v.clientHeight*0.8);
 }
-// 下端に近づいたら窓を自動延長（長いページも最後まで読めるように・上限あり）
-function _svExtend(v){
-  var f=document.getElementById('sv-frame');
-  if(!f) return;
-  var h=f.offsetHeight;
-  if(h<20000 && v.scrollTop+v.clientHeight > h-v.clientHeight){
-    f.style.height=(h+1600)+'px';
-  }
-}
+// ボタンの塊はマウスの居る四隅へ移動する（2026-08-11指示）。
+// 中央線の±80pxは不感帯＝境界をまたぐたびにチラチラ動くのを防ぐ
 (function(){
   var v=document.getElementById('site-viewer');
-  if(v) v.addEventListener('scroll',function(){ _svExtend(v); },{passive:true});
+  if(!v) return;
+  var last=0;
+  v.addEventListener('mousemove',function(e){
+    var now=Date.now(); if(now-last<120) return; last=now;
+    var H=80, cx=innerWidth/2, cy=innerHeight/2;
+    var hz=(e.clientX<cx-H)?'l':(e.clientX>cx+H)?'r':'';
+    var vt=(e.clientY<cy-H)?'t':(e.clientY>cy+H)?'b':'';
+    if(!hz||!vt) return;                       // 不感帯内は現状維持
+    var want='sv-'+vt+hz;
+    if(v.classList.contains(want)) return;
+    ['sv-bl','sv-tr','sv-tl','sv-br'].forEach(function(c){ v.classList.remove(c); });
+    if(want!=='sv-br') v.classList.add(want);  // 既定(右下)はクラス無し
+  },{passive:true});
 })();
 window.addEventListener('popstate',function(){ closeSiteViewer(true); });
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteViewer(); });
@@ -1521,7 +1584,11 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteV
 var _tvW=0,_tvHmax=0;
 function updateTvH(){
   try{
-    if(!isTvPcMode()){
+    var on=isTvPcMode();
+    // TV/PC中はページ自体をスクロール不能に（html.tvpc→overflow:hidden）。
+    // スクロールバーの出現が画面幅を奪い、vw基準のロゴ・バナーが動く連鎖を根絶する
+    document.documentElement.classList.toggle('tvpc', on);
+    if(!on){
       if(_tvW){ document.documentElement.style.removeProperty('--tvH'); _tvW=0; _tvHmax=0; }
       return;
     }
@@ -2491,6 +2558,29 @@ function fitPlayer(){
   try{ if(!isFs && (pw.matches(':fullscreen')||pw.matches(':-webkit-full-screen'))) isFs=true; }catch(_){}
 
   if(!isFs){
+    if(isTvPcMode()){
+      // ── TV/PCの通常表示：内部を1920×1080で描かせて縮小表示（2026-08-11・画質対策）──
+      // YouTubeは「プレーヤーの大きさ」で画質を自動選択するため、実寸(例:981×552)のままだと
+      // 720p以下が選ばれやすい。内部1920×1080なら最初から1080pを選びやすくなる。
+      // 枠(player-wrap)は常に16:9なので縮小率は縦横同一＝見た目の配置は従来と同じ。
+      // ※過去にtransformで起きた数pxズレはiOS固有の合成問題で、ここはiOS除外済み(isTvPcMode)
+      yt.style.position='absolute'; yt.style.left='0'; yt.style.top='0';
+      yt.style.right='auto'; yt.style.bottom='auto';
+      yt.style.width=_fitW0+'px'; yt.style.height=_fitH0+'px';
+      yt.style.transformOrigin='0 0';
+      if(cw>0&&ch>0){
+        var scN=Math.min(cw/_fitW0, ch/_fitH0);
+        var txN=Math.round((cw-_fitW0*scN)/2), tyN=Math.round((ch-_fitH0*scN)/2);
+        yt.style.transform='translate('+txN+'px,'+tyN+'px) scale('+scN+')';
+      }
+      if(cw>0){
+        var fsbT=document.getElementById('fs-ctrl-bar');
+        if(fsbT){ fsbT.style.width=Math.max(280,Math.round(cw*0.94))+'px'; }
+        var telT=document.getElementById('video-telop');
+        if(telT){ telT.style.bottom='12px'; try{ fitTelop(cw); }catch(_){} }
+      }
+      return;
+    }
     // ★通常表示は v1.41以前の「枠を100%そのまま埋める」素直方式に復帰（transform非使用）。
     //   v1.42で導入したtransform縮小方式が、iOSで映像を数pxズラす原因だった（回帰）。
     //   枠(player-wrap)は縦横どちらでも常に16:9なので、iframeを100%で埋めれば
