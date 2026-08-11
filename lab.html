@@ -1340,7 +1340,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.62-lab（枠の精度・追従／旧機種対応）</div>
+    <div class="ps-version">version 2.63-lab（番組表の枠を見出しごとに）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1475,7 +1475,7 @@ html.tvpc #settings-panel .set-link{
     </div>
 
     <!-- 右上：番組表 -->
-    <div class="sidebar">
+    <div class="sidebar" id="sb-panel">
       <div class="sb-head">
         <div class="sb-ttl">番 組 表</div>
         <span class="sb-note">好きな番組をタップして視聴できます</span>
@@ -1659,7 +1659,7 @@ var TOUR=[
   {id:'vol-slider',     t:'音量',           d:'左右に動かして音量を調整します。'},
   {id:'expand-open-btn',t:'全画面表示',     d:'映像を画面いっぱいに広げます。',
                                             d2:'戻すときは右下の縮小マークです。'},
-  {id:'sb-list',        t:'番組表',         d:'その日の放送予定の一覧です。',
+  {id:'sb-panel',        t:'番組表',         d:'その日の放送予定の一覧です。',
                                             d2:'押した番組をすぐに再生します。'},
   {id:'sb-news',        t:'お知らせ',       d:'宍粟市の新着情報とイベントです。',
                                             d2:'押すとページが開きます。'},
