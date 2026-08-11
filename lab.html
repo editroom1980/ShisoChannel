@@ -1340,7 +1340,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.61-lab（登録案内・焦点枠の修正）</div>
+    <div class="ps-version">version 2.62-lab（枠の精度・追従／旧機種対応）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1668,6 +1668,7 @@ var TOUR=[
 ];
 //  _tourMode … 0=出ていない／1=最初の問いかけ／2=放送開始の説明／3=本編／4=終わりのお知らせ
 var _tourMode=0, _tourSeq=[], _tourPos=-1, _tourWait=null, _tourScroll0=0, _tourFixes=0, _tourWatchT=[];
+var _tourSync=null, _tourRect='';   // 出している間、対象の位置を見張って枠を合わせ続ける
 // リモコンやキーボードで操作する画面か（テレビ・パソコン）。
 // ★指で触る端末では自動で焦点をあてない。押していないのに緑の枠が付いて見えるため
 //   （2026-08-12 iOS26のシミュレータで実際に出た）
@@ -1744,14 +1745,17 @@ function tourPoint(i, counter, noScroll){
   e.hole.style.display='';
   // 小さいボタンほど枠を広めに取り、丸く囲む
   var small=(r.width<70 && r.height<70);
-  var P=small?16:10;
-  // ★枠は画面の中に収める（はみ出すと金色の線が途中で切れて見えるため）。
-  //   ただし画面のふちギリギリまで使う。3px内側に寄せると、画面の上端にある設定ボタンのように
-  //   ふちに接している物が枠の外へ押し出されて暗くなってしまう（2026-08-12実測で確認）。
-  //   枠線(3px)は枠の外側ではなく境界そのものに描かれるので、0でも線は全部見える。
-  var M=0;
-  var hl=Math.max(M, r.left-P),  ht=Math.max(M, r.top-P);
-  var hr=Math.min(innerWidth-M, r.right+P), hb=Math.min(innerHeight-M, r.bottom+P);
+  // ★余白は四方そろえる。片側だけ画面のふちで削ると、枠が対象からズレて見える
+  //   （2026-08-12 実機写真で判明：上6px・下1pxのように偏っていた）。
+  //   入る分だけ同じ幅を四方に取り、足りなければ全体を縮める。
+  //   小さいボタンは大きめの輪で目立たせ、大きな四角は細めに当てて正確に見せる。
+  var P=small?16:8;
+  var pad=Math.min(P, Math.max(0,r.left), Math.max(0,r.top),
+                      Math.max(0,innerWidth-r.right), Math.max(0,innerHeight-r.bottom));
+  var hl=r.left-pad, ht=r.top-pad, hr=r.right+pad, hb=r.bottom+pad;
+  // 対象そのものが画面から出ている辺だけは、画面に合わせる（線が消えないように）
+  hl=Math.max(0,hl); ht=Math.max(0,ht);
+  hr=Math.min(innerWidth,hr); hb=Math.min(innerHeight,hb);
   e.hole.style.left=hl+'px';          e.hole.style.top=ht+'px';
   e.hole.style.width=Math.max(0,hr-hl)+'px'; e.hole.style.height=Math.max(0,hb-ht)+'px';
   e.hole.style.borderRadius=small?'999px':'12px';   // 正方形なら丸、細長い音量つまみなら小判形
@@ -1801,6 +1805,7 @@ function tourPoint(i, counter, noScroll){
       TR.left=Math.round(dir==='right'?(L-13):(L+TW-1))+'px';
     }
   }
+  _tourRect=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
   if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
 }
 // 本編のpos番目を出す。出す直前に消えていた項目はその場で飛ばす
@@ -1813,14 +1818,14 @@ function tourGo(pos){
   e.next.disabled=false;
   e.next.textContent=(pos>=_tourSeq.length-1)?'おわり':'次へ';
   tourPoint(_tourSeq[pos], (pos+1)+' / '+_tourSeq.length);
-  tourWatch();
+  tourWatch(); tourSyncStart();
 }
 // 最初の1枚：放送開始ボタン
 function tourShowPower(){
   var e=tourEls();
   _tourMode=2; _tourPos=-1; _tourFixes=0;
   tourPoint(0,'');
-  tourWatch();
+  tourWatch(); tourSyncStart();
   // 準備がまだなら、その間だけ「次へ」を押せなくする（本物のボタンと同じ振るまい）
   var pb=document.getElementById('ps-btn');
   if(pb && pb.classList.contains('loading')){
@@ -1842,7 +1847,27 @@ function tourShowPower(){
 // 出した直後に、枠がまだ対象に合っているかを2回だけ見に行く。
 // ★他の処理がページを動かす事がある（powerOnのscrollTo(0,0)など）。ずれていたら取り直す。
 //   ※スクロールイベントでの検知は検証環境で発火を確認できなかったため、確実に動くタイマーで見る
-function tourWatchClear(){ _tourWatchT.forEach(clearTimeout); _tourWatchT=[]; }
+function tourWatchClear(){
+  _tourWatchT.forEach(clearTimeout); _tourWatchT=[];
+  if(_tourSync){ clearInterval(_tourSync); _tourSync=null; }
+}
+// ★対象の位置や大きさが変わったら枠を合わせ直す。
+//   バナーは10秒ごと、お知らせは8秒ごとに中身が変わり、画像の読み込みでも寸法が動く。
+//   一度測って終わりにすると、そのぶん枠がズレたまま残る（2026-08-12 実機写真で判明）
+function tourSyncStart(){
+  if(_tourSync) clearInterval(_tourSync);
+  _tourSync=setInterval(function(){
+    if(_tourMode!==2 && _tourMode!==3){ clearInterval(_tourSync); _tourSync=null; return; }
+    var i=(_tourMode===2)?0:_tourSeq[_tourPos];
+    if(i===undefined || !TOUR[i]) return;
+    var el=document.getElementById(TOUR[i].id); if(!el) return;
+    var r=el.getBoundingClientRect();
+    var key=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
+    if(key===_tourRect) return;      // 変わっていなければ何もしない
+    _tourRect=key;
+    tourPoint(i, (_tourMode===2)?'':((_tourPos+1)+' / '+_tourSeq.length), true);
+  }, 250);
+}
 function tourWatch(){
   tourWatchClear();
   [120,450].forEach(function(ms){
@@ -2038,6 +2063,9 @@ var REG={
         b:[{l:'押せた',go:'iDone',p:1},{l:'見当たらない',go:'iEdit'}]},
  iEdit:{t:'一覧に足します',
         d:['一覧の一番下にある','「アクションを編集」から','追加できます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'それでも無い',go:'iSafari'}]},
+ iSafari:{t:'Safariで開き直します',
+        d:['古い機種では、Safari以外だと','ホーム画面に追加できません。','Safariで開いてお試しください。'],
         b:[{l:'とじる',go:null,p:1}]},
  iDone:{t:'最後に「追加」を押します',
         d:['右上の「追加」を押すと','ホーム画面に置かれます。'],
