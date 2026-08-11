@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1e3a28"><!-- ノッチ帯(ビューポート外)の色をiOSへ明示指定。全画面出入り後の黒残り対策(サンプリング推測を無効化する狙い) -->
+<!-- テレビ(Google TV等)のブラウザは「強制ダークモード」でページの色を勝手に反転させる。
+     実機で白の番組表が黒に、文字が反転して表示された(2026-08-11 実機確認)。
+     Chrome公式のとおり opt-out は "only light" のみ有効（"dark" では止まらない）。
+     このアプリは自前で暗い配色を持っているため、ブラウザ側の変換は不要。 -->
+<meta name="color-scheme" content="only light">
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>しそチャンNET LAB（操作改善テスト）</title>
@@ -19,6 +24,8 @@
 /* タイトル用フォント コーポレートロゴB（Corporate Logo Bold・OFLベース）。タイトル文字だけにサブセット済(約1KB) */
 @font-face{font-family:'CorpLogoB';src:url('corp-logo-b.woff2?v=1') format('woff2');font-weight:700;font-display:swap;}
 :root{
+  /* 強制ダークモード(テレビのブラウザ等)による色の勝手な反転を止める。metaと二重で指定 */
+  color-scheme: only light;
   --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;--green3:#52a070;
   --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
   --white:#fff;--off:#f6f8f6;--border:#d4e0d6;
@@ -1012,6 +1019,39 @@ body.ori-p .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; }body.ip
 body.ori-l .player-wrap.expanded .fs-sponsor,
 body.ori-l .player-wrap:fullscreen .fs-sponsor,
 body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
+
+/* ══════════════════════════════════════════════════════════════════
+   PC・テレビ（大きな横長画面）専用：全体を1画面に収め、お知らせを全文表示する
+   2026-08-11 実機(Google TV)確認で判明した2点への対応：
+     ①お知らせ枠が画面の下へ45pxはみ出しており、テレビのオーバースキャン
+       （画面端を数十px表示しない仕様）と重なって完全に見えなくなっていた
+     ②お知らせのタイトルが1行省略のため、12件中6件が途中で切れていた（実測）
+   対策：動画の幅を「画面の高さ」から逆算して決め、はみ出しをゼロにする。
+        右カラムが広がるぶん、番組表とお知らせの文字が読みやすくなる。
+   ★スマホ(ori-p/ori-l)・iPad(ori-tp/ori-tl)・FireTV(silk-mode)は
+     それぞれ専用の指定を持つため :not() で明確に除外＝1pxも変えない。
+   ══════════════════════════════════════════════════════════════════ */
+@media (min-width:1000px) and (min-height:600px){
+  /* 動画の高さ = 使える高さ - 上下padding32 - gap16 - お知らせ枠106 - タイトルバー44 - 操作バー44 = -242px
+     動画の幅 = その高さ × 16/9。これで縦がぴったり収まる */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .page{
+    height:calc(100vh - var(--hdr-h, 97px));
+    box-sizing:border-box;
+    padding-bottom:16px;
+    overflow:hidden;
+    grid-template-columns:calc((100vh - var(--hdr-h, 97px) - 242px) * 16 / 9) 1fr;
+  }
+  /* 番組表は右カラムいっぱいに伸ばし、内側だけスクロールさせる（外にはみ出さない） */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .sidebar{
+    height:100%;max-height:100%;overflow:hidden;position:static;
+  }
+  /* お知らせのタイトル：1行省略をやめ、2行まで折り返して全文を見せる */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .news-ttl{
+    white-space:normal;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+    overflow:hidden;
+  }
+}
 </style>
 </head>
 <body>
@@ -1020,7 +1060,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.46-lab（投稿の説明文）</div>
+    <div class="ps-version">version 2.47-lab（テレビ対応：色反転とお知らせ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
