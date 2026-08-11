@@ -1025,34 +1025,61 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
    iPhoneでiOSが自動で出す「アプリ内ブラウザ」（×・◀付きのかぶせ窓）と同じ構造を自前で再現。
    開くと動画は一時停止し、◀もどるで窓を閉じると再開する（2026-08-11指示）。
    スマホ・iPad・FireTVでは開かず従来どおりページ遷移（JS側 isTvPcMode() が入口）。 */
-#site-viewer{position:fixed;inset:0;z-index:700;background:#fff;display:none;}
+#site-viewer{position:fixed;inset:0;z-index:700;background:#fff;display:none;
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;}
+#site-viewer::-webkit-scrollbar{width:0;height:0;display:none;}
 #site-viewer.open{display:block;}
-#sv-frame{width:100%;height:100%;border:0;display:block;background:#fff;}
-#sv-back{
-  position:absolute;left:24px;bottom:24px;z-index:2;
-  display:flex;align-items:center;gap:8px;
-  font-size:22px;font-weight:700;letter-spacing:2px;font-family:inherit;
-  color:#fff;background:rgba(20,30,24,0.92);
-  border:2px solid var(--gold2);border-radius:999px;
-  padding:12px 26px;cursor:pointer;
-  box-shadow:0 4px 16px rgba(0,0,0,0.45);
+/* 窓は縦に長く(2.5画面分)開き、中身を「窓ごと」スクロールして読む方式。
+   相手サイトの中のスクロールは外から操作できない(Webの安全規約)ため、
+   ▲▼ボタン(自前=TVブラウザでも確実に効く)で窓自体を送る。下端に近づくと自動延長 */
+#sv-frame{width:100%;height:250vh;border:0;display:block;background:#fff;}
+/* 丸ボタン3つ(iPhoneのアプリ内ブラウザと同じ「⚪︎に＜」意匠・2026-08-11指示)。
+   窓がスクロールしても付いてくるよう固定配置 */
+#sv-back,#sv-up,#sv-down{
+  position:fixed;z-index:2;width:60px;height:60px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(250,250,250,0.95);color:#222;border:0;padding:0;cursor:pointer;
+  box-shadow:0 3px 12px rgba(0,0,0,0.35);
 }
-#sv-back:hover{background:rgba(40,60,48,0.95);}
-#sv-back:active{opacity:0.7;}
+#sv-back{left:24px;bottom:24px;}
+#sv-up{right:24px;bottom:96px;}
+#sv-down{right:24px;bottom:24px;}
+#sv-back svg,#sv-up svg,#sv-down svg{width:30px;height:30px;fill:#222;display:block;}
+#sv-back:active,#sv-up:active,#sv-down:active{opacity:0.6;}
 
-/* iPhone横向きの設定画面：3列に並べ「使い方〜投稿フォーム」まで1画面で見えるように（2026-08-11指示）
-   ※2列では縦402pxに入り切らず3〜4列目が画面外へあふれることを実測で確認したため、
-     余白と文字を少し詰めた3列構成にしている。縦向き・iPad・PCの設定画面には影響しない（body.ori-l 限定） */
-body.ori-l #settings-panel .set-body{column-count:3;column-gap:8px;padding:4px 6px 8px;}
-body.ori-l #settings-panel .set-sec{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:6px;padding:7px;}
+/* iPhone横向きの設定画面（2026-08-11指示の配置）：
+   上段＝3ブロックを同じ大きさで横に並べる
+     ①使い方＋背景の色（ひと繋がりの1ブロックに見せる） ②表示と動作 ③投稿・お問い合わせ
+   下段＝「アプリについて」を横いっぱいの帯にして中身も横並び
+   縦向き・iPad・PCの設定画面には影響しない（body.ori-l 限定） */
+body.ori-l #settings-panel .set-body{
+  /* minmax(0,1fr)=中身の幅に引っ張られず3列を完全な均等幅にする(1frだけだと不揃いになる・実測で確認) */
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 1fr auto;
+  gap:6px 8px;padding:2px 6px 6px;align-items:stretch;
+}
+body.ori-l #settings-panel .set-sec{margin-bottom:0;padding:7px;}
+/* ①使い方（上）＋背景の色（下）を縦に繋げて1ブロックに見せる（角丸と隙間を消して一体化） */
+body.ori-l #settings-panel .set-sec:nth-of-type(1){grid-column:1;grid-row:1;border-radius:8px 8px 0 0;}
+body.ori-l #settings-panel .set-sec:nth-of-type(2){grid-column:1;grid-row:2;border-radius:0 0 8px 8px;margin-top:-6px;}
+body.ori-l #settings-panel .set-sec:nth-of-type(3){grid-column:2;grid-row:1 / span 2;}
+body.ori-l #settings-panel .set-sec:nth-of-type(4){grid-column:3;grid-row:1 / span 2;}
+/* 下段：アプリについて＝横一本の帯。中身（バージョン・放送時間・出典・リセット）も横並び */
+body.ori-l #settings-panel .set-sec:nth-of-type(5){
+  grid-column:1 / span 3;grid-row:3;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:6px 10px;
+}
+body.ori-l #settings-panel .set-sec:nth-of-type(5) .set-hd{margin:0;flex-shrink:0;}
+body.ori-l #settings-panel .set-about{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;}
+body.ori-l #settings-panel .set-about div{display:flex;gap:6px;padding:0;border:0;font-size:11px;align-items:baseline;}
+body.ori-l #settings-panel .set-link-reset{width:auto;margin-left:auto;padding:4px 10px;}
+body.ori-l #settings-panel .set-link-reset .set-link-txt i{display:none;}
+/* 各ブロック内の圧縮（横402pxの高さに収めるため） */
 body.ori-l #settings-panel .set-link{padding:6px 8px;}
 body.ori-l #settings-panel .set-link-txt b{font-size:13px;}
 body.ori-l #settings-panel .set-link-txt i{font-size:10px;}
 body.ori-l #settings-panel .set-row{padding:5px 0;}
-body.ori-l #settings-panel .set-about div{padding:2px 0;font-size:11px;}
 body.ori-l #settings-panel .set-sec-ttl{font-size:12px;padding:3px 10px;}
 body.ori-l #settings-panel .set-hd{margin-bottom:5px;}
-body.ori-l #settings-panel .set-body{padding-top:2px;padding-bottom:4px;}
 
 /* ══════════════════════════════════════════════════════════════════
    PC・テレビ（大きな横長画面）専用：全体を1画面に収め、お知らせを全文表示する
@@ -1102,12 +1129,19 @@ body.ori-l #settings-panel .set-body{padding-top:2px;padding-bottom:4px;}
      お知らせ枠のぶんを引いてはいけない（引くと動画の下に余白が残る）。
      動画の高さ = 使える高さ - 上下padding32 - タイトルバー44 - 操作バー44 = -120px
      動画の幅 = その高さ × 16/9。これで動画が縦いっぱいに入り、余白ゼロで収まる */
+  /* 高さの基準は100vhではなく、JSが実測して固定する --tvH（2026-08-11指示）。
+     TVブラウザはマウスを上に持っていくとURLバーが降りて画面の高さが一時的に縮み、
+     100vh基準だとその都度レイアウト全体が作り直されてガタつく＋スクロール余地が生まれていた。
+     --tvHは「幅が変わった時だけ基準を取り直し、同じ幅での高さ減(=バーの出没)は無視」する
+     冪等な実測値（updateTvH参照）。未設定時は従来どおり100vh */
+  html{scrollbar-width:none;}
+  html::-webkit-scrollbar{width:0;height:0;display:none;}
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .page{
-    height:calc(100vh - var(--hdr-h, 97px));
+    height:calc(var(--tvH, 100vh) - var(--hdr-h, 97px));
     box-sizing:border-box;
     padding-bottom:16px;
     overflow:hidden;
-    grid-template-columns:calc((100vh - var(--hdr-h, 97px) - 120px) * 16 / 9) 1fr;
+    grid-template-columns:calc((var(--tvH, 100vh) - var(--hdr-h, 97px) - 120px) * 16 / 9) 1fr;
   }
   /* 番組表は右カラムいっぱいに伸ばし、内側だけスクロールさせる（外にはみ出さない） */
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .sidebar{
@@ -1139,7 +1173,7 @@ body.ori-l #settings-panel .set-body{padding-top:2px;padding-bottom:4px;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.50-lab（TV：かぶせ窓・設定1画面ほか）</div>
+    <div class="ps-version">version 2.51-lab（TV：画面固定・窓▲▼・丸もどる）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1366,10 +1400,19 @@ body.ori-l #settings-panel .set-body{padding-top:2px;padding-bottom:4px;}
   </div>
 </div>
 
-<!-- サイト表示の窓（TV・PC）: リンク先をページを離れず開き、◀もどるで放送へ戻る -->
+<!-- サイト表示の窓（TV・PC）: リンク先をページを離れず開く。
+     窓の枠(iframe)は開くたびにJSで作り直す＝閉じた時に枠ごと削除する。
+     （src属性の差し替えは履歴に残り「間に何もないページ」が挟まる原因になるため） -->
 <div id="site-viewer">
-  <iframe id="sv-frame" title="リンク先のページ"></iframe>
-  <button id="sv-back" onclick="closeSiteViewer()">◀ もどる</button>
+  <button id="sv-back" onclick="closeSiteViewer()" aria-label="もどる">
+    <svg viewBox="0 0 24 24"><path d="M15.4 7.4L14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+  </button>
+  <button id="sv-up" onclick="svScroll(-1)" aria-label="上へスクロール">
+    <svg viewBox="0 0 24 24"><path d="M12 8l-6 6 1.4 1.4L12 10.8l4.6 4.6L18 14z"/></svg>
+  </button>
+  <button id="sv-down" onclick="svScroll(1)" aria-label="下へスクロール">
+    <svg viewBox="0 0 24 24"><path d="M12 16l6-6-1.4-1.4L12 13.2 7.4 8.6 6 10z"/></svg>
+  </button>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -1408,8 +1451,8 @@ function canEmbed(url){
 }
 var _svPushed=false, _svWasPlaying=false;
 function openSiteViewer(url){
-  var v=document.getElementById('site-viewer'), f=document.getElementById('sv-frame');
-  if(!v||!f) return false;
+  var v=document.getElementById('site-viewer');
+  if(!v) return false;
   // 再生中なら一時停止（もどった時に再開するため状態を覚える）
   _svWasPlaying=false;
   try{
@@ -1418,23 +1461,76 @@ function openSiteViewer(url){
       _svWasPlaying=true; ytPlayer.pauseVideo();
     }
   }catch(_){}
+  // 窓の枠は毎回作り直す。新品の枠の最初の読み込みは履歴に残らない仕様のため、
+  // 履歴が汚れず、リモコンの「戻る」1回でスッと放送へ戻れる（src差し替え方式の
+  // 「間に何もないページが挟まる」問題の対策・2026-08-11）
+  var old=document.getElementById('sv-frame'); if(old) old.remove();
+  var f=document.createElement('iframe');
+  f.id='sv-frame'; f.title='リンク先のページ';
   f.src=url;
+  v.insertBefore(f, v.firstChild);
   v.classList.add('open');
+  v.scrollTop=0;
   // 履歴に1段積む＝端末・ブラウザの「戻る」でも窓が閉じる（ページを離れない）
   try{ history.pushState({sv:1},''); _svPushed=true; }catch(_){ _svPushed=false; }
   return true;
 }
 function closeSiteViewer(fromPop){
-  var v=document.getElementById('site-viewer'), f=document.getElementById('sv-frame');
+  var v=document.getElementById('site-viewer');
   if(!v||!v.classList.contains('open')) return;
   v.classList.remove('open');
-  try{ f.src='about:blank'; }catch(_){}  // 窓の中の読み込み・音を確実に止める
+  var f=document.getElementById('sv-frame');
+  if(f) f.remove();   // 枠ごと削除＝読み込み・音も確実に止まり、履歴も汚さない
   if(_svWasPlaying){ _svWasPlaying=false; try{ ytPlayer.playVideo(); }catch(_){} }
   if(!fromPop && _svPushed){ _svPushed=false; try{ history.back(); }catch(_){} }
   else { _svPushed=false; }
 }
+// ▲▼ボタン：窓を1画面分ずつ送る。相手サイトの中のスクロールは外から操作できない
+// (Webの安全規約)ため、縦に長い窓を「窓ごと」動かす方式。TVブラウザでも確実に効く
+function svScroll(dir){
+  var v=document.getElementById('site-viewer');
+  if(!v||!v.classList.contains('open')) return;
+  _svExtend(v);
+  // 即時スクロール（1押し=0.8画面）。なめらか送り(smooth)はTVブラウザ側の対応が
+  // 保証できず検証も不能なため使わない。押すたびに確実に1段進む方が高齢者にも明快
+  v.scrollTop += dir*Math.round(v.clientHeight*0.8);
+}
+// 下端に近づいたら窓を自動延長（長いページも最後まで読めるように・上限あり）
+function _svExtend(v){
+  var f=document.getElementById('sv-frame');
+  if(!f) return;
+  var h=f.offsetHeight;
+  if(h<20000 && v.scrollTop+v.clientHeight > h-v.clientHeight){
+    f.style.height=(h+1600)+'px';
+  }
+}
+(function(){
+  var v=document.getElementById('site-viewer');
+  if(v) v.addEventListener('scroll',function(){ _svExtend(v); },{passive:true});
+})();
 window.addEventListener('popstate',function(){ closeSiteViewer(true); });
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteViewer(); });
+
+// ══ TV/PCのレイアウト固定（2026-08-11指示）══
+// TVブラウザはマウスを画面上部に持っていくとURLバーが現れ、画面の高さが一時的に縮む。
+// 100vh基準だとその都度レイアウトが作り直されてガタつくため、実測した高さを --tvH に固定する。
+// 安全弁: ①幅が変わった時(本当のウィンドウ変更)は基準を取り直す
+//        ②同じ幅で高さが15%以上減った時も本物のリサイズとみなす(URLバーは8%程度)
+//        ③同じ幅で高さが増えた時は大きい方を採用(バーが引っ込んだ=正しい全画面)
+// 誤発動しても「少し余白が出る」だけで壊れない冪等な補正。
+var _tvW=0,_tvHmax=0;
+function updateTvH(){
+  try{
+    if(!isTvPcMode()){
+      if(_tvW){ document.documentElement.style.removeProperty('--tvH'); _tvW=0; _tvHmax=0; }
+      return;
+    }
+    if(innerWidth!==_tvW){ _tvW=innerWidth; _tvHmax=innerHeight; }
+    else if(innerHeight>_tvHmax){ _tvHmax=innerHeight; }
+    else if(innerHeight<_tvHmax*0.85){ _tvHmax=innerHeight; }
+    document.documentElement.style.setProperty('--tvH', _tvHmax+'px');
+  }catch(_){}
+}
 
 // ページ遷移で離れる時の復帰フラグ（従来のsessionStorageに加え、消える環境に備えて
 // localStorage（30分期限）でも二重に持つ。TVブラウザ対策・2026-08-11）
@@ -2604,6 +2700,7 @@ function isLandscapeNow(){
 }
 function applyOrientationClass(){
   try{
+    updateTvH();   // TV/PCの高さ固定を維持（500ms毎の定期呼び出しに相乗り・冪等）
     var S=Math.min(screen.width||0, screen.height||0);   // 画面の短辺＝スマホ判定に使う
     if(!S) return;
     var land=isLandscapeNow();
