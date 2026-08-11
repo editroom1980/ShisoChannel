@@ -1340,7 +1340,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.60-lab（ホーム画面への登録案内）</div>
+    <div class="ps-version">version 2.61-lab（登録案内・焦点枠の修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1668,6 +1668,13 @@ var TOUR=[
 ];
 //  _tourMode … 0=出ていない／1=最初の問いかけ／2=放送開始の説明／3=本編／4=終わりのお知らせ
 var _tourMode=0, _tourSeq=[], _tourPos=-1, _tourWait=null, _tourScroll0=0, _tourFixes=0, _tourWatchT=[];
+// リモコンやキーボードで操作する画面か（テレビ・パソコン）。
+// ★指で触る端末では自動で焦点をあてない。押していないのに緑の枠が付いて見えるため
+//   （2026-08-12 iOS26のシミュレータで実際に出た）
+function uiNeedsFocus(){
+  try{ if(('ontouchstart' in window) || navigator.maxTouchPoints>0) return false; }catch(_){}
+  return true;
+}
 function tourEls(){
   return {w:document.getElementById('tour'), hole:document.getElementById('tour-hole'),
     tri:document.getElementById('tour-tri'), tip:document.getElementById('tour-tip'),
@@ -1716,7 +1723,7 @@ function tourCenter(ttl,lines,nextLabel,skipLabel){
   e.tip.style.width=tourTipW()+'px';
   e.tip.style.left='50%'; e.tip.style.top='50%';
   e.tip.style.transform='translate(-50%,-50%)';
-  try{ e.next.focus({preventScroll:true}); }catch(_){ try{ e.next.focus(); }catch(__){} }
+  if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
 }
 // 対象を光らせて説明を出す
 function tourPoint(i, counter, noScroll){
@@ -1794,7 +1801,7 @@ function tourPoint(i, counter, noScroll){
       TR.left=Math.round(dir==='right'?(L-13):(L+TW-1))+'px';
     }
   }
-  try{ e.next.focus({preventScroll:true}); }catch(_){ try{ e.next.focus(); }catch(__){} }
+  if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
 }
 // 本編のpos番目を出す。出す直前に消えていた項目はその場で飛ばす
 function tourGo(pos){
@@ -2084,8 +2091,10 @@ function regShow(key){
     el.addEventListener('click', function(ev){ ev.stopPropagation(); regPick(b); });
     e.btns.appendChild(el);
   });
-  var first=e.btns.querySelector('.reg-btn.go')||e.btns.firstChild;
-  try{ if(first) first.focus({preventScroll:true}); }catch(_){ }
+  if(uiNeedsFocus()){
+    var first=e.btns.querySelector('.reg-btn.go')||e.btns.firstChild;
+    try{ if(first) first.focus({preventScroll:true}); }catch(_){ }
+  }
 }
 function regPick(b){
   if(b.go==='@prompt'){ regDoPrompt(); return; }
