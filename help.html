@@ -5,12 +5,16 @@
 <!-- このページは図を細かく見られるよう、指で広げて拡大できるようにしてある（2026-08-10指示） -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1e3a28">
+<!-- テレビ(Google TV等)のブラウザの「強制ダークモード」が色を勝手に反転させるのを止める
+     （2026-08-11 実機で図の色が崩れて表示された対策。本体lab/indexと同じ指定） -->
+<meta name="color-scheme" content="only light">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <title>しそチャンNET の使い方</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
 :root{
+  color-scheme: only light;  /* 強制ダークモード対策（metaと二重で確実に） */
   --forest:#1e3a28;--green2:#3d7a54;--green4:#a8d5b5;--green5:#e4f2e8;
   --gold:#c8992a;--gold2:#e8b84a;--white:#fff;--band:#2f5f42;
   --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;

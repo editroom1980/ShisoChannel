@@ -1020,6 +1020,40 @@ body.ori-l .player-wrap.expanded .fs-sponsor,
 body.ori-l .player-wrap:fullscreen .fs-sponsor,
 body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
 
+/* ══ サイト表示の窓（TV・PC用）══
+   お知らせ・バナー・投稿フォームのリンク先を、ページを離れずこの窓の中で開く。
+   iPhoneでiOSが自動で出す「アプリ内ブラウザ」（×・◀付きのかぶせ窓）と同じ構造を自前で再現。
+   開くと動画は一時停止し、◀もどるで窓を閉じると再開する（2026-08-11指示）。
+   スマホ・iPad・FireTVでは開かず従来どおりページ遷移（JS側 isTvPcMode() が入口）。 */
+#site-viewer{position:fixed;inset:0;z-index:700;background:#fff;display:none;}
+#site-viewer.open{display:block;}
+#sv-frame{width:100%;height:100%;border:0;display:block;background:#fff;}
+#sv-back{
+  position:absolute;left:24px;bottom:24px;z-index:2;
+  display:flex;align-items:center;gap:8px;
+  font-size:22px;font-weight:700;letter-spacing:2px;font-family:inherit;
+  color:#fff;background:rgba(20,30,24,0.92);
+  border:2px solid var(--gold2);border-radius:999px;
+  padding:12px 26px;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,0.45);
+}
+#sv-back:hover{background:rgba(40,60,48,0.95);}
+#sv-back:active{opacity:0.7;}
+
+/* iPhone横向きの設定画面：3列に並べ「使い方〜投稿フォーム」まで1画面で見えるように（2026-08-11指示）
+   ※2列では縦402pxに入り切らず3〜4列目が画面外へあふれることを実測で確認したため、
+     余白と文字を少し詰めた3列構成にしている。縦向き・iPad・PCの設定画面には影響しない（body.ori-l 限定） */
+body.ori-l #settings-panel .set-body{column-count:3;column-gap:8px;padding:4px 6px 8px;}
+body.ori-l #settings-panel .set-sec{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:6px;padding:7px;}
+body.ori-l #settings-panel .set-link{padding:6px 8px;}
+body.ori-l #settings-panel .set-link-txt b{font-size:13px;}
+body.ori-l #settings-panel .set-link-txt i{font-size:10px;}
+body.ori-l #settings-panel .set-row{padding:5px 0;}
+body.ori-l #settings-panel .set-about div{padding:2px 0;font-size:11px;}
+body.ori-l #settings-panel .set-sec-ttl{font-size:12px;padding:3px 10px;}
+body.ori-l #settings-panel .set-hd{margin-bottom:5px;}
+body.ori-l #settings-panel .set-body{padding-top:2px;padding-bottom:4px;}
+
 /* ══════════════════════════════════════════════════════════════════
    PC・テレビ（大きな横長画面）専用：全体を1画面に収め、お知らせを全文表示する
    2026-08-11 実機(Google TV)確認で判明した2点への対応：
@@ -1038,20 +1072,31 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode){
     --banner-w:33vw;
   }
-  /* テレビは離れて見るため、ロゴ・試験放送中・設定ボタンを2倍に（2026-08-11指示） */
+  /* ヘッダーの各要素は「バナーの縦幅」(33vw×193.2/2277≈2.8vw)を基準に統一（2026-08-11指示）。
+     ロゴ・試験放送中・歯車をバナーと同じ高さに収め、ヘッダーの下余白を0にして
+     バナー→動画の間隔を、番組表→お知らせの間隔と同じ16px（.pageのgap）に揃える */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .header{
+    min-height:0;padding-top:12px;padding-bottom:0;
+  }
+  /* バナーの包み(.h-banner)の上下3px余白がヘッダーを6px太らせ、間隔を19pxにしていた（実測）。
+     0にしてヘッダー高=12+バナー36=48 → バナー→動画の間隔がちょうど16pxになる */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-banner{
+    padding:0;
+  }
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-logo-main{
-    font-size:40px;
+    font-size:2.5vw;line-height:2.8vw;
   }
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .test-badge,
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-right .onair-badge{
-    font-size:20px;padding:4px 14px;border-radius:8px;gap:10px;letter-spacing:2px;
+    font-size:1.4vw;height:2.8vw;box-sizing:border-box;padding:0 1.1vw;
+    border-radius:0.5vw;gap:0.6vw;letter-spacing:0.15vw;
   }
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .test-badge .bdot,
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-right .onair-badge .bdot{
-    width:12px;height:12px;
+    width:0.8vw;height:0.8vw;
   }
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-gear svg{
-    width:48px;height:48px;
+    width:2.8vw;height:2.8vw;
   }
   /* ★動画エリア(player)は grid-template-areas で上下2行にまたがるため、
      お知らせ枠のぶんを引いてはいけない（引くと動画の下に余白が残る）。
@@ -1077,6 +1122,14 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
     overflow:hidden;
     min-height:calc(1.35em * 3);
   }
+  /* 設定画面：横幅を活かして2列に並べ、全項目を1画面に収める（2026-08-11指示。
+     TVブラウザは内側スクロールを回せないため「スクロール不要にする」のが根本対処） */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-body{
+    column-count:2;column-gap:12px;
+  }
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) #settings-panel .set-sec{
+    break-inside:avoid;-webkit-column-break-inside:avoid;
+  }
 }
 </style>
 </head>
@@ -1086,7 +1139,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.49-lab（TV：バナー1/3・文字2倍）</div>
+    <div class="ps-version">version 2.50-lab（TV：かぶせ窓・設定1画面ほか）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1313,6 +1366,12 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   </div>
 </div>
 
+<!-- サイト表示の窓（TV・PC）: リンク先をページを離れず開き、◀もどるで放送へ戻る -->
+<div id="site-viewer">
+  <iframe id="sv-frame" title="リンク先のページ"></iframe>
+  <button id="sv-back" onclick="closeSiteViewer()">◀ もどる</button>
+</div>
+
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ══════════════════════════════════════════════
@@ -1323,6 +1382,68 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 function escHtml(t){
   return String(t==null?'':t)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
+//  サイト表示の窓（TV・PC用・2026-08-11）
+//  リンク先をページ内の窓で開く＝放送のページを離れない。
+//  開くと動画を一時停止し、◀もどる（または端末の戻る）で窓を閉じて再開する。
+// ══════════════════════════════════════════════
+// この窓を使うのはTV/PCレイアウトの時だけ。スマホ・iPad・FireTVは従来どおりページ遷移
+function isTvPcMode(){
+  var c=document.body.classList;
+  return innerWidth>=1000 && innerHeight>=600 &&
+    !c.contains('ori-p') && !c.contains('ori-l') &&
+    !c.contains('ori-tp') && !c.contains('ori-tl') && !c.contains('silk-mode');
+}
+// 窓への埋め込みを許しているサイトだけ（2026-08-11に全リンク先のヘッダーを実測して確定）。
+// Instagram・READYFORは拒否のため、この表に無い相手は従来どおりページ遷移になる
+var EMBED_OK=['city.shiso.lg.jp','docs.google.com','matsukou.hyogo.jp',
+              'kawamoto-sekizai.com','cafesansyo.com','tonkotsuramen-tsubaki-shiso.com'];
+function canEmbed(url){
+  try{
+    var h=new URL(url,location.href).hostname;
+    return EMBED_OK.some(function(d){ return h===d || h.slice(-(d.length+1))==='.'+d; });
+  }catch(_){ return false; }
+}
+var _svPushed=false, _svWasPlaying=false;
+function openSiteViewer(url){
+  var v=document.getElementById('site-viewer'), f=document.getElementById('sv-frame');
+  if(!v||!f) return false;
+  // 再生中なら一時停止（もどった時に再開するため状態を覚える）
+  _svWasPlaying=false;
+  try{
+    if(typeof ytPlayer!=='undefined' && ytPlayer && ytReady &&
+       ytPlayer.getPlayerState && ytPlayer.getPlayerState()===1){
+      _svWasPlaying=true; ytPlayer.pauseVideo();
+    }
+  }catch(_){}
+  f.src=url;
+  v.classList.add('open');
+  // 履歴に1段積む＝端末・ブラウザの「戻る」でも窓が閉じる（ページを離れない）
+  try{ history.pushState({sv:1},''); _svPushed=true; }catch(_){ _svPushed=false; }
+  return true;
+}
+function closeSiteViewer(fromPop){
+  var v=document.getElementById('site-viewer'), f=document.getElementById('sv-frame');
+  if(!v||!v.classList.contains('open')) return;
+  v.classList.remove('open');
+  try{ f.src='about:blank'; }catch(_){}  // 窓の中の読み込み・音を確実に止める
+  if(_svWasPlaying){ _svWasPlaying=false; try{ ytPlayer.playVideo(); }catch(_){} }
+  if(!fromPop && _svPushed){ _svPushed=false; try{ history.back(); }catch(_){} }
+  else { _svPushed=false; }
+}
+window.addEventListener('popstate',function(){ closeSiteViewer(true); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteViewer(); });
+
+// ページ遷移で離れる時の復帰フラグ（従来のsessionStorageに加え、消える環境に備えて
+// localStorage（30分期限）でも二重に持つ。TVブラウザ対策・2026-08-11）
+function setResumeFlag(){
+  try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+  try{
+    if(userWantsPlay) localStorage.setItem('shiso_resume_t', String(Date.now()));
+    else localStorage.removeItem('shiso_resume_t');
+  }catch(_){}
 }
 
 // ══════════════════════════════════════════════
@@ -1440,7 +1561,12 @@ function attachNewsSwipe(el){
   el.addEventListener('click',function(){
     if(_newsTapSuppress || isTapBlocked()) return;
     var L=newsDisplayList(); var n=L[cityNewsIndex];
-    if(n && n.url){ location.href=n.url; }
+    if(n && n.url){
+      // TV/PCはページ内の窓で開く（放送を離れない・動画は一時停止→もどるで再開）
+      if(isTvPcMode() && canEmbed(n.url) && openSiteViewer(n.url)) return;
+      setResumeFlag();  // 従来経路にも復帰フラグ（今まではお知らせだけ未設定だった＝TVで電源画面に戻る原因）
+      location.href=n.url;
+    }
   });
 }
 // ══════════════════════════════════════════════
@@ -1662,7 +1788,12 @@ function openForm(key){
   if(isTapBlocked()) return;
   var url=FORMS[key];
   if(!url) return;                       // 準備中は何もしない
-  try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+  if(isTvPcMode() && canEmbed(url)){
+    // Googleフォームは埋め込み用の形（embedded=true）でだけ窓に入れられる（ヘッダー実測で確認済み）
+    var eu=url+(url.indexOf('?')>=0?'&':'?')+'embedded=true';
+    if(openSiteViewer(eu)) return;
+  }
+  setResumeFlag();
   location.href=url;
 }
 function renderForms(){
@@ -1788,8 +1919,9 @@ function openSponsorLink(){
   if(isTapBlocked()) return;   // 全画面解除直後の突き抜け防止
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
-    try{statsBannerClick(s.name);statsFlush(true);}catch(_){}
-    try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+    try{statsBannerClick(s.name);statsFlush(true);}catch(_){}   // 計測は窓・遷移どちらの経路でも打つ
+    if(isTvPcMode() && canEmbed(s.url) && openSiteViewer(s.url)) return;
+    setResumeFlag();
     location.href=s.url;
   }
 }
@@ -2489,8 +2621,18 @@ function applyOrientationClass(){
       e.classList.toggle('ori-p',p);  e.classList.toggle('ori-l',l);
       e.classList.toggle('ori-tp',tp); e.classList.toggle('ori-tl',tl);
     });
+    // 向きが実際に変わった時だけ：番組表の時刻チップの強調と横スライドを付け直す（2026-08-11）。
+    // 従来は番組ロード時のみだったため、回転すると目盛りが古い位置のまま取り残されていた。
+    // 500ms毎の定期呼び出しでは向きが同じ＝ここは走らない（無駄な再計算をしない）
+    var sig=(p?'p':'')+(l?'l':'')+(tp?'tp':'')+(tl?'tl':'');
+    if(sig!==_oriSig){
+      _oriSig=sig;
+      if(hasPoweredOn){ try{ hlSB(vC,vP); }catch(_){} }
+      try{ hideClippedChips(); }catch(_){}
+    }
   }catch(_){}
 }
+var _oriSig='';
 // ══ 見た目を更新するだけのタイマーの置き場（2026-08-10）══
 //  他のアプリを見ている間（document.hidden）は、画面を描き直しても誰も見ていないので止めて電池を節約する。
 //  止めてよいのは【見た目だけ】のもの。番組の切り替え(periodicCheck)・通信・計測は止めない。
@@ -2975,7 +3117,29 @@ function hlSB(c,p){
       tb.scrollLeft+=delta;
     }
   }
+  try{ hideClippedChips(); }catch(_){}
 }
+
+// 画面端で数字が中途半端に切れて見えるのを防ぐ：枠に一部だけかかっているチップは丸ごと非表示にする。
+// 場所は取ったまま見えなくするだけ＝並びは1pxも動かない。何度呼んでも同じ結果になる冪等な処理（全バージョン共通・2026-08-11指示）
+function hideClippedChips(){
+  document.querySelectorAll('.time-bar').forEach(function(tb){
+    var tr=tb.getBoundingClientRect();
+    if(!tr.width) return;
+    tb.querySelectorAll('.time-chip-item').forEach(function(ch){
+      var r=ch.getBoundingClientRect();
+      var cut=(r.left<tr.left-1 && r.right>tr.left+1)||(r.left<tr.right-1 && r.right>tr.right+1);
+      ch.style.visibility=cut?'hidden':'';
+    });
+  });
+}
+// 窓のサイズ変更（PCで窓を伸縮した時など）でも切れ方が変わるので測り直す（rAFで間引き）
+var _hccRaf=null;
+function hideClippedChipsSoon(){
+  if(_hccRaf) return;
+  _hccRaf=requestAnimationFrame(function(){ _hccRaf=null; try{ hideClippedChips(); }catch(_){} });
+}
+window.addEventListener('resize',hideClippedChipsSoon);
 
 // ══════════════════════════════════════════════
 //  タップ判定（スクロールと区別）
@@ -3025,6 +3189,8 @@ function renderSB(){
       // 時刻バー（タイトル上・横並び・6時刻）
       var timeBar=document.createElement('div');
       timeBar.className='time-bar';
+      // 指でなぞって時刻バーを動かした時も、端で切れる数字を測り直して隠す
+      timeBar.addEventListener('scroll',hideClippedChipsSoon,{passive:true});
       for(var ci=0;ci<times.length;ci++){
         (function(cIdx){
           if(cIdx>0){
@@ -3063,6 +3229,7 @@ function renderSB(){
       list.appendChild(row);
     })(pIdx);
   }
+  try{ hideClippedChips(); }catch(_){}  // 描画直後の端切れも隠す
 }
 
 // ══════════════════════════════════════════════
@@ -3507,16 +3674,26 @@ function init(){
 
   // スポンサーページから戻って再読込された場合: 電源画面をスキップして放送再開
   // （bfキャッシュが効けばpageshowで復元、効かない場合のフォールバック）
-  try{
-    if(sessionStorage.getItem('shiso_resume')==='1'){
+  (function(){
+    var _resume=false;
+    try{
+      if(sessionStorage.getItem('shiso_resume')==='1') _resume=true;
       sessionStorage.removeItem('shiso_resume');
+    }catch(_){}
+    // sessionStorageが消える環境（TVブラウザ等）向けの控え。30分以内の再訪だけ有効
+    try{
+      var _rt=parseInt(localStorage.getItem('shiso_resume_t')||'0',10);
+      localStorage.removeItem('shiso_resume_t');
+      if(_rt && (Date.now()-_rt) < 30*60*1000) _resume=true;
+    }catch(_){}
+    if(_resume){
       var _resumeWait=function(){
         if(ytReady){ powerOn(); }
         else setTimeout(_resumeWait,150);
       };
       setTimeout(_resumeWait,200);
     }
-  }catch(_){}
+  })();
 
   // ══ TV/キオスクモード(?tv) ══
   // Google TV Streamer等にFully Kioskで本ページを全画面表示する運用向け。
@@ -3594,7 +3771,7 @@ function init(){
     var h=document.getElementById('lnk-help');
     if(h) h.addEventListener('click', function(){
       if(isTapBlocked()) return;
-      try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+      setResumeFlag();
       location.href='help.html';
     });
   })();
