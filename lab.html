@@ -1094,6 +1094,46 @@ html.tvpc body{
 }
 html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;display:none;}
 
+/* ══ 使い方の説明ツアー（コーチマーク方式・2026-08-12）══
+   実際の画面の上で、押せるボタンを1つずつ光らせて説明する。別ページの説明書を見なくて済む。
+   ・対象だけを明るく残し、周りを暗くする（box-shadowの広がりで外側を覆う＝要素を1つ足すだけ）
+   ・三角で対象を指し、吹き出しは画面からはみ出さない側へ自動で置く
+   ・画面のどこを押しても次へ進む（高齢者が押しやすいように的を大きく取る）
+   ・文章は折り返しが起きない短さを基本にし、やむを得ない場合も語の途中で切らない */
+/* ★誤タップ防止の透明カバー(#yt-block-*)が z-index 2147483647 で置かれているため、
+   ツアーはそれと同じ最大値にする。同値ならHTMLの後ろにある方＝ツアーが上に来る（#tourは末尾に置いてある）。
+   これをしないと映像の上端80pxでタップが吸われ、そこだけ次へ進めなくなる */
+#tour{position:fixed;inset:0;z-index:2147483647;display:none;}
+#tour.on{display:block;}
+/* 最初の問いかけと最後のお知らせは指す対象が無いので、背面全体を同じ濃さで暗くする
+   （説明中の暗さ rgba(0,0,0,.74) と同じ。ツアー中ずっと同じ見え方に揃えるため） */
+#tour.dim{background:rgba(0,0,0,0.74);}
+#tour-hole{position:fixed;border:3px solid var(--gold2);box-shadow:0 0 0 9999px rgba(0,0,0,0.74);
+  pointer-events:none;transition:none;}
+#tour-tri{position:fixed;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;pointer-events:none;}
+#tour-tip{position:fixed;background:#fff;color:#1a2520;border-radius:14px;padding:16px 18px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);
+  /* 日本語は語の途中で改行しない。長い語も枠からはみ出させない */
+  word-break:normal;overflow-wrap:anywhere;line-break:strict;}
+/* 見出しと本文は「左詰めのひとかたまり」のまま、その塊ごと箱の左右中央に置く。
+   （ボタンは #tour-foot の右寄せのまま） */
+#tour-tip{text-align:center;}
+#tour-body{display:inline-block;text-align:left;max-width:100%;}
+#tour-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
+#tour-txt{font-size:16px;line-height:1.65;}
+#tour-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+#tour-step{font-size:13px;color:#8a938d;}
+.tour-btn{border:0;border-radius:9px;padding:9px 18px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;}
+.tour-skip{background:#ececec;color:#555;}
+.tour-next{background:var(--gold);color:#fff;}
+.tour-btn:disabled{opacity:.5;cursor:default;}
+/* テレビのリモコンは「どこが選ばれているか」が見えないと操作できないため、選択中の枠を出す */
+.tour-btn:focus{outline:3px solid var(--green);outline-offset:2px;}
+.tour-btn:focus:not(:focus-visible){outline:none;}   /* 指やマウスで押した時は出さない */
+/* 幅の狭い機種(iPhone SEの旧型=320pxなど)だけ左右の内側余白を詰める。
+   本文が折り返さない幅(258px)を確保するため。344px以上の機種では何も変わらない */
+@media (max-width:343px){ #tour-tip{padding:16px 14px;} }
+
 /* 実測値の画面表示（?debug=1 の時だけ）。原因を推測せず数値で確かめるための保険 */
 #tv-debug{
   position:fixed;right:8px;top:8px;z-index:9999;
@@ -1280,7 +1320,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.57-lab（音量表示の不一致・全画面バナー3/4）</div>
+    <div class="ps-version">version 2.58-lab（使い方の説明）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1324,7 +1364,7 @@ html.tvpc #settings-panel .set-link{
     <!-- 左：プレイヤー -->
     <div class="player-col">
       <div class="viewing-bar">
-        <span class="live-tap" onclick="onLiveClick()">
+        <span class="live-tap" id="live-tap" onclick="onLiveClick()">
           <div class="ldot g" id="ldot"></div>
           <span class="llbl g" id="llbl">LIVE</span>
         </span>
@@ -1442,8 +1482,12 @@ html.tvpc #settings-panel .set-link{
   </div>
   <div class="set-body">
     <div class="set-sec">
-      <button class="set-link set-link-lead" id="lnk-help">
-        <span class="set-link-txt"><b>アプリの使い方</b><i>画面の見かたと操作を図で説明</i></span>
+      <button class="set-link set-link-lead" id="lnk-tour">
+        <span class="set-link-txt"><b>しそチャンNETの使い方</b><i>アプリの機能を順に説明します</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
+      <button class="set-link" id="lnk-help">
+        <span class="set-link-txt"><b>詳しい説明とヘルプ</b><i>アプリ機能のまとめと困った時の対処法です</i></span>
         <span class="set-link-arw">›</span>
       </button>
     </div>
@@ -1512,6 +1556,25 @@ html.tvpc #settings-panel .set-link{
   </div>
 </div>
 
+<!-- 使い方の説明ツアー（コーチマーク） -->
+<div id="tour">
+  <div id="tour-hole"></div>
+  <div id="tour-tri"></div>
+  <div id="tour-tip">
+    <div id="tour-body">
+      <div id="tour-ttl"></div>
+      <div id="tour-txt"></div>
+    </div>
+    <div id="tour-foot">
+      <span id="tour-step"></span>
+      <span>
+        <button class="tour-btn tour-skip" id="tour-skip">とじる</button>
+        <button class="tour-btn tour-next" id="tour-next">次へ</button>
+      </span>
+    </div>
+  </div>
+</div>
+
 <!-- 実測値の表示（?debug=1 の時だけ見える） -->
 <div id="tv-debug"></div>
 
@@ -1535,6 +1598,313 @@ function escHtml(t){
   return String(t==null?'':t)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ══════════════════════════════════════════════
+//  使い方の説明ツアー（2026-08-12）
+//  実際の画面の上で、押せるボタンを1つずつ光らせて説明する。
+//  ・初回起動時に「説明を見ますか？」と尋ね、見る／スキップを選べる
+//  ・設定の「使い方の説明」からいつでも見直せる
+//  ・その端末に無い項目（例: iPhoneでは音量つまみが出ない）は自動で飛ばす
+//  ・文章は短く。折り返しても語の途中で切れないようCSS側で指定済み
+// ══════════════════════════════════════════════
+var TOUR_KEY='shisochan_tour';
+var TOUR=[
+  {id:'ps-btn',         t:'放送開始',       d:'いま放送中の番組を再生します。', power:1},
+  {id:'sponsor-banner', t:'スポンサー広告', d:'地元企業からの広告です。',
+                                            d2:'押すと各社のページが開きます。'},
+  {id:'live-tap',       t:'放送中の表示',   d:'いま放送中かどうかを示します。',
+                                            d2:'押すと放送中の番組に戻ります。'},
+  {id:'ctrl-play',      t:'再生・一時停止', d:'再生と一時停止を切り替えます。'},
+  {id:'ctrl-back30',    t:'巻き戻し',       d:'ボタンの秒数だけ前に戻ります。',
+                                            d2:'秒数は設定で変更できます。'},
+  {id:'ctrl-fwd30',     t:'早送り',         d:'ボタンの秒数だけ先へ進みます。',
+                                            d2:'秒数は設定で変更できます。'},
+  {id:'ctrl-mute',      t:'消音',           d:'押すと音が消え、もう一度押すと',
+                                            d2:'元の音量に戻ります。'},
+  {id:'vol-slider',     t:'音量',           d:'左右に動かして音量を調整します。'},
+  {id:'expand-open-btn',t:'全画面表示',     d:'映像を画面いっぱいに広げます。',
+                                            d2:'戻すときは右下の縮小マークです。'},
+  {id:'sb-list',        t:'番組表',         d:'その日の放送予定の一覧です。',
+                                            d2:'押した番組をすぐに再生します。'},
+  {id:'sb-news',        t:'お知らせ',       d:'宍粟市の新着情報とイベントです。',
+                                            d2:'押すとページが開きます。'},
+  {id:'h-gear',         t:'設定',           d:'背景の色や文字の大きさなど、',
+                                            d2:'表示と動作を変更できます。'}
+];
+//  _tourMode … 0=出ていない／1=最初の問いかけ／2=放送開始の説明／3=本編／4=終わりのお知らせ
+var _tourMode=0, _tourSeq=[], _tourPos=-1, _tourWait=null, _tourScroll0=0, _tourFixes=0, _tourWatchT=[];
+function tourEls(){
+  return {w:document.getElementById('tour'), hole:document.getElementById('tour-hole'),
+    tri:document.getElementById('tour-tri'), tip:document.getElementById('tour-tip'),
+    ttl:document.getElementById('tour-ttl'), txt:document.getElementById('tour-txt'),
+    step:document.getElementById('tour-step'), next:document.getElementById('tour-next'),
+    skip:document.getElementById('tour-skip')};
+}
+// 吹き出しの幅。文章が折り返さない幅（本文で258px必要）を、狭い画面でも確保する。
+// ふつうのスマホ(344px以上)では常に320pxで、これまでと同じ見た目のまま変わらない
+function tourTipW(){ return Math.min(320, Math.max(innerWidth-24, 180)); }
+// その端末に「ある」かどうか（画面の外にあるだけの物は、あるものとして数える）
+function tourHas(i){
+  var el=document.getElementById(TOUR[i].id);
+  if(!el) return false;
+  var r=el.getBoundingClientRect();
+  // ★1px以上あれば「ある」とみなす。音量つまみは棒の高さが4pxしかなく、
+  //   8px以上を条件にすると横向きのiPhoneで説明が抜け落ちる（2026-08-12実測）
+  return r.width>=1 && r.height>=1;
+}
+// 実際に見せる項目だけを並べる（放送開始は別扱いなので入れない）
+function tourBuildSeq(){
+  _tourSeq=[];
+  for(var i=0;i<TOUR.length;i++){ if(!TOUR[i].power && tourHas(i)) _tourSeq.push(i); }
+}
+// 文章を指定どおりの行に分けて入れる。
+// ★行の折り返しはブラウザ任せにしない：行末に2〜3文字だけ残る形を作らないため、
+//   どこで改行するかはこちらで決め打ちする（CLAUDE.md 絶対ルール10）
+function tourLines(el, arr){
+  el.textContent='';
+  for(var i=0;i<arr.length;i++){
+    if(i) el.appendChild(document.createElement('br'));
+    el.appendChild(document.createTextNode(arr[i]));
+  }
+}
+// 画面の中央に文章だけを出す（最初の問いかけ・最後のお知らせ）
+function tourCenter(ttl,lines,nextLabel,skipLabel){
+  var e=tourEls(); if(!e.w) return;
+  if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
+  e.w.classList.add('on','dim');
+  e.hole.style.display='none'; e.tri.style.display='none';
+  e.ttl.textContent=ttl; tourLines(e.txt, lines);
+  e.step.textContent='';
+  e.next.disabled=false; e.next.textContent=nextLabel;
+  e.skip.textContent=skipLabel||''; e.skip.style.display=skipLabel?'':'none';
+  // ★中央に置く指定はここで直接書く（前の手順で入れた座標が残ると中央に来ないため）
+  e.tip.style.width=tourTipW()+'px';
+  e.tip.style.left='50%'; e.tip.style.top='50%';
+  e.tip.style.transform='translate(-50%,-50%)';
+  try{ e.next.focus({preventScroll:true}); }catch(_){ try{ e.next.focus(); }catch(__){} }
+}
+// 対象を光らせて説明を出す
+function tourPoint(i, counter, noScroll){
+  var e=tourEls(); if(!e.w) return;
+  var s=TOUR[i], el=document.getElementById(s.id);
+  if(!el) return;
+  var r=el.getBoundingClientRect();
+  // 画面の外にある物（iPhone縦のお知らせなど）は、まず画面の中へスクロールしてから測る。
+  // ★描き直しだけの呼び出し(noScroll)ではスクロールしない＝スクロール監視と取り合いにならない
+  if(!noScroll && (r.top<0 || r.bottom>innerHeight)){
+    try{
+      var want=scrollY + r.top - Math.max(0,(innerHeight-r.height)/2);
+      window.scrollTo(0, Math.max(0, Math.round(want)));
+    }catch(_){}
+    r=el.getBoundingClientRect();
+  }
+  e.w.classList.add('on'); e.w.classList.remove('dim');
+  e.hole.style.display='';
+  // 小さいボタンほど枠を広めに取り、丸く囲む
+  var small=(r.width<70 && r.height<70);
+  var P=small?16:10;
+  // ★枠は必ず画面の中に収める。はみ出すと金色の線が途中で切れて見えるため（画面ふちに3pxだけ残す）
+  var M=3;
+  var hl=Math.max(M, r.left-P),  ht=Math.max(M, r.top-P);
+  var hr=Math.min(innerWidth-M, r.right+P), hb=Math.min(innerHeight-M, r.bottom+P);
+  e.hole.style.left=hl+'px';          e.hole.style.top=ht+'px';
+  e.hole.style.width=Math.max(0,hr-hl)+'px'; e.hole.style.height=Math.max(0,hb-ht)+'px';
+  e.hole.style.borderRadius=small?'999px':'12px';   // 正方形なら丸、細長い音量つまみなら小判形
+  e.ttl.textContent=s.t;
+  tourLines(e.txt, s.d2?[s.d,s.d2]:[s.d]);
+  e.step.textContent=counter||'';
+  e.skip.textContent='とじる'; e.skip.style.display='';
+  // 吹き出しは、上下左右のうち入る側へ置く
+  var TW=tourTipW();
+  e.tip.style.width=TW+'px'; e.tip.style.transform='none';
+  e.tip.style.left='-9999px'; e.tip.style.top='0px';   // 先に幅だけ決めて高さを測る
+  var TH=e.tip.offsetHeight||150;
+  var GAP=16, L, T, dir;
+  if(innerHeight-r.bottom-P-GAP >= TH){ dir='down'; T=r.bottom+P+GAP; }
+  else if(r.top-P-GAP >= TH){ dir='up'; T=r.top-P-GAP-TH; }
+  else if(innerWidth-r.right-P-GAP >= TW){ dir='right'; }
+  else if(r.left-P-GAP >= TW){ dir='left'; }
+  else { dir='center'; }
+  if(dir==='down'||dir==='up'){
+    L=Math.max(16, Math.min(innerWidth-TW-16, r.left+r.width/2-TW/2));
+  }else if(dir==='right'){
+    L=r.right+P+GAP; T=Math.max(16, Math.min(innerHeight-TH-16, r.top+r.height/2-TH/2));
+  }else if(dir==='left'){
+    L=r.left-P-GAP-TW; T=Math.max(16, Math.min(innerHeight-TH-16, r.top+r.height/2-TH/2));
+  }else{
+    L=Math.max(16,(innerWidth-TW)/2); T=Math.max(16,(innerHeight-TH)/2);
+  }
+  e.tip.style.left=Math.round(L)+'px'; e.tip.style.top=Math.round(T)+'px';
+  // 三角で対象を指す（上下左右のどこに置いても必ず指す）
+  var TR=e.tri.style;
+  if(dir==='center'){ TR.display='none'; }
+  else{
+    TR.display='';
+    if(dir==='down'||dir==='up'){
+      // 吹き出しの上または下から、対象の中心へ向けて出す
+      TR.borderLeft='11px solid transparent'; TR.borderRight='11px solid transparent';
+      TR.borderTop   =(dir==='up')  ?'14px solid #fff':'0';
+      TR.borderBottom=(dir==='down')?'14px solid #fff':'0';
+      TR.left=Math.round(Math.max(L+14, Math.min(L+TW-36, r.left+r.width/2-11)))+'px';
+      TR.top =Math.round(dir==='down'?(T-13):(T+TH-1))+'px';
+    }else{
+      // 吹き出しの左または右から、対象の中心へ向けて出す
+      TR.borderTop='11px solid transparent'; TR.borderBottom='11px solid transparent';
+      TR.borderRight=(dir==='right')?'14px solid #fff':'0';
+      TR.borderLeft =(dir==='left') ?'14px solid #fff':'0';
+      TR.top =Math.round(Math.max(T+14, Math.min(T+TH-36, r.top+r.height/2-11)))+'px';
+      TR.left=Math.round(dir==='right'?(L-13):(L+TW-1))+'px';
+    }
+  }
+  try{ e.next.focus({preventScroll:true}); }catch(_){ try{ e.next.focus(); }catch(__){} }
+}
+// 本編のpos番目を出す。出す直前に消えていた項目はその場で飛ばす
+function tourGo(pos){
+  var e=tourEls();
+  while(pos<_tourSeq.length && !tourHas(_tourSeq[pos])){ _tourSeq.splice(pos,1); }
+  if(pos>=_tourSeq.length){ tourFinish(); return; }
+  _tourMode=3; _tourPos=pos; _tourFixes=0;
+  if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
+  e.next.disabled=false;
+  e.next.textContent=(pos>=_tourSeq.length-1)?'おわり':'次へ';
+  tourPoint(_tourSeq[pos], (pos+1)+' / '+_tourSeq.length);
+  tourWatch();
+}
+// 最初の1枚：放送開始ボタン
+function tourShowPower(){
+  var e=tourEls();
+  _tourMode=2; _tourPos=-1; _tourFixes=0;
+  tourPoint(0,'');
+  tourWatch();
+  // 準備がまだなら、その間だけ「次へ」を押せなくする（本物のボタンと同じ振るまい）
+  var pb=document.getElementById('ps-btn');
+  if(pb && pb.classList.contains('loading')){
+    e.next.disabled=true; e.next.textContent='準備中…';
+    if(_tourWait) clearInterval(_tourWait);
+    _tourWait=setInterval(function(){
+      var b2=document.getElementById('ps-btn');
+      if(b2 && b2.classList.contains('loading')) return;
+      clearInterval(_tourWait); _tourWait=null;
+      if(_tourMode===2){ e.next.disabled=false; e.next.textContent='次へ'; }
+    },250);
+  } else { e.next.disabled=false; e.next.textContent='次へ'; }
+}
+// ページが動いた時に、枠と吹き出しを貼り直す。
+// ★測った後にページが動く事がある（powerOnのscrollTo(0,0)・回転後の組み直しなど）。
+//   ツアー中は画面全体を覆っていて手ではスクロールできないので、動いたのは他の処理。
+//   よって対象が画面から出たら中へ戻す。ただし直し合いが続くと困るので回数に上限を設け、
+//   上限を超えたら「描き直すだけ（動かさない）」に落とす＝暴走しない
+// 出した直後に、枠がまだ対象に合っているかを2回だけ見に行く。
+// ★他の処理がページを動かす事がある（powerOnのscrollTo(0,0)など）。ずれていたら取り直す。
+//   ※スクロールイベントでの検知は検証環境で発火を確認できなかったため、確実に動くタイマーで見る
+function tourWatchClear(){ _tourWatchT.forEach(clearTimeout); _tourWatchT=[]; }
+function tourWatch(){
+  tourWatchClear();
+  [120,450].forEach(function(ms){
+    _tourWatchT.push(setTimeout(function(){
+      if(_tourMode!==2 && _tourMode!==3) return;
+      var i=(_tourMode===2)?0:_tourSeq[_tourPos];
+      if(i===undefined || !TOUR[i]) return;
+      var el=document.getElementById(TOUR[i].id); if(!el) return;
+      var r=el.getBoundingClientRect();
+      var h=document.getElementById('tour-hole').getBoundingClientRect();
+      var 画面外 = (r.top<-0.5 || r.bottom>innerHeight+0.5);
+      var 離れた = Math.abs((h.top+h.bottom)/2-(r.top+r.bottom)/2)>20 ||
+                   Math.abs((h.left+h.right)/2-(r.left+r.right)/2)>20;
+      if(画面外 || 離れた) tourRedraw();
+    }, ms));
+  });
+}
+function tourRedraw(){
+  if(_tourMode!==2 && _tourMode!==3) return;
+  var noScroll = (++_tourFixes > 8);
+  if(_tourMode===2) tourPoint(0,'',noScroll);
+  else if(_tourPos>=0 && _tourSeq[_tourPos]!==undefined){
+    tourPoint(_tourSeq[_tourPos], (_tourPos+1)+' / '+_tourSeq.length, noScroll);
+  }
+}
+function tourNext(){
+  var e=tourEls();
+  if(e.next && e.next.disabled) return;
+  if(_tourMode===2){
+    // ★powerOnは押した流れの中で直接呼ぶ（iOSは操作から離れると再生を始めないため）
+    try{ powerOn(); }catch(_){}
+    e.next.disabled=true;                      // 画面が出るまでの二重押しを止める
+    setTimeout(function(){
+      if(_tourMode!==2) return;
+      tourBuildSeq(); tourGo(0);
+      setTimeout(function(){ if(_tourMode===3 && _tourPos===0) tourGo(0); },800); // 組み上がり後に測り直す
+    }, 700);
+    return;
+  }
+  if(_tourMode===3){ tourGo(_tourPos+1); return; }
+}
+function tourFinish(){
+  _tourMode=4;
+  tourCenter('使い方の説明は以上です',
+    ['もう一度見る時は、設定の',
+     '「しそチャンNETの使い方」を',
+     '押してください。'],
+    'とじる','');
+}
+function tourEnd(){
+  var e=tourEls(); if(!e.w) return;
+  if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
+  tourWatchClear();
+  e.w.classList.remove('on','dim');
+  e.hole.style.display='none'; e.tri.style.display='none';
+  _tourMode=0; _tourPos=-1;
+  try{ window.scrollTo(0, _tourScroll0); }catch(_){}   // ツアーで動かした分を元に戻す
+  tourMarkSeen();
+}
+function tourMarkSeen(){ try{ localStorage.setItem(TOUR_KEY,'done'); }catch(_){} }
+function tourStart(){
+  tourMarkSeen();
+  try{ closeSettings(); }catch(_){}
+  try{ _tourScroll0=window.scrollY||0; }catch(_){ _tourScroll0=0; }
+  // 設定画面が閉じ切ってから測る（閉じる途中の座標を拾わないため）
+  setTimeout(function(){
+    if(!hasPoweredOn && tourHas(0)){ tourShowPower(); }
+    else { tourBuildSeq(); tourGo(0); }
+  }, 60);
+}
+// 初回起動：見るかどうかを尋ねる
+function tourAskIfFirst(){
+  var seen=null;
+  try{ seen=localStorage.getItem(TOUR_KEY); }catch(_){}
+  if(seen) return;
+  _tourMode=1;
+  tourCenter('しそチャンNETの使い方',['アプリの使い方の説明を見ますか？'],'見る','スキップ');
+}
+(function(){
+  var e=tourEls(); if(!e.w) return;
+  e.next.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    if(_tourMode===1){ tourStart(); return; }   // 問いかけ →「見る」
+    if(_tourMode===4){ tourEnd();   return; }   // 終わりのお知らせ →「とじる」
+    tourNext();
+  });
+  e.skip.addEventListener('click', function(ev){ ev.stopPropagation(); tourEnd(); });
+  // 画面のどこを押しても次へ。問いかけ中と終わりの画面では効かせない（誤って飛ばさないため）
+  e.w.addEventListener('click', function(){ if(_tourMode===2||_tourMode===3) tourNext(); });
+  // 画面の向きや大きさが変わったら、光らせる位置を測り直す
+  window.addEventListener('resize', function(){
+    if(_tourMode===2){ tourPoint(0,''); return; }
+    if(_tourMode!==3) return;
+    // 回すと項目が増減する（縦のiPhoneには音量つまみが無い）ので数え直し、
+    // いま見せている項目はそのまま続ける
+    var cur=_tourSeq[_tourPos];
+    tourBuildSeq();
+    var np=_tourSeq.indexOf(cur);
+    tourGo(np>=0?np:Math.min(_tourPos,Math.max(0,_tourSeq.length-1)));
+  });
+  // 設定の「使い方の説明」から、いつでも見直せる
+  var lt=document.getElementById('lnk-tour');
+  if(lt) lt.addEventListener('click', function(){
+    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
+    tourStart();
+  });
+})();
 
 // ══════════════════════════════════════════════
 //  サイト表示の窓（TV・PC用・2026-08-11）
@@ -3941,6 +4311,8 @@ function init(){
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
   (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
   setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
+  // 初回だけ「使い方の説明を見ますか？」と尋ねる。画面が組み上がってから出す
+  setTimeout(function(){ try{ tourAskIfFirst(); }catch(_){} }, 400);
   uiInterval(updateClock,1000);
   setInterval(periodicCheck,10000);   // 番組の切り替えの要。裏に回っても止めない
   // シークバーと再生アイコンの追従。0.1秒ごとにYouTubeへ状態を聞いていたが、
