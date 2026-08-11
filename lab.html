@@ -1134,6 +1134,26 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
    本文が折り返さない幅(258px)を確保するため。344px以上の機種では何も変わらない */
 @media (max-width:343px){ #tour-tip{padding:16px 14px;} }
 
+/* ══ ホーム画面への登録案内（2026-08-12）══
+   ・Android系は beforeinstallprompt が来たら「ボタン1つ」で入る（メニュー探し不要）
+   ・iPhoneはOSに入れる仕組みが無いので、選択式で探し方を案内する
+   ・文章はツアーと同じく行の折り返しを決め打ちする（CLAUDE.md 絶対ルール10） */
+#reg{position:fixed;inset:0;z-index:2147483647;display:none;background:rgba(0,0,0,0.74);}
+#reg.on{display:block;}
+#reg-box{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:#fff;color:#1a2520;border-radius:14px;padding:18px 18px 16px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);text-align:center;
+  word-break:normal;overflow-wrap:anywhere;line-break:strict;}
+#reg-body{display:inline-block;text-align:left;max-width:100%;}
+#reg-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
+#reg-txt{font-size:16px;line-height:1.65;}
+#reg-btns{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+.reg-btn{border:0;border-radius:10px;padding:13px 14px;font-family:inherit;
+  font-size:16px;font-weight:700;cursor:pointer;background:#ececec;color:#41504a;}
+.reg-btn.go{background:var(--gold);color:#fff;}
+.reg-btn:focus{outline:3px solid var(--green);outline-offset:2px;}
+.reg-btn:focus:not(:focus-visible){outline:none;}
+
 /* 実測値の画面表示（?debug=1 の時だけ）。原因を推測せず数値で確かめるための保険 */
 #tv-debug{
   position:fixed;right:8px;top:8px;z-index:9999;
@@ -1320,7 +1340,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.58-lab（使い方の説明）</div>
+    <div class="ps-version">version 2.60-lab（ホーム画面への登録案内）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1490,6 +1510,10 @@ html.tvpc #settings-panel .set-link{
         <span class="set-link-txt"><b>詳しい説明とヘルプ</b><i>アプリ機能のまとめと困った時の対処法です</i></span>
         <span class="set-link-arw">›</span>
       </button>
+      <button class="set-link" id="lnk-reg">
+        <span class="set-link-txt"><b>ホーム画面に登録する</b><i>アイコンを置いてひと押しで開けるようにします</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
     </div>
 
     <div class="set-sec">
@@ -1572,6 +1596,17 @@ html.tvpc #settings-panel .set-link{
         <button class="tour-btn tour-next" id="tour-next">次へ</button>
       </span>
     </div>
+  </div>
+</div>
+
+<!-- ホーム画面への登録案内 -->
+<div id="reg">
+  <div id="reg-box">
+    <div id="reg-body">
+      <div id="reg-ttl"></div>
+      <div id="reg-txt"></div>
+    </div>
+    <div id="reg-btns"></div>
   </div>
 </div>
 
@@ -1703,8 +1738,11 @@ function tourPoint(i, counter, noScroll){
   // 小さいボタンほど枠を広めに取り、丸く囲む
   var small=(r.width<70 && r.height<70);
   var P=small?16:10;
-  // ★枠は必ず画面の中に収める。はみ出すと金色の線が途中で切れて見えるため（画面ふちに3pxだけ残す）
-  var M=3;
+  // ★枠は画面の中に収める（はみ出すと金色の線が途中で切れて見えるため）。
+  //   ただし画面のふちギリギリまで使う。3px内側に寄せると、画面の上端にある設定ボタンのように
+  //   ふちに接している物が枠の外へ押し出されて暗くなってしまう（2026-08-12実測で確認）。
+  //   枠線(3px)は枠の外側ではなく境界そのものに描かれるので、0でも線は全部見える。
+  var M=0;
   var hl=Math.max(M, r.left-P),  ht=Math.max(M, r.top-P);
   var hr=Math.min(innerWidth-M, r.right+P), hb=Math.min(innerHeight-M, r.bottom+P);
   e.hole.style.left=hl+'px';          e.hole.style.top=ht+'px';
@@ -1873,6 +1911,9 @@ function tourAskIfFirst(){
   var seen=null;
   try{ seen=localStorage.getItem(TOUR_KEY); }catch(_){}
   if(seen) return;
+  // ★ブラウザで見ている間は出さない。先に「ホーム画面への登録」を案内し、
+  //   ホーム画面のアイコンから開いた時に使い方の説明が始まる（2026-08-12指示）
+  try{ if(!regHome()) return; }catch(_){}
   _tourMode=1;
   tourCenter('しそチャンNETの使い方',['アプリの使い方の説明を見ますか？'],'見る','スキップ');
 }
@@ -1898,6 +1939,13 @@ function tourAskIfFirst(){
     var np=_tourSeq.indexOf(cur);
     tourGo(np>=0?np:Math.min(_tourPos,Math.max(0,_tourSeq.length-1)));
   });
+  // 設定の「ホーム画面に登録する」から、いつでもやり直せる
+  var lr=document.getElementById('lnk-reg');
+  if(lr) lr.addEventListener('click', function(){
+    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
+    try{ closeSettings(); }catch(_){}
+    setTimeout(function(){ regShow(regHome()?'already':'route'); }, 60);
+  });
   // 設定の「使い方の説明」から、いつでも見直せる
   var lt=document.getElementById('lnk-tour');
   if(lt) lt.addEventListener('click', function(){
@@ -1907,6 +1955,174 @@ function tourAskIfFirst(){
 })();
 
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  ホーム画面への登録案内（2026-08-12）
+//  ★Chromeの公式インストール条件は「1回以上タップ＋30秒以上閲覧＋HTTPS＋マニフェスト」。
+//    放送を見ていれば自然に満たされるので、Android系は beforeinstallprompt を捕まえて
+//    「ボタン1つ」で登録できる（メニューを探させない）。iPhoneはOSに仕組みが無く手動のみ。
+// ══════════════════════════════════════════════
+var REG_KEY='shisochan_reg';
+var _regPrompt=null, _regAt=null, _regSeen=false;
+
+// ★イベントは読み込み後しばらくして届くので、必ず先に受け口を用意しておく
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();          // ブラウザの小さい帯は出さず、こちらのボタンで出す
+  _regPrompt=e;
+  try{ regMaybeOffer(); }catch(_){}
+});
+window.addEventListener('appinstalled', function(){
+  _regPrompt=null;
+  try{ localStorage.setItem(REG_KEY,'done'); }catch(_){}
+  if(_regAt) regShow('okAdded');
+});
+
+function regHome(){                       // ホーム画面から開いているか
+  try{
+    if(window.navigator.standalone===true) return true;
+    if(window.matchMedia && matchMedia('(display-mode: standalone)').matches) return true;
+  }catch(_){}
+  return false;
+}
+function regInApp(){                      // LINEやXの中のブラウザか（分かる範囲だけ）
+  var u=navigator.userAgent;
+  return /Line\/|FBAN|FBAV|Instagram|Twitter for|MicroMessenger/.test(u);
+}
+
+//  画面の定義。d は行ごとの配列（折り返しを決め打ちするため）
+var REG={
+ start:{t:'ホーム画面に置きませんか',
+        d:['次からアイコンを押すだけで','すぐに見られます。'],
+        b:[{l:'ホーム画面に置く',go:'route',p:1},{l:'あとにする',go:null}]},
+
+ // ── Android系：ボタン1つ
+ oneTap:{t:'ホーム画面に追加します',
+        d:['下のボタンを押すと、','確認の画面が出ます。'],
+        b:[{l:'追加する',go:'@prompt',p:1},{l:'やめる',go:null}]},
+ already:{t:'すでに登録できています',
+        d:['いまホーム画面のアイコンから','開いています。このままお使い','ください。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ okAdded:{t:'追加できました',
+        d:['ホーム画面のアイコンから','開いてお使いください。'],
+        b:[{l:'とじる',go:null,p:1}]},
+
+ // ── iPhone・iPad
+ iBrowser:{t:'いま何で見ていますか',
+        d:['お使いのブラウザを','選んでください。'],
+        b:[{l:'Safari',go:'iShare'},{l:'Chrome',go:'iChrome'},
+           {l:'LINEやXの中',go:'inApp'},{l:'わからない',go:'iShare'}]},
+ inApp:{t:'このままでは追加できません',
+        d:['LINEなどの中で見ているため','ホーム画面に置けません。'],
+        b:[{l:'開き直し方を見る',go:'inApp2',p:1},{l:'とじる',go:null}]},
+ inApp2:{t:'ブラウザで開き直します',
+        d:['右下などにある「…」を押し','ブラウザで開くを選んでから','もう一度お試しください。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ iShare:{t:'共有ボタンを探します',
+        d:['□に↑のマークが','どこにありますか。'],
+        b:[{l:'画面の下にある',go:'iList'},{l:'右上にある',go:'iList'},
+           {l:'見当たらない',go:'iDots'}]},
+ iDots:{t:'「…」を押してください',
+        d:['画面の下か右下にある','「…」の中に共有があります。'],
+        b:[{l:'押せた',go:'iList',p:1}]},
+ iChrome:{t:'共有ボタンを押します',
+        d:['画面の上のアドレスの右に','ある□に↑を押します。'],
+        b:[{l:'押せた',go:'iList',p:1}]},
+ iList:{t:'下までスクロールします',
+        d:['出てきた一覧を下へたどり','「ホーム画面に追加」を','押してください。'],
+        b:[{l:'押せた',go:'iDone',p:1},{l:'見当たらない',go:'iEdit'}]},
+ iEdit:{t:'一覧に足します',
+        d:['一覧の一番下にある','「アクションを編集」から','追加できます。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ iDone:{t:'最後に「追加」を押します',
+        d:['右上の「追加」を押すと','ホーム画面に置かれます。'],
+        b:[{l:'とじる',go:null,p:1}]},
+
+ // ── Android系でボタンが使えない場合／その他
+ aBrowser:{t:'いま何で見ていますか',
+        d:['お使いのブラウザを','選んでください。'],
+        b:[{l:'Chrome',go:'aChrome'},{l:'Edge',go:'aEdge'},
+           {l:'Galaxyの標準ブラウザ',go:'aSams'},{l:'その他・わからない',go:'aOther'}]},
+ aChrome:{t:'メニューを下まで見ます',
+        d:['右上の「⋮」を押し、','下までスクロールすると','「ホーム画面に追加」があります。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ aEdge:{t:'アプリとして入れます',
+        d:['右上のメニューを開き','「アプリとしてインストール」','を押してください。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ aSams:{t:'下のメニューから足します',
+        d:['画面の下の「≡」を押し','「ページを追加」→','「ホーム画面」の順です。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ aOther:{t:'メニューの中を探します',
+        d:['メニューを開いて','「ホーム画面」「追加」','「インストール」を探します。'],
+        b:[{l:'とじる',go:null,p:1}]}
+};
+
+function regEls(){
+  return {w:document.getElementById('reg'), box:document.getElementById('reg-box'),
+    ttl:document.getElementById('reg-ttl'), txt:document.getElementById('reg-txt'),
+    btns:document.getElementById('reg-btns')};
+}
+function regShow(key){
+  var e=regEls(); if(!e.w) return;
+  if(key==='route'){
+    // ★順番が大事。LINEやXの中で開いている時は、OSに関係なく先に開き直してもらう
+    //   （その中のブラウザにはホーム画面へ追加する機能が無い）
+    if(regInApp())            key='inApp';
+    else if(_regPrompt)       key='oneTap';
+    else if(isIOS)            key='iBrowser';
+    else                      key='aBrowser';
+  }
+  var sc=REG[key]; if(!sc) return;
+  _regAt=key;
+  e.w.classList.add('on');
+  e.box.style.width=tourTipW()+'px';
+  e.ttl.textContent=sc.t;
+  tourLines(e.txt, sc.d);
+  e.btns.textContent='';
+  sc.b.forEach(function(b){
+    var el=document.createElement('button');
+    el.className='reg-btn'+(b.p?' go':'');
+    el.textContent=b.l;
+    el.addEventListener('click', function(ev){ ev.stopPropagation(); regPick(b); });
+    e.btns.appendChild(el);
+  });
+  var first=e.btns.querySelector('.reg-btn.go')||e.btns.firstChild;
+  try{ if(first) first.focus({preventScroll:true}); }catch(_){ }
+}
+function regPick(b){
+  if(b.go==='@prompt'){ regDoPrompt(); return; }
+  if(!b.go){ regEnd(); return; }
+  regShow(b.go);
+}
+function regDoPrompt(){
+  if(!_regPrompt){ regShow('aBrowser'); return; }   // 使えなくなっていたら手順案内へ
+  var p=_regPrompt; _regPrompt=null;                // prompt()は1回だけ呼べる
+  try{
+    p.prompt();
+    Promise.resolve(p.userChoice).then(function(r){
+      if(r && r.outcome==='accepted') regShow('okAdded');
+      else regShow('aBrowser');                      // 断られたら手順で案内
+    }).catch(function(){ regShow('aBrowser'); });
+  }catch(_){ regShow('aBrowser'); }
+}
+function regEnd(){
+  var e=regEls(); if(!e.w) return;
+  e.w.classList.remove('on');
+  _regAt=null;
+  try{ localStorage.setItem(REG_KEY,'done'); }catch(_){}
+}
+//  出してよい場面かを見て、最初の画面を出す
+function regMaybeOffer(){
+  if(_regSeen || _regAt) return;
+  if(regHome()) return;                 // すでにホーム画面から開いている
+  if(!hasPoweredOn) return;             // 放送を見始めるまでは出さない
+  if(_tourMode!==0) return;             // 使い方の説明が出ている間は出さない
+  if(isExpanded) return;                // 全画面で見ている最中は割り込まない
+  // ★テレビ・パソコンには「ホーム画面」が無い。TVは電気店が設置するので案内も不要
+  try{ if(isSilk || isTvPcMode()) return; }catch(_){}
+  try{ if(localStorage.getItem(REG_KEY)) return; }catch(_){}
+  _regSeen=true;
+  regShow('start');
+}
+
 //  サイト表示の窓（TV・PC用・2026-08-11）
 //  リンク先をページ内の窓で開く＝放送のページを離れない。
 //  開くと動画を一時停止し、◀もどる（または端末の戻る）で窓を閉じて再開する。
@@ -4118,6 +4334,8 @@ function powerOn(){
       }, ms);
     });
   }
+  // 放送が始まってから登録案内を出す（何のアプリか分かってから勧めるため）
+  setTimeout(function(){ try{ regMaybeOffer(); }catch(_){} }, 3000);
   // Silk/FireTVのみ: ユーザージェスチャー直後にブラウザUIを非表示にする
   // PC・iOS版には一切影響しない（isSilkがfalseのため実行されない）
   if(isSilk){
