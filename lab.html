@@ -1032,10 +1032,26 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
      それぞれ専用の指定を持つため :not() で明確に除外＝1pxも変えない。
    ══════════════════════════════════════════════════════════════════ */
 @media (min-width:1000px) and (min-height:600px){
-  /* バナーを小さくして、浮いた高さを動画に回す（1068px→860px・約20%減）。
-     ヘッダーの実高さは setHdrVar() が --hdr-h に実測して入れるため、下の計算式が自動で追従する */
+  /* バナーは画面幅の1/3に（2026-08-11指示）。固定pxだとテレビ(実測1280x720)で画面の67%を
+     占めてしまったため、画面幅に対する割合で指定してどの解像度でも1/3に保つ。
+     ヘッダーの実高さは setHdrVar() が --hdr-h に実測して入れるため、動画の計算式が自動で追従する */
   body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode){
-    --banner-w:860px;
+    --banner-w:33vw;
+  }
+  /* テレビは離れて見るため、ロゴ・試験放送中・設定ボタンを2倍に（2026-08-11指示） */
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-logo-main{
+    font-size:40px;
+  }
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .test-badge,
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-right .onair-badge{
+    font-size:20px;padding:4px 14px;border-radius:8px;gap:10px;letter-spacing:2px;
+  }
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .test-badge .bdot,
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-right .onair-badge .bdot{
+    width:12px;height:12px;
+  }
+  body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .h-gear svg{
+    width:48px;height:48px;
   }
   /* ★動画エリア(player)は grid-template-areas で上下2行にまたがるため、
      お知らせ枠のぶんを引いてはいけない（引くと動画の下に余白が残る）。
@@ -1070,7 +1086,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.48-lab（テレビ対応：余白ゼロ・バナー縮小）</div>
+    <div class="ps-version">version 2.49-lab（TV：バナー1/3・文字2倍）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
