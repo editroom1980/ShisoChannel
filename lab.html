@@ -16,7 +16,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
 <!-- Android(Chrome)はapple-*のmetaを見ない。ホーム画面に追加した時にアドレスバーを消して
      アプリとして開くにはmanifestが要る（iOSは従来どおり上のmetaで動く） -->
-<link rel="manifest" href="manifest-lab.json?v=245">
+<link rel="manifest" href="manifest-lab.json?v=276">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
@@ -1439,7 +1439,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.76-lab（手順のマークを絵で表示）</div>
+    <div class="ps-version">version 2.77-lab（manifestのキャッシュ番号を更新）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2140,7 +2140,10 @@ var _regPrompt=null, _regAt=null, _regSeen=false;
 var _regT0=Date.now();          // ページを開いた時刻。1タップ追加が使えるようになるまでの待ちに使う
 var _regInstalled=false;        // 端末に「もう追加済み」と教えてもらえた場合
 // ?reg=1 で「まだ一度も見ていない状態」に戻す（実機で自動表示を確かめるため。?debug=1と同じ使い方）
-try{ if(/[?&]reg=1(&|$)/.test(location.search)) localStorage.removeItem(REG_KEY); }catch(_){}
+// ★すでにホーム画面に追加してある端末では、追加済み検知が働いて案内が出ない＝検証できない。
+//   ?reg=1 の時だけは、その検知を無視して案内を出す（普段の動きは変えない）
+var _regForce=false;
+try{ if(/[?&]reg=1(&|$)/.test(location.search)){ localStorage.removeItem(REG_KEY); _regForce=true; } }catch(_){}
 
 // ★イベントは読み込み後しばらくして届くので、必ず先に受け口を用意しておく
 window.addEventListener('beforeinstallprompt', function(e){
@@ -2581,7 +2584,7 @@ function regStripHide(){
 function regFabSync(){
   try{
     var f=document.getElementById('reg-fab'); if(!f) return;
-    var show = hasPoweredOn && !regHome() && !_regInstalled && _tourMode===0 && !isExpanded;
+    var show = hasPoweredOn && !regHome() && !(_regInstalled&&!_regForce) && _tourMode===0 && !isExpanded;
     try{ if(isSilk || isTvPcMode()) show=false; }catch(_){}
     try{ if(document.getElementById('reg').classList.contains('on')) show=false; }catch(_){}
     var st=document.getElementById('reg-strip');
@@ -2673,7 +2676,7 @@ function regSchedule(){
 function regMaybeOffer(){
   if(_regSeen || _regAt) return;
   if(regHome()) return;                 // すでにホーム画面から開いている
-  if(_regInstalled) return;             // 端末が「もう追加済み」と答えた（ブラウザで開いていても分かる）
+  if(_regInstalled && !_regForce) return;   // 端末が「もう追加済み」と答えた（?reg=1の時だけ無視して検証できる）
   if(regMayGetPrompt()) return;         // 1タップ追加が使えるようになるのを少しだけ待つ
   if(!hasPoweredOn) return;             // 放送を見始めるまでは出さない
   if(_tourMode!==0) return;             // 使い方の説明が出ている間は出さない

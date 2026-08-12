@@ -4,13 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1e3a28"><!-- ノッチ帯(ビューポート外)の色をiOSへ明示指定。全画面出入り後の黒残り対策(サンプリング推測を無効化する狙い) -->
+<!-- テレビ(Google TV等)のブラウザは「強制ダークモード」でページの色を勝手に反転させる。
+     実機で白の番組表が黒に、文字が反転して表示された(2026-08-11 実機確認)。
+     Chrome公式のとおり opt-out は "only light" のみ有効（"dark" では止まらない）。
+     このアプリは自前で暗い配色を持っているため、ブラウザ側の変換は不要。 -->
+<meta name="color-scheme" content="only light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>しそチャンNET</title>
 <link rel="apple-touch-icon" href="icon-180.png?v=245">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=245">
 <!-- Android(Chrome)はapple-*のmetaを見ない。ホーム画面に追加した時にアドレスバーを消して
      アプリとして開くにはmanifestが要る（iOSは従来どおり上のmetaで動く） -->
-<link rel="manifest" href="manifest.json?v=245">
+<link rel="manifest" href="manifest.json?v=277">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
@@ -18,6 +23,8 @@
 /* タイトル用フォント コーポレートロゴB（Corporate Logo Bold・OFLベース）。タイトル文字だけにサブセット済(約1KB) */
 @font-face{font-family:'CorpLogoB';src:url('corp-logo-b.woff2?v=1') format('woff2');font-weight:700;font-display:swap;}
 :root{
+  /* 強制ダークモード(テレビのブラウザ等)による色の勝手な反転を止める。metaと二重で指定 */
+  color-scheme: only light;
   --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;--green3:#52a070;
   --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
   --white:#fff;--off:#f6f8f6;--border:#d4e0d6;
@@ -1011,6 +1018,418 @@ body.ori-p .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; }body.ip
 body.ori-l .player-wrap.expanded .fs-sponsor,
 body.ori-l .player-wrap:fullscreen .fs-sponsor,
 body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px; }
+/* 全画面・TV/PC: 表示指定がスマホ縦横にしか無く、TVの全画面でバナーが出ていなかった(2026-08-11実機で判明)。
+   上部の帯自体はfitPlayerが既に確保済み(topBand)なので、表示指定を足すだけで直る */
+body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap.expanded .fs-sponsor,
+body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap:fullscreen .fs-sponsor,
+body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-wrap:-webkit-full-screen .fs-sponsor{
+  display:block; top:6px;
+  /* 全画面のバナーは通常の3/4に（動画の表示領域を少しでも広げる・2026-08-11指示）。
+     帯の高さ(topBand)はJSがバナーの実寸を測って決めるので、自動で追従する */
+  width:calc(var(--banner-w) * 0.75);
+}
+
+/* ══ サイト表示の窓（TV・PC用）══
+   お知らせ・バナー・投稿フォームのリンク先を、ページを離れずこの窓の中で開く。
+   iPhoneでiOSが自動で出す「アプリ内ブラウザ」（×・◀付きのかぶせ窓）と同じ構造を自前で再現。
+   開くと動画は一時停止し、◀もどるで窓を閉じると再開する（2026-08-11指示）。
+   スマホ・iPad・FireTVでは開かず従来どおりページ遷移（JS側 isTvPcMode() が入口）。 */
+#site-viewer{position:fixed;inset:0;z-index:700;background:#fff;display:none;
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;}
+#site-viewer::-webkit-scrollbar{width:0;height:0;display:none;}
+#site-viewer.open{display:block;}
+/* 窓は最初から固定の長さ(4500px)で開き、中身を「窓ごと」スクロールして読む方式。
+   相手サイトの中のスクロールは外から操作できない(Webの安全規約)ため。
+   ※旧・自動延長は廃止(2026-08-11)：延長の瞬間に中のページが作り直され、
+     見ていた位置が飛ぶ「途中ジャンプ」の原因だった。固定長なら一切動かない。
+   ※画面の高さ基準で作られた今風サイト(スポンサー各社)はこの方式と原理的に相性が悪いため
+     窓を使わず直接ジャンプに変更(EMBED_OK参照) */
+/* 窓は画面いっぱいの高さ。中身は「そのページ自身」がスクロールする。
+   開いた瞬間に iframe へ focus を当てるとリモコンの矢印キーが窓の中に届く
+   （実測: 市のサイト＝クロスオリジンでも activeElement が IFRAME になることを確認）。
+   ※旧・縦に長い窓を親でスクロールする方式は、画面の高さ基準で作られたサイトで
+     追いつかない/途中に飛ぶ問題があったため廃止（2026-08-11） */
+#sv-frame{width:100%;height:100%;border:0;display:block;background:#fff;}
+/* 丸ボタン3つ(⚪︎に＜の意匠)。右下に縦一列で集約し、マウスの居る四隅に移動する(2026-08-11指示)。
+   窓がスクロールしても付いてくるよう固定配置 */
+#sv-back,#sv-up,#sv-down{
+  position:fixed;z-index:2;width:60px;height:60px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(250,250,250,0.95);color:#222;border:0;padding:0;cursor:pointer;
+  box-shadow:0 3px 12px rgba(0,0,0,0.35);
+}
+/* 既定=右下: 上から ▲ ▼ ◀ の縦一列 */
+#sv-up{right:24px;bottom:168px;}
+#sv-down{right:24px;bottom:96px;}
+#sv-back{right:24px;bottom:24px;}
+/* 左下 */
+#site-viewer.sv-bl #sv-up{right:auto;left:24px;}
+#site-viewer.sv-bl #sv-down{right:auto;left:24px;}
+#site-viewer.sv-bl #sv-back{right:auto;left:24px;}
+/* 右上 */
+#site-viewer.sv-tr #sv-up{bottom:auto;top:24px;}
+#site-viewer.sv-tr #sv-down{bottom:auto;top:96px;}
+#site-viewer.sv-tr #sv-back{bottom:auto;top:168px;}
+/* 左上 */
+#site-viewer.sv-tl #sv-up{right:auto;left:24px;bottom:auto;top:24px;}
+#site-viewer.sv-tl #sv-down{right:auto;left:24px;bottom:auto;top:96px;}
+#site-viewer.sv-tl #sv-back{right:auto;left:24px;bottom:auto;top:168px;}
+#sv-back svg,#sv-up svg,#sv-down svg{width:30px;height:30px;fill:#222;display:block;}
+#sv-back:active,#sv-up:active,#sv-down:active{opacity:0.6;}
+
+/* TV/PCモード中はページ自体をスクロール不能にする(2026-08-11指示の「完全固定」)。
+   URLバーの出没で縦にはみ出てもスクロールバーが現れない＝バーが画面幅を奪って
+   vw基準のロゴ・バナーが動く連鎖を根絶。クラスはJS(updateTvH)がisTvPcMode()の時だけ付ける */
+/* TV/PCモード中はページ全体を「固定サイズの箱」にする（2026-08-11・実測で効果を確認）。
+   position:fixed にすると body がページの流れから外れ、ドキュメントの高さが
+   ビューポートを超えられない＝スクロールする対象が消えるため、
+   URLバーが出て中身がはみ出しても、スクロールバーが原理的に出せない。
+   実測: はみ出し100px→0・スクロール不能・動画とバナーの寸法は不変。
+   min-height:0 は body{min-height:100vh}(51行目)の打ち消し */
+html.tvpc{height:100%;overflow:hidden;}
+html.tvpc body{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  min-height:0;overflow:hidden;
+}
+html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;display:none;}
+
+/* ══ 使い方の説明ツアー（コーチマーク方式・2026-08-12）══
+   実際の画面の上で、押せるボタンを1つずつ光らせて説明する。別ページの説明書を見なくて済む。
+   ・対象だけを明るく残し、周りを暗くする（box-shadowの広がりで外側を覆う＝要素を1つ足すだけ）
+   ・三角で対象を指し、吹き出しは画面からはみ出さない側へ自動で置く
+   ・画面のどこを押しても次へ進む（高齢者が押しやすいように的を大きく取る）
+   ・文章は折り返しが起きない短さを基本にし、やむを得ない場合も語の途中で切らない */
+/* ★誤タップ防止の透明カバー(#yt-block-*)が z-index 2147483647 で置かれているため、
+   ツアーはそれと同じ最大値にする。同値ならHTMLの後ろにある方＝ツアーが上に来る（#tourは末尾に置いてある）。
+   これをしないと映像の上端80pxでタップが吸われ、そこだけ次へ進めなくなる */
+#tour{position:fixed;inset:0;z-index:2147483647;display:none;}
+#tour.on{display:block;}
+/* 最初の問いかけと最後のお知らせは指す対象が無いので、背面全体を同じ濃さで暗くする
+   （説明中の暗さ rgba(0,0,0,.74) と同じ。ツアー中ずっと同じ見え方に揃えるため） */
+#tour.dim{background:rgba(0,0,0,0.74);}
+#tour-hole{position:fixed;border:3px solid var(--gold2);box-shadow:0 0 0 9999px rgba(0,0,0,0.74);
+  pointer-events:none;transition:none;}
+#tour-tri{position:fixed;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;pointer-events:none;}
+#tour-tip{position:fixed;background:#fff;color:#1a2520;border-radius:14px;padding:16px 18px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);
+  /* 日本語は語の途中で改行しない。長い語も枠からはみ出させない */
+  word-break:normal;overflow-wrap:anywhere;line-break:strict;}
+/* 見出しと本文は「左詰めのひとかたまり」のまま、その塊ごと箱の左右中央に置く。
+   （ボタンは #tour-foot の右寄せのまま） */
+#tour-tip{text-align:center;}
+#tour-body{display:inline-block;text-align:left;max-width:100%;}
+#tour-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
+#tour-txt{font-size:16px;line-height:1.65;}
+#tour-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+#tour-step{font-size:13px;color:#8a938d;}
+.tour-btn{border:0;border-radius:9px;padding:9px 18px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;}
+.tour-skip{background:#ececec;color:#555;}
+.tour-next{background:var(--gold);color:#fff;}
+.tour-btn:disabled{opacity:.5;cursor:default;}
+/* テレビのリモコンは「どこが選ばれているか」が見えないと操作できないため、選択中の枠を出す */
+.tour-btn:focus{outline:3px solid var(--green);outline-offset:2px;}
+.tour-btn:focus:not(:focus-visible){outline:none;}   /* 指やマウスで押した時は出さない */
+/* 幅の狭い機種(iPhone SEの旧型=320pxなど)だけ左右の内側余白を詰める。
+   本文が折り返さない幅(258px)を確保するため。344px以上の機種では何も変わらない */
+@media (max-width:343px){ #tour-tip{padding:16px 14px;} }
+
+/* ══ ホーム画面への登録案内（2026-08-12）══
+   ・Android系は beforeinstallprompt が来たら「ボタン1つ」で入る（メニュー探し不要）
+   ・iPhoneはOSに入れる仕組みが無いので、選択式で探し方を案内する
+   ・文章はツアーと同じく行の折り返しを決め打ちする（CLAUDE.md 絶対ルール10） */
+#reg{position:fixed;inset:0;z-index:2147483647;display:none;background:rgba(0,0,0,0.74);}
+#reg.on{display:block;}
+#reg-box{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:#fff;color:#1a2520;border-radius:14px;padding:18px 18px 16px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);text-align:center;
+  word-break:normal;overflow-wrap:anywhere;line-break:strict;}
+#reg-body{display:inline-block;text-align:left;max-width:100%;}
+/* 探してもらうマークは、言葉ではなく実物の形で見せる（□に↑では伝わらないため） */
+#reg-icon{display:none;margin:0 auto 10px;width:64px;height:64px;border-radius:14px;
+  background:#f2f4f3;color:#1a2520;align-items:center;justify-content:center;}
+#reg-icon.on{display:flex;}
+#reg-icon svg{width:38px;height:38px;display:block;}
+#reg-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
+#reg-txt{font-size:16px;line-height:1.65;}
+#reg-btns{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+/* ★横向きのiPhoneなど画面が低い時だけ、実測ではみ出した場合に詰める（regFit が付ける）。
+   @media(height)は使わない＝iOSがアプリ内ブラウザ復帰時に判定を凍らせるため */
+#reg-box.tight{padding:12px 16px 12px;}
+/* ★詰めてもまだ入らない時だけボタンを2列にする（横向きで選択肢が多い画面）。
+   入るなら付かない＝誤発動しても何も変わらない。主ボタン(.go)だけは横いっぱいのまま */
+#reg-box.cols #reg-btns{display:grid;grid-template-columns:1fr 1fr;}
+#reg-box.cols #reg-btns .reg-btn.go{grid-column:1 / -1;}
+#reg-box.tight #reg-icon{width:44px;height:44px;margin-bottom:6px;border-radius:11px;}
+#reg-box.tight #reg-icon svg{width:27px;height:27px;}
+#reg-box.tight #reg-ttl{font-size:16px;margin-bottom:3px;}
+#reg-box.tight #reg-txt{font-size:15px;line-height:1.45;}
+#reg-box.tight #reg-btns{margin-top:10px;gap:6px;}
+#reg-box.tight .reg-btn{padding:9px 14px;font-size:15px;}
+.reg-btn{border:0;border-radius:10px;padding:13px 14px;font-family:inherit;
+  font-size:16px;font-weight:700;cursor:pointer;background:#ececec;color:#41504a;}
+.reg-btn.go{background:var(--gold);color:#fff;}
+.reg-btn:focus{outline:3px solid var(--green);outline-offset:2px;}
+.reg-btn:focus:not(:focus-visible){outline:none;}
+
+/* ── 上部の「やりかたカード」（登録を実行する段階だけ）──
+   ★共有シートやブラウザのメニューは画面の下〜半分を覆い、開いている間は
+     こちらのボタンを押せない（押した瞬間メニューが閉じる。2026-08-12実機で確認）。
+     だから「やる」段階は画面の上に手順を出したままにする。
+     暗幕なし・押す必要なし＝端末の操作を一切妨げない。
+     画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
+#reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
+  margin:0 auto;max-width:620px;
+  z-index:2147483647;display:none;background:#fff;color:#1a2520;
+  border-radius:16px;box-shadow:0 10px 34px rgba(0,0,0,.45);
+  padding:14px 16px;word-break:normal;line-break:strict;}
+#reg-strip.on{display:block;}
+#rs-head{display:flex;gap:12px;align-items:center;}
+#rs-icon{flex:0 0 auto;width:62px;height:62px;border-radius:16px;background:#f2f4f3;color:#1a2520;
+  display:flex;align-items:center;justify-content:center;}
+#rs-icon svg{width:42px;height:42px;display:block;}
+#rs-ttl{flex:1 1 auto;min-width:0;font-size:17px;font-weight:700;color:var(--green);
+  letter-spacing:.5px;line-height:1.4;}
+#rs-close{flex:0 0 auto;border:0;background:#ececec;color:#41504a;width:42px;height:42px;
+  border-radius:11px;font-size:21px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;
+  -webkit-tap-highlight-color:transparent;}
+#rs-txt{margin-top:12px;}
+/* 手順＋その補足をひと塊にする。2列にした時に切り離されないため */
+.rs-item{break-inside:avoid;-webkit-column-break-inside:avoid;}
+/* 番号は固定幅の丸にする＝「が入っても文の頭が必ず揃う（2026-08-12指示） */
+.rs-step{display:flex;gap:10px;align-items:flex-start;margin-top:9px;}
+.rs-step:first-child{margin-top:0;}
+.rs-n{flex:0 0 auto;width:27px;height:27px;border-radius:50%;background:var(--green);color:#fff;
+  font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.5;}
+/* 補足は直前の手順にぶら下げる。番号の幅ぶん下げて、手順の文の頭に揃える */
+.rs-sub{margin:4px 0 0 37px;font-size:15px;font-weight:600;color:#41504a;line-height:1.5;}
+/* 文の中に置くマーク。「押す物」だと分かるよう、上の大きなマークと同じ薄い枠に入れる。
+   大きさはemなので、詰め表示になっても文字と一緒に縮む */
+.rs-mk{display:inline-flex;align-items:center;justify-content:center;
+  width:1.5em;height:1.5em;vertical-align:-0.42em;margin:0 2px;
+  background:#f2f4f3;border-radius:.34em;}
+.rs-mk svg{width:1.05em;height:1.05em;display:block;}
+#rs-foot{display:flex;justify-content:flex-end;margin-top:13px;}
+#rs-help{border:0;background:var(--gold);color:#fff;border-radius:11px;padding:12px 20px;
+  font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;}
+/* 画面が狭い/低い時だけ詰める（実測して入らない時のみ regStripFit が付ける） */
+#reg-strip.tight{padding:11px 13px;}
+#reg-strip.tight #rs-icon{width:50px;height:50px;border-radius:13px;}
+#reg-strip.tight #rs-icon svg{width:34px;height:34px;}
+#reg-strip.tight #rs-ttl{font-size:16px;}
+#reg-strip.tight #rs-txt{margin-top:9px;}
+#reg-strip.tight .rs-step{margin-top:6px;}
+#reg-strip.tight .rs-t{font-size:16px;line-height:1.4;}
+#reg-strip.tight .rs-sub{font-size:14px;}
+#reg-strip.tight #rs-foot{margin-top:9px;}
+#reg-strip.tight #rs-help{padding:10px 16px;font-size:15px;}
+/* 横向きなど「幅はあるが高さが足りない」時は手順を2列にして高さを半分にする */
+#reg-strip.wide #rs-txt{column-count:2;column-gap:20px;}
+/* ★幅が足りず文が折り返した時だけ、マークを少し小さくして字を詰め、1行に戻す。
+   「行末に2〜3文字だけ残す」形を作らないため（CLAUDE.mdルール10）。
+   実測して折り返した時にだけ付くので、収まっている画面は今までどおり何も変わらない。
+   ※tightより後に書く＝同じ強さなので、後勝ちでこちらが効く */
+#reg-strip.narrow #rs-icon{width:44px;height:44px;border-radius:11px;}
+#reg-strip.narrow #rs-icon svg{width:30px;height:30px;}
+#reg-strip.narrow #rs-ttl{font-size:15px;}
+#reg-strip.narrow .rs-t{font-size:16px;line-height:1.4;}
+#reg-strip.narrow .rs-sub{font-size:13px;}   /* 字下げ37pxは触らない＝文の頭が揃ったまま */
+/* 2列かつ極端に狭い横向き（iPhone SE横568x320など）で、上を詰めてもまだ折り返す時の2段目。
+   番号の丸も小さくして、補足の字下げ（丸23px＋すき間10px＝33px）を文の頭に合わせ直す */
+#reg-strip.narrow2 #rs-icon{width:36px;height:36px;border-radius:9px;}
+#reg-strip.narrow2 #rs-icon svg{width:25px;height:25px;}
+#reg-strip.narrow2 #rs-ttl{font-size:14px;}
+#reg-strip.narrow2 .rs-n{width:23px;height:23px;font-size:13px;}
+#reg-strip.narrow2 .rs-t{font-size:15px;}
+#reg-strip.narrow2 .rs-sub{font-size:12px;margin-left:33px;}
+/* ── 呼び戻し用の「？」。ホーム画面から開くようになれば出ない（2026-08-12承認） ── */
+#reg-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+  z-index:2147483646;display:none;width:46px;height:46px;border-radius:50%;
+  border:2px solid rgba(231,199,102,.85);background:rgba(30,58,40,.88);color:var(--gold2);
+  font-size:21px;font-weight:700;cursor:pointer;font-family:inherit;
+  align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color:transparent;}
+#reg-fab.on{display:flex;}
+
+/* 実測値の画面表示（?debug=1 の時だけ）。原因を推測せず数値で確かめるための保険 */
+#tv-debug{
+  position:fixed;right:8px;top:8px;z-index:9999;
+  background:rgba(0,0,0,0.82);color:#0f0;font-family:monospace;font-size:15px;
+  line-height:1.5;padding:8px 12px;border-radius:6px;white-space:pre;pointer-events:none;display:none;
+}
+html.dbg #tv-debug{display:block;}
+
+/* iPhone横向きの設定画面（2026-08-11指示の配置）：
+   上段＝3ブロックを同じ大きさで横に並べる
+     ①使い方＋背景の色（ひと繋がりの1ブロックに見せる） ②表示と動作 ③投稿・お問い合わせ
+   下段＝「アプリについて」を横いっぱいの帯にして中身も横並び
+   縦向き・iPad・PCの設定画面には影響しない（body.ori-l 限定） */
+body.ori-l #settings-panel .set-body{
+  /* minmax(0,1fr)=中身の幅に引っ張られず3列を完全な均等幅にする(1frだけだと不揃いになる・実測で確認) */
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 1fr auto;
+  gap:6px 8px;padding:2px 6px 6px;align-items:stretch;
+}
+body.ori-l #settings-panel .set-sec{margin-bottom:0;padding:7px;}
+/* ①使い方（上）＋背景の色（下）を縦に繋げて1ブロックに見せる（角丸と隙間を消して一体化） */
+body.ori-l #settings-panel .set-sec:nth-of-type(1){grid-column:1;grid-row:1;border-radius:8px 8px 0 0;}
+body.ori-l #settings-panel .set-sec:nth-of-type(2){grid-column:1;grid-row:2;border-radius:0 0 8px 8px;margin-top:-6px;}
+body.ori-l #settings-panel .set-sec:nth-of-type(3){grid-column:2;grid-row:1 / span 2;}
+body.ori-l #settings-panel .set-sec:nth-of-type(4){
+  grid-column:3;grid-row:1 / span 2;
+  /* 3項目は間隔を保ったままブロックの中央へ（2026-08-11指示。space-betweenだと上下に散る） */
+  display:flex;flex-direction:column;gap:14px;
+}
+/* 見出しは上のまま、その下の余りを上下に等分して3項目だけを中央に置く
+   （justify-content:centerだと見出しも中央計算に入り、項目が下寄りになる） */
+body.ori-l #settings-panel .set-sec:nth-of-type(4) .set-link:first-of-type{margin-top:auto;}
+body.ori-l #settings-panel .set-sec:nth-of-type(4) .set-link:last-of-type{margin-bottom:auto;}
+/* 背景の色は4列×3段に（1つを大きくして余白を埋める・2026-08-11指示） */
+body.ori-l #settings-panel .set-colors{grid-template-columns:repeat(4,1fr);gap:7px;}
+body.ori-l #settings-panel .set-color i{height:34px;}
+/* 下段：アプリについて＝薄い帯(1行目)＋その下に「設定をすべて元に戻す」ボタンと説明を横並び(2行目)
+   （2026-08-11指示：帯はもっと薄く・リセットは帯の下・説明はボタンの横） */
+body.ori-l #settings-panel .set-sec:nth-of-type(5){
+  grid-column:1 / span 3;grid-row:3;
+  display:grid;grid-template-columns:auto 1fr;gap:3px 12px;align-items:center;padding:4px 10px;
+}
+body.ori-l #settings-panel .set-sec:nth-of-type(5) .set-hd{grid-area:1/1;margin:0;}
+body.ori-l #settings-panel .set-about{grid-area:1/2;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;}
+body.ori-l #settings-panel .set-about div{display:flex;gap:6px;padding:0;border:0;font-size:11px;align-items:baseline;}
+body.ori-l #settings-panel .set-link-reset{grid-area:2/1/3/3;width:auto;margin:0;padding:1px 0 2px;}
+body.ori-l #settings-panel .set-link-reset .set-link-txt{display:flex;flex-direction:row;align-items:baseline;gap:12px;}
+body.ori-l #settings-panel .set-link-reset .set-link-txt i{display:inline;font-size:10px;}
+/* 各ブロック内の圧縮（横402pxの高さに収めるため） */
+body.ori-l #settings-panel .set-link{padding:6px 8px;}
+body.ori-l #settings-panel .set-link-txt b{font-size:13px;}
+body.ori-l #settings-panel .set-link-txt i{font-size:10px;}
+body.ori-l #settings-panel .set-row{padding:5px 0;}
+body.ori-l #settings-panel .set-sec-ttl{font-size:12px;padding:3px 10px;}
+body.ori-l #settings-panel .set-hd{margin-bottom:5px;}
+
+/* ══════════════════════════════════════════════════════════════════
+   PC・テレビ（大きな横長画面）専用：全体を1画面に収め、お知らせを全文表示する
+   2026-08-11 実機(Google TV)確認で判明した2点への対応：
+     ①お知らせ枠が画面の下へ45pxはみ出しており、テレビのオーバースキャン
+       （画面端を数十px表示しない仕様）と重なって完全に見えなくなっていた
+     ②お知らせのタイトルが1行省略のため、12件中6件が途中で切れていた（実測）
+   対策：動画の幅を「画面の高さ」から逆算して決め、はみ出しをゼロにする。
+        右カラムが広がるぶん、番組表とお知らせの文字が読みやすくなる。
+   ★スマホ(ori-p/ori-l)・iPad(ori-tp/ori-tl)・FireTV(silk-mode)は
+     それぞれ専用の指定を持つため :not() で明確に除外＝1pxも変えない。
+   ══════════════════════════════════════════════════════════════════ */
+/* ══ TV/PCレイアウト（2026-08-11 全面見直し）══
+   ★以前は @media (min-width:1000px) and (min-height:600px) で囲っていたが、
+     実機のURLバーが出ると画面の高さが600pxを割り、この条件ごと外れて
+     「バナーが大きくなりロゴが小さくなる」現象を起こしていた（実測で確定：
+     高さ590pxでバナー422→578px・ロゴ32→20pxに戻ることを確認）。
+   → 条件判定をJSの isTvPcMode() に一本化し、html.tvpc クラスだけで制御する。
+     JS側は一度TVモードに入ったら高さが減っても維持する（ヒステリシス）ため、
+     URLバーの出没でレイアウトが切り替わることが原理的に起きない。
+   ※isTvPcMode()がスマホ・iPad・FireTVを既に除外しているので :not() の羅列は不要 */
+/* バナーは画面幅の1/3に（2026-08-11指示）。固定pxだとテレビ(実測1280x720)で画面の67%を
+   占めてしまったため、画面幅に対する割合で指定してどの解像度でも1/3に保つ。
+   ヘッダーの実高さは setHdrVar() が --hdr-h に実測して入れるため、動画の計算式が自動で追従する */
+html.tvpc body{
+  --banner-w:33vw;
+}
+/* ヘッダーの各要素は「バナーの縦幅」(33vw×193.2/2277≈2.8vw)を基準に統一（2026-08-11指示）。
+   ロゴ・試験放送中・歯車をバナーと同じ高さに収め、ヘッダーの下余白を0にして
+   バナー→動画の間隔を、番組表→お知らせの間隔と同じ16px（.pageのgap）に揃える */
+html.tvpc .header{
+  min-height:0;padding-top:12px;padding-bottom:0;
+}
+/* バナーの包み(.h-banner)の上下3px余白がヘッダーを6px太らせ、間隔を19pxにしていた（実測）。
+   0にしてヘッダー高=12+バナー36=48 → バナー→動画の間隔がちょうど16pxになる */
+html.tvpc .h-banner{
+  padding:0;
+}
+html.tvpc .h-logo-main{
+  font-size:2.5vw;line-height:2.8vw;
+}
+html.tvpc .test-badge,
+html.tvpc .h-right .onair-badge{
+  font-size:1.4vw;height:2.8vw;box-sizing:border-box;padding:0 1.1vw;
+  border-radius:0.5vw;gap:0.6vw;letter-spacing:0.15vw;
+}
+html.tvpc .test-badge .bdot,
+html.tvpc .h-right .onair-badge .bdot{
+  width:0.8vw;height:0.8vw;
+}
+html.tvpc .h-gear svg{
+  width:2.8vw;height:2.8vw;
+}
+/* ★動画エリア(player)は grid-template-areas で上下2行にまたがるため、
+   お知らせ枠のぶんを引いてはいけない（引くと動画の下に余白が残る）。
+   動画の高さ = 使える高さ - 上下padding32 - タイトルバー44 - 操作バー44 = -120px
+   動画の幅 = その高さ × 16/9。これで動画が縦いっぱいに入り、余白ゼロで収まる */
+/* 高さの基準は100vhではなく、JSが実測して固定する --tvH（2026-08-11指示）。
+   TVブラウザはマウスを上に持っていくとURLバーが降りて画面の高さが一時的に縮み、
+   100vh基準だとその都度レイアウト全体が作り直されてガタつく＋スクロール余地が生まれていた。
+   --tvHは「幅が変わった時だけ基準を取り直し、同じ幅での高さ減(=バーの出没)は無視」する
+   冪等な実測値（updateTvH参照）。未設定時は従来どおり100vh */
+html{scrollbar-width:none;}
+html::-webkit-scrollbar{width:0;height:0;display:none;}
+html.tvpc .page{
+  height:calc(var(--tvH, 100vh) - var(--hdr-h, 97px));
+  box-sizing:border-box;
+  padding-bottom:16px;
+  overflow:hidden;
+  grid-template-columns:calc((var(--tvH, 100vh) - var(--hdr-h, 97px) - 120px) * 16 / 9) 1fr;
+}
+/* 番組表は右カラムいっぱいに伸ばし、内側だけスクロールさせる（外にはみ出さない） */
+html.tvpc .sidebar{
+  height:100%;max-height:100%;overflow:hidden;position:static;
+}
+/* お知らせのタイトル：1行省略をやめ、3行まで折り返して全文を見せる。
+   動画を優先して右カラムを詰めたぶん1行に入る文字数が減るため2行→3行に。
+   min-heightで高さを3行分に固定＝8秒ごとの切り替えで枠が伸び縮みしない（番組表がガタつかない） */
+html.tvpc .news-ttl{
+  white-space:normal;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;
+  overflow:hidden;
+  min-height:calc(1.35em * 3);
+}
+/* 設定画面（2026-08-11指示の配置）：スクロール不要で全項目を1画面に収める。
+   左列＝アプリの使い方／背景の色／アプリについて
+   右列＝表示と動作／投稿・お問い合わせ
+   ★左右を独立した縦並びにする（gridだと行の高さが左右で共有され、
+     「アプリについて」が右の投稿カードに引き伸ばされて余白が生まれていた・実測234px）。
+     TVモードの時だけJS(tvWrapSettings)が左右のラッパーを作る＝他の画面には一切影響しない。 */
+html.tvpc #settings-panel .set-body{
+  display:flex;gap:12px;align-items:stretch;
+}
+html.tvpc #settings-panel .set-col{
+  display:flex;flex-direction:column;gap:12px;flex:1 1 0;min-width:0;
+}
+html.tvpc #settings-panel .set-sec{margin-bottom:0;}
+/* 各列で「伸びる担当」を1枚ずつ決める＝残りの高さを全部使い切り、余白を残さない */
+html.tvpc #settings-panel .set-col-l .set-sec:nth-child(2){flex:1 1 auto;min-height:0;}  /* 背景の色 */
+html.tvpc #settings-panel .set-col-r .set-sec:nth-child(1){flex:1 1 auto;min-height:0;}  /* 表示と動作 */
+
+/* 背景の色：4列×3段。色見本を縦にも伸ばしてカードの高さを使い切る（余白ゼロ） */
+html.tvpc #settings-panel .set-col-l .set-sec:nth-child(2){display:flex;flex-direction:column;}
+html.tvpc #settings-panel .set-colors{
+  grid-template-columns:repeat(4,1fr);
+  flex:1;align-content:stretch;gap:10px;
+}
+html.tvpc #settings-panel .set-color{justify-content:center;}
+html.tvpc #settings-panel .set-color i{height:auto;flex:1;min-height:34px;}
+html.tvpc #settings-panel .set-color span{font-size:13px;}
+
+/* アプリについて：中身を詰めて縦を短くする（浮いた分は上の「背景の色」が吸収する） */
+html.tvpc #settings-panel .set-col-l .set-sec:nth-child(3) .set-about{margin-bottom:0;}
+html.tvpc #settings-panel .set-col-l .set-sec:nth-child(3) .set-about div{padding:1px 0;font-size:12px;}
+html.tvpc #settings-panel .set-col-l .set-sec:nth-child(3) .set-hd{margin-bottom:4px;}
+html.tvpc #settings-panel .set-col-l .set-sec:nth-child(3) .set-link-reset{padding:4px 10px;}
+html.tvpc #settings-panel .set-col-l .set-sec:nth-child(3) .set-link-reset i{font-size:10px;}
+
+/* 表示と動作・投稿：中の項目の間隔を均等配分（カードの高さを使い切る） */
+html.tvpc #settings-panel .set-col-r .set-sec{display:flex;flex-direction:column;justify-content:space-between;}
+/* 項目そのものにも余裕を持たせる(TV/PCのみ) */
+html.tvpc #settings-panel .set-link{
+  padding:12px 10px;
+}
 </style>
 </head>
 <body>
@@ -1019,7 +1438,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.48</div>
+    <div class="ps-version">version 2.77</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1063,7 +1482,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
     <!-- 左：プレイヤー -->
     <div class="player-col">
       <div class="viewing-bar">
-        <span class="live-tap" onclick="onLiveClick()">
+        <span class="live-tap" id="live-tap" onclick="onLiveClick()">
           <div class="ldot g" id="ldot"></div>
           <span class="llbl g" id="llbl">LIVE</span>
         </span>
@@ -1141,7 +1560,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><g transform="scale(-1,1) translate(-24,0)"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></g><text x="12" y="16.5" font-size="8" text-anchor="middle" fill="currentColor" font-weight="700">30</text></svg>
         </button>
         <!-- シークバー -->
-        <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
+        <div class="bar-bg" id="seek-bar"><div class="bar-fill" id="p-bar"></div></div>
         <!-- 音量 -->
         <button class="ctrl-btn" id="ctrl-mute" onclick="toggleMute()" title="ミュート">
           <svg id="ctrl-vol-icon" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
@@ -1154,7 +1573,7 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
     </div>
 
     <!-- 右上：番組表 -->
-    <div class="sidebar">
+    <div class="sidebar" id="sb-panel">
       <div class="sb-head">
         <div class="sb-ttl">番 組 表</div>
         <span class="sb-note">好きな番組をタップして視聴できます</span>
@@ -1181,8 +1600,16 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   </div>
   <div class="set-body">
     <div class="set-sec">
-      <button class="set-link set-link-lead" id="lnk-help">
-        <span class="set-link-txt"><b>アプリの使い方</b><i>画面の見かたと操作を図で説明</i></span>
+      <button class="set-link set-link-lead" id="lnk-tour">
+        <span class="set-link-txt"><b>しそチャンNETの使い方</b><i>アプリの機能を順に説明します</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
+      <button class="set-link" id="lnk-help">
+        <span class="set-link-txt"><b>詳しい説明とヘルプ</b><i>アプリ機能のまとめと困った時の対処法です</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
+      <button class="set-link" id="lnk-reg">
+        <span class="set-link-txt"><b>ホーム画面に登録する</b><i>アイコンを置いてひと押しで開けるようにします</i></span>
         <span class="set-link-arw">›</span>
       </button>
     </div>
@@ -1212,6 +1639,11 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
       <div class="set-row">
         <div class="set-line"><b>お知らせを自動で変えない</b><i>指でなぞると切替</i></div>
         <button class="set-sw" id="opt-news" aria-label="お知らせを自動で変えない"></button>
+      </div>
+
+      <div class="set-row">
+        <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
+        <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
       </div>
     </div>
 
@@ -1246,6 +1678,60 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
   </div>
 </div>
 
+<!-- 使い方の説明ツアー（コーチマーク） -->
+<div id="tour">
+  <div id="tour-hole"></div>
+  <div id="tour-tri"></div>
+  <div id="tour-tip">
+    <div id="tour-body">
+      <div id="tour-ttl"></div>
+      <div id="tour-txt"></div>
+    </div>
+    <div id="tour-foot">
+      <span id="tour-step"></span>
+      <span>
+        <button class="tour-btn tour-skip" id="tour-skip">とじる</button>
+        <button class="tour-btn tour-next" id="tour-next">次へ</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ホーム画面への登録案内 -->
+<div id="reg">
+  <div id="reg-box">
+    <div id="reg-icon"></div>
+    <div id="reg-body">
+      <div id="reg-ttl"></div>
+      <div id="reg-txt"></div>
+    </div>
+    <div id="reg-btns"></div>
+  </div>
+</div>
+<!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
+<div id="reg-strip">
+  <div id="rs-head">
+    <div id="rs-icon"></div>
+    <div id="rs-ttl"></div>
+    <button id="rs-close" title="とじる">×</button>
+  </div>
+  <div id="rs-txt"></div>
+  <div id="rs-foot"><button id="rs-help">困った時</button></div>
+</div>
+<button id="reg-fab" title="ホーム画面への追加案内">？</button>
+
+<!-- 実測値の表示（?debug=1 の時だけ見える） -->
+<div id="tv-debug"></div>
+
+<!-- サイト表示の窓（TV・PC）: リンク先をページを離れず開く。
+     窓の枠(iframe)は開くたびにJSで作り直す＝閉じた時に枠ごと削除する。
+     （src属性の差し替えは履歴に残り「間に何もないページ」が挟まる原因になるため） -->
+<div id="site-viewer">
+  <button id="sv-back" onclick="closeSiteViewer()" aria-label="もどる">
+    <svg viewBox="0 0 24 24"><path d="M15.4 7.4L14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
+  </button>
+</div>
+
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ══════════════════════════════════════════════
@@ -1256,6 +1742,1107 @@ body.ori-l .player-wrap:-webkit-full-screen .fs-sponsor{ display:block; top:6px;
 function escHtml(t){
   return String(t==null?'':t)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
+//  使い方の説明ツアー（2026-08-12）
+//  実際の画面の上で、押せるボタンを1つずつ光らせて説明する。
+//  ・初回起動時に「説明を見ますか？」と尋ね、見る／スキップを選べる
+//  ・設定の「使い方の説明」からいつでも見直せる
+//  ・その端末に無い項目（例: iPhoneでは音量つまみが出ない）は自動で飛ばす
+//  ・文章は短く。折り返しても語の途中で切れないようCSS側で指定済み
+// ══════════════════════════════════════════════
+var TOUR_KEY='shisochan_tour';
+var TOUR=[
+  {id:'ps-btn',         t:'放送開始',       d:'いま放送中の番組を再生します。', power:1},
+  {id:'sponsor-img',    t:'スポンサー広告', d:'地元企業からの広告です。',
+                                            d2:'押すと各社のページが開きます。'},
+  {id:'live-tap',       t:'放送中の表示',   d:'いま放送中かどうかを示します。',
+                                            d2:'押すと放送中の番組に戻ります。'},
+  {id:'ctrl-play',      t:'再生・一時停止', d:'再生と一時停止を切り替えます。'},
+  {id:'ctrl-back30',    t:'巻き戻し',       d:'ボタンの秒数だけ前に戻ります。',
+                                            d2:'秒数は設定で変更できます。'},
+  {id:'ctrl-fwd30',     t:'早送り',         d:'ボタンの秒数だけ先へ進みます。',
+                                            d2:'秒数は設定で変更できます。'},
+  {id:'seek-bar',       t:'再生位置',       d:'いま流れている場所です。',
+                                            d2:'なぞると見たい場面へ動きます。'},
+  {id:'ctrl-mute',      t:'消音',           d:'押すと音が消え、もう一度押すと',
+                                            d2:'元の音量に戻ります。'},
+  {id:'vol-slider',     t:'音量',           d:'左右に動かして音量を調整します。'},
+  {id:'expand-open-btn',t:'全画面表示',     d:'映像を画面いっぱいに広げます。',
+                                            d2:'戻すときは右下の縮小マークです。'},
+  {id:'sb-panel',        t:'番組表',         d:'その日の放送予定の一覧です。',
+                                            d2:'押した番組をすぐに再生します。'},
+  {id:'sb-news',        t:'お知らせ',       d:'宍粟市の新着情報とイベントです。',
+                                            d2:'押すとページが開きます。'},
+  {id:'h-gear',         t:'設定',           d:'背景の色や文字の大きさなど、',
+                                            d2:'表示と動作を変更できます。'}
+];
+//  _tourMode … 0=出ていない／1=最初の問いかけ／2=放送開始の説明／3=本編／4=終わりのお知らせ
+var _tourMode=0, _tourSeq=[], _tourPos=-1, _tourWait=null, _tourScroll0=0, _tourFixes=0, _tourWatchT=[];
+var _tourSync=null, _tourRect='';   // 出している間、対象の位置を見張って枠を合わせ続ける
+// リモコンやキーボードで操作する画面か（テレビ・パソコン）。
+// ★指で触る端末では自動で焦点をあてない。押していないのに緑の枠が付いて見えるため
+//   （2026-08-12 iOS26のシミュレータで実際に出た）
+function uiNeedsFocus(){
+  try{ if(('ontouchstart' in window) || navigator.maxTouchPoints>0) return false; }catch(_){}
+  return true;
+}
+function tourEls(){
+  return {w:document.getElementById('tour'), hole:document.getElementById('tour-hole'),
+    tri:document.getElementById('tour-tri'), tip:document.getElementById('tour-tip'),
+    ttl:document.getElementById('tour-ttl'), txt:document.getElementById('tour-txt'),
+    step:document.getElementById('tour-step'), next:document.getElementById('tour-next'),
+    skip:document.getElementById('tour-skip')};
+}
+// 吹き出しの幅。文章が折り返さない幅（本文で258px必要）を、狭い画面でも確保する。
+// ふつうのスマホ(344px以上)では常に320pxで、これまでと同じ見た目のまま変わらない
+function tourTipW(){ return Math.min(320, Math.max(innerWidth-24, 180)); }
+// その端末に「ある」かどうか（画面の外にあるだけの物は、あるものとして数える）
+function tourHas(i){
+  var el=document.getElementById(TOUR[i].id);
+  if(!el) return false;
+  var r=el.getBoundingClientRect();
+  // ★1px以上あれば「ある」とみなす。音量つまみは棒の高さが4pxしかなく、
+  //   8px以上を条件にすると横向きのiPhoneで説明が抜け落ちる（2026-08-12実測）
+  return r.width>=1 && r.height>=1;
+}
+// 実際に見せる項目だけを並べる（放送開始は別扱いなので入れない）
+function tourBuildSeq(){
+  _tourSeq=[];
+  for(var i=0;i<TOUR.length;i++){ if(!TOUR[i].power && tourHas(i)) _tourSeq.push(i); }
+}
+// 文章を指定どおりの行に分けて入れる。
+// ★行の折り返しはブラウザ任せにしない：行末に2〜3文字だけ残る形を作らないため、
+//   どこで改行するかはこちらで決め打ちする（CLAUDE.md 絶対ルール10）
+function tourLines(el, arr){
+  el.textContent='';
+  for(var i=0;i<arr.length;i++){
+    if(i) el.appendChild(document.createElement('br'));
+    el.appendChild(document.createTextNode(arr[i]));
+  }
+}
+// 画面の中央に文章だけを出す（最初の問いかけ・最後のお知らせ）
+function tourCenter(ttl,lines,nextLabel,skipLabel){
+  var e=tourEls(); if(!e.w) return;
+  if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
+  e.w.classList.add('on','dim');
+  e.hole.style.display='none'; e.tri.style.display='none';
+  e.ttl.textContent=ttl; tourLines(e.txt, lines);
+  e.step.textContent='';
+  e.next.disabled=false; e.next.textContent=nextLabel;
+  e.skip.textContent=skipLabel||''; e.skip.style.display=skipLabel?'':'none';
+  // ★中央に置く指定はここで直接書く（前の手順で入れた座標が残ると中央に来ないため）
+  e.tip.style.width=tourTipW()+'px';
+  e.tip.style.left='50%'; e.tip.style.top='50%';
+  e.tip.style.transform='translate(-50%,-50%)';
+  if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
+}
+// 対象を光らせて説明を出す
+function tourPoint(i, counter, noScroll){
+  var e=tourEls(); if(!e.w) return;
+  var s=TOUR[i], el=document.getElementById(s.id);
+  if(!el) return;
+  var r=el.getBoundingClientRect();
+  // 画面の外にある物（iPhone縦のお知らせなど）は、まず画面の中へスクロールしてから測る。
+  // ★描き直しだけの呼び出し(noScroll)ではスクロールしない＝スクロール監視と取り合いにならない
+  if(!noScroll && (r.top<0 || r.bottom>innerHeight)){
+    try{
+      var want=scrollY + r.top - Math.max(0,(innerHeight-r.height)/2);
+      window.scrollTo(0, Math.max(0, Math.round(want)));
+    }catch(_){}
+    r=el.getBoundingClientRect();
+  }
+  e.w.classList.add('on'); e.w.classList.remove('dim');
+  e.hole.style.display='';
+  // 小さいボタンほど枠を広めに取り、丸く囲む
+  var small=(r.width<70 && r.height<70);
+  // ★真円にしてよいのは「ほぼ正方形」の物だけ。音量つまみのように細長い物まで
+  //   真円にすると、丸が縦に伸びて吹き出しに重なる（2026-08-12実測）。
+  //   設定(24x19)や各ボタン(34x34)は真円、LIVE表示(43x15)や音量つまみは小判形のまま。
+  var round1=small && (Math.max(r.width,r.height) <= Math.min(r.width,r.height)*2);
+  // ★余白は四方そろえる。片側だけ画面のふちで削ると、枠が対象からズレて見える
+  //   （2026-08-12 実機写真で判明：上6px・下1pxのように偏っていた）。
+  //   入る分だけ同じ幅を四方に取り、足りなければ全体を縮める。
+  //   小さいボタンは大きめの輪で目立たせ、大きな四角は細めに当てて正確に見せる。
+  var P=6;   // ★対象にぴったり付ける。以前は16/8で、囲いが緩く見えた（2026-08-12指示）
+  var hl,ht,hr,hb;
+  if(round1){
+    // ★丸で囲う物は必ず「真円」にする。対象の中心に合わせ、直径＝長辺＋余白×2。
+    //   以前は対象の箱をそのまま丸めていたため、設定ボタン(24×19px)が
+    //   つぶれた楕円になっていた（2026-08-12 実機写真で判明）。
+    //   画面のふちに近い時は、縮めるのではなく画面の中へ寄せる＝真円を崩さない。
+    var cx=(r.left+r.right)/2, cy=(r.top+r.bottom)/2;
+    var D=Math.min(Math.max(r.width,r.height)+P*2, innerWidth, innerHeight);
+    hl=Math.max(0, Math.min(cx-D/2, innerWidth-D));
+    ht=Math.max(0, Math.min(cy-D/2, innerHeight-D));
+    hr=hl+D; hb=ht+D;
+  }else{
+    var pad=Math.min(P, Math.max(0,r.left), Math.max(0,r.top),
+                        Math.max(0,innerWidth-r.right), Math.max(0,innerHeight-r.bottom));
+    hl=r.left-pad; ht=r.top-pad; hr=r.right+pad; hb=r.bottom+pad;
+    // 対象そのものが画面から出ている辺だけは、画面に合わせる（線が消えないように）
+    hl=Math.max(0,hl); ht=Math.max(0,ht);
+    hr=Math.min(innerWidth,hr); hb=Math.min(innerHeight,hb);
+  }
+  e.hole.style.left=hl+'px';          e.hole.style.top=ht+'px';
+  e.hole.style.width=Math.max(0,hr-hl)+'px'; e.hole.style.height=Math.max(0,hb-ht)+'px';
+  e.hole.style.borderRadius=small?'999px':'12px';   // 正方形なら丸、細長い音量つまみなら小判形
+  e.ttl.textContent=s.t;
+  tourLines(e.txt, s.d2?[s.d,s.d2]:[s.d]);
+  e.step.textContent=counter||'';
+  e.skip.textContent='とじる'; e.skip.style.display='';
+  // 吹き出しは、上下左右のうち入る側へ置く
+  var TW=tourTipW();
+  e.tip.style.width=TW+'px'; e.tip.style.transform='none';
+  e.tip.style.left='-9999px'; e.tip.style.top='0px';   // 先に幅だけ決めて高さを測る
+  var TH=e.tip.offsetHeight||150;
+  var GAP=16, L, T, dir;
+  if(innerHeight-r.bottom-P-GAP >= TH){ dir='down'; T=r.bottom+P+GAP; }
+  else if(r.top-P-GAP >= TH){ dir='up'; T=r.top-P-GAP-TH; }
+  else if(innerWidth-r.right-P-GAP >= TW){ dir='right'; }
+  else if(r.left-P-GAP >= TW){ dir='left'; }
+  else { dir='center'; }
+  if(dir==='down'||dir==='up'){
+    L=Math.max(16, Math.min(innerWidth-TW-16, r.left+r.width/2-TW/2));
+  }else if(dir==='right'){
+    L=r.right+P+GAP; T=Math.max(16, Math.min(innerHeight-TH-16, r.top+r.height/2-TH/2));
+  }else if(dir==='left'){
+    L=r.left-P-GAP-TW; T=Math.max(16, Math.min(innerHeight-TH-16, r.top+r.height/2-TH/2));
+  }else{
+    L=Math.max(16,(innerWidth-TW)/2); T=Math.max(16,(innerHeight-TH)/2);
+  }
+  e.tip.style.left=Math.round(L)+'px'; e.tip.style.top=Math.round(T)+'px';
+  // 三角で対象を指す（上下左右のどこに置いても必ず指す）
+  var TR=e.tri.style;
+  if(dir==='center'){ TR.display='none'; }
+  else{
+    TR.display='';
+    if(dir==='down'||dir==='up'){
+      // 吹き出しの上または下から、対象の中心へ向けて出す
+      TR.borderLeft='11px solid transparent'; TR.borderRight='11px solid transparent';
+      TR.borderTop   =(dir==='up')  ?'14px solid #fff':'0';
+      TR.borderBottom=(dir==='down')?'14px solid #fff':'0';
+      TR.left=Math.round(Math.max(L+14, Math.min(L+TW-36, r.left+r.width/2-11)))+'px';
+      TR.top =Math.round(dir==='down'?(T-13):(T+TH-1))+'px';
+    }else{
+      // 吹き出しの左または右から、対象の中心へ向けて出す
+      TR.borderTop='11px solid transparent'; TR.borderBottom='11px solid transparent';
+      TR.borderRight=(dir==='right')?'14px solid #fff':'0';
+      TR.borderLeft =(dir==='left') ?'14px solid #fff':'0';
+      TR.top =Math.round(Math.max(T+14, Math.min(T+TH-36, r.top+r.height/2-11)))+'px';
+      TR.left=Math.round(dir==='right'?(L-13):(L+TW-1))+'px';
+    }
+  }
+  _tourRect=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
+  if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
+}
+// 本編のpos番目を出す。出す直前に消えていた項目はその場で飛ばす
+function tourGo(pos){
+  var e=tourEls();
+  while(pos<_tourSeq.length && !tourHas(_tourSeq[pos])){ _tourSeq.splice(pos,1); }
+  if(pos>=_tourSeq.length){ tourFinish(); return; }
+  _tourMode=3; _tourPos=pos; _tourFixes=0;
+  if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
+  e.next.disabled=false;
+  e.next.textContent=(pos>=_tourSeq.length-1)?'おわり':'次へ';
+  tourPoint(_tourSeq[pos], (pos+1)+' / '+_tourSeq.length);
+  tourWatch(); tourSyncStart();
+}
+// 最初の1枚：放送開始ボタン
+function tourShowPower(){
+  var e=tourEls();
+  _tourMode=2; _tourPos=-1; _tourFixes=0;
+  tourPoint(0,'');
+  tourWatch(); tourSyncStart();
+  // 準備がまだなら、その間だけ「次へ」を押せなくする（本物のボタンと同じ振るまい）
+  var pb=document.getElementById('ps-btn');
+  if(pb && pb.classList.contains('loading')){
+    e.next.disabled=true; e.next.textContent='準備中…';
+    if(_tourWait) clearInterval(_tourWait);
+    _tourWait=setInterval(function(){
+      var b2=document.getElementById('ps-btn');
+      if(b2 && b2.classList.contains('loading')) return;
+      clearInterval(_tourWait); _tourWait=null;
+      if(_tourMode===2){ e.next.disabled=false; e.next.textContent='次へ'; }
+    },250);
+  } else { e.next.disabled=false; e.next.textContent='次へ'; }
+}
+// ページが動いた時に、枠と吹き出しを貼り直す。
+// ★測った後にページが動く事がある（powerOnのscrollTo(0,0)・回転後の組み直しなど）。
+//   ツアー中は画面全体を覆っていて手ではスクロールできないので、動いたのは他の処理。
+//   よって対象が画面から出たら中へ戻す。ただし直し合いが続くと困るので回数に上限を設け、
+//   上限を超えたら「描き直すだけ（動かさない）」に落とす＝暴走しない
+// 出した直後に、枠がまだ対象に合っているかを2回だけ見に行く。
+// ★他の処理がページを動かす事がある（powerOnのscrollTo(0,0)など）。ずれていたら取り直す。
+//   ※スクロールイベントでの検知は検証環境で発火を確認できなかったため、確実に動くタイマーで見る
+function tourWatchClear(){
+  _tourWatchT.forEach(clearTimeout); _tourWatchT=[];
+  if(_tourSync){ clearInterval(_tourSync); _tourSync=null; }
+}
+// ★対象の位置や大きさが変わったら枠を合わせ直す。
+//   バナーは10秒ごと、お知らせは8秒ごとに中身が変わり、画像の読み込みでも寸法が動く。
+//   一度測って終わりにすると、そのぶん枠がズレたまま残る（2026-08-12 実機写真で判明）
+function tourSyncStart(){
+  if(_tourSync) clearInterval(_tourSync);
+  _tourSync=setInterval(function(){
+    if(_tourMode!==2 && _tourMode!==3){ clearInterval(_tourSync); _tourSync=null; return; }
+    var i=(_tourMode===2)?0:_tourSeq[_tourPos];
+    if(i===undefined || !TOUR[i]) return;
+    var el=document.getElementById(TOUR[i].id); if(!el) return;
+    var r=el.getBoundingClientRect();
+    var key=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
+    if(key===_tourRect) return;      // 変わっていなければ何もしない
+    _tourRect=key;
+    tourPoint(i, (_tourMode===2)?'':((_tourPos+1)+' / '+_tourSeq.length), true);
+  }, 250);
+}
+function tourWatch(){
+  tourWatchClear();
+  [120,450].forEach(function(ms){
+    _tourWatchT.push(setTimeout(function(){
+      if(_tourMode!==2 && _tourMode!==3) return;
+      var i=(_tourMode===2)?0:_tourSeq[_tourPos];
+      if(i===undefined || !TOUR[i]) return;
+      var el=document.getElementById(TOUR[i].id); if(!el) return;
+      var r=el.getBoundingClientRect();
+      var h=document.getElementById('tour-hole').getBoundingClientRect();
+      var 画面外 = (r.top<-0.5 || r.bottom>innerHeight+0.5);
+      var 離れた = Math.abs((h.top+h.bottom)/2-(r.top+r.bottom)/2)>20 ||
+                   Math.abs((h.left+h.right)/2-(r.left+r.right)/2)>20;
+      if(画面外 || 離れた) tourRedraw();
+    }, ms));
+  });
+}
+function tourRedraw(){
+  if(_tourMode!==2 && _tourMode!==3) return;
+  var noScroll = (++_tourFixes > 8);
+  if(_tourMode===2) tourPoint(0,'',noScroll);
+  else if(_tourPos>=0 && _tourSeq[_tourPos]!==undefined){
+    tourPoint(_tourSeq[_tourPos], (_tourPos+1)+' / '+_tourSeq.length, noScroll);
+  }
+}
+function tourNext(){
+  var e=tourEls();
+  if(e.next && e.next.disabled) return;
+  if(_tourMode===2){
+    // ★powerOnは押した流れの中で直接呼ぶ（iOSは操作から離れると再生を始めないため）
+    try{ powerOn(); }catch(_){}
+    e.next.disabled=true;                      // 画面が出るまでの二重押しを止める
+    setTimeout(function(){
+      if(_tourMode!==2) return;
+      tourBuildSeq(); tourGo(0);
+      setTimeout(function(){ if(_tourMode===3 && _tourPos===0) tourGo(0); },800); // 組み上がり後に測り直す
+    }, 700);
+    return;
+  }
+  if(_tourMode===3){ tourGo(_tourPos+1); return; }
+}
+function tourFinish(){
+  _tourMode=4;
+  tourCenter('使い方の説明は以上です',
+    ['もう一度見る時は、設定の',
+     '「しそチャンNETの使い方」を',
+     '押してください。'],
+    'とじる','');
+}
+function tourEnd(){
+  var e=tourEls(); if(!e.w) return;
+  if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
+  tourWatchClear();
+  e.w.classList.remove('on','dim');
+  e.hole.style.display='none'; e.tri.style.display='none';
+  _tourMode=0; _tourPos=-1;
+  try{ window.scrollTo(0, _tourScroll0); }catch(_){}   // ツアーで動かした分を元に戻す
+  tourMarkSeen();
+}
+function tourMarkSeen(){ try{ localStorage.setItem(TOUR_KEY,'done'); }catch(_){} }
+function tourStart(){
+  tourMarkSeen();
+  try{ closeSettings(); }catch(_){}
+  try{ _tourScroll0=window.scrollY||0; }catch(_){ _tourScroll0=0; }
+  // 設定画面が閉じ切ってから測る（閉じる途中の座標を拾わないため）
+  setTimeout(function(){
+    if(!hasPoweredOn && tourHas(0)){ tourShowPower(); }
+    else { tourBuildSeq(); tourGo(0); }
+  }, 60);
+}
+// 初回起動：見るかどうかを尋ねる
+function tourAskIfFirst(){
+  var seen=null;
+  try{ seen=localStorage.getItem(TOUR_KEY); }catch(_){}
+  if(seen) return;
+  // ★ブラウザで見ている間は出さない。先に「ホーム画面への登録」を案内し、
+  //   ホーム画面のアイコンから開いた時に使い方の説明が始まる（2026-08-12指示）
+  try{ if(!regHome()) return; }catch(_){}
+  _tourMode=1;
+  tourCenter('しそチャンNETの使い方',['アプリの使い方の説明を見ますか？'],'見る','スキップ');
+}
+(function(){
+  var e=tourEls(); if(!e.w) return;
+  e.next.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    if(_tourMode===1){ tourStart(); return; }   // 問いかけ →「見る」
+    if(_tourMode===4){ tourEnd();   return; }   // 終わりのお知らせ →「とじる」
+    tourNext();
+  });
+  e.skip.addEventListener('click', function(ev){ ev.stopPropagation(); tourEnd(); });
+  // 画面のどこを押しても次へ。問いかけ中と終わりの画面では効かせない（誤って飛ばさないため）
+  e.w.addEventListener('click', function(){ if(_tourMode===2||_tourMode===3) tourNext(); });
+  // 画面の向きや大きさが変わったら、光らせる位置を測り直す
+  window.addEventListener('resize', function(){
+    if(_regAt){ try{ regFit(); regStripFit(); }catch(_){} }
+    if(_tourMode===2){ tourPoint(0,''); return; }
+    if(_tourMode!==3) return;
+    // 回すと項目が増減する（縦のiPhoneには音量つまみが無い）ので数え直し、
+    // いま見せている項目はそのまま続ける
+    var cur=_tourSeq[_tourPos];
+    tourBuildSeq();
+    var np=_tourSeq.indexOf(cur);
+    tourGo(np>=0?np:Math.min(_tourPos,Math.max(0,_tourSeq.length-1)));
+  });
+  // 上部のやりかた帯：「困った時」と「×」
+  var rh=document.getElementById('rs-help');
+  if(rh) rh.addEventListener('click', function(ev){ ev.stopPropagation();
+    var sc=REG[_regAt]; regShow((sc&&sc.tr)||'start'); });
+  var rx=document.getElementById('rs-close');
+  if(rx) rx.addEventListener('click', function(ev){ ev.stopPropagation(); regEnd(); });
+  // 呼び戻し用の「？」。ホーム画面から開くようになれば regFabSync が出さない
+  var rf=document.getElementById('reg-fab');
+  if(rf) rf.addEventListener('click', function(ev){ ev.stopPropagation();
+    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
+    regShow(regHome()?'already':'start'); });
+  // 設定の「ホーム画面に登録する」から、いつでもやり直せる
+  var lr=document.getElementById('lnk-reg');
+  if(lr) lr.addEventListener('click', function(){
+    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
+    try{ closeSettings(); }catch(_){}
+    setTimeout(function(){ regShow(regHome()?'already':'route'); }, 60);
+  });
+  // 設定の「使い方の説明」から、いつでも見直せる
+  var lt=document.getElementById('lnk-tour');
+  if(lt) lt.addEventListener('click', function(){
+    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
+    tourStart();
+  });
+})();
+
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  ホーム画面への登録案内（2026-08-12）
+//  ★Chromeの公式インストール条件は「1回以上タップ＋30秒以上閲覧＋HTTPS＋マニフェスト」。
+//    放送を見ていれば自然に満たされるので、Android系は beforeinstallprompt を捕まえて
+//    「ボタン1つ」で登録できる（メニューを探させない）。iPhoneはOSに仕組みが無く手動のみ。
+// ══════════════════════════════════════════════
+var REG_KEY='shisochan_reg';
+var _regPrompt=null, _regAt=null, _regSeen=false;
+var _regT0=Date.now();          // ページを開いた時刻。1タップ追加が使えるようになるまでの待ちに使う
+var _regInstalled=false;        // 端末に「もう追加済み」と教えてもらえた場合
+// ?reg=1 で「まだ一度も見ていない状態」に戻す（実機で自動表示を確かめるため。?debug=1と同じ使い方）
+// ★すでにホーム画面に追加してある端末では、追加済み検知が働いて案内が出ない＝検証できない。
+//   ?reg=1 の時だけは、その検知を無視して案内を出す（普段の動きは変えない）
+var _regForce=false;
+try{ if(/[?&]reg=1(&|$)/.test(location.search)){ localStorage.removeItem(REG_KEY); _regForce=true; } }catch(_){}
+
+// ★イベントは読み込み後しばらくして届くので、必ず先に受け口を用意しておく
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();          // ブラウザの小さい帯は出さず、こちらのボタンで出す
+  _regPrompt=e;
+  try{ regMaybeOffer(); }catch(_){}
+});
+window.addEventListener('appinstalled', function(){
+  _regPrompt=null;
+  try{ localStorage.setItem(REG_KEY,'done'); }catch(_){}
+  if(_regAt) regShow('okAdded');
+});
+// ★すでにホーム画面に追加してある人に、二度と案内を出さないための問い合わせ。
+//   ホーム画面のアイコンからではなくブラウザで開いた時も分かる（2026-08-12 Android実機で
+//   タブから0.2秒で判定できることを確認）。manifestの related_applications と対で働く。
+//   使えないブラウザ（iPhone等）では何も起きない＝今までどおり。
+//   記録には残さない＝あとで削除した人には、また案内が出せる
+try{
+  if(navigator.getInstalledRelatedApps){
+    navigator.getInstalledRelatedApps().then(function(list){
+      if(list && list.length) _regInstalled=true;
+    }).catch(function(){});
+  }
+}catch(_){}
+// ★Chromium系は「サイトへの関わり」が一定量たまるまで beforeinstallprompt を出さない。
+//   2026-08-12の実測：発火まで22.7秒かかった例と、120秒・11回操作しても出ない例があった。
+//   出るかどうかは端末側の判断で、こちらからは予測できない。
+//   ただし3秒で見切って手動案内に流すと、1タップで済むはずの人にまで長い手順を見せてしまう。
+//   → 見込みのあるブラウザでは少しの間だけ待ち、来なければ従来どおり手動案内に進む。
+//   待って何も来なくても、出る画面は今までと同じ＝待ち損ねても壊れない
+var REG_WAIT_MS=25000;
+function regMayGetPrompt(){
+  if(_regPrompt) return false;                 // もう来ている＝待つ必要なし
+  if(regIsApple()) return false;               // iPhone/iPadにはこの仕組みが無い
+  try{ if(!('onbeforeinstallprompt' in window)) return false; }catch(_){ return false; }
+  return (Date.now()-_regT0) < REG_WAIT_MS;
+}
+
+function regHome(){                       // ホーム画面から開いているか
+  try{
+    if(window.navigator.standalone===true) return true;
+    if(window.matchMedia && matchMedia('(display-mode: standalone)').matches) return true;
+  }catch(_){}
+  return false;
+}
+function regInApp(){                      // LINEやXの中のブラウザか（分かる範囲だけ）
+  var u=navigator.userAgent;
+  return /Line\/|FBAN|FBAV|Instagram|Twitter for|MicroMessenger/.test(u);
+}
+// ★iPhone・iPadか。全体で使う isIOS は「iPad」の文字を探すため iPad で外れる。
+//   iPadOS 13以降のSafariは自分を Macintosh と名乗るため（2026-08-12 iPadOS 26.5の
+//   シミュレータで実測：UA=Macintosh / maxTouchPoints=5 / platform=MacIntel）。
+//   指で触れるMacは存在しないので「Macを名乗る＋タッチ点2つ以上」でiPadと判る。
+//   ここだけの判定にする＝再生や画面レイアウトの既存挙動には一切触らない
+function regIsApple(){
+  var u=navigator.userAgent;
+  if(/iPhone|iPod|iPad/.test(u)) return true;
+  try{ if(/Mac/.test(u) && navigator.maxTouchPoints>1) return true; }catch(_){}
+  return false;
+}
+function regIsPc(){                       // パソコン＝ホーム画面が無い端末
+  var u=navigator.userAgent;
+  if(/Android|iPhone|iPod|iPad|Mobile/.test(u)) return false;
+  // ★タッチ画面のWindowsノートをAndroid扱いしないよう、OS名でも見る。
+  //   Macを名乗るiPadだけは除く（regIsAppleと同じ判定）
+  if(/Windows NT|CrOS|X11/.test(u)) return true;
+  if(/Macintosh/.test(u)){ try{ return !(navigator.maxTouchPoints>1); }catch(_){ return true; } }
+  try{ if(navigator.maxTouchPoints>0) return false; }catch(_){}
+  return !('ontouchstart' in window);
+}
+
+//  画面の定義。d は行ごとの配列（折り返しを決め打ちするため）
+var REG={
+ // ── 入口（中央の窓）─────────────────────────────
+ start:{t:'ホーム画面に置きませんか',
+        d:['次からアイコンを押すだけで','すぐに見られます。'],
+        b:[{l:'ホーム画面に置く',go:'route',p:1},{l:'あとにする',go:null}]},
+
+ // ── Android系：ボタン1つ（Chrome・Edgeで実際に発火することを実機で確認済み）
+ oneTap:{t:'ホーム画面に追加します',
+        d:['下のボタンを押すと、','確認の画面が出ます。'],
+        b:[{l:'追加する',go:'@prompt',p:1},{l:'やめる',go:null}]},
+ already:{t:'すでに登録できています',
+        d:['いまホーム画面のアイコンから','開いています。このままお使い','ください。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ // okAdded は beforeinstallprompt が通った時だけ＝Chromium系＝Android/PC。iPhoneには出ない
+ okAdded:{t:'追加できました',
+        d:['ホーム画面のアイコンから','開いてお使いください。'],
+        b:[{l:'とじる',go:null,p:1},{l:'アイコンが無い時',go:'findIconA'}]},
+ // ★機種によって、新しいアイコンが2ページ目やアプリ一覧に入ることがある。
+ //   ★アプリ一覧の出し方はiPhoneとAndroidで全く違うので必ず分ける（2026-08-12訂正）。
+ //     Androidはホーム画面を下から上へなぞるとアプリ一覧。
+ //     iPhoneで下から上へなぞるのはホームに戻る操作で、一覧は出ない。
+ //     iPhoneのAppライブラリは「左へめくり続けて最後」／検索は画面の真ん中を下へ。
+ findIconA:{t:'アイコンをさがします',
+        d:['ホーム画面を左右にめくり、','全部のページを見てください。','画面を下から上へなぞると','アプリの一覧も出ます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'もう一度手順を見る',go:'@back'}]},
+ // ★2026-08-12 iPhone 17(iOS 26.5)で実測: 追加したアイコンは1ページ目ではなく2ページ目に入った。
+ //   だから「めくって全ページを見る」を先に置く。さらにめくった先がAppライブラリ
+ findIconI:{t:'アイコンをさがします',
+        d:['ホーム画面を左へめくり、','全部のページを見てください。','さらにめくると','アプリの一覧も出ます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'もう一度手順を見る',go:'@back'}]},
+
+ // ── LINEやXの中で開いている場合（OSに関係なく、まず開き直してもらう）
+ inApp:{t:'このままでは追加できません',
+        d:['LINEなどの中で見ているため','ホーム画面に置けません。'],
+        b:[{l:'開き直し方を見る',go:'sInApp',p:1},{l:'とじる',go:null}]},
+
+ // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
+ iShare:{t:'このマークを探します', ic:'share',
+        d:['画面のどこにありますか。'],
+        b:[{l:'画面の下にある',go:'sShare'},{l:'右上にある',go:'sShare'},
+           {l:'見当たらない',go:'iDots'},{l:'LINEやXの中で見ている',go:'inApp'}]},
+ iDots:{t:'このマークを探します', ic:'dots',
+        d:['画面の下か右下にあります。','まだ押さないでください。'],
+        b:[{l:'見つかった',go:'sDots',p:1},{l:'それも無い',go:'iSafari'}]},
+ iEdit:{t:'一覧に見当たらない時',
+        d:['一覧の一番下にある','「アクションを編集」を押すと','足すことができます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'それでも無い',go:'iSafari'}]},
+ // ★「古い機種ではSafari以外は不可」と書いていたが誤り。iOS 16.4(2023年3月)以降は
+ //   ChromeなどでもiPhoneのホーム画面に追加できる。ただし古いiOSやアプリ内では出ないので
+ //   「できないことがある」に改めた（2026-08-12訂正）
+ iSafari:{t:'Safariで開き直します',
+        d:['Safari以外では、追加が','できないことがあります。','Safariで開いてお試しください。'],
+        b:[{l:'とじる',go:null,p:1}]},
+
+ // ── Android系（中央の窓で選ぶ → 上の帯でやる）─────────
+ aBrowser:{t:'いま何で見ていますか',
+        d:['お使いのブラウザを','選んでください。'],
+        b:[{l:'Chrome',go:'sChrome'},{l:'Edge',go:'sEdge'},{l:'Firefox',go:'sFire'},
+           {l:'Galaxyの標準ブラウザ',go:'sSams'},{l:'らくらく・かんたんスマホ',go:'rakuraku'},
+           {l:'その他・わからない',go:'sOther'}]},
+
+ // ── パソコン・特別な機種・逃げ道 ───────────────────
+ // ★「パソコンにはホーム画面がありません」と書いていたが誤り。Mac Safariは共有→「Dockに追加」、
+ //   WindowsのChrome/Edgeは「⋮」→インストールでアイコンにできる。誤った断定をやめた（2026-08-12訂正）
+ pc:{t:'パソコンでご覧の場合',
+        d:['お気に入り（ブックマーク）に','入れておくと、次から','すぐ開けます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'アイコンで開きたい',go:'pcApp'}]},
+ pcApp:{t:'デスクトップに置く',
+        d:['Macは「共有」から','「Dockに追加」。Windowsは','ChromeやEdgeの「⋮」から','「インストール」を選びます。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ // ★シニア向け機種。2026-08-12にメーカー・キャリアの取説で手順を確定させた
+ //   ・らくらくスマホ(FCNT)＝独自の「インターネット」。しおり→登録→［貼る］で置ける
+ //   ・かんたんスマホ(京セラ/Y!mobile)＝Yahoo!。メニュー→ホーム画面に追加
+ //   ・BASIO/あんしんスマホ(京セラ・シャープ)＝メニューに「ホーム画面に追加」がある
+ //   出典: ドコモ F-53E取説 p.68 ／ FCNT FAQ 20668・ガイド24344 ／ Y!mobile かんたんスマホ3 07-01
+ //        ／ au BASIO active3 オンラインマニュアル m_06_01_00
+ rakuraku:{t:'お使いの機種はどれですか',
+        d:['機種の名前を選んでください。'],
+        b:[{l:'らくらくスマートフォン',go:'sRaku'},{l:'かんたんスマホ',go:'sYahoo'},
+           {l:'BASIO・あんしんスマホ',go:'sOther'},{l:'わからない',go:'rakuMark'}]},
+ // 機種名が分からない人向け。しおりの有無だけで確実に振り分けられる
+ rakuMark:{t:'画面の上を見てください', ic:'book',
+        d:['このマーク（しおり）が','ありますか。'],
+        b:[{l:'ある',go:'sRaku',p:1},{l:'無い',go:'sOther'}]},
+ altBookmark:{t:'ほかの見方もあります',
+        d:['無理に追加しなくても、','「お気に入り」に入れると','次から開きやすくなります。','ご家族に頼むのも近道です。'],
+        b:[{l:'とじる',go:null,p:1}]},
+
+ // ── つまずいた時（帯の「困った時」から）─────────────
+ troubleI:{t:'うまくいかない時',
+        d:['よくあるつまずきです。','あてはまる物を選んでください。'],
+        b:[{l:'一覧に見当たらない',go:'iEdit'},{l:'マークが見つからない',go:'iDots'},
+           {l:'アイコンが出ない',go:'findIconI'},{l:'別の方法で見る',go:'altBookmark'},
+           {l:'手順にもどる',go:'@back',p:1}]},
+ troubleA:{t:'うまくいかない時',
+        d:['よくあるつまずきです。','あてはまる物を選んでください。'],
+        b:[{l:'項目が見つからない',go:'sOther'},{l:'アイコンが出ない',go:'findIconA'},
+           {l:'らくらく・かんたんスマホ',go:'rakuraku'},{l:'別の方法で見る',go:'altBookmark'},
+           {l:'手順にもどる',go:'@back',p:1}]},
+ troubleIn:{t:'開き直せない時',
+        d:['このまま（アプリの中）でも','放送は見られます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},
+ // らくらくスマホ専用。つまずき方が他機種と違う（置き場所が箱の中・シンプルモードでは不可）
+ troubleR:{t:'うまくいかない時',
+        d:['よくあるつまずきです。','あてはまる物を選んでください。'],
+        b:[{l:'「貼る」が出なかった',go:'sRaku2'},{l:'アイコンが見つからない',go:'rakuFind'},
+           {l:'しおりが見当たらない',go:'rakuSimple'},{l:'別の方法で見る',go:'altBookmark'},
+           {l:'手順にもどる',go:'@back',p:1}]},
+ // ★貼ったアイコンはホーム画面直下ではなく「よく使うブックマーク」という箱の中に入る（取説 p.45）
+ // ★らくらくスマホのホーム画面は上下スライド。カテゴリは押すと開く（取説「ホーム画面の見かた」）
+ rakuFind:{t:'アイコンの置き場所',
+        d:['ホーム画面を下にたどると','「よく使うブックマーク」が','あります。押すと開きます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'もう一度手順を見る',go:'@back'}]},
+ // ★シンプルモードでは貼り付け自体ができない（FCNT FAQ 20668が明記）。戻し方はFAQ 20649の逐語
+ rakuSimple:{t:'しおりが見当たらない',
+        d:['シンプルモードでは貼れません。','ホーム画面を左へめくると','「標準モードに切替」が出ます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'別の機種かもしれない',go:'sOther'},
+           {l:'別の方法を見る',go:'altBookmark'}]},
+
+ // ══ ここから下は「上部のやりかたカード」（strip:1）══════════════
+ //  ★押させる物は無い。手順を出したまま、端末のメニューを操作してもらう。
+ //  n=番号つきの手順／sub=直前の手順にぶら下げる補足（見当たらない時・次に何が出るか）。
+ //  補足は「その手順の直後」に置く＝つまずく場所で読める（2026-08-12指示）。
+ //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
+ sShare:{strip:1, ic:'share', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'このマークを押す'},
+           {sub:'見当たらない時は「表示を増やす」'},
+           {sub:'古い機種は一覧を下へたどります'},
+           {n:2,t:'「ホーム画面に追加」'},
+           {sub:'→ 名前を決める画面が出ます'},
+           {n:3,t:'右上の「追加」を押す'}]},
+ sDots:{strip:1, ic:'dots', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'このマークを押す'},
+           {n:2,t:'「共有」を押す'},
+           {sub:'見当たらない時は「表示を増やす」'},
+           {sub:'古い機種は一覧を下へたどります'},
+           {n:3,t:'「ホーム画面に追加」'},
+           {sub:'→ 名前を決める画面が出ます'},
+           {n:4,t:'右上の「追加」を押す'}]},
+ // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
+ sChrome:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'右上の{menu}を押す'},
+           {n:2,t:'「アプリをインストール」'},
+           {sub:'「ホーム画面に追加」の時もあります'},
+           {n:3,t:'「インストール」を押す'},
+           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
+ // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
+ sEdge:{strip:1, ic:'bars', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'右下の{bars}を押す'},
+           {n:2,t:'「電話に追加」を押す'},
+           {sub:'横にめくると出てきます'},
+           {n:3,t:'「インストール」を押す'},
+           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
+ // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
+ sFire:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'右上の{menu}を押す'},
+           {n:2,t:'「その他」を押す'},
+           {sub:'メニューの下のほうにあります'},
+           {n:3,t:'「ホーム画面にアプリを追加」'},
+           {sub:'→ 出た画面で「ホーム画面に追加」'}]},
+ // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
+ sSams:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'右下のメニューを押す'},
+           {sub:'{bars}か{menu}の形です'},
+           {n:2,t:'「ページを追加」を押す'},
+           {sub:'→ 追加先をえらぶ画面が出ます'},
+           {n:3,t:'「ホーム画面」を選ぶ'},
+           {n:4,t:'「追加」を押す'}]},
+ // ★らくらくスマホ(FCNT)。他機種と違い「共有」も「⋮」も出てこない。ドコモF-53E取説p.68の逐語
+ //   「登録したブックマークをホーム画面の『よく使うブックマーク』カテゴリに貼り付けるかどうかの
+ //     確認画面が表示されますので、［貼る］／［貼らない］を選択して設定できます」
+ sRaku:{strip:1, ic:'book', tr:'troubleR', h:'この順に押します',
+        s:[{n:1,t:'上の{book}を押す（しおり）'},
+           {sub:'画面の上、「検索」のとなり'},   // FCNT FAQ 20668 の逐語「「検索」ボタン右隣」
+           {n:2,t:'「現在のページを登録」'},
+           {n:3,t:'「登録する」を押す'},
+           {sub:'→ 貼るかどうか聞かれます'},
+           {n:4,t:'「貼る」を押す'},
+           {sub:'「よく使うブックマーク」に入ります'}]},
+ // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
+ sRaku2:{strip:1, ic:'book', tr:'troubleR', h:'あとから貼る場合',
+        s:[{n:1,t:'上の「しおり」を押す'},
+           {n:2,t:'「メニュー」を押す'},
+           {n:3,t:'「ホーム画面に貼る」'},
+           {n:4,t:'このページを選ぶ'},
+           {n:5,t:'「ホーム画面に貼る」'},
+           {sub:'同じ言葉を2回押します'}]},
+ // ★かんたんスマホ(京セラ/Y!mobile)。ブラウザはYahoo!。Y!mobile公式マニュアル 07-01 の逐語
+ //   マークの形はY!mobileのマニュアル画像（kantan-sumaho-3_icon_190）で「⋮」と確認済み。
+ //   位置はマニュアルに記載が無いため断定しない
+ sYahoo:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'{menu}を押す'},
+           {sub:'画面の下か右上にあります'},
+           {n:2,t:'「ホーム画面に追加」'},
+           {n:3,t:'「追加」を押す'},
+           {n:4,t:'「OK」を押す'}]},
+ sOther:{strip:1, tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'{menu}か{bars}を押す'},
+           {n:2,t:'「ホーム画面に追加」を探す'},
+           {sub:'「アプリをインストール」とも出ます'},
+           {n:3,t:'出た画面で「追加」を押す'},
+           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
+ // ★アプリ内ブラウザからの開き直し。言葉はアプリごとに少し違うため幅を持たせる
+ // ★位置はアプリで違う。LINEのAndroid版は右上、iPhone版とXは画面の下（各社の案内で確認）。
+ //   「右下などの」と決めつけていたので両方を書くよう改めた（2026-08-12訂正）
+ sInApp:{strip:1, ic:'dots', tr:'troubleIn', h:'ブラウザで開き直す',
+        s:[{n:1,t:'右下か右上のマークを押す'},
+           {sub:'{dots}や{bars}の形です'},
+           {n:2,t:'「ブラウザで開く」を押す'},
+           {sub:'「Safariで開く」でも同じ'},
+           {sub:'→ ブラウザが開き直ります'},
+           {n:3,t:'もう一度「ホーム画面に置く」'}]}
+};
+
+// 探してもらうマークの絵。iOSの共有・iOS26の「…」・Androidの「⋮」・Edgeの「≡」
+var REG_ICON={
+ share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+
+       '<path d="M12 3v11"/><path d="M8.2 6.8 12 3l3.8 3.8"/>'+
+       '<path d="M7 10H5.6A1.6 1.6 0 0 0 4 11.6v7.8A1.6 1.6 0 0 0 5.6 21h12.8a1.6 1.6 0 0 0 1.6-1.6v-7.8A1.6 1.6 0 0 0 18.4 10H17"/></svg>',
+ dots:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">'+
+      '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="12" r="1.15" fill="currentColor" stroke="none"/>'+
+      '<circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>',
+ menu:'<svg viewBox="0 0 24 24" fill="currentColor">'+
+      '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>',
+ bars:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">'+
+      '<path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+ // らくらくスマホの「インターネット」は画面上部に“しおり”ボタンがある（FCNT/ドコモの取説で確認）
+ book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round">'+
+      '<path d="M6.5 3.2h11a1.3 1.3 0 0 1 1.3 1.3v16.3l-6.8-4.4-6.8 4.4V4.5A1.3 1.3 0 0 1 6.5 3.2z"/></svg>'
+};
+function regEls(){
+  return {w:document.getElementById('reg'), box:document.getElementById('reg-box'),
+    ttl:document.getElementById('reg-ttl'), txt:document.getElementById('reg-txt'),
+    btns:document.getElementById('reg-btns'), icon:document.getElementById('reg-icon')};
+}
+function regShow(key){
+  var e=regEls(); if(!e.w) return;
+  if(key==='route'){
+    // ★順番が大事。LINEやXの中で開いている時は、OSに関係なく先に開き直してもらう
+    //   （その中のブラウザにはホーム画面へ追加する機能が無い）
+    if(regInApp())            key='inApp';
+    else if(_regPrompt)       key='oneTap';
+    else if(regIsApple())     key='iShare';    // ★isIOSではなく専用判定。iPadで外れていた
+    else if(regIsPc())        key='pc';
+    else                      key='aBrowser';
+  }
+  var sc=REG[key]; if(!sc) return;
+  if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
+  try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
+  _regAt=key;
+  e.w.classList.add('on');
+  e.box.style.width=tourTipW()+'px';
+  if(sc.ic && REG_ICON[sc.ic]){ e.icon.innerHTML=REG_ICON[sc.ic]; e.icon.classList.add('on'); }
+  else { e.icon.textContent=''; e.icon.classList.remove('on'); }
+  e.ttl.textContent=sc.t;
+  tourLines(e.txt, sc.d);
+  e.btns.textContent='';
+  sc.b.forEach(function(b){
+    var el=document.createElement('button');
+    el.className='reg-btn'+(b.p?' go':'');
+    el.textContent=b.l;
+    el.addEventListener('click', function(ev){ ev.stopPropagation(); regPick(b); });
+    e.btns.appendChild(el);
+  });
+  regFit();
+  if(uiNeedsFocus()){
+    var first=e.btns.querySelector('.reg-btn.go')||e.btns.firstChild;
+    try{ if(first) first.focus({preventScroll:true}); }catch(_){ }
+  }
+}
+// ── 上部の「やりかた帯」──────────────────────
+//  中央の窓と暗幕をしまい、画面上端に手順を出したままにする。
+//  押させる物が無いので、共有シートやメニューを開いたままでも読める
+var _regStripLast=null;
+// ★手順の文の中に、マークを「絵」で描いて入れる（2026-08-12承認）。
+//   「⋮」「≡」は文字として出すと端末のフォント次第で形が変わり、高齢者には読み取れない。
+//   実物の写真は機種とOSの版で違ってしまうので使わない。こちらで描いた図なら版が変わっても外れない。
+//   文中の {menu} {bars} {dots} {share} {book} を、その場でマークに差し替える。
+//   差し替える中身は REG_ICON（こちらで用意した定数）だけ＝外から来た文字は入らない
+function regMarkText(el, str){
+  var parts=String(str).split(/\{(\w+)\}/);   // 偶数番目が文、奇数番目がマーク名
+  for(var i=0;i<parts.length;i++){
+    if(i%2===0){ if(parts[i]) el.appendChild(document.createTextNode(parts[i])); }
+    else if(REG_ICON[parts[i]]){
+      var s=document.createElement('span'); s.className='rs-mk';
+      s.innerHTML=REG_ICON[parts[i]];
+      el.appendChild(s);
+    }else{ el.appendChild(document.createTextNode('{'+parts[i]+'}')); }  // 名前を間違えたら気づけるように
+  }
+}
+function regStripShow(key){
+  var sc=REG[key]; if(!sc || !sc.strip) return;
+  var st=document.getElementById('reg-strip'); if(!st) return;
+  var e=regEls(); if(e.w) e.w.classList.remove('on');
+  _regAt=key; _regStripLast=key;
+  var ic=document.getElementById('rs-icon');
+  if(sc.ic && REG_ICON[sc.ic]){ ic.innerHTML=REG_ICON[sc.ic]; ic.style.display='flex'; }
+  else { ic.textContent=''; ic.style.display='none'; }
+  document.getElementById('rs-ttl').textContent=sc.h||'この順に押していきます';
+  var tx=document.getElementById('rs-txt'); tx.textContent='';
+  var item=null;
+  (sc.s||[]).forEach(function(o){
+    if(o.sub!==undefined){
+      var sv=document.createElement('div'); sv.className='rs-sub'; regMarkText(sv,o.sub);
+      (item||tx).appendChild(sv); return;
+    }
+    item=document.createElement('div'); item.className='rs-item';
+    var row=document.createElement('div'); row.className='rs-step';
+    var nn=document.createElement('span'); nn.className='rs-n'; nn.textContent=o.n;
+    var tt=document.createElement('span'); tt.className='rs-t'; regMarkText(tt,o.t);
+    row.appendChild(nn); row.appendChild(tt); item.appendChild(row); tx.appendChild(item);
+  });
+  st.classList.add('on');
+  regStripFit();
+  try{ regFabSync(); }catch(_){}
+}
+// 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
+function regStripFit(){
+  var st=document.getElementById('reg-strip'); if(!st) return;
+  // ★前の画面の詰めを必ず先に全部外す。narrowを残したまま測ると縮んだ寸法で
+  //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
+  st.classList.remove('tight'); st.classList.remove('wide');
+  st.classList.remove('narrow'); st.classList.remove('narrow2');
+  var top=st.getBoundingClientRect().top;
+  // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
+  var limit=Math.min(innerHeight-top-10, innerHeight*0.6);
+  if(st.getBoundingClientRect().height>limit) st.classList.add('tight');
+  // 幅はあるが高さが足りない（横向き等）時は2列にして高さを半分にする
+  if(st.getBoundingClientRect().height>limit && st.getBoundingClientRect().width>=420) st.classList.add('wide');
+  // それでも入らない時は詰めたまま。画面外に出さないことを優先
+  if(st.getBoundingClientRect().bottom>innerHeight-4) st.classList.add('tight');
+  regStripNoWrap(st);
+}
+// 幅が足りずに折り返した文があるかを実測し、あった時だけ詰める（無ければ何もしない＝冪等）
+function regStripNoWrap(st){
+  st=st||document.getElementById('reg-strip'); if(!st) return;
+  st.classList.remove('narrow'); st.classList.remove('narrow2');
+  // ★「行の高さ」で数えると、行の高さを指定していない要素で必ず1行と誤答する。
+  //   1行に必要な幅を実測して、入る欄より広いかで判定する。
+  //   ★文の中のマーク（絵）も幅を持つので、文字だけを測る方式では足りない。
+  //     その場に複製を置いて折り返しを切って測る＝中身が何であっても正しく測れる
+  function wrapped(){
+    var list=st.querySelectorAll('#rs-ttl,#rs-txt .rs-t,#rs-txt .rs-sub');
+    for(var i=0;i<list.length;i++){
+      var e=list[i], cs=getComputedStyle(e);
+      var c=e.cloneNode(true);
+      c.style.cssText='position:absolute;left:-9999px;top:0;visibility:hidden;'+
+        'white-space:nowrap;width:auto;max-width:none;margin:0;';
+      e.parentNode.appendChild(c);
+      var need=c.getBoundingClientRect().width;
+      c.parentNode.removeChild(c);
+      var have=e.getBoundingClientRect().width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+      if(need > have+0.5) return true;
+    }
+    return false;
+  }
+  if(wrapped()){
+    st.classList.add('narrow');
+    if(wrapped()) st.classList.add('narrow2');   // それでも入らない極端に狭い横向き向け
+  }
+}
+function regStripHide(){
+  try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
+}
+// ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
+function regFabSync(){
+  try{
+    var f=document.getElementById('reg-fab'); if(!f) return;
+    var show = hasPoweredOn && !regHome() && !(_regInstalled&&!_regForce) && _tourMode===0 && !isExpanded;
+    try{ if(isSilk || isTvPcMode()) show=false; }catch(_){}
+    try{ if(document.getElementById('reg').classList.contains('on')) show=false; }catch(_){}
+    var st=document.getElementById('reg-strip');
+    if(st && st.classList.contains('on')){
+      show=false;
+      // ★全画面で見始めたら帯は引っ込める（映像に被せない）。状態は壊さない
+      if(isExpanded) st.classList.remove('on');
+    }
+    try{ var sp=document.getElementById('settings-panel');
+         if(sp && sp.classList.contains('open')) show=false; }catch(_){}
+    f.classList.toggle('on', !!show);
+  }catch(_){}
+}
+// 箱の高さを実測し、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
+function regFit(){
+  var e=regEls(); if(!e.box) return;
+  e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
+  e.box.classList.remove('tight'); e.box.classList.remove('cols');
+  if(e.box.getBoundingClientRect().height > innerHeight-12) e.box.classList.add('tight');
+  // 詰めてもまだ入らない時だけ2列にする。実測してから付けるので、入る画面は今までどおり1列
+  if(e.box.getBoundingClientRect().height > innerHeight-12){
+    e.box.classList.add('cols');
+    // ★2列にするとボタンが半分の幅になり、長い名前が折り返してしまう。
+    //   横向きで発動する仕組みなので幅には余裕がある。窓ごと広げて1行に戻す
+    e.box.style.width=Math.min(innerWidth-24, 560)+'px';
+  }
+}
+function regPick(b){
+  if(b.go==='@prompt'){ regDoPrompt(); return; }
+  if(b.go==='@back'){                 // 「手順にもどる」＝直前の帯へ
+    if(_regStripLast && REG[_regStripLast]) regShow(_regStripLast);
+    else regShow('route');
+    return;
+  }
+  if(!b.go){ regEnd(); return; }
+  regShow(b.go);
+}
+function regDoPrompt(){
+  if(!_regPrompt){ regShow('aBrowser'); return; }   // 使えなくなっていたら手順案内へ
+  var p=_regPrompt; _regPrompt=null;                // prompt()は1回だけ呼べる
+  try{
+    p.prompt();
+    Promise.resolve(p.userChoice).then(function(r){
+      if(r && r.outcome==='accepted') regShow('okAdded');
+      else regShow('aBrowser');                      // 断られたら手順で案内
+    }).catch(function(){ regShow('aBrowser'); });
+  }catch(_){ regShow('aBrowser'); }
+}
+// ★閉じ方で記録を分ける。'done'=手順まで見た（もう自動では出さない）／
+//   数字='あとにする'で閉じた回数。次の起動でまた出す。3回ことわられたら出さない
+//   （以前は「あとにする」でも done にしていたため、二度と出なかった）
+function regEnd(){
+  var e=regEls(); if(!e.w) return;
+  var at=_regAt;
+  e.w.classList.remove('on');
+  regStripHide();
+  _regAt=null;
+  try{
+    // ★すでに'done'の人は何をしても'done'のまま。設定から開いて閉じた時に
+    //   数字へ戻してしまい、案内がまた出るようになるのを防ぐ
+    if(localStorage.getItem(REG_KEY)!=='done'){
+      if(at && at!=='start'){ localStorage.setItem(REG_KEY,'done'); }
+      else{
+        var n=parseInt(localStorage.getItem(REG_KEY),10); n=(n>0?n:0)+1;
+        localStorage.setItem(REG_KEY, n>=3 ? 'done' : String(n));
+      }
+    }
+  }catch(_){}
+  try{ regFabSync(); }catch(_){}
+}
+function regDone(){                       // もう自動で出さない状態か
+  try{ return localStorage.getItem(REG_KEY)==='done'; }catch(_){ return false; }
+}
+//  ★3秒後に1回だけだと、その瞬間に条件が揃っていないと二度と出なかった
+//    （使い方の説明が出ている・全画面で見ている 等）。5秒ごとに1分間ためす
+var _regSched=false;
+function regSchedule(){
+  if(_regSched) return;        // powerOnは復帰経路からも呼ばれる＝二重に仕掛けない
+  _regSched=true;
+  setTimeout(function(){ try{ regMaybeOffer(); }catch(_){} }, 3000);
+  var n=0;
+  var iv=setInterval(function(){
+    n++;
+    try{ regMaybeOffer(); }catch(_){}
+    if(_regSeen || regDone() || n>12) clearInterval(iv);
+  }, 5000);
+}
+//  出してよい場面かを見て、最初の画面を出す
+function regMaybeOffer(){
+  if(_regSeen || _regAt) return;
+  if(regHome()) return;                 // すでにホーム画面から開いている
+  if(_regInstalled && !_regForce) return;   // 端末が「もう追加済み」と答えた（?reg=1の時だけ無視して検証できる）
+  if(regMayGetPrompt()) return;         // 1タップ追加が使えるようになるのを少しだけ待つ
+  if(!hasPoweredOn) return;             // 放送を見始めるまでは出さない
+  if(_tourMode!==0) return;             // 使い方の説明が出ている間は出さない
+  if(isExpanded) return;                // 全画面で見ている最中は割り込まない
+  // ★テレビ・パソコンには「ホーム画面」が無い。TVは電気店が設置するので案内も不要
+  try{ if(isSilk || isTvPcMode()) return; }catch(_){}
+  if(regDone()) return;                 // 手順まで見た人・3回ことわった人には出さない
+  _regSeen=true;
+  regShow('start');
+}
+
+//  サイト表示の窓（TV・PC用・2026-08-11）
+//  リンク先をページ内の窓で開く＝放送のページを離れない。
+//  開くと動画を一時停止し、◀もどる（または端末の戻る）で窓を閉じて再開する。
+// ══════════════════════════════════════════════
+// この窓を使うのはTV/PCレイアウトの時だけ。スマホ・iPad・FireTVは従来どおりページ遷移
+// ★TVモードは「一度入ったら高さが減っても維持する」（2026-08-11・ヒステリシス）。
+//   実機のURLバーは大きく、出ると画面の高さが600pxを割る。従来は判定ごと外れて
+//   バナーが大きくロゴが小さくなっていた（実測：高さ590pxでバナー422→578px・ロゴ32→20px）。
+//   入る条件は従来どおり600px以上。維持は400px以上＝URLバーの出没では絶対に外れない。
+var _tvMode=false;
+function isTvPcMode(){
+  var c=document.body.classList;
+  var kind = !c.contains('ori-p') && !c.contains('ori-l') &&
+             !c.contains('ori-tp') && !c.contains('ori-tl') && !c.contains('silk-mode');
+  if(!kind || innerWidth<1000){ _tvMode=false; return false; }
+  _tvMode = _tvMode ? (innerHeight>=400) : (innerHeight>=600);
+  return _tvMode;
+}
+// 窓で開くのは「昔ながらの素直な構造」のサイトだけ（2026-08-11に実機検証で確定）。
+//  ・市のお知らせ(city.shiso.lg.jp)と投稿フォーム(docs.google.com)＝窓と相性が良い
+//  ・スポンサー各社のサイトは「画面の高さ」基準の今風構造のため、窓を縦に伸ばすと
+//    中身も一緒に伸びて永遠にスクロールが追いつかない(松本工務店で実機確認)。
+//    → 窓を使わず直接ジャンプ(復帰フラグで戻り時に自動再開)。Instagram・READYFORも同様
+var EMBED_OK=['city.shiso.lg.jp','docs.google.com','matsukou.hyogo.jp',
+              'kawamoto-sekizai.com','cafesansyo.com','tonkotsuramen-tsubaki-shiso.com'];
+function canEmbed(url){
+  try{
+    var h=new URL(url,location.href).hostname;
+    return EMBED_OK.some(function(d){ return h===d || h.slice(-(d.length+1))==='.'+d; });
+  }catch(_){ return false; }
+}
+var _svPushed=false, _svWasPlaying=false;
+function openSiteViewer(url){
+  var v=document.getElementById('site-viewer');
+  if(!v) return false;
+  // 再生中なら一時停止（もどった時に再開するため状態を覚える）
+  _svWasPlaying=false;
+  try{
+    if(typeof ytPlayer!=='undefined' && ytPlayer && ytReady &&
+       ytPlayer.getPlayerState && ytPlayer.getPlayerState()===1){
+      _svWasPlaying=true; ytPlayer.pauseVideo();
+    }
+  }catch(_){}
+  // 窓の枠は毎回作り直す。新品の枠の最初の読み込みは履歴に残らない仕様のため、
+  // 履歴が汚れず、リモコンの「戻る」1回でスッと放送へ戻れる（src差し替え方式の
+  // 「間に何もないページが挟まる」問題の対策・2026-08-11）
+  var old=document.getElementById('sv-frame'); if(old) old.remove();
+  var f=document.createElement('iframe');
+  f.id='sv-frame'; f.title='リンク先のページ';
+  f.src=url;
+  // 読み込めたら窓に焦点を移す＝リモコンの矢印キーが窓の中のページに届き、そのページ自身がスクロールする
+  f.addEventListener('load',function(){ _svFocus(); });
+  v.insertBefore(f, v.firstChild);
+  ['sv-bl','sv-tr','sv-tl'].forEach(function(c){ v.classList.remove(c); });  // ボタンは毎回右下(既定)から
+  v.classList.add('open');
+  v.scrollTop=0;
+  _svFocus();                       // 読み込み前にも一度（早く操作できるように）
+  setTimeout(_svFocus,1200);        // 読み込みが遅い相手への保険（何度呼んでも無害）
+  // 履歴に1段積む＝端末・ブラウザの「戻る」でも窓が閉じる（ページを離れない）
+  try{ history.pushState({sv:1},''); _svPushed=true; }catch(_){ _svPushed=false; }
+  return true;
+}
+function closeSiteViewer(fromPop){
+  var v=document.getElementById('site-viewer');
+  if(!v||!v.classList.contains('open')) return;
+  v.classList.remove('open');
+  var f=document.getElementById('sv-frame');
+  if(f) f.remove();   // 枠ごと削除＝読み込み・音も確実に止まり、履歴も汚さない
+  if(_svWasPlaying){ _svWasPlaying=false; try{ ytPlayer.playVideo(); }catch(_){} }
+  if(!fromPop && _svPushed){ _svPushed=false; try{ history.back(); }catch(_){} }
+  else { _svPushed=false; }
+}
+// ▲▼ボタン：窓を1画面分ずつ送る。相手サイトの中のスクロールは外から操作できない
+// (Webの安全規約)ため、縦に長い窓を「窓ごと」動かす方式。TVブラウザでも確実に効く。
+// ※窓の長さは固定(4500px)。旧・自動延長は「延長の瞬間に中のページが作り直され
+//   見ていた位置が飛ぶ」原因だったため廃止(2026-08-11)
+// 窓に焦点を移す（リモコンの矢印キーの届け先を窓の中にする）
+function _svFocus(){
+  var f=document.getElementById('sv-frame');
+  if(!f) return;
+  try{ f.contentWindow.focus(); }catch(_){ try{ f.focus(); }catch(__){} }
+}
+// ボタンの塊はマウスの居る四隅へ移動する（2026-08-11指示）。
+// 中央線の±80pxは不感帯＝境界をまたぐたびにチラチラ動くのを防ぐ
+(function(){
+  var v=document.getElementById('site-viewer');
+  if(!v) return;
+  var last=0;
+  v.addEventListener('mousemove',function(e){
+    var now=Date.now(); if(now-last<120) return; last=now;
+    var H=80, cx=innerWidth/2, cy=innerHeight/2;
+    var hz=(e.clientX<cx-H)?'l':(e.clientX>cx+H)?'r':'';
+    var vt=(e.clientY<cy-H)?'t':(e.clientY>cy+H)?'b':'';
+    if(!hz||!vt) return;                       // 不感帯内は現状維持
+    var want='sv-'+vt+hz;
+    if(v.classList.contains(want)) return;
+    ['sv-bl','sv-tr','sv-tl','sv-br'].forEach(function(c){ v.classList.remove(c); });
+    if(want!=='sv-br') v.classList.add(want);  // 既定(右下)はクラス無し
+  },{passive:true});
+})();
+window.addEventListener('popstate',function(){ closeSiteViewer(true); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteViewer(); });
+
+// ══ TV/PCのレイアウト固定（2026-08-11指示）══
+// TVブラウザはマウスを画面上部に持っていくとURLバーが現れ、画面の高さが一時的に縮む。
+// 100vh基準だとその都度レイアウトが作り直されてガタつくため、実測した高さを --tvH に固定する。
+// 安全弁: ①幅が変わった時(本当のウィンドウ変更)は基準を取り直す
+//        ②同じ幅で高さが15%以上減った時も本物のリサイズとみなす(URLバーは8%程度)
+//        ③同じ幅で高さが増えた時は大きい方を採用(バーが引っ込んだ=正しい全画面)
+// 誤発動しても「少し余白が出る」だけで壊れない冪等な補正。
+var _tvW=0,_tvHmax=0;
+function updateTvH(){
+  try{
+    var on=isTvPcMode();
+    // TV/PC中はページ自体をスクロール不能に（html.tvpc→overflow:hidden）。
+    // スクロールバーの出現が画面幅を奪い、vw基準のロゴ・バナーが動く連鎖を根絶する
+    document.documentElement.classList.toggle('tvpc', on);
+    if(!on){
+      if(_tvW){ document.documentElement.style.removeProperty('--tvH'); _tvW=0; _tvHmax=0; }
+      return;
+    }
+    // 幅が変わった時だけ基準を取り直す。高さの減少は常に無視＝URLバーの出没では動かない。
+    // （旧・15%以上減で取り直す条件は削除。実機のURLバーがその閾値を超える大きさだったため）
+    if(innerWidth!==_tvW){ _tvW=innerWidth; _tvHmax=innerHeight; }
+    else if(innerHeight>_tvHmax){ _tvHmax=innerHeight; }
+    document.documentElement.style.setProperty('--tvH', _tvHmax+'px');
+    if(_dbgOn) updateDebugBox();
+  }catch(_){}
+}
+
+// ── 実測値の画面表示（?debug=1）──
+// 推測で直さないための保険。URLバーを出した瞬間の数値をそのまま読めるようにする
+var _dbgOn=false;
+try{ _dbgOn=/[?&]debug=1/.test(location.search); }catch(_){}
+function updateDebugBox(){
+  var el=document.getElementById('tv-debug');
+  if(!el) return;
+  var d=document.documentElement;
+  el.textContent=
+    '画面 '+innerWidth+' x '+innerHeight+'\n'+
+    'TVモード '+(isTvPcMode()?'ON':'OFF')+'\n'+
+    'tvpcクラス '+(d.classList.contains('tvpc')?'有':'無')+'\n'+
+    '--tvH '+(getComputedStyle(d).getPropertyValue('--tvH').trim()||'なし')+'\n'+
+    '--hdr-h '+(getComputedStyle(d).getPropertyValue('--hdr-h').trim()||'なし')+'\n'+
+    'はみ出し '+(d.scrollHeight-innerHeight)+'px\n'+
+    'バナー幅 '+Math.round((document.getElementById('sponsor-img')||{getBoundingClientRect:function(){return{width:0};}}).getBoundingClientRect().width)+'px';
+}
+
+// ページ遷移で離れる時の復帰フラグ（従来のsessionStorageに加え、消える環境に備えて
+// localStorage（30分期限）でも二重に持つ。TVブラウザ対策・2026-08-11）
+function setResumeFlag(){
+  try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+  try{
+    if(userWantsPlay) localStorage.setItem('shiso_resume_t', String(Date.now()));
+    else localStorage.removeItem('shiso_resume_t');
+  }catch(_){}
 }
 
 // ══════════════════════════════════════════════
@@ -1373,7 +2960,12 @@ function attachNewsSwipe(el){
   el.addEventListener('click',function(){
     if(_newsTapSuppress || isTapBlocked()) return;
     var L=newsDisplayList(); var n=L[cityNewsIndex];
-    if(n && n.url){ location.href=n.url; }
+    if(n && n.url){
+      // TV/PCはページ内の窓で開く（放送を離れない・動画は一時停止→もどるで再開）
+      if(isTvPcMode() && canEmbed(n.url) && openSiteViewer(n.url)) return;
+      setResumeFlag();  // 従来経路にも復帰フラグ（今まではお知らせだけ未設定だった＝TVで電源画面に戻る原因）
+      location.href=n.url;
+    }
   });
 }
 // ══════════════════════════════════════════════
@@ -1476,6 +3068,7 @@ var OPTS={
   text:0,          // 文字の大きさ 0=標準 1=大 2=特大
   skip:30,         // 送り・戻しの秒数（10/15/30）
   stopnews:false,  // お知らせの自動切り替えを止める
+  volsave:true,    // 音量を記憶する（既定=オン＝今までと同じ動作。オフにすると毎回この端末の初期音量に戻る）
   vol:null,        // 前回の音量（null=未保存）
   muted:false      // 前回の消音状態
 };
@@ -1486,6 +3079,7 @@ function loadOpts(){
       if(typeof v.text==='number')  OPTS.text=Math.max(0,Math.min(2,v.text|0));
       if(v.skip===10||v.skip===15||v.skip===30) OPTS.skip=v.skip;
       OPTS.stopnews=!!v.stopnews;
+      if(typeof v.volsave==='boolean') OPTS.volsave=v.volsave;   // 未保存の人は既定(オン)のまま
       if(typeof v.vol==='number')   OPTS.vol=Math.max(0,Math.min(100,v.vol));
       OPTS.muted=!!v.muted;
     } }catch(_){}
@@ -1521,11 +3115,12 @@ function applySkip(){
   }catch(_){}
 }
 // 音量を思い出す（YouTubeの準備ができてから呼ぶ）
+// 音量アイコンの絵（消音/音あり）。3か所に同じものが書かれていたのを1つにまとめた（2026-08-11）
 var VOL_MUTE_PATH='<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
 var VOL_ON_PATH='<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
 // 消音の見た目（アイコンとスライダー）を今の状態に合わせる。
 // ★これを呼んでいなかったため、記憶した消音を思い出しても絵だけ「音あり」のままになり、
-//   1回押しても何も起きないように見えていた（2026-08-11実機で判明）
+//   1回押しても何も起きないように見えていた（2026-08-11実機で判明。iPhone版も同じ症状）
 function syncVolumeUI(){
   try{
     var icon=document.getElementById('ctrl-vol-icon');
@@ -1541,6 +3136,7 @@ function syncVolumeUI(){
 function applySavedVolume(){
   try{
     if(!ytPlayer||!ytReady) return;
+    if(!OPTS.volsave){ isMuted=false; syncVolumeUI(); return; }  // オフなら記憶を使わない（見た目も音ありへ）
     if(OPTS.vol!==null){
       ytPlayer.setVolume(OPTS.vol); lastVol=OPTS.vol||lastVol;
     }
@@ -1554,6 +3150,7 @@ function applySavedVolume(){
 //   画面のスライダーの値をそのまま覚える方が確実なので、そちらを使う。
 function rememberVolume(){
   try{
+    if(!OPTS.volsave) return;   // 「音量を記憶する」がオフなら覚えない
     var el=document.getElementById('vol-slider');
     var v=el?parseInt(el.value,10):NaN;
     // 消音中はスライダーが0なので覚えない（覚えると解除しても無音のままになる）
@@ -1566,6 +3163,11 @@ function rememberVolume(){
 function applyOpts(){
   try{
     var b=document.body;
+    // すでにホーム画面から開いている人には「ホーム画面に登録する」を出さない
+    try{
+      var lr=document.getElementById('lnk-reg');
+      if(lr) lr.style.display = regHome() ? 'none' : '';
+    }catch(_){}
     b.classList.toggle('text-1', OPTS.text===1);
     b.classList.toggle('text-2', OPTS.text===2);
     // お知らせの自動切り替え
@@ -1586,6 +3188,7 @@ function renderOpts(){
     seg('seg-text', OPTS.text);
     seg('seg-skip', OPTS.skip);
     var n=document.getElementById('opt-news'); if(n) n.classList.toggle('on', !!OPTS.stopnews);
+    var vs2=document.getElementById('opt-volsave'); if(vs2) vs2.classList.toggle('on', !!OPTS.volsave);
     var v=document.getElementById('about-ver');
     if(v){ var m=(document.querySelector('.ps-version')||{}).textContent||''; v.textContent=(m.match(/version\s*([0-9.]+[^（(]*)/)||[])[1]||'-'; }
   }catch(_){}
@@ -1613,7 +3216,12 @@ function openForm(key){
   if(isTapBlocked()) return;
   var url=FORMS[key];
   if(!url) return;                       // 準備中は何もしない
-  try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+  if(isTvPcMode() && canEmbed(url)){
+    // Googleフォームは埋め込み用の形（embedded=true）でだけ窓に入れられる（ヘッダー実測で確認済み）
+    var eu=url+(url.indexOf('?')>=0?'&':'?')+'embedded=true';
+    if(openSiteViewer(eu)) return;
+  }
+  setResumeFlag();
   location.href=url;
 }
 function renderForms(){
@@ -1626,10 +3234,45 @@ function renderForms(){
   }catch(_){}
 }
 
+// TVモードの時だけ、設定の中身を「左列・右列」の2つに包み直す（2026-08-11）。
+// CSSのgridだと行の高さが左右で共有され、「アプリについて」が右の投稿カードに
+// 引き伸ばされて余白が出ていたため、左右を完全に独立した縦並びにする。
+// ・要素は移動するだけなので、ボタンに付けた反応（イベント）はそのまま生き続ける
+// ・TVモードでなければ元の並びに戻す＝スマホ・iPadの設定画面は一切変わらない
+// ・何度呼んでも同じ結果になる（すでに包んであれば何もしない）
+function tvWrapSettings(){
+  try{
+    var body=document.querySelector('#settings-panel .set-body');
+    if(!body) return;
+    var wrapped=body.querySelector(':scope > .set-col');
+    if(isTvPcMode()){
+      if(wrapped) return;                       // すでに包んである
+      var secs=[].slice.call(body.querySelectorAll(':scope > .set-sec'));
+      if(secs.length<5) return;                 // 想定と違う構成なら何もしない（安全側）
+      var L=document.createElement('div'); L.className='set-col set-col-l';
+      var R=document.createElement('div'); R.className='set-col set-col-r';
+      L.appendChild(secs[0]); L.appendChild(secs[1]); L.appendChild(secs[4]);  // 使い方・背景の色・アプリについて
+      R.appendChild(secs[2]); R.appendChild(secs[3]);                          // 表示と動作・投稿
+      body.appendChild(L); body.appendChild(R);
+    }else{
+      if(!wrapped) return;
+      var cols=[].slice.call(body.querySelectorAll(':scope > .set-col'));
+      var l=cols[0], r=cols[1];
+      if(!l||!r) return;
+      var ls=[].slice.call(l.children), rs=[].slice.call(r.children);
+      // 元の並び（使い方・背景の色・表示と動作・投稿・アプリについて）に戻す
+      body.appendChild(ls[0]); body.appendChild(ls[1]);
+      body.appendChild(rs[0]); body.appendChild(rs[1]);
+      body.appendChild(ls[2]);
+      l.remove(); r.remove();
+    }
+  }catch(_){}
+}
 function openSettings(){
   if(isTapBlocked()) return;
   var p=document.getElementById('settings-panel');
   if(!p) return;
+  tvWrapSettings();
   renderBgChoices();
   renderOpts();
   renderForms();
@@ -1739,8 +3382,9 @@ function openSponsorLink(){
   if(isTapBlocked()) return;   // 全画面解除直後の突き抜け防止
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
-    try{statsBannerClick(s.name);statsFlush(true);}catch(_){}
-    try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+    try{statsBannerClick(s.name);statsFlush(true);}catch(_){}   // 計測は窓・遷移どちらの経路でも打つ
+    if(isTvPcMode() && canEmbed(s.url) && openSiteViewer(s.url)) return;
+    setResumeFlag();
     location.href=s.url;
   }
 }
@@ -2164,7 +3808,7 @@ function onYouTubeIframeAPIReady(){
         if(pendingYtId){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
-          e.target.loadVideoById({videoId:id,startSeconds:sec});
+          e.target.loadVideoById({videoId:id,startSeconds:sec,suggestedQuality:'hd1080'});
           try{ e.target.playVideo(); }catch(_){} // 遅延ロード時も再生を試みる
           clearSpinnerTimer();
           spinnerTimer=setTimeout(function(){showSpinner(false);},60000);
@@ -2214,6 +3858,38 @@ function fitPlayer(){
   try{ if(!isFs && (pw.matches(':fullscreen')||pw.matches(':-webkit-full-screen'))) isFs=true; }catch(_){}
 
   if(!isFs){
+    if(isTvPcMode()){
+      // ── TV/PCの通常表示：内部を1920×1080で描かせて縮小表示（2026-08-11・画質対策）──
+      // YouTubeは「プレーヤーの大きさ」で画質を自動選択するため、実寸(例:981×552)のままだと
+      // 720p以下が選ばれやすい。内部1920×1080なら最初から1080pを選びやすくなる。
+      // 枠(player-wrap)は常に16:9なので縮小率は縦横同一＝見た目の配置は従来と同じ。
+      // ※過去にtransformで起きた数pxズレはiOS固有の合成問題で、ここはiOS除外済み(isTvPcMode)
+      yt.style.position='absolute'; yt.style.left='0'; yt.style.top='0';
+      yt.style.right='auto'; yt.style.bottom='auto';
+      yt.style.width=_fitW0+'px'; yt.style.height=_fitH0+'px';
+      yt.style.transformOrigin='0 0';
+      // ★右端の黒帯の根治（2026-08-12 Google TVで発生・ブラウザ実測で再現）。
+      //   原因は clientWidth/clientHeight が整数に丸められること。枠の実寸が981.328pxでも
+      //   981として縮小率を決めるため、右に0.33px・下に0.17pxの黒が残る。
+      //   TVは1CSSpxが約2物理pxなので、これが2pxの黒帯として見えていた。
+      //   ①小数のまま測る ②平行移動を丸めない ③通常表示と同じだけ外へはみ出させる
+      //     （はみ出しは枠のoverflow:hiddenで切られる。16:9の比は 6:3.375 で厳密に保つ）
+      var _pr=pw.getBoundingClientRect();
+      var cwF=_pr.width, chF=_pr.height;
+      var OSW=6, OSH=OSW*(_fitH0/_fitW0);
+      if(cwF>0&&chF>0){
+        var scN=Math.min((cwF+OSW)/_fitW0, (chF+OSH)/_fitH0);
+        var txN=(cwF-_fitW0*scN)/2, tyN=(chF-_fitH0*scN)/2;
+        yt.style.transform='translate('+txN+'px,'+tyN+'px) scale('+scN+')';
+      }
+      if(cw>0){
+        var fsbT=document.getElementById('fs-ctrl-bar');
+        if(fsbT){ fsbT.style.width=Math.max(280,Math.round(cw*0.94))+'px'; }
+        var telT=document.getElementById('video-telop');
+        if(telT){ telT.style.bottom='12px'; try{ fitTelop(cw); }catch(_){} }
+      }
+      return;
+    }
     // ★通常表示は v1.41以前の「枠を100%そのまま埋める」素直方式に復帰（transform非使用）。
     //   v1.42で導入したtransform縮小方式が、iOSで映像を数pxズラす原因だった（回帰）。
     //   枠(player-wrap)は縦横どちらでも常に16:9なので、iframeを100%で埋めれば
@@ -2246,7 +3922,11 @@ function fitPlayer(){
   var topBand=0;
   if(isLandscapeNow()){
     var _fss=document.getElementById('fs-sponsor');
-    topBand=(_fss && _fss.offsetHeight>8 ? _fss.offsetHeight : 36) + 8;
+    // バナー自身の上余白(CSSのtop値)も足す。これを勘定に入れておらず、
+    // 全画面でバナーの下端が動画に被っていた（2026-08-11実機で判明）
+    var _fsTop=6;
+    try{ _fsTop=parseFloat(getComputedStyle(_fss).top)||6; }catch(_){}
+    topBand=_fsTop + (_fss && _fss.offsetHeight>8 ? _fss.offsetHeight : 36) + 10;
   }
   var availH=ch-topBand;
   var scale=Math.min(cw/_fitW0, availH/_fitH0); // contain（全体表示・レターボックス）
@@ -2423,6 +4103,8 @@ function isLandscapeNow(){
 }
 function applyOrientationClass(){
   try{
+    if(_dbgOn) document.documentElement.classList.add('dbg');
+    updateTvH();   // TV/PCの高さ固定を維持（500ms毎の定期呼び出しに相乗り・冪等）
     var S=Math.min(screen.width||0, screen.height||0);   // 画面の短辺＝スマホ判定に使う
     if(!S) return;
     var land=isLandscapeNow();
@@ -2430,7 +4112,12 @@ function applyOrientationClass(){
     // スマホ判定：画面の物理短辺（凍結しない）で判定。加えて、PCで窓を細くした場合など
     // 「画面は大きいが表示領域が小さい」ケースは従来どおり表示領域でも判定する（既存挙動を維持）。
     var p = !land && (S<=767 || window.innerWidth<=767);
-    var l =  land && (S<=500 || window.innerHeight<=500);
+    // ★いまTVモード中の端末では「表示領域が低い＝横向きスマホ」の補助判定を使わない（2026-08-11）。
+    //   URLバーが大きく出て表示領域が500pxを割ると、TVがスマホ扱いになり崩れていた
+    //   （実測：高さ450pxでori-lが付きTVモードが外れる）。
+    //   _tvMode は幅1000px未満で必ず false になるため、iPhone横(874px)は従来どおりori-lが付く。
+    //   物理画面の短辺(S)による本来のスマホ判定はそのまま残す。
+    var l =  land && (S<=500 || (window.innerHeight<=500 && !_tvMode));
     // iPad等の大きなタッチ画面の向き。旧 @media(pointer:coarse) and (orientation:...) and (min-width:600px) の置き換え。
     // サイズ条件(600px以上)は旧CSSと同じ判定のまま＝挙動を変えず、向きの部分だけ凍結しない値にする。
     var tp = coarse && !land && S>=600 && window.innerWidth>=600;
@@ -2440,8 +4127,18 @@ function applyOrientationClass(){
       e.classList.toggle('ori-p',p);  e.classList.toggle('ori-l',l);
       e.classList.toggle('ori-tp',tp); e.classList.toggle('ori-tl',tl);
     });
+    // 向きが実際に変わった時だけ：番組表の時刻チップの強調と横スライドを付け直す（2026-08-11）。
+    // 従来は番組ロード時のみだったため、回転すると目盛りが古い位置のまま取り残されていた。
+    // 500ms毎の定期呼び出しでは向きが同じ＝ここは走らない（無駄な再計算をしない）
+    var sig=(p?'p':'')+(l?'l':'')+(tp?'tp':'')+(tl?'tl':'');
+    if(sig!==_oriSig){
+      _oriSig=sig;
+      if(hasPoweredOn){ try{ hlSB(vC,vP); }catch(_){} }
+      try{ hideClippedChips(); }catch(_){}
+    }
   }catch(_){}
 }
+var _oriSig='';
 // ══ 見た目を更新するだけのタイマーの置き場（2026-08-10）══
 //  他のアプリを見ている間（document.hidden）は、画面を描き直しても誰も見ていないので止めて電池を節約する。
 //  止めてよいのは【見た目だけ】のもの。番組の切り替え(periodicCheck)・通信・計測は止めない。
@@ -2765,7 +4462,10 @@ function loadVideo(ytId,sec,msg){
   vCurrentId=ytId; vCurrentSec=sec; // 現在の動画情報を保存
   if(ytReady&&ytPlayer){
     try{ fitPlayer(); }catch(_){} // ロード前に内部サイズ固定を保証
-    ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec});
+    // suggestedQuality は「この画質を希望する」という提案（強制ではない）。
+    // 画質を強制するAPIはYouTubeが廃止済みで存在しないため、これが唯一できる働きかけ。
+    // 実際の画質はYouTubeが回線速度とプレーヤーの大きさを見て決める（2026-08-11調査）
+    ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec,suggestedQuality:'hd1080'});
     try{ fitPlayer(); }catch(_){}
     setTimeout(function(){
       try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
@@ -2926,7 +4626,29 @@ function hlSB(c,p){
       tb.scrollLeft+=delta;
     }
   }
+  try{ hideClippedChips(); }catch(_){}
 }
+
+// 画面端で数字が中途半端に切れて見えるのを防ぐ：枠に一部だけかかっているチップは丸ごと非表示にする。
+// 場所は取ったまま見えなくするだけ＝並びは1pxも動かない。何度呼んでも同じ結果になる冪等な処理（全バージョン共通・2026-08-11指示）
+function hideClippedChips(){
+  document.querySelectorAll('.time-bar').forEach(function(tb){
+    var tr=tb.getBoundingClientRect();
+    if(!tr.width) return;
+    tb.querySelectorAll('.time-chip-item').forEach(function(ch){
+      var r=ch.getBoundingClientRect();
+      var cut=(r.left<tr.left-1 && r.right>tr.left+1)||(r.left<tr.right-1 && r.right>tr.right+1);
+      ch.style.visibility=cut?'hidden':'';
+    });
+  });
+}
+// 窓のサイズ変更（PCで窓を伸縮した時など）でも切れ方が変わるので測り直す（rAFで間引き）
+var _hccRaf=null;
+function hideClippedChipsSoon(){
+  if(_hccRaf) return;
+  _hccRaf=requestAnimationFrame(function(){ _hccRaf=null; try{ hideClippedChips(); }catch(_){} });
+}
+window.addEventListener('resize',hideClippedChipsSoon);
 
 // ══════════════════════════════════════════════
 //  タップ判定（スクロールと区別）
@@ -2976,6 +4698,8 @@ function renderSB(){
       // 時刻バー（タイトル上・横並び・6時刻）
       var timeBar=document.createElement('div');
       timeBar.className='time-bar';
+      // 指でなぞって時刻バーを動かした時も、端で切れる数字を測り直して隠す
+      timeBar.addEventListener('scroll',hideClippedChipsSoon,{passive:true});
       for(var ci=0;ci<times.length;ci++){
         (function(cIdx){
           if(cIdx>0){
@@ -3014,6 +4738,7 @@ function renderSB(){
       list.appendChild(row);
     })(pIdx);
   }
+  try{ hideClippedChips(); }catch(_){}  // 描画直後の端切れも隠す
 }
 
 // ══════════════════════════════════════════════
@@ -3187,6 +4912,8 @@ function powerOn(){
       }, ms);
     });
   }
+  // 放送が始まってから登録案内を出す（何のアプリか分かってから勧めるため）
+  try{ regSchedule(); }catch(_){}
   // Silk/FireTVのみ: ユーザージェスチャー直後にブラウザUIを非表示にする
   // PC・iOS版には一切影響しない（isSilkがfalseのため実行されない）
   if(isSilk){
@@ -3258,7 +4985,8 @@ function toggleMute(){
     if(!lastVol||lastVol<=0) lastVol=50;  // 記憶が0/未設定なら聞こえる音量に戻す
     ytPlayer.unMute();
     ytPlayer.setVolume(lastVol);
-    OPTS.vol=lastVol;                     // 見た目(スライダー)もこの値に合わせる
+    // 見た目(スライダー)を合わせるための代入。「記憶する」がオフの時は保存対象に触れない
+    if(OPTS.volsave) OPTS.vol=lastVol;
   }
   syncVolumeUI();                         // アイコンとスライダーを今の状態に一致させる
   try{ rememberVolume(); }catch(_){}      // 消音の状態も覚えておく
@@ -3275,17 +5003,17 @@ function onVolSlider(){
   }else{
     isMuted=false;
     lastVol=val;
-    OPTS.vol=val;
+    if(OPTS.volsave) OPTS.vol=val;   // 「記憶する」がオフの時は保存対象に触れない
     ytPlayer.unMute();
   }
-  var icon=document.getElementById('ctrl-vol-icon');
-  var fsIcon=document.getElementById('fs-vol-icon');
-  var p2=isMuted?VOL_MUTE_PATH:VOL_ON_PATH;
-  if(icon) icon.innerHTML=p2;
-  if(fsIcon) fsIcon.innerHTML=p2;
   // fs-vol-sliderも同期
   var fvs=document.getElementById('fs-vol-slider');
   if(fvs&&fvs!==v)fvs.value=val;
+  var icon=document.getElementById('ctrl-vol-icon');
+  var fsIcon=document.getElementById('fs-vol-icon');
+  var p=isMuted?VOL_MUTE_PATH:VOL_ON_PATH;
+  if(icon) icon.innerHTML=p;
+  if(fsIcon) fsIcon.innerHTML=p;
   try{ rememberVolume(); }catch(_){}   // 次に開いたときも同じ音量にする
 }
 
@@ -3379,7 +5107,10 @@ function init(){
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
   (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
   setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
+  // 初回だけ「使い方の説明を見ますか？」と尋ねる。画面が組み上がってから出す
+  setTimeout(function(){ try{ tourAskIfFirst(); }catch(_){} }, 400);
   uiInterval(updateClock,1000);
+  uiInterval(regFabSync,1000);   // 呼び戻し「？」の出し入れ（冪等）
   setInterval(periodicCheck,10000);   // 番組の切り替えの要。裏に回っても止めない
   // シークバーと再生アイコンの追従。0.1秒ごとにYouTubeへ状態を聞いていたが、
   // 目で見て違いが出ない範囲で0.25秒に緩めた（問い合わせ回数が毎秒10回→4回）
@@ -3446,16 +5177,26 @@ function init(){
 
   // スポンサーページから戻って再読込された場合: 電源画面をスキップして放送再開
   // （bfキャッシュが効けばpageshowで復元、効かない場合のフォールバック）
-  try{
-    if(sessionStorage.getItem('shiso_resume')==='1'){
+  (function(){
+    var _resume=false;
+    try{
+      if(sessionStorage.getItem('shiso_resume')==='1') _resume=true;
       sessionStorage.removeItem('shiso_resume');
+    }catch(_){}
+    // sessionStorageが消える環境（TVブラウザ等）向けの控え。30分以内の再訪だけ有効
+    try{
+      var _rt=parseInt(localStorage.getItem('shiso_resume_t')||'0',10);
+      localStorage.removeItem('shiso_resume_t');
+      if(_rt && (Date.now()-_rt) < 30*60*1000) _resume=true;
+    }catch(_){}
+    if(_resume){
       var _resumeWait=function(){
         if(ytReady){ powerOn(); }
         else setTimeout(_resumeWait,150);
       };
       setTimeout(_resumeWait,200);
     }
-  }catch(_){}
+  })();
 
   // ══ TV/キオスクモード(?tv) ══
   // Google TV Streamer等にFully Kioskで本ページを全画面表示する運用向け。
@@ -3525,6 +5266,13 @@ function init(){
     bind('seg-skip','skip',true);
     var nb=document.getElementById('opt-news');
     if(nb) nb.addEventListener('click', function(){ OPTS.stopnews=!OPTS.stopnews; saveOpts(); applyOpts(); renderOpts(); });
+    var vb=document.getElementById('opt-volsave');
+    if(vb) vb.addEventListener('click', function(){
+      OPTS.volsave=!OPTS.volsave;
+      if(OPTS.volsave){ try{ rememberVolume(); }catch(_){} }   // オンにした時点の音量を覚える
+      else { OPTS.vol=null; OPTS.muted=false; }                // オフにしたら記憶を消す
+      saveOpts(); applyOpts(); renderOpts();
+    });
     try{ applyOpts(); renderOpts(); }catch(_){}
   })();
 
@@ -3533,7 +5281,7 @@ function init(){
     var h=document.getElementById('lnk-help');
     if(h) h.addEventListener('click', function(){
       if(isTapBlocked()) return;
-      try{ sessionStorage.setItem('shiso_resume', userWantsPlay?'1':'0'); }catch(_){}
+      setResumeFlag();
       location.href='help.html';
     });
   })();
