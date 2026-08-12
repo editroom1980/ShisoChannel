@@ -1439,7 +1439,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.82-lab（追加済みの端末で詰まる道を追加）</div>
+    <div class="ps-version">version 2.83-lab（制作側の視聴を計測から外す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3578,14 +3578,18 @@ function loadRemoteSchedule(){
 //  ・イベントはローカルに集約し、10分毎＋離脱時にまとめて送信（書込最小化）
 //  ・全処理はtry/catchで隔離。計測が失敗しても再生には一切影響しない
 //  ・FIREBASE未設定時は完全に何もしない
+//  ・?nostat=1 を開いた端末は以後いっさい計測しない（制作側の確認を数字から外す）
 // ══════════════════════════════════════════════
 var _stQKEY='shisochan_stats_queue_v1';
 var _stDevKEY='shisochan_device_id';
 var _stPingKEY='shisochan_dev_ping';
+var _stExclKEY='shisochan_stats_excl'; // この端末を計測から外す（制作側の確認用）
 var _stSes={id:'',playing:false,t0:0,acc:0,sent:0,counted:false}; // 番組セッション
 var _stImpLast={idx:-1,ts:0};
 var _stFlushing=false;
-function _stEnabled(){return !!(FIREBASE.projectId&&FIREBASE.apiKey);}
+// 除外中かどうかは読み込み時に確定させる（以降のどの計測より先に決まる）
+var _stExcl=(function(){try{return localStorage.getItem(_stExclKEY)==='1';}catch(_){return false;}})();
+function _stEnabled(){return !!(FIREBASE.projectId&&FIREBASE.apiKey)&&!_stExcl;}
 function _stDay(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function _stDevId(){
   var id='';
@@ -3596,6 +3600,35 @@ function _stDevId(){
     try{localStorage.setItem(_stDevKEY,id);}catch(_){}
   }
   return id;
+}
+// ?nostat=1 で、このブラウザを計測から外す（?nostat=0 で戻す）。
+// 制作側の確認が視聴数に混ざるのを防ぐためのもの。付けない限り誰にも影響しない。
+function _stExclSwitch(){
+  var m=/[?&]nostat=([01])(&|$)/.exec(location.search);
+  if(!m)return;
+  var on=(m[1]==='1');
+  if(on===_stExcl)return; // すでにその状態＝何もしない（同じURLを何度開いても安全）
+  _stExcl=on;
+  try{
+    if(on)localStorage.setItem(_stExclKEY,'1');
+    else localStorage.removeItem(_stExclKEY);
+  }catch(_){}
+  if(on){try{localStorage.removeItem(_stQKEY);}catch(_){}} // 未送信の溜まり分も捨てる
+  _stMarkExcluded(on);
+  var msg=on?'この端末の視聴計測を止めました。\nレポートの数字には入りません。'
+            :'この端末の視聴計測を再開しました。';
+  setTimeout(function(){try{alert(msg);}catch(_){}},0); // 起動処理を止めない
+}
+// stats_devices/{端末番号} に除外の印を書く（レポートの端末数から外すため）
+function _stMarkExcluded(on){
+  try{
+    if(!(FIREBASE.projectId&&FIREBASE.apiKey))return;
+    var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)
+      +'/databases/(default)/documents/stats_devices/'+encodeURIComponent(_stDevId())
+      +'?key='+encodeURIComponent(FIREBASE.apiKey)+'&updateMask.fieldPaths=excl';
+    fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{excl:{booleanValue:!!on}}})}).catch(function(){});
+  }catch(_){}
 }
 function _stQ(){ // キュー取得（壊れていたら初期化）
   var q=null;
@@ -3729,6 +3762,7 @@ function statsFlush(useBeacon){
   }catch(_){_stFlushing=false;}
 }
 function statsInit(){
+  try{_stExclSwitch();}catch(_){} // 除外の切り替えは、計測の可否を見る前に行う（解除もできるように）
   if(!_stEnabled())return;
   try{
     _stDevId();
