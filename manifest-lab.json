@@ -12,13 +12,39 @@
   "background_color": "#1e3a28",
   "theme_color": "#1e3a28",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "screenshots": [
-    { "src": "screenshot-app.jpg", "sizes": "556x1000", "type": "image/jpeg", "form_factor": "narrow", "label": "放送と番組表" }
+    {
+      "src": "screenshot-app.jpg",
+      "sizes": "556x1000",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "放送と番組表"
+    }
   ],
   "related_applications": [
-    { "platform": "webapp", "url": "./manifest-lab.json", "id": "/lab" }
+    {
+      "platform": "webapp",
+      "url": "./manifest-lab.json",
+      "id": "/lab"
+    }
   ]
 }

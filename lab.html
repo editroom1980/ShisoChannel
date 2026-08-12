@@ -16,7 +16,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
 <!-- Android(Chrome)はapple-*のmetaを見ない。ホーム画面に追加した時にアドレスバーを消して
      アプリとして開くにはmanifestが要る（iOSは従来どおり上のmetaで動く） -->
-<link rel="manifest" href="manifest-lab.json?v=276">
+<link rel="manifest" href="manifest-lab.json?v=280">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
@@ -1439,7 +1439,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.77-lab（manifestのキャッシュ番号を更新）</div>
+    <div class="ps-version">version 2.80-lab（アイコンを新デザインに更新）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2358,6 +2358,7 @@ var REG={
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
  sChrome:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
+           {sub:'色のついた丸のこともあります'},
            {n:2,t:'「アプリをインストール」'},
            {sub:'「ホーム画面に追加」の時もあります'},
            {n:3,t:'「インストール」を押す'},
@@ -2414,6 +2415,7 @@ var REG={
            {n:4,t:'「OK」を押す'}]},
  sOther:{strip:1, tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'{menu}か{bars}を押す'},
+           {sub:'色のついた丸のこともあります'},
            {n:2,t:'「ホーム画面に追加」を探す'},
            {sub:'「アプリをインストール」とも出ます'},
            {n:3,t:'出た画面で「追加」を押す'},
