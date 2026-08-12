@@ -1,5 +1,5 @@
 {
- "updated": "2026-08-12T09:42:20+09:00",
+ "updated": "2026-08-12T12:09:44+09:00",
  "source": "宍粟市公式サイト",
  "items": [
   {
@@ -8,6 +8,20 @@
    "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/18866.html",
    "date": "8月12日",
    "ts": "2026-08-12T08:30:00+09:00"
+  },
+  {
+   "tag": "イベント",
+   "title": "移動図書館ささゆり号が波賀に8月22日",
+   "url": "https://www.city.shiso.lg.jp/event/19589.html",
+   "date": "8月10日",
+   "ts": "2026-08-10T00:00:00+09:00"
+  },
+  {
+   "tag": "イベント",
+   "title": "いちのぴあで「えほんのじかん」 8月29日開催",
+   "url": "https://www.city.shiso.lg.jp/event/20893.html",
+   "date": "8月1日",
+   "ts": "2026-08-01T09:00:00+09:00"
   },
   {
    "tag": "イベント",
@@ -71,20 +85,6 @@
    "url": "https://www.city.shiso.lg.jp/boshujoho/kouzakyousitu/20177.html",
    "date": "6月22日",
    "ts": "2026-06-22T08:30:00+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "令和9年4月採用の宍粟市職員を募集（事務職、幼稚園教諭・保育教諭、自動車運転員兼調理員）",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/syokuinbosyu/21722.html",
-   "date": "6月15日",
-   "ts": "2026-06-15T08:30:00+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "消費生活センター映画上映会『プラスチックの海』8月21日上映",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/kouzakyousitu/19256.html",
-   "date": "6月15日",
-   "ts": "2026-06-15T00:00:00+09:00"
   }
  ]
 }
