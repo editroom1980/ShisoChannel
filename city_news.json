@@ -1,7 +1,14 @@
 {
- "updated": "2026-08-12T08:22:59+09:00",
+ "updated": "2026-08-12T09:42:20+09:00",
  "source": "宍粟市公式サイト",
  "items": [
+  {
+   "tag": "募集",
+   "title": "いちのみやふるさとまつり 出店・出展・出演団体募集",
+   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/18866.html",
+   "date": "8月12日",
+   "ts": "2026-08-12T08:30:00+09:00"
+  },
   {
    "tag": "イベント",
    "title": "移動図書館「ささゆり号」が千種に 8月19日",
@@ -78,13 +85,6 @@
    "url": "https://www.city.shiso.lg.jp/boshujoho/kouzakyousitu/19256.html",
    "date": "6月15日",
    "ts": "2026-06-15T00:00:00+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "やまさき文化大学公開講座を8月20日開催 テーマは「マシンガンズ滝沢と考えるごみ問題～清掃員から見た景色～」",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/kaiinn/17762.html",
-   "date": "6月2日",
-   "ts": "2026-06-02T09:00:00+09:00"
   }
  ]
 }
