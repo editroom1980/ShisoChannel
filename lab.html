@@ -1168,32 +1168,55 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 .reg-btn:focus{outline:3px solid var(--green);outline-offset:2px;}
 .reg-btn:focus:not(:focus-visible){outline:none;}
 
-/* ── 上部の「やりかた帯」（登録を実行する段階だけ）──
+/* ── 上部の「やりかたカード」（登録を実行する段階だけ）──
    ★共有シートやブラウザのメニューは画面の下〜半分を覆い、開いている間は
      こちらのボタンを押せない（押した瞬間メニューが閉じる。2026-08-12実機で確認）。
-     だから「やる」段階は画面の上端に手順を出したままにする。
+     だから「やる」段階は画面の上に手順を出したままにする。
      暗幕なし・押す必要なし＝端末の操作を一切妨げない。
-     iOSの共有シートは下から出るため上端の帯は隠れない（実測）。 */
-#reg-strip{position:fixed;left:0;right:0;top:0;z-index:2147483647;display:none;
-  background:#fff;color:#1a2520;box-shadow:0 3px 16px rgba(0,0,0,.4);
-  padding:8px 8px 10px;padding-top:calc(8px + env(safe-area-inset-top));
-  word-break:normal;line-break:strict;}
+     画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
+#reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
+  margin:0 auto;max-width:620px;
+  z-index:2147483647;display:none;background:#fff;color:#1a2520;
+  border-radius:16px;box-shadow:0 10px 34px rgba(0,0,0,.45);
+  padding:14px 16px;word-break:normal;line-break:strict;}
 #reg-strip.on{display:block;}
-/* 1段目：絵＋手順＋×。狭い機種(320px)でも手順1行(全角12字)が折り返さない幅配分 */
-#rs-main{display:flex;gap:8px;align-items:flex-start;}
-#rs-icon{flex:0 0 auto;width:40px;height:40px;border-radius:11px;background:#f2f4f3;color:#1a2520;
-  display:flex;align-items:center;justify-content:center;margin-top:2px;}
-#rs-icon svg{width:27px;height:27px;display:block;}
-#rs-txt{flex:1 1 auto;min-width:0;font-size:17px;font-weight:700;line-height:1.55;}
-#rs-txt .note{font-size:14px;font-weight:600;color:#41504a;}
-#rs-close{flex:0 0 auto;border:0;background:#ececec;color:#41504a;width:40px;height:40px;border-radius:10px;
-  font-size:20px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;
+#rs-head{display:flex;gap:12px;align-items:center;}
+#rs-icon{flex:0 0 auto;width:62px;height:62px;border-radius:16px;background:#f2f4f3;color:#1a2520;
+  display:flex;align-items:center;justify-content:center;}
+#rs-icon svg{width:42px;height:42px;display:block;}
+#rs-ttl{flex:1 1 auto;min-width:0;font-size:17px;font-weight:700;color:var(--green);
+  letter-spacing:.5px;line-height:1.4;}
+#rs-close{flex:0 0 auto;border:0;background:#ececec;color:#41504a;width:42px;height:42px;
+  border-radius:11px;font-size:21px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;
   -webkit-tap-highlight-color:transparent;}
-/* 2段目：困った時（右寄せ） */
-#rs-foot{display:flex;justify-content:flex-end;margin-top:6px;}
-#rs-help{border:0;background:var(--gold);color:#fff;border-radius:10px;padding:11px 16px;
-  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
+#rs-txt{margin-top:12px;}
+/* 手順＋その補足をひと塊にする。2列にした時に切り離されないため */
+.rs-item{break-inside:avoid;-webkit-column-break-inside:avoid;}
+/* 番号は固定幅の丸にする＝「が入っても文の頭が必ず揃う（2026-08-12指示） */
+.rs-step{display:flex;gap:10px;align-items:flex-start;margin-top:9px;}
+.rs-step:first-child{margin-top:0;}
+.rs-n{flex:0 0 auto;width:27px;height:27px;border-radius:50%;background:var(--green);color:#fff;
+  font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.5;}
+/* 補足は直前の手順にぶら下げる。番号の幅ぶん下げて、手順の文の頭に揃える */
+.rs-sub{margin:4px 0 0 37px;font-size:15px;font-weight:600;color:#41504a;line-height:1.5;}
+#rs-foot{display:flex;justify-content:flex-end;margin-top:13px;}
+#rs-help{border:0;background:var(--gold);color:#fff;border-radius:11px;padding:12px 20px;
+  font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
   -webkit-tap-highlight-color:transparent;}
+/* 画面が狭い/低い時だけ詰める（実測して入らない時のみ regStripFit が付ける） */
+#reg-strip.tight{padding:11px 13px;}
+#reg-strip.tight #rs-icon{width:50px;height:50px;border-radius:13px;}
+#reg-strip.tight #rs-icon svg{width:34px;height:34px;}
+#reg-strip.tight #rs-ttl{font-size:16px;}
+#reg-strip.tight #rs-txt{margin-top:9px;}
+#reg-strip.tight .rs-step{margin-top:6px;}
+#reg-strip.tight .rs-t{font-size:16px;line-height:1.4;}
+#reg-strip.tight .rs-sub{font-size:14px;}
+#reg-strip.tight #rs-foot{margin-top:9px;}
+#reg-strip.tight #rs-help{padding:10px 16px;font-size:15px;}
+/* 横向きなど「幅はあるが高さが足りない」時は手順を2列にして高さを半分にする */
+#reg-strip.wide #rs-txt{column-count:2;column-gap:20px;}
 /* ── 呼び戻し用の「？」。ホーム画面から開くようになれば出ない（2026-08-12承認） ── */
 #reg-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
   z-index:2147483646;display:none;width:46px;height:46px;border-radius:50%;
@@ -1389,7 +1412,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.70-lab（登録案内を全面改良）</div>
+    <div class="ps-version">version 2.72-lab（案内カードの作り直し・8種を統一）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1661,11 +1684,12 @@ html.tvpc #settings-panel .set-link{
 </div>
 <!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
 <div id="reg-strip">
-  <div id="rs-main">
+  <div id="rs-head">
     <div id="rs-icon"></div>
-    <div id="rs-txt"></div>
+    <div id="rs-ttl"></div>
     <button id="rs-close" title="とじる">×</button>
   </div>
+  <div id="rs-txt"></div>
   <div id="rs-foot"><button id="rs-help">困った時</button></div>
 </div>
 <button id="reg-fab" title="ホーム画面への追加案内">？</button>
@@ -1807,17 +1831,34 @@ function tourPoint(i, counter, noScroll){
   e.hole.style.display='';
   // 小さいボタンほど枠を広めに取り、丸く囲む
   var small=(r.width<70 && r.height<70);
+  // ★真円にしてよいのは「ほぼ正方形」の物だけ。音量つまみのように細長い物まで
+  //   真円にすると、丸が縦に伸びて吹き出しに重なる（2026-08-12実測）。
+  //   設定(24x19)や各ボタン(34x34)は真円、LIVE表示(43x15)や音量つまみは小判形のまま。
+  var round1=small && (Math.max(r.width,r.height) <= Math.min(r.width,r.height)*2);
   // ★余白は四方そろえる。片側だけ画面のふちで削ると、枠が対象からズレて見える
   //   （2026-08-12 実機写真で判明：上6px・下1pxのように偏っていた）。
   //   入る分だけ同じ幅を四方に取り、足りなければ全体を縮める。
   //   小さいボタンは大きめの輪で目立たせ、大きな四角は細めに当てて正確に見せる。
   var P=6;   // ★対象にぴったり付ける。以前は16/8で、囲いが緩く見えた（2026-08-12指示）
-  var pad=Math.min(P, Math.max(0,r.left), Math.max(0,r.top),
-                      Math.max(0,innerWidth-r.right), Math.max(0,innerHeight-r.bottom));
-  var hl=r.left-pad, ht=r.top-pad, hr=r.right+pad, hb=r.bottom+pad;
-  // 対象そのものが画面から出ている辺だけは、画面に合わせる（線が消えないように）
-  hl=Math.max(0,hl); ht=Math.max(0,ht);
-  hr=Math.min(innerWidth,hr); hb=Math.min(innerHeight,hb);
+  var hl,ht,hr,hb;
+  if(round1){
+    // ★丸で囲う物は必ず「真円」にする。対象の中心に合わせ、直径＝長辺＋余白×2。
+    //   以前は対象の箱をそのまま丸めていたため、設定ボタン(24×19px)が
+    //   つぶれた楕円になっていた（2026-08-12 実機写真で判明）。
+    //   画面のふちに近い時は、縮めるのではなく画面の中へ寄せる＝真円を崩さない。
+    var cx=(r.left+r.right)/2, cy=(r.top+r.bottom)/2;
+    var D=Math.min(Math.max(r.width,r.height)+P*2, innerWidth, innerHeight);
+    hl=Math.max(0, Math.min(cx-D/2, innerWidth-D));
+    ht=Math.max(0, Math.min(cy-D/2, innerHeight-D));
+    hr=hl+D; hb=ht+D;
+  }else{
+    var pad=Math.min(P, Math.max(0,r.left), Math.max(0,r.top),
+                        Math.max(0,innerWidth-r.right), Math.max(0,innerHeight-r.bottom));
+    hl=r.left-pad; ht=r.top-pad; hr=r.right+pad; hb=r.bottom+pad;
+    // 対象そのものが画面から出ている辺だけは、画面に合わせる（線が消えないように）
+    hl=Math.max(0,hl); ht=Math.max(0,ht);
+    hr=Math.min(innerWidth,hr); hb=Math.min(innerHeight,hb);
+  }
   e.hole.style.left=hl+'px';          e.hole.style.top=ht+'px';
   e.hole.style.width=Math.max(0,hr-hl)+'px'; e.hole.style.height=Math.max(0,hb-ht)+'px';
   e.hole.style.borderRadius=small?'999px':'12px';   // 正方形なら丸、細長い音量つまみなら小判形
@@ -2024,7 +2065,7 @@ function tourAskIfFirst(){
   e.w.addEventListener('click', function(){ if(_tourMode===2||_tourMode===3) tourNext(); });
   // 画面の向きや大きさが変わったら、光らせる位置を測り直す
   window.addEventListener('resize', function(){
-    if(_regAt){ try{ regFit(); }catch(_){} }
+    if(_regAt){ try{ regFit(); regStripFit(); }catch(_){} }
     if(_tourMode===2){ tourPoint(0,''); return; }
     if(_tourMode!==3) return;
     // 回すと項目が増減する（縦のiPhoneには音量つまみが無い）ので数え直し、
@@ -2192,32 +2233,68 @@ var REG={
         d:['このまま（アプリの中）でも','放送は見られます。'],
         b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},
 
- // ══ ここから下は「上部のやりかた帯」（strip:1）══════════════
+ // ══ ここから下は「上部のやりかたカード」（strip:1）══════════════
  //  ★押させる物は無い。手順を出したまま、端末のメニューを操作してもらう。
+ //  n=番号つきの手順／sub=直前の手順にぶら下げる補足（見当たらない時・次に何が出るか）。
+ //  補足は「その手順の直後」に置く＝つまずく場所で読める（2026-08-12指示）。
  //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
- sShare:{strip:1, ic:'share', tr:'troubleI',
-        d:['①このマークを押す','②「ホーム画面に追加」','③右上の「追加」',
-           '※無い時は「表示を増やす」','※か、一覧を下へたどる']},
- sDots:{strip:1, ic:'dots', tr:'troubleI',
-        d:['①このマークを押す','②「共有」を押す','③「ホーム画面に追加」','④右上の「追加」',
-           '※無い時は「表示を増やす」']},
+ sShare:{strip:1, ic:'share', tr:'troubleI', h:'この順に押していきます',
+        s:[{n:1,t:'このマークを押す'},
+           {sub:'見当たらない時は「表示を増やす」'},
+           {sub:'古い機種は一覧を下へたどります'},
+           {n:2,t:'「ホーム画面に追加」'},
+           {sub:'→ 名前を決める画面が出ます'},
+           {n:3,t:'右上の「追加」を押す'}]},
+ sDots:{strip:1, ic:'dots', tr:'troubleI', h:'この順に押していきます',
+        s:[{n:1,t:'このマークを押す'},
+           {n:2,t:'「共有」を押す'},
+           {sub:'見当たらない時は「表示を増やす」'},
+           {sub:'古い機種は一覧を下へたどります'},
+           {n:3,t:'「ホーム画面に追加」'},
+           {sub:'→ 名前を決める画面が出ます'},
+           {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
- sChrome:{strip:1, ic:'menu', tr:'troubleA',
-        d:['①右上の「⋮」を押す','②「アプリを','　インストール」か','　「ホーム画面に追加」','③「インストール」を押す']},
+ sChrome:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押していきます',
+        s:[{n:1,t:'右上の「⋮」を押す'},
+           {n:2,t:'「アプリをインストール」'},
+           {sub:'「ホーム画面に追加」の時もあります'},
+           {n:3,t:'「インストール」を押す'},
+           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
- sEdge:{strip:1, ic:'bars', tr:'troubleA',
-        d:['①右下の「≡」を押す','②「電話に追加」をさがす','　（横にめくると出ます）','③「インストール」を押す']},
+ sEdge:{strip:1, ic:'bars', tr:'troubleA', h:'この順に押していきます',
+        s:[{n:1,t:'右下の「≡」を押す'},
+           {n:2,t:'「電話に追加」を押す'},
+           {sub:'横にめくると出てきます'},
+           {n:3,t:'「インストール」を押す'},
+           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
- sFire:{strip:1, ic:'menu', tr:'troubleA',
-        d:['①右上の「⋮」を押す','②「その他」を押す','③「ホーム画面にアプリ','　を追加」を押す','④「ホーム画面に追加」']},
+ sFire:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押していきます',
+        s:[{n:1,t:'右上の「⋮」を押す'},
+           {n:2,t:'「その他」を押す'},
+           {sub:'メニューの下のほうにあります'},
+           {n:3,t:'「ホーム画面にアプリを追加」'},
+           {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
- sSams:{strip:1, ic:'menu', tr:'troubleA',
-        d:['①右下のメニューを押す','②「ページを追加」','③「ホーム画面」を選ぶ','④「追加」を押す']},
- sOther:{strip:1, tr:'troubleA',
-        d:['①「⋮」か「≡」を押す','②「ホーム画面に追加」','　などの言葉をさがす','③出た画面で「追加」']},
+ sSams:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押していきます',
+        s:[{n:1,t:'右下のメニューを押す'},
+           {sub:'「≡」か「⋮」の形です'},
+           {n:2,t:'「ページを追加」を押す'},
+           {sub:'→ 追加先をえらぶ画面が出ます'},
+           {n:3,t:'「ホーム画面」を選ぶ'},
+           {n:4,t:'「追加」を押す'}]},
+ sOther:{strip:1, tr:'troubleA', h:'この順に押していきます',
+        s:[{n:1,t:'「⋮」か「≡」を押す'},
+           {n:2,t:'「ホーム画面に追加」を探す'},
+           {sub:'「アプリをインストール」の時もあります'},
+           {n:3,t:'出た画面で「追加」を押す'},
+           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★アプリ内ブラウザからの開き直し。言葉はアプリごとに少し違うため幅を持たせる
- sInApp:{strip:1, ic:'dots', tr:'troubleIn',
-        d:['①「…」をさがして押す','　（右下や右上にある）','②「ブラウザで開く」','　に似た言葉を押す','③開いたら、もう一度','　「ホーム画面に置く」']}
+ sInApp:{strip:1, ic:'dots', tr:'troubleIn', h:'ブラウザで開き直します',
+        s:[{n:1,t:'右下などの「…」を押す'},
+           {n:2,t:'「ブラウザで開く」を押す'},
+           {sub:'似た言葉でも大丈夫です'},
+           {sub:'→ ブラウザが開き直ります'},
+           {n:3,t:'もう一度「ホーム画面に置く」'}]}
 };
 
 // 探してもらうマークの絵。iOSの共有・iOS26の「…」・Androidの「⋮」・Edgeの「≡」
@@ -2285,16 +2362,36 @@ function regStripShow(key){
   var ic=document.getElementById('rs-icon');
   if(sc.ic && REG_ICON[sc.ic]){ ic.innerHTML=REG_ICON[sc.ic]; ic.style.display='flex'; }
   else { ic.textContent=''; ic.style.display='none'; }
+  document.getElementById('rs-ttl').textContent=sc.h||'この順に押していきます';
   var tx=document.getElementById('rs-txt'); tx.textContent='';
-  sc.d.forEach(function(L){
-    var dv=document.createElement('div');
-    // ※や（で始まる行は補足＝少し小さく。全角空白始まりは手順の続き＝同じ大きさ
-    if(/^※/.test(L) || /^　?（/.test(L)) dv.className='note';
-    dv.textContent=L.replace(/^※/,'※ ');
-    tx.appendChild(dv);
+  var item=null;
+  (sc.s||[]).forEach(function(o){
+    if(o.sub!==undefined){
+      var sv=document.createElement('div'); sv.className='rs-sub'; sv.textContent=o.sub;
+      (item||tx).appendChild(sv); return;
+    }
+    item=document.createElement('div'); item.className='rs-item';
+    var row=document.createElement('div'); row.className='rs-step';
+    var nn=document.createElement('span'); nn.className='rs-n'; nn.textContent=o.n;
+    var tt=document.createElement('span'); tt.className='rs-t'; tt.textContent=o.t;
+    row.appendChild(nn); row.appendChild(tt); item.appendChild(row); tx.appendChild(item);
   });
   st.classList.add('on');
+  regStripFit();
   try{ regFabSync(); }catch(_){}
+}
+// 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
+function regStripFit(){
+  var st=document.getElementById('reg-strip'); if(!st) return;
+  st.classList.remove('tight'); st.classList.remove('wide');
+  var top=st.getBoundingClientRect().top;
+  // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
+  var limit=Math.min(innerHeight-top-10, innerHeight*0.6);
+  if(st.getBoundingClientRect().height>limit) st.classList.add('tight');
+  // 幅はあるが高さが足りない（横向き等）時は2列にして高さを半分にする
+  if(st.getBoundingClientRect().height>limit && st.getBoundingClientRect().width>=420) st.classList.add('wide');
+  // それでも入らない時は詰めたまま。画面外に出さないことを優先
+  if(st.getBoundingClientRect().bottom>innerHeight-4) st.classList.add('tight');
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
