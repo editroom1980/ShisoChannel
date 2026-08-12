@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>脱出テスト（しそチャンNET・検証用）</title>
+<style>
+  :root{--forest:#1e3a28;--green:#3d7a54;--gold:#c8992a;--line:#d4e0d6;--red:#b83030;--text:#1a2520;--muted:#7d9186;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+       background:#f4f7f4;color:var(--text);line-height:1.7;
+       padding:16px 14px calc(30px + env(safe-area-inset-bottom));font-size:15px;}
+  h1{font-size:17px;color:var(--forest);margin-bottom:3px;}
+  .sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:9px;
+        padding:14px 15px;margin-bottom:12px;}
+  h2{font-size:13px;color:var(--forest);margin-bottom:9px;
+     border-bottom:2px solid #e4f2e8;padding-bottom:5px;}
+  .verdict{border-radius:9px;padding:16px 15px;margin-bottom:14px;color:#fff;}
+  .verdict.ok{background:var(--green);}
+  .verdict.ng{background:var(--red);}
+  .verdict.na{background:#5b6b62;}
+  .verdict b{display:block;font-size:19px;margin-bottom:5px;}
+  .verdict span{font-size:13.5px;opacity:.95;}
+  .row{display:flex;justify-content:space-between;gap:12px;
+       padding:6px 0;border-bottom:1px solid #eef3ef;font-size:13.5px;}
+  .row:last-child{border-bottom:none;}
+  .row b{color:var(--muted);font-weight:600;flex-shrink:0;}
+  .row span{text-align:right;word-break:break-all;}
+  .yes{color:var(--red);font-weight:700;}
+  .no{color:var(--green);font-weight:700;}
+  button{display:block;width:100%;padding:15px 12px;margin-bottom:9px;
+         border:none;border-radius:9px;background:var(--green);color:#fff;
+         font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;
+         text-align:left;line-height:1.45;}
+  button:active{opacity:.6;}
+  button small{display:block;font-size:12px;font-weight:500;opacity:.85;margin-top:2px;}
+  button.g{background:#eef3ef;color:var(--forest);border:1px solid var(--line);}
+  .ua{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted);
+      background:#f0f4f1;padding:9px 10px;border-radius:6px;word-break:break-all;
+      margin-top:8px;line-height:1.55;}
+  .note{font-size:12.5px;color:var(--muted);margin-top:10px;}
+</style>
+</head>
+<body>
+
+<h1>アプリ内ブラウザ 脱出テスト</h1>
+<div class="sub">しそチャンNET 検証用。印刷済みのQRのまま、LINEの中から外のブラウザへ出られるかを調べます。</div>
+
+<div id="verdict"></div>
+
+<div class="card">
+  <h2>いま開いている場所</h2>
+  <div id="state"></div>
+  <div class="ua" id="ua"></div>
+</div>
+
+<div class="card" id="btns">
+  <h2>3つの方法を試す</h2>
+  <button data-m="line">方法1：LINEに外で開かせる
+    <small>?openExternalBrowser=1 へ移動する（LINE公式の指定）</small></button>
+  <button data-m="safari">方法2：Safariを直接ひらく
+    <small>x-safari-https:// を使う（iPhone向け・非公式）</small></button>
+  <button data-m="intent">方法3：外部ブラウザをよぶ
+    <small>intent:// を使う（Android向け）</small></button>
+  <button class="g" data-m="reset">最初からやり直す</button>
+  <div class="note">押すと画面が切り替わります。<b>外のブラウザ（SafariやChrome）で開き直されたら成功</b>です。
+    結果はこのページが自動で判定して、上に大きく表示します。</div>
+</div>
+
+<script>
+(function(){
+  var BASE = location.origin + location.pathname;
+  var Q = {};
+  location.search.replace(/^\?/,'').split('&').forEach(function(kv){
+    if(!kv) return; var p=kv.split('='); Q[decodeURIComponent(p[0])]=decodeURIComponent(p[1]||'');
+  });
+
+  var ua = navigator.userAgent;
+  // アプリ本体と同じ判定（そろえてある）
+  var INAPP = /Line\/|FBAN|FBAV|Instagram|Twitter for|MicroMessenger/.test(ua);
+  var which = /Line\//.test(ua) ? 'LINE'
+            : /FBAN|FBAV/.test(ua) ? 'Facebook'
+            : /Instagram/.test(ua) ? 'Instagram'
+            : /Twitter for/.test(ua) ? 'X（Twitter）'
+            : /MicroMessenger/.test(ua) ? 'WeChat' : '';
+  var standalone = false;
+  try{ standalone = (navigator.standalone===true) ||
+       (window.matchMedia && matchMedia('(display-mode: standalone)').matches); }catch(_){}
+
+  var NAME = {line:'方法1（LINEに外で開かせる）', safari:'方法2（Safariを直接ひらく）', intent:'方法3（外部ブラウザをよぶ）'};
+
+  // ── 結果の判定 ────────────────────────────
+  var v = document.getElementById('verdict');
+  if(Q.tried && NAME[Q.tried]){
+    if(!INAPP){
+      v.className='verdict ok';
+      v.innerHTML='<b>成功しました</b><span>'+NAME[Q.tried]+'が効きました。'
+        +'いま外のブラウザで開いています。この方法をアプリに入れれば、'
+        +'印刷済みのQRのままホーム画面に追加できます。</span>';
+    }else{
+      v.className='verdict ng';
+      v.innerHTML='<b>効きませんでした</b><span>'+NAME[Q.tried]+'を試しましたが、'
+        +'まだ'+(which||'アプリ')+'の中のままです。別の方法を試してください。</span>';
+    }
+  }else if(!INAPP){
+    v.className='verdict na';
+    v.innerHTML='<b>いまアプリの中ではありません</b><span>'
+      +'このテストは、LINEの中で開いた状態から始めます。'
+      +'LINEの「Keepメモ」にこのページのURLを送り、それを押してください。</span>';
+  }else{
+    v.className='verdict na';
+    v.innerHTML='<b>'+(which||'アプリ')+'の中で開いています</b><span>'
+      +'この状態ではホーム画面に追加できません。下の3つを順に試してください。</span>';
+  }
+
+  // ── 現状 ──────────────────────────────────
+  function row(k,val,cls){
+    return '<div class="row"><b>'+k+'</b><span'+(cls?' class="'+cls+'"':'')+'>'+val+'</span></div>';
+  }
+  document.getElementById('state').innerHTML =
+      row('アプリの中か', INAPP?'はい（追加できない）':'いいえ（追加できる）', INAPP?'yes':'no')
+    + row('見分けた相手', which||'—')
+    + row('ホーム画面から起動', standalone?'はい':'いいえ')
+    + row('直前に試した方法', (Q.tried&&NAME[Q.tried])?NAME[Q.tried]:'—')
+    + row('いまのURL', location.href.replace(location.origin,''));
+  document.getElementById('ua').textContent = ua;
+
+  // ── 3つの方法：飛び先を組み立てる（検証できるよう関数に分ける）──
+  //   base = https://…/_escape-test.html ／ host = shisochan.net/_escape-test.html
+  function escTarget(m, base, host){
+    if(m==='reset')  return base;
+    // LINEは移動先のURLを見て、この指定があれば外のブラウザへ渡す（LINE公式の指定）
+    if(m==='line')   return base + '?openExternalBrowser=1&tried=line';
+    // https を x-safari-https に差し替えるとSafariが開く（iPhone・非公式）
+    if(m==='safari') return 'x-safari-' + base + '?tried=safari';
+    // Androidの外部ブラウザ呼び出し
+    if(m==='intent') return 'intent://' + host + '?tried=intent'
+                          + '#Intent;scheme=https;action=android.intent.action.VIEW;end';
+    return base;
+  }
+  window.escTarget = escTarget;   // 検証用に外から呼べるようにしておく
+
+  document.getElementById('btns').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('button') : null;
+    if(!b) return;
+    var m = b.getAttribute('data-m');
+    location.href = escTarget(m, BASE, location.host + location.pathname);
+  });
+})();
+</script>
+</body>
+</html>
