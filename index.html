@@ -1438,7 +1438,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.84</div>
+    <div class="ps-version">version 2.86</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2153,6 +2153,7 @@ window.addEventListener('beforeinstallprompt', function(e){
 window.addEventListener('appinstalled', function(){
   _regPrompt=null;
   try{ localStorage.setItem(REG_KEY,'done'); }catch(_){}
+  try{ statsRegStep('ok'); }catch(_){}   // 追加できた＝唯一たしかな成功の合図
   if(_regAt) regShow('okAdded');
 });
 // ★すでにホーム画面に追加してある人に、二度と案内を出さないための問い合わせ。
@@ -2174,9 +2175,23 @@ try{
 //   → 見込みのあるブラウザでは少しの間だけ待ち、来なければ従来どおり手動案内に進む。
 //   待って何も来なくても、出る画面は今までと同じ＝待ち損ねても壊れない
 var REG_WAIT_MS=25000;
+// ★Samsung Internetは27以降、1タップ追加を出さないとSamsung自身が表明している
+//   （「Chrome独自の非標準機能だから」という理由・Samsung開発者フォーラム）。
+//   それでも window.onbeforeinstallprompt は残っているため、待つと25秒を丸ごと捨てる。
+//   Galaxyは既定がこのブラウザなので、該当者は全員が待たされていた。
+//   → 出ないと分かっているブラウザでは待たず、すぐ手順の案内へ進む。
+//   道筋の選択(regShow('route'))は押した瞬間に _regPrompt を見るので、万一あとから
+//   来た場合でも1タップ追加の道は残る＝この判定で取りこぼしは起きない
+function regNoPromptBrowser(){
+  try{
+    var m=/\bSamsungBrowser\/(\d+)/.exec(navigator.userAgent);
+    return !!(m && parseInt(m[1],10)>=27);
+  }catch(_){ return false; }
+}
 function regMayGetPrompt(){
   if(_regPrompt) return false;                 // もう来ている＝待つ必要なし
   if(regIsApple()) return false;               // iPhone/iPadにはこの仕組みが無い
+  if(regNoPromptBrowser()) return false;       // 出ないと分かっている＝待たない
   try{ if(!('onbeforeinstallprompt' in window)) return false; }catch(_){ return false; }
   return (Date.now()-_regT0) < REG_WAIT_MS;
 }
@@ -2469,6 +2484,7 @@ function regShow(key){
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
+  try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
   _regAt=key;
@@ -2634,7 +2650,9 @@ function regDoPrompt(){
   try{
     p.prompt();
     Promise.resolve(p.userChoice).then(function(r){
-      if(r && r.outcome==='accepted') regShow('okAdded');
+      var yes = !!(r && r.outcome==='accepted');
+      try{ statsRegStep(yes?'tapYes':'tapNo'); }catch(_){}
+      if(yes) regShow('okAdded');
       else regShow('aBrowser');                      // 断られたら手順で案内
     }).catch(function(){ regShow('aBrowser'); });
   }catch(_){ regShow('aBrowser'); }
@@ -2645,6 +2663,7 @@ function regDoPrompt(){
 function regEnd(){
   var e=regEls(); if(!e.w) return;
   var at=_regAt;
+  try{ if(at) statsRegStep('quit',at); }catch(_){}   // どこで閉じたかを数える
   e.w.classList.remove('on');
   regStripHide();
   _regAt=null;
@@ -3647,8 +3666,9 @@ function _stMarkExcluded(on){
 function _stQ(){ // キュー取得（壊れていたら初期化）
   var q=null;
   try{q=JSON.parse(localStorage.getItem(_stQKEY)||'null');}catch(_){}
-  if(!q||typeof q!=='object')q={v:{},s:{},hours:{},imp:{},clk:{},titles:{}};
+  if(!q||typeof q!=='object')q={v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}};
   q.v=q.v||{};q.s=q.s||{};q.hours=q.hours||{};q.imp=q.imp||{};q.clk=q.clk||{};q.titles=q.titles||{};
+  q.reg=q.reg||{};   // 古い版が残したキューにも足す＝作りかけのデータで落ちない
   return q;
 }
 function _stQSave(q){try{localStorage.setItem(_stQKEY,JSON.stringify(q));}catch(_){}}
@@ -3710,6 +3730,19 @@ function statsBannerClick(name){
   if(!_stEnabled())return;
   var q=_stQ();q.clk[name]=(q.clk[name]||0)+1;_stQSave(q);
 }
+// 登録案内の足あと（どこまで進み、どこで閉じたか）。既存の計測に相乗りするので
+// 通信は増えない。持つのは画面の名前と回数だけ＝個人を特定する情報は無い。
+//   at_◯◯   その画面に到達した
+//   quit_◯◯ その画面で閉じた
+//   ok       追加が完了した（端末が知らせてきた時だけ）
+//   tapYes / tapNo  1タップ追加の確認画面で、追加した／やめた
+function statsRegStep(kind,key){
+  if(!_stEnabled())return;
+  try{
+    var k=key?(kind+'_'+key):kind;
+    var q=_stQ(); q.reg[k]=(q.reg[k]||0)+1; _stQSave(q);
+  }catch(_){}
+}
 // Firestoreのフィールドパス用（数字始まり・記号・日本語もバッククォートで安全に）
 function _stFP(seg){return '`'+String(seg).replace(/\\/g,'\\\\').replace(/`/g,'\\`')+'`';}
 // commit リクエストJSONを組み立て（テスト可能な純関数）
@@ -3723,6 +3756,7 @@ function statsBuildCommit(q,day,devId,pingNeeded){
   for(k in q.hours)tf.push({fieldPath:'hours.'+_stFP(k),increment:{integerValue:String(q.hours[k])}});
   for(k in q.imp)tf.push({fieldPath:'banners.'+_stFP(k)+'.imp',increment:{integerValue:String(q.imp[k])}});
   for(k in q.clk)tf.push({fieldPath:'banners.'+_stFP(k)+'.clk',increment:{integerValue:String(q.clk[k])}});
+  for(k in q.reg)tf.push({fieldPath:'reg.'+_stFP(k),increment:{integerValue:String(q.reg[k])}});
   if(tf.length){
     writes.push({update:{name:docBase+'stats_daily/'+day,fields:{d:{stringValue:day}}},
                  updateMask:{fieldPaths:['d']},updateTransforms:tf});
@@ -3763,14 +3797,14 @@ function statsFlush(useBeacon){
     var sent=false;
     if(useBeacon&&navigator.sendBeacon){
       try{sent=navigator.sendBeacon(url,new Blob([json],{type:'application/json'}));}catch(_){sent=false;}
-      if(sent){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
+      if(sent){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
       return;
     }
     _stFlushing=true;
     fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:json,keepalive:!!useBeacon})
     .then(function(r){
       _stFlushing=false;
-      if(r.ok){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
+      if(r.ok){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
     })
     .catch(function(){_stFlushing=false;}); // 失敗時はキュー保持→次回再送
   }catch(_){_stFlushing=false;}
