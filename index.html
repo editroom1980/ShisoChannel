@@ -1438,7 +1438,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.83</div>
+    <div class="ps-version">version 2.84</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3577,7 +3577,10 @@ function loadRemoteSchedule(){
 //  ・イベントはローカルに集約し、10分毎＋離脱時にまとめて送信（書込最小化）
 //  ・全処理はtry/catchで隔離。計測が失敗しても再生には一切影響しない
 //  ・FIREBASE未設定時は完全に何もしない
-//  ・?nostat=1 を開いた端末は以後いっさい計測しない（制作側の確認を数字から外す）
+//  ・数えるのは公開サイト(https://shisochan.net の本番ページ)を開いた時だけ。
+//    localhost・file://・シミュレータ・検証版(lab.html)は自動的に対象外＝
+//    制作側の確認作業は、何もしなくても数字に入らない
+//  ・?nostat=1 を開いた端末は以後いっさい計測しない（自分の実機を外す用）
 // ══════════════════════════════════════════════
 var _stQKEY='shisochan_stats_queue_v1';
 var _stDevKEY='shisochan_device_id';
@@ -3588,7 +3591,18 @@ var _stImpLast={idx:-1,ts:0};
 var _stFlushing=false;
 // 除外中かどうかは読み込み時に確定させる（以降のどの計測より先に決まる）
 var _stExcl=(function(){try{return localStorage.getItem(_stExclKEY)==='1';}catch(_){return false;}})();
-function _stEnabled(){return !!(FIREBASE.projectId&&FIREBASE.apiKey)&&!_stExcl;}
+// 公開ホスト名。CNAMEと必ず一致させること（出荷前の検査C13が突き合わせて落とす）。
+// ここを変え忘れて引っ越すと、計測が黙って止まる。
+var _stHOST='shisochan.net';
+// 公開サイトで開いているか（localhost・file://・シミュレータはすべて偽）
+function _stOnPublicHost(){
+  try{return location.protocol==='https:'&&location.hostname===_stHOST;}catch(_){return false;}
+}
+// 数える対象のページか（検証版 lab.html は制作側の確認用なので数えない）
+function _stIsProdPage(){
+  try{return _stOnPublicHost()&&!/(^|\/)lab\.html$/i.test(location.pathname);}catch(_){return false;}
+}
+function _stEnabled(){return !!(FIREBASE.projectId&&FIREBASE.apiKey)&&!_stExcl&&_stIsProdPage();}
 function _stDay(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function _stDevId(){
   var id='';
@@ -3622,6 +3636,7 @@ function _stExclSwitch(){
 function _stMarkExcluded(on){
   try{
     if(!(FIREBASE.projectId&&FIREBASE.apiKey))return;
+    if(!_stOnPublicHost())return; // 公開サイト以外の端末は元々数えていないので印も要らない
     var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)
       +'/databases/(default)/documents/stats_devices/'+encodeURIComponent(_stDevId())
       +'?key='+encodeURIComponent(FIREBASE.apiKey)+'&updateMask.fieldPaths=excl';
