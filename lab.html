@@ -1156,6 +1156,10 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* ★横向きのiPhoneなど画面が低い時だけ、実測ではみ出した場合に詰める（regFit が付ける）。
    @media(height)は使わない＝iOSがアプリ内ブラウザ復帰時に判定を凍らせるため */
 #reg-box.tight{padding:12px 16px 12px;}
+/* ★詰めてもまだ入らない時だけボタンを2列にする（横向きで選択肢が多い画面）。
+   入るなら付かない＝誤発動しても何も変わらない。主ボタン(.go)だけは横いっぱいのまま */
+#reg-box.cols #reg-btns{display:grid;grid-template-columns:1fr 1fr;}
+#reg-box.cols #reg-btns .reg-btn.go{grid-column:1 / -1;}
 #reg-box.tight #reg-icon{width:44px;height:44px;margin-bottom:6px;border-radius:11px;}
 #reg-box.tight #reg-icon svg{width:27px;height:27px;}
 #reg-box.tight #reg-ttl{font-size:16px;margin-bottom:3px;}
@@ -1200,6 +1204,12 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 .rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.5;}
 /* 補足は直前の手順にぶら下げる。番号の幅ぶん下げて、手順の文の頭に揃える */
 .rs-sub{margin:4px 0 0 37px;font-size:15px;font-weight:600;color:#41504a;line-height:1.5;}
+/* 文の中に置くマーク。「押す物」だと分かるよう、上の大きなマークと同じ薄い枠に入れる。
+   大きさはemなので、詰め表示になっても文字と一緒に縮む */
+.rs-mk{display:inline-flex;align-items:center;justify-content:center;
+  width:1.5em;height:1.5em;vertical-align:-0.42em;margin:0 2px;
+  background:#f2f4f3;border-radius:.34em;}
+.rs-mk svg{width:1.05em;height:1.05em;display:block;}
 #rs-foot{display:flex;justify-content:flex-end;margin-top:13px;}
 #rs-help{border:0;background:var(--gold);color:#fff;border-radius:11px;padding:12px 20px;
   font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
@@ -1217,6 +1227,23 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight #rs-help{padding:10px 16px;font-size:15px;}
 /* 横向きなど「幅はあるが高さが足りない」時は手順を2列にして高さを半分にする */
 #reg-strip.wide #rs-txt{column-count:2;column-gap:20px;}
+/* ★幅が足りず文が折り返した時だけ、マークを少し小さくして字を詰め、1行に戻す。
+   「行末に2〜3文字だけ残す」形を作らないため（CLAUDE.mdルール10）。
+   実測して折り返した時にだけ付くので、収まっている画面は今までどおり何も変わらない。
+   ※tightより後に書く＝同じ強さなので、後勝ちでこちらが効く */
+#reg-strip.narrow #rs-icon{width:44px;height:44px;border-radius:11px;}
+#reg-strip.narrow #rs-icon svg{width:30px;height:30px;}
+#reg-strip.narrow #rs-ttl{font-size:15px;}
+#reg-strip.narrow .rs-t{font-size:16px;line-height:1.4;}
+#reg-strip.narrow .rs-sub{font-size:13px;}   /* 字下げ37pxは触らない＝文の頭が揃ったまま */
+/* 2列かつ極端に狭い横向き（iPhone SE横568x320など）で、上を詰めてもまだ折り返す時の2段目。
+   番号の丸も小さくして、補足の字下げ（丸23px＋すき間10px＝33px）を文の頭に合わせ直す */
+#reg-strip.narrow2 #rs-icon{width:36px;height:36px;border-radius:9px;}
+#reg-strip.narrow2 #rs-icon svg{width:25px;height:25px;}
+#reg-strip.narrow2 #rs-ttl{font-size:14px;}
+#reg-strip.narrow2 .rs-n{width:23px;height:23px;font-size:13px;}
+#reg-strip.narrow2 .rs-t{font-size:15px;}
+#reg-strip.narrow2 .rs-sub{font-size:12px;margin-left:33px;}
 /* ── 呼び戻し用の「？」。ホーム画面から開くようになれば出ない（2026-08-12承認） ── */
 #reg-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
   z-index:2147483646;display:none;width:46px;height:46px;border-radius:50%;
@@ -1412,7 +1439,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.72-lab（案内カードの作り直し・8種を統一）</div>
+    <div class="ps-version">version 2.76-lab（手順のマークを絵で表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2110,6 +2137,8 @@ function tourAskIfFirst(){
 // ══════════════════════════════════════════════
 var REG_KEY='shisochan_reg';
 var _regPrompt=null, _regAt=null, _regSeen=false;
+var _regT0=Date.now();          // ページを開いた時刻。1タップ追加が使えるようになるまでの待ちに使う
+var _regInstalled=false;        // 端末に「もう追加済み」と教えてもらえた場合
 // ?reg=1 で「まだ一度も見ていない状態」に戻す（実機で自動表示を確かめるため。?debug=1と同じ使い方）
 try{ if(/[?&]reg=1(&|$)/.test(location.search)) localStorage.removeItem(REG_KEY); }catch(_){}
 
@@ -2124,6 +2153,31 @@ window.addEventListener('appinstalled', function(){
   try{ localStorage.setItem(REG_KEY,'done'); }catch(_){}
   if(_regAt) regShow('okAdded');
 });
+// ★すでにホーム画面に追加してある人に、二度と案内を出さないための問い合わせ。
+//   ホーム画面のアイコンからではなくブラウザで開いた時も分かる（2026-08-12 Android実機で
+//   タブから0.2秒で判定できることを確認）。manifestの related_applications と対で働く。
+//   使えないブラウザ（iPhone等）では何も起きない＝今までどおり。
+//   記録には残さない＝あとで削除した人には、また案内が出せる
+try{
+  if(navigator.getInstalledRelatedApps){
+    navigator.getInstalledRelatedApps().then(function(list){
+      if(list && list.length) _regInstalled=true;
+    }).catch(function(){});
+  }
+}catch(_){}
+// ★Chromium系は「サイトへの関わり」が一定量たまるまで beforeinstallprompt を出さない。
+//   2026-08-12の実測：発火まで22.7秒かかった例と、120秒・11回操作しても出ない例があった。
+//   出るかどうかは端末側の判断で、こちらからは予測できない。
+//   ただし3秒で見切って手動案内に流すと、1タップで済むはずの人にまで長い手順を見せてしまう。
+//   → 見込みのあるブラウザでは少しの間だけ待ち、来なければ従来どおり手動案内に進む。
+//   待って何も来なくても、出る画面は今までと同じ＝待ち損ねても壊れない
+var REG_WAIT_MS=25000;
+function regMayGetPrompt(){
+  if(_regPrompt) return false;                 // もう来ている＝待つ必要なし
+  if(regIsApple()) return false;               // iPhone/iPadにはこの仕組みが無い
+  try{ if(!('onbeforeinstallprompt' in window)) return false; }catch(_){ return false; }
+  return (Date.now()-_regT0) < REG_WAIT_MS;
+}
 
 function regHome(){                       // ホーム画面から開いているか
   try{
@@ -2172,12 +2226,22 @@ var REG={
  already:{t:'すでに登録できています',
         d:['いまホーム画面のアイコンから','開いています。このままお使い','ください。'],
         b:[{l:'とじる',go:null,p:1}]},
+ // okAdded は beforeinstallprompt が通った時だけ＝Chromium系＝Android/PC。iPhoneには出ない
  okAdded:{t:'追加できました',
         d:['ホーム画面のアイコンから','開いてお使いください。'],
-        b:[{l:'とじる',go:null,p:1},{l:'アイコンが無い時',go:'findIcon'}]},
- // ★機種によって、新しいアイコンが2ページ目やアプリ一覧に入ることがある
- findIcon:{t:'アイコンをさがします',
+        b:[{l:'とじる',go:null,p:1},{l:'アイコンが無い時',go:'findIconA'}]},
+ // ★機種によって、新しいアイコンが2ページ目やアプリ一覧に入ることがある。
+ //   ★アプリ一覧の出し方はiPhoneとAndroidで全く違うので必ず分ける（2026-08-12訂正）。
+ //     Androidはホーム画面を下から上へなぞるとアプリ一覧。
+ //     iPhoneで下から上へなぞるのはホームに戻る操作で、一覧は出ない。
+ //     iPhoneのAppライブラリは「左へめくり続けて最後」／検索は画面の真ん中を下へ。
+ findIconA:{t:'アイコンをさがします',
         d:['ホーム画面を左右にめくり、','全部のページを見てください。','画面を下から上へなぞると','アプリの一覧も出ます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'もう一度手順を見る',go:'@back'}]},
+ // ★2026-08-12 iPhone 17(iOS 26.5)で実測: 追加したアイコンは1ページ目ではなく2ページ目に入った。
+ //   だから「めくって全ページを見る」を先に置く。さらにめくった先がAppライブラリ
+ findIconI:{t:'アイコンをさがします',
+        d:['ホーム画面を左へめくり、','全部のページを見てください。','さらにめくると','アプリの一覧も出ます。'],
         b:[{l:'とじる',go:null,p:1},{l:'もう一度手順を見る',go:'@back'}]},
 
  // ── LINEやXの中で開いている場合（OSに関係なく、まず開き直してもらう）
@@ -2196,24 +2260,43 @@ var REG={
  iEdit:{t:'一覧に見当たらない時',
         d:['一覧の一番下にある','「アクションを編集」を押すと','足すことができます。'],
         b:[{l:'とじる',go:null,p:1},{l:'それでも無い',go:'iSafari'}]},
+ // ★「古い機種ではSafari以外は不可」と書いていたが誤り。iOS 16.4(2023年3月)以降は
+ //   ChromeなどでもiPhoneのホーム画面に追加できる。ただし古いiOSやアプリ内では出ないので
+ //   「できないことがある」に改めた（2026-08-12訂正）
  iSafari:{t:'Safariで開き直します',
-        d:['古い機種では、Safari以外だと','ホーム画面に追加できません。','Safariで開いてお試しください。'],
+        d:['Safari以外では、追加が','できないことがあります。','Safariで開いてお試しください。'],
         b:[{l:'とじる',go:null,p:1}]},
 
  // ── Android系（中央の窓で選ぶ → 上の帯でやる）─────────
  aBrowser:{t:'いま何で見ていますか',
         d:['お使いのブラウザを','選んでください。'],
         b:[{l:'Chrome',go:'sChrome'},{l:'Edge',go:'sEdge'},{l:'Firefox',go:'sFire'},
-           {l:'Galaxyの標準ブラウザ',go:'sSams'},{l:'その他・わからない',go:'sOther'}]},
+           {l:'Galaxyの標準ブラウザ',go:'sSams'},{l:'らくらく・かんたんスマホ',go:'rakuraku'},
+           {l:'その他・わからない',go:'sOther'}]},
 
  // ── パソコン・特別な機種・逃げ道 ───────────────────
+ // ★「パソコンにはホーム画面がありません」と書いていたが誤り。Mac Safariは共有→「Dockに追加」、
+ //   WindowsのChrome/Edgeは「⋮」→インストールでアイコンにできる。誤った断定をやめた（2026-08-12訂正）
  pc:{t:'パソコンでご覧の場合',
-        d:['パソコンにはホーム画面が','ありません。お気に入りに','入れてお使いください。'],
+        d:['お気に入り（ブックマーク）に','入れておくと、次から','すぐ開けます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'アイコンで開きたい',go:'pcApp'}]},
+ pcApp:{t:'デスクトップに置く',
+        d:['Macは「共有」から','「Dockに追加」。Windowsは','ChromeやEdgeの「⋮」から','「インストール」を選びます。'],
         b:[{l:'とじる',go:null,p:1}]},
- // ★らくらくスマホ等は追加自体ができない機種がある（無理をさせない）
- rakuraku:{t:'かんたんスマホの方へ',
-        d:['この種類の機種は、追加が','できないことがあります。','ブックマークに入れるか、','ご家族にご相談ください。'],
-        b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},
+ // ★シニア向け機種。2026-08-12にメーカー・キャリアの取説で手順を確定させた
+ //   ・らくらくスマホ(FCNT)＝独自の「インターネット」。しおり→登録→［貼る］で置ける
+ //   ・かんたんスマホ(京セラ/Y!mobile)＝Yahoo!。メニュー→ホーム画面に追加
+ //   ・BASIO/あんしんスマホ(京セラ・シャープ)＝メニューに「ホーム画面に追加」がある
+ //   出典: ドコモ F-53E取説 p.68 ／ FCNT FAQ 20668・ガイド24344 ／ Y!mobile かんたんスマホ3 07-01
+ //        ／ au BASIO active3 オンラインマニュアル m_06_01_00
+ rakuraku:{t:'お使いの機種はどれですか',
+        d:['機種の名前を選んでください。'],
+        b:[{l:'らくらくスマートフォン',go:'sRaku'},{l:'かんたんスマホ',go:'sYahoo'},
+           {l:'BASIO・あんしんスマホ',go:'sOther'},{l:'わからない',go:'rakuMark'}]},
+ // 機種名が分からない人向け。しおりの有無だけで確実に振り分けられる
+ rakuMark:{t:'画面の上を見てください', ic:'book',
+        d:['このマーク（しおり）が','ありますか。'],
+        b:[{l:'ある',go:'sRaku',p:1},{l:'無い',go:'sOther'}]},
  altBookmark:{t:'ほかの見方もあります',
         d:['無理に追加しなくても、','「お気に入り」に入れると','次から開きやすくなります。','ご家族に頼むのも近道です。'],
         b:[{l:'とじる',go:null,p:1}]},
@@ -2221,31 +2304,47 @@ var REG={
  // ── つまずいた時（帯の「困った時」から）─────────────
  troubleI:{t:'うまくいかない時',
         d:['よくあるつまずきです。','あてはまる物を選んでください。'],
-        b:[{l:'「ホーム画面に追加」が無い',go:'iEdit'},{l:'マークが見つからない',go:'iDots'},
-           {l:'アイコンが出ない',go:'findIcon'},{l:'別の方法で見る',go:'altBookmark'},
+        b:[{l:'一覧に見当たらない',go:'iEdit'},{l:'マークが見つからない',go:'iDots'},
+           {l:'アイコンが出ない',go:'findIconI'},{l:'別の方法で見る',go:'altBookmark'},
            {l:'手順にもどる',go:'@back',p:1}]},
  troubleA:{t:'うまくいかない時',
         d:['よくあるつまずきです。','あてはまる物を選んでください。'],
-        b:[{l:'項目が見つからない',go:'sOther'},{l:'アイコンが出ない',go:'findIcon'},
-           {l:'かんたんスマホの方',go:'rakuraku'},{l:'別の方法で見る',go:'altBookmark'},
+        b:[{l:'項目が見つからない',go:'sOther'},{l:'アイコンが出ない',go:'findIconA'},
+           {l:'らくらく・かんたんスマホ',go:'rakuraku'},{l:'別の方法で見る',go:'altBookmark'},
            {l:'手順にもどる',go:'@back',p:1}]},
  troubleIn:{t:'開き直せない時',
         d:['このまま（アプリの中）でも','放送は見られます。'],
         b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},
+ // らくらくスマホ専用。つまずき方が他機種と違う（置き場所が箱の中・シンプルモードでは不可）
+ troubleR:{t:'うまくいかない時',
+        d:['よくあるつまずきです。','あてはまる物を選んでください。'],
+        b:[{l:'「貼る」が出なかった',go:'sRaku2'},{l:'アイコンが見つからない',go:'rakuFind'},
+           {l:'しおりが見当たらない',go:'rakuSimple'},{l:'別の方法で見る',go:'altBookmark'},
+           {l:'手順にもどる',go:'@back',p:1}]},
+ // ★貼ったアイコンはホーム画面直下ではなく「よく使うブックマーク」という箱の中に入る（取説 p.45）
+ // ★らくらくスマホのホーム画面は上下スライド。カテゴリは押すと開く（取説「ホーム画面の見かた」）
+ rakuFind:{t:'アイコンの置き場所',
+        d:['ホーム画面を下にたどると','「よく使うブックマーク」が','あります。押すと開きます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'もう一度手順を見る',go:'@back'}]},
+ // ★シンプルモードでは貼り付け自体ができない（FCNT FAQ 20668が明記）。戻し方はFAQ 20649の逐語
+ rakuSimple:{t:'しおりが見当たらない',
+        d:['シンプルモードでは貼れません。','ホーム画面を左へめくると','「標準モードに切替」が出ます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'別の機種かもしれない',go:'sOther'},
+           {l:'別の方法を見る',go:'altBookmark'}]},
 
  // ══ ここから下は「上部のやりかたカード」（strip:1）══════════════
  //  ★押させる物は無い。手順を出したまま、端末のメニューを操作してもらう。
  //  n=番号つきの手順／sub=直前の手順にぶら下げる補足（見当たらない時・次に何が出るか）。
  //  補足は「その手順の直後」に置く＝つまずく場所で読める（2026-08-12指示）。
  //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
- sShare:{strip:1, ic:'share', tr:'troubleI', h:'この順に押していきます',
+ sShare:{strip:1, ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'このマークを押す'},
            {sub:'見当たらない時は「表示を増やす」'},
            {sub:'古い機種は一覧を下へたどります'},
            {n:2,t:'「ホーム画面に追加」'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:3,t:'右上の「追加」を押す'}]},
- sDots:{strip:1, ic:'dots', tr:'troubleI', h:'この順に押していきます',
+ sDots:{strip:1, ic:'dots', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'このマークを押す'},
            {n:2,t:'「共有」を押す'},
            {sub:'見当たらない時は「表示を増やす」'},
@@ -2254,45 +2353,76 @@ var REG={
            {sub:'→ 名前を決める画面が出ます'},
            {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
- sChrome:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押していきます',
-        s:[{n:1,t:'右上の「⋮」を押す'},
+ sChrome:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'右上の{menu}を押す'},
            {n:2,t:'「アプリをインストール」'},
            {sub:'「ホーム画面に追加」の時もあります'},
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
- sEdge:{strip:1, ic:'bars', tr:'troubleA', h:'この順に押していきます',
-        s:[{n:1,t:'右下の「≡」を押す'},
+ sEdge:{strip:1, ic:'bars', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'右下の{bars}を押す'},
            {n:2,t:'「電話に追加」を押す'},
            {sub:'横にめくると出てきます'},
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
- sFire:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押していきます',
-        s:[{n:1,t:'右上の「⋮」を押す'},
+ sFire:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'右上の{menu}を押す'},
            {n:2,t:'「その他」を押す'},
            {sub:'メニューの下のほうにあります'},
            {n:3,t:'「ホーム画面にアプリを追加」'},
            {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
- sSams:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押していきます',
+ sSams:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下のメニューを押す'},
-           {sub:'「≡」か「⋮」の形です'},
+           {sub:'{bars}か{menu}の形です'},
            {n:2,t:'「ページを追加」を押す'},
            {sub:'→ 追加先をえらぶ画面が出ます'},
            {n:3,t:'「ホーム画面」を選ぶ'},
            {n:4,t:'「追加」を押す'}]},
- sOther:{strip:1, tr:'troubleA', h:'この順に押していきます',
-        s:[{n:1,t:'「⋮」か「≡」を押す'},
+ // ★らくらくスマホ(FCNT)。他機種と違い「共有」も「⋮」も出てこない。ドコモF-53E取説p.68の逐語
+ //   「登録したブックマークをホーム画面の『よく使うブックマーク』カテゴリに貼り付けるかどうかの
+ //     確認画面が表示されますので、［貼る］／［貼らない］を選択して設定できます」
+ sRaku:{strip:1, ic:'book', tr:'troubleR', h:'この順に押します',
+        s:[{n:1,t:'上の{book}を押す（しおり）'},
+           {sub:'画面の上、「検索」のとなり'},   // FCNT FAQ 20668 の逐語「「検索」ボタン右隣」
+           {n:2,t:'「現在のページを登録」'},
+           {n:3,t:'「登録する」を押す'},
+           {sub:'→ 貼るかどうか聞かれます'},
+           {n:4,t:'「貼る」を押す'},
+           {sub:'「よく使うブックマーク」に入ります'}]},
+ // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
+ sRaku2:{strip:1, ic:'book', tr:'troubleR', h:'あとから貼る場合',
+        s:[{n:1,t:'上の「しおり」を押す'},
+           {n:2,t:'「メニュー」を押す'},
+           {n:3,t:'「ホーム画面に貼る」'},
+           {n:4,t:'このページを選ぶ'},
+           {n:5,t:'「ホーム画面に貼る」'},
+           {sub:'同じ言葉を2回押します'}]},
+ // ★かんたんスマホ(京セラ/Y!mobile)。ブラウザはYahoo!。Y!mobile公式マニュアル 07-01 の逐語
+ //   マークの形はY!mobileのマニュアル画像（kantan-sumaho-3_icon_190）で「⋮」と確認済み。
+ //   位置はマニュアルに記載が無いため断定しない
+ sYahoo:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'{menu}を押す'},
+           {sub:'画面の下か右上にあります'},
+           {n:2,t:'「ホーム画面に追加」'},
+           {n:3,t:'「追加」を押す'},
+           {n:4,t:'「OK」を押す'}]},
+ sOther:{strip:1, tr:'troubleA', h:'この順に押します',
+        s:[{n:1,t:'{menu}か{bars}を押す'},
            {n:2,t:'「ホーム画面に追加」を探す'},
-           {sub:'「アプリをインストール」の時もあります'},
+           {sub:'「アプリをインストール」とも出ます'},
            {n:3,t:'出た画面で「追加」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★アプリ内ブラウザからの開き直し。言葉はアプリごとに少し違うため幅を持たせる
- sInApp:{strip:1, ic:'dots', tr:'troubleIn', h:'ブラウザで開き直します',
-        s:[{n:1,t:'右下などの「…」を押す'},
+ // ★位置はアプリで違う。LINEのAndroid版は右上、iPhone版とXは画面の下（各社の案内で確認）。
+ //   「右下などの」と決めつけていたので両方を書くよう改めた（2026-08-12訂正）
+ sInApp:{strip:1, ic:'dots', tr:'troubleIn', h:'ブラウザで開き直す',
+        s:[{n:1,t:'右下か右上のマークを押す'},
+           {sub:'{dots}や{bars}の形です'},
            {n:2,t:'「ブラウザで開く」を押す'},
-           {sub:'似た言葉でも大丈夫です'},
+           {sub:'「Safariで開く」でも同じ'},
            {sub:'→ ブラウザが開き直ります'},
            {n:3,t:'もう一度「ホーム画面に置く」'}]}
 };
@@ -2308,7 +2438,10 @@ var REG_ICON={
  menu:'<svg viewBox="0 0 24 24" fill="currentColor">'+
       '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>',
  bars:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">'+
-      '<path d="M4 6h16M4 12h16M4 18h16"/></svg>'
+      '<path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+ // らくらくスマホの「インターネット」は画面上部に“しおり”ボタンがある（FCNT/ドコモの取説で確認）
+ book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round">'+
+      '<path d="M6.5 3.2h11a1.3 1.3 0 0 1 1.3 1.3v16.3l-6.8-4.4-6.8 4.4V4.5A1.3 1.3 0 0 1 6.5 3.2z"/></svg>'
 };
 function regEls(){
   return {w:document.getElementById('reg'), box:document.getElementById('reg-box'),
@@ -2354,6 +2487,22 @@ function regShow(key){
 //  中央の窓と暗幕をしまい、画面上端に手順を出したままにする。
 //  押させる物が無いので、共有シートやメニューを開いたままでも読める
 var _regStripLast=null;
+// ★手順の文の中に、マークを「絵」で描いて入れる（2026-08-12承認）。
+//   「⋮」「≡」は文字として出すと端末のフォント次第で形が変わり、高齢者には読み取れない。
+//   実物の写真は機種とOSの版で違ってしまうので使わない。こちらで描いた図なら版が変わっても外れない。
+//   文中の {menu} {bars} {dots} {share} {book} を、その場でマークに差し替える。
+//   差し替える中身は REG_ICON（こちらで用意した定数）だけ＝外から来た文字は入らない
+function regMarkText(el, str){
+  var parts=String(str).split(/\{(\w+)\}/);   // 偶数番目が文、奇数番目がマーク名
+  for(var i=0;i<parts.length;i++){
+    if(i%2===0){ if(parts[i]) el.appendChild(document.createTextNode(parts[i])); }
+    else if(REG_ICON[parts[i]]){
+      var s=document.createElement('span'); s.className='rs-mk';
+      s.innerHTML=REG_ICON[parts[i]];
+      el.appendChild(s);
+    }else{ el.appendChild(document.createTextNode('{'+parts[i]+'}')); }  // 名前を間違えたら気づけるように
+  }
+}
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
@@ -2367,13 +2516,13 @@ function regStripShow(key){
   var item=null;
   (sc.s||[]).forEach(function(o){
     if(o.sub!==undefined){
-      var sv=document.createElement('div'); sv.className='rs-sub'; sv.textContent=o.sub;
+      var sv=document.createElement('div'); sv.className='rs-sub'; regMarkText(sv,o.sub);
       (item||tx).appendChild(sv); return;
     }
     item=document.createElement('div'); item.className='rs-item';
     var row=document.createElement('div'); row.className='rs-step';
     var nn=document.createElement('span'); nn.className='rs-n'; nn.textContent=o.n;
-    var tt=document.createElement('span'); tt.className='rs-t'; tt.textContent=o.t;
+    var tt=document.createElement('span'); tt.className='rs-t'; regMarkText(tt,o.t);
     row.appendChild(nn); row.appendChild(tt); item.appendChild(row); tx.appendChild(item);
   });
   st.classList.add('on');
@@ -2383,7 +2532,10 @@ function regStripShow(key){
 // 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
 function regStripFit(){
   var st=document.getElementById('reg-strip'); if(!st) return;
+  // ★前の画面の詰めを必ず先に全部外す。narrowを残したまま測ると縮んだ寸法で
+  //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
   st.classList.remove('tight'); st.classList.remove('wide');
+  st.classList.remove('narrow'); st.classList.remove('narrow2');
   var top=st.getBoundingClientRect().top;
   // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
   var limit=Math.min(innerHeight-top-10, innerHeight*0.6);
@@ -2392,6 +2544,35 @@ function regStripFit(){
   if(st.getBoundingClientRect().height>limit && st.getBoundingClientRect().width>=420) st.classList.add('wide');
   // それでも入らない時は詰めたまま。画面外に出さないことを優先
   if(st.getBoundingClientRect().bottom>innerHeight-4) st.classList.add('tight');
+  regStripNoWrap(st);
+}
+// 幅が足りずに折り返した文があるかを実測し、あった時だけ詰める（無ければ何もしない＝冪等）
+function regStripNoWrap(st){
+  st=st||document.getElementById('reg-strip'); if(!st) return;
+  st.classList.remove('narrow'); st.classList.remove('narrow2');
+  // ★「行の高さ」で数えると、行の高さを指定していない要素で必ず1行と誤答する。
+  //   1行に必要な幅を実測して、入る欄より広いかで判定する。
+  //   ★文の中のマーク（絵）も幅を持つので、文字だけを測る方式では足りない。
+  //     その場に複製を置いて折り返しを切って測る＝中身が何であっても正しく測れる
+  function wrapped(){
+    var list=st.querySelectorAll('#rs-ttl,#rs-txt .rs-t,#rs-txt .rs-sub');
+    for(var i=0;i<list.length;i++){
+      var e=list[i], cs=getComputedStyle(e);
+      var c=e.cloneNode(true);
+      c.style.cssText='position:absolute;left:-9999px;top:0;visibility:hidden;'+
+        'white-space:nowrap;width:auto;max-width:none;margin:0;';
+      e.parentNode.appendChild(c);
+      var need=c.getBoundingClientRect().width;
+      c.parentNode.removeChild(c);
+      var have=e.getBoundingClientRect().width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+      if(need > have+0.5) return true;
+    }
+    return false;
+  }
+  if(wrapped()){
+    st.classList.add('narrow');
+    if(wrapped()) st.classList.add('narrow2');   // それでも入らない極端に狭い横向き向け
+  }
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
@@ -2400,7 +2581,7 @@ function regStripHide(){
 function regFabSync(){
   try{
     var f=document.getElementById('reg-fab'); if(!f) return;
-    var show = hasPoweredOn && !regHome() && _tourMode===0 && !isExpanded;
+    var show = hasPoweredOn && !regHome() && !_regInstalled && _tourMode===0 && !isExpanded;
     try{ if(isSilk || isTvPcMode()) show=false; }catch(_){}
     try{ if(document.getElementById('reg').classList.contains('on')) show=false; }catch(_){}
     var st=document.getElementById('reg-strip');
@@ -2418,8 +2599,15 @@ function regFabSync(){
 function regFit(){
   var e=regEls(); if(!e.box) return;
   e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
-  e.box.classList.remove('tight');
+  e.box.classList.remove('tight'); e.box.classList.remove('cols');
   if(e.box.getBoundingClientRect().height > innerHeight-12) e.box.classList.add('tight');
+  // 詰めてもまだ入らない時だけ2列にする。実測してから付けるので、入る画面は今までどおり1列
+  if(e.box.getBoundingClientRect().height > innerHeight-12){
+    e.box.classList.add('cols');
+    // ★2列にするとボタンが半分の幅になり、長い名前が折り返してしまう。
+    //   横向きで発動する仕組みなので幅には余裕がある。窓ごと広げて1行に戻す
+    e.box.style.width=Math.min(innerWidth-24, 560)+'px';
+  }
 }
 function regPick(b){
   if(b.go==='@prompt'){ regDoPrompt(); return; }
@@ -2485,6 +2673,8 @@ function regSchedule(){
 function regMaybeOffer(){
   if(_regSeen || _regAt) return;
   if(regHome()) return;                 // すでにホーム画面から開いている
+  if(_regInstalled) return;             // 端末が「もう追加済み」と答えた（ブラウザで開いていても分かる）
+  if(regMayGetPrompt()) return;         // 1タップ追加が使えるようになるのを少しだけ待つ
   if(!hasPoweredOn) return;             // 放送を見始めるまでは出さない
   if(_tourMode!==0) return;             // 使い方の説明が出ている間は出さない
   if(isExpanded) return;                // 全画面で見ている最中は割り込まない
