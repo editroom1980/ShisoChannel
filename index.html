@@ -1438,7 +1438,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.86</div>
+    <div class="ps-version">version 2.87</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2264,7 +2264,7 @@ var REG={
  // ── LINEやXの中で開いている場合（OSに関係なく、まず開き直してもらう）
  inApp:{t:'このままでは追加できません',
         d:['LINEなどの中で見ているため','ホーム画面に置けません。'],
-        b:[{l:'開き直し方を見る',go:'sInApp',p:1},{l:'とじる',go:null}]},
+        b:[{l:'ブラウザで開く',go:'@escape',p:1},{l:'とじる',go:null}]},
 
  // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
  iShare:{t:'このマークを探します', ic:'share',
@@ -2636,6 +2636,7 @@ function regFit(){
 }
 function regPick(b){
   if(b.go==='@prompt'){ regDoPrompt(); return; }
+  if(b.go==='@escape'){ regDoEscape(); return; }
   if(b.go==='@back'){                 // 「手順にもどる」＝直前の帯へ
     if(_regStripLast && REG[_regStripLast]) regShow(_regStripLast);
     else regShow('route');
@@ -2643,6 +2644,41 @@ function regPick(b){
   }
   if(!b.go){ regEnd(); return; }
   regShow(b.go);
+}
+// LINEなどアプリ内ブラウザから、外のブラウザへ開き直す（2026-08-13 実機で確認）
+//   ・LINE  … 移動先に openExternalBrowser=1 を付けると外のブラウザへ渡してくれる。
+//             LINE公式の指定。既定のブラウザが開くので利用者の設定を尊重できる。
+//             公式の説明はメッセージ内リンク向けだが、中のブラウザからの移動でも
+//             効くことを iPhone の実機で確認済み
+//   ・iPhoneのその他(Instagram等) … https を x-safari-https に替えるとSafariが開く（実機確認済み）
+//   ・Android … intent:// で外部ブラウザを呼ぶ（未検証。効かなくても下の保険で従来案内に戻る）
+// 効かなかった時は、少し待って従来どおりの手動案内へ進む＝袋小路を作らない。
+// 成功した時はこの画面から離れるので、保険は画面が見えている時だけ働かせる。
+function regDoEscape(){
+  var moved=false;
+  try{
+    var u=navigator.userAgent;
+    var url=location.href.split('#')[0];
+    if(/Line\//.test(u)){
+      location.href = url + (url.indexOf('?')>=0?'&':'?') + 'openExternalBrowser=1';
+      moved=true;
+    }else if(regIsApple()){
+      location.href = 'x-safari-' + url;
+      moved=true;
+    }else{
+      location.href = 'intent://' + location.host + location.pathname + location.search
+        + '#Intent;scheme=https;action=android.intent.action.VIEW;end';
+      moved=true;
+    }
+  }catch(_){}
+  // 保険：開き直せなかった場合だけ、従来の手動案内へ
+  setTimeout(function(){
+    try{
+      if(document.hidden) return;          // 外のブラウザへ移った＝ここはもう裏側
+      if(_regAt!=='inApp') return;          // 利用者が別の画面へ動いた
+      regShow('sInApp');
+    }catch(_){}
+  }, moved?2500:0);
 }
 function regDoPrompt(){
   if(!_regPrompt){ regShow('aBrowser'); return; }   // 使えなくなっていたら手順案内へ
