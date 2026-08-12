@@ -43,8 +43,7 @@
   "related_applications": [
     {
       "platform": "webapp",
-      "url": "./manifest-lab.json",
-      "id": "/lab"
+      "url": "./manifest-lab.json"
     }
   ]
 }

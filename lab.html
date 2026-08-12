@@ -16,7 +16,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=132">
 <!-- Android(Chrome)はapple-*のmetaを見ない。ホーム画面に追加した時にアドレスバーを消して
      アプリとして開くにはmanifestが要る（iOSは従来どおり上のmetaで動く） -->
-<link rel="manifest" href="manifest-lab.json?v=282">
+<link rel="manifest" href="manifest-lab.json">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
@@ -1439,7 +1439,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.81b-lab（丸アイコンの名前を変えて確実に更新）</div>
+    <div class="ps-version">version 2.82-lab（追加済みの端末で詰まる道を追加）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2312,9 +2312,14 @@ var REG={
            {l:'手順にもどる',go:'@back',p:1}]},
  troubleA:{t:'うまくいかない時',
         d:['よくあるつまずきです。','あてはまる物を選んでください。'],
-        b:[{l:'項目が見つからない',go:'sOther'},{l:'アイコンが出ない',go:'findIconA'},
-           {l:'らくらく・かんたんスマホ',go:'rakuraku'},{l:'別の方法で見る',go:'altBookmark'},
-           {l:'手順にもどる',go:'@back',p:1}]},
+        b:[{l:'「起動」と出ている',go:'alreadyIn'},{l:'項目が見つからない',go:'sOther'},
+           {l:'アイコンが出ない',go:'findIconA'},{l:'らくらく・かんたんスマホ',go:'rakuraku'},
+           {l:'別の方法で見る',go:'altBookmark'},{l:'手順にもどる',go:'@back',p:1}]},
+ // ★すでに入っている端末では、メニューが「ホーム画面に追加」から「(アプリ名)を起動」に変わる。
+ //   ホーム画面からアイコンだけ消した人がこの状態になり、追加の項目を探して詰まる（2026-08-12 実機で確認）
+ alreadyIn:{t:'すでに入っています',
+        d:['この端末には追加済みです。','メニューの「起動」を押せば','そのまま開けます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'アイコンが見当たらない',go:'findIconA'}]},
  troubleIn:{t:'開き直せない時',
         d:['このまま（アプリの中）でも','放送は見られます。'],
         b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},

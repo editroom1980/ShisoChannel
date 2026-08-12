@@ -44,24 +44,6 @@
     {
       "platform": "webapp",
       "url": "./manifest.json"
-    },
-    {
-      "platform": "webapp",
-      "url": "./manifest.json?v=282"
-    },
-    {
-      "platform": "webapp",
-      "url": "./manifest.json",
-      "id": "/"
-    },
-    {
-      "platform": "webapp",
-      "url": "./manifest.json",
-      "id": "https://shisochan.net/"
-    },
-    {
-      "platform": "webapp",
-      "url": "https://shisochan.net/manifest.json"
     }
   ]
 }
