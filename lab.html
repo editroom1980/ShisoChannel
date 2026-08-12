@@ -1168,6 +1168,41 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 .reg-btn:focus{outline:3px solid var(--green);outline-offset:2px;}
 .reg-btn:focus:not(:focus-visible){outline:none;}
 
+/* ── 上部の「やりかた帯」（登録を実行する段階だけ）──
+   ★共有シートやブラウザのメニューは画面の下〜半分を覆い、開いている間は
+     こちらのボタンを押せない（押した瞬間メニューが閉じる。2026-08-12実機で確認）。
+     だから「やる」段階は画面の上端に手順を出したままにする。
+     暗幕なし・押す必要なし＝端末の操作を一切妨げない。
+     iOSの共有シートは下から出るため上端の帯は隠れない（実測）。 */
+#reg-strip{position:fixed;left:0;right:0;top:0;z-index:2147483647;display:none;
+  background:#fff;color:#1a2520;box-shadow:0 3px 16px rgba(0,0,0,.4);
+  padding:8px 8px 10px;padding-top:calc(8px + env(safe-area-inset-top));
+  word-break:normal;line-break:strict;}
+#reg-strip.on{display:block;}
+/* 1段目：絵＋手順＋×。狭い機種(320px)でも手順1行(全角12字)が折り返さない幅配分 */
+#rs-main{display:flex;gap:8px;align-items:flex-start;}
+#rs-icon{flex:0 0 auto;width:40px;height:40px;border-radius:11px;background:#f2f4f3;color:#1a2520;
+  display:flex;align-items:center;justify-content:center;margin-top:2px;}
+#rs-icon svg{width:27px;height:27px;display:block;}
+#rs-txt{flex:1 1 auto;min-width:0;font-size:17px;font-weight:700;line-height:1.55;}
+#rs-txt .note{font-size:14px;font-weight:600;color:#41504a;}
+#rs-close{flex:0 0 auto;border:0;background:#ececec;color:#41504a;width:40px;height:40px;border-radius:10px;
+  font-size:20px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;
+  -webkit-tap-highlight-color:transparent;}
+/* 2段目：困った時（右寄せ） */
+#rs-foot{display:flex;justify-content:flex-end;margin-top:6px;}
+#rs-help{border:0;background:var(--gold);color:#fff;border-radius:10px;padding:11px 16px;
+  font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;}
+/* ── 呼び戻し用の「？」。ホーム画面から開くようになれば出ない（2026-08-12承認） ── */
+#reg-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+  z-index:2147483646;display:none;width:46px;height:46px;border-radius:50%;
+  border:2px solid rgba(231,199,102,.85);background:rgba(30,58,40,.88);color:var(--gold2);
+  font-size:21px;font-weight:700;cursor:pointer;font-family:inherit;
+  align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color:transparent;}
+#reg-fab.on{display:flex;}
+
 /* 実測値の画面表示（?debug=1 の時だけ）。原因を推測せず数値で確かめるための保険 */
 #tv-debug{
   position:fixed;right:8px;top:8px;z-index:9999;
@@ -1354,7 +1389,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.69-lab（4ブラウザの手順を実機で確定）</div>
+    <div class="ps-version">version 2.70-lab（登録案内を全面改良）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1624,6 +1659,16 @@ html.tvpc #settings-panel .set-link{
     <div id="reg-btns"></div>
   </div>
 </div>
+<!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
+<div id="reg-strip">
+  <div id="rs-main">
+    <div id="rs-icon"></div>
+    <div id="rs-txt"></div>
+    <button id="rs-close" title="とじる">×</button>
+  </div>
+  <div id="rs-foot"><button id="rs-help">困った時</button></div>
+</div>
+<button id="reg-fab" title="ホーム画面への追加案内">？</button>
 
 <!-- 実測値の表示（?debug=1 の時だけ見える） -->
 <div id="tv-debug"></div>
@@ -1989,6 +2034,17 @@ function tourAskIfFirst(){
     var np=_tourSeq.indexOf(cur);
     tourGo(np>=0?np:Math.min(_tourPos,Math.max(0,_tourSeq.length-1)));
   });
+  // 上部のやりかた帯：「困った時」と「×」
+  var rh=document.getElementById('rs-help');
+  if(rh) rh.addEventListener('click', function(ev){ ev.stopPropagation();
+    var sc=REG[_regAt]; regShow((sc&&sc.tr)||'start'); });
+  var rx=document.getElementById('rs-close');
+  if(rx) rx.addEventListener('click', function(ev){ ev.stopPropagation(); regEnd(); });
+  // 呼び戻し用の「？」。ホーム画面から開くようになれば regFabSync が出さない
+  var rf=document.getElementById('reg-fab');
+  if(rf) rf.addEventListener('click', function(ev){ ev.stopPropagation();
+    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
+    regShow(regHome()?'already':'start'); });
   // 設定の「ホーム画面に登録する」から、いつでもやり直せる
   var lr=document.getElementById('lnk-reg');
   if(lr) lr.addEventListener('click', function(){
@@ -2063,55 +2119,39 @@ function regIsPc(){                       // パソコン＝ホーム画面が�
 
 //  画面の定義。d は行ごとの配列（折り返しを決め打ちするため）
 var REG={
+ // ── 入口（中央の窓）─────────────────────────────
  start:{t:'ホーム画面に置きませんか',
         d:['次からアイコンを押すだけで','すぐに見られます。'],
         b:[{l:'ホーム画面に置く',go:'route',p:1},{l:'あとにする',go:null}]},
 
- // ── Android系：ボタン1つ
+ // ── Android系：ボタン1つ（Chrome・Edgeで実際に発火することを実機で確認済み）
  oneTap:{t:'ホーム画面に追加します',
         d:['下のボタンを押すと、','確認の画面が出ます。'],
         b:[{l:'追加する',go:'@prompt',p:1},{l:'やめる',go:null}]},
  already:{t:'すでに登録できています',
         d:['いまホーム画面のアイコンから','開いています。このままお使い','ください。'],
         b:[{l:'とじる',go:null,p:1}]},
- // ★Chromeの追加のあと、端末側からもう一度「ホーム画面に追加」と聞かれることがある
- //   （2026-08-12 Android 15 + Chrome の実機エミュレータで確認）。ここで終わったと
- //   思って閉じるとアイコンが置かれないため、その場合の逃げ道も書く
  okAdded:{t:'追加できました',
-        d:['ホーム画面のアイコンから','開いてお使いください。','見当たらない時は、もう一度','「ホーム画面に追加」を押す。'],
-        b:[{l:'とじる',go:null,p:1}]},
+        d:['ホーム画面のアイコンから','開いてお使いください。'],
+        b:[{l:'とじる',go:null,p:1},{l:'アイコンが無い時',go:'findIcon'}]},
+ // ★機種によって、新しいアイコンが2ページ目やアプリ一覧に入ることがある
+ findIcon:{t:'アイコンをさがします',
+        d:['ホーム画面を左右にめくり、','全部のページを見てください。','画面を下から上へなぞると','アプリの一覧も出ます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'もう一度手順を見る',go:'@back'}]},
 
  // ── LINEやXの中で開いている場合（OSに関係なく、まず開き直してもらう）
  inApp:{t:'このままでは追加できません',
         d:['LINEなどの中で見ているため','ホーム画面に置けません。'],
-        b:[{l:'開き直し方を見る',go:'inApp2',p:1},{l:'とじる',go:null}]},
- inApp2:{t:'ブラウザで開き直します',
-        d:['右下などにある「…」を押し','ブラウザで開くを選んでから','もう一度お試しください。'],
-        b:[{l:'とじる',go:null,p:1}]},
+        b:[{l:'開き直し方を見る',go:'sInApp',p:1},{l:'とじる',go:null}]},
 
- // ── iPhone・iPad
- iBrowser:{t:'いま何で見ていますか',
-        d:['お使いのブラウザを','選んでください。'],
-        b:[{l:'Safari',go:'iShare'},{l:'Chrome',go:'iShare'},
-           {l:'LINEやXの中',go:'inApp'},{l:'わからない',go:'iShare'}]},
+ // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
  iShare:{t:'このマークを探します', ic:'share',
         d:['画面のどこにありますか。'],
-        b:[{l:'画面の下にある',go:'iSteps'},{l:'右上にある',go:'iSteps'},
-           {l:'見当たらない',go:'iDots'}]},
+        b:[{l:'画面の下にある',go:'sShare'},{l:'右上にある',go:'sShare'},
+           {l:'見当たらない',go:'iDots'},{l:'LINEやXの中で見ている',go:'inApp'}]},
  iDots:{t:'このマークを探します', ic:'dots',
         d:['画面の下か右下にあります。','まだ押さないでください。'],
-        b:[{l:'見つかった',go:'iSteps2',p:1},{l:'それも無い',go:'iSafari'}]},
- // ★マークを押すと画面を覆うメニューや一覧が出て、この案内は指で触れなくなる。
- //   途中で「押せた」を押させると、その瞬間にメニューが閉じて続きができない
- //   （2026-08-12 実機で発生）。だから押す前に最後までの手順を全部見せる。
- iSteps:{t:'この順に押していきます', ic:'share',
-        d:['① このマークを押す','②「ホーム画面に追加」','③ 右上の「追加」',
-           '※見えない時は「表示を増やす」','　か、一覧を下へたどる'],
-        b:[{l:'とじる',go:null,p:1},{l:'見つからない時',go:'iEdit'}]},
- iSteps2:{t:'この順に押していきます', ic:'dots',
-        d:['① このマークを押す','②「共有」を押す','③「ホーム画面に追加」','④ 右上の「追加」',
-           '※見えない時は「表示を増やす」'],
-        b:[{l:'とじる',go:null,p:1},{l:'見つからない時',go:'iEdit'}]},
+        b:[{l:'見つかった',go:'sDots',p:1},{l:'それも無い',go:'iSafari'}]},
  iEdit:{t:'一覧に見当たらない時',
         d:['一覧の一番下にある','「アクションを編集」を押すと','足すことができます。'],
         b:[{l:'とじる',go:null,p:1},{l:'それでも無い',go:'iSafari'}]},
@@ -2119,40 +2159,68 @@ var REG={
         d:['古い機種では、Safari以外だと','ホーム画面に追加できません。','Safariで開いてお試しください。'],
         b:[{l:'とじる',go:null,p:1}]},
 
- // ── Android系でボタンが使えない場合／その他
+ // ── Android系（中央の窓で選ぶ → 上の帯でやる）─────────
  aBrowser:{t:'いま何で見ていますか',
         d:['お使いのブラウザを','選んでください。'],
-        b:[{l:'Chrome',go:'aChrome'},{l:'Edge',go:'aEdge'},{l:'Firefox',go:'aFire'},
-           {l:'Galaxyの標準ブラウザ',go:'aSams'},{l:'その他・わからない',go:'aOther'}]},
- // ★このアプリはPWAの条件を満たすため、Chromeの表記は「ホーム画面に追加」ではなく
- //   「アプリをインストール」に変わることがある（サイトごとに自動で振り分けられる）。
- //   どちらが出ても迷わないよう両方を書く
- aChrome:{t:'メニューから入れます', ic:'menu',
-        d:['右上の「⋮」を押し、','「アプリをインストール」か','「ホーム画面に追加」を押す。'],
-        b:[{l:'とじる',go:null,p:1}]},
- // ★Edgeに「ホーム画面に追加」という項目は無い。メニューを横にめくった先の
- //   「電話に追加」→「インストール」が正しい道（2026-08-12 実機で確認）
- aEdge:{t:'メニューから入れます',
-        d:['画面の右下のメニューを押し、','横にめくって「電話に追加」。','次に「インストール」を押す。'],
-        b:[{l:'とじる',go:null,p:1}]},
- // ★Firefoxは「ホーム画面に追加」ではなく「ホーム画面にアプリを追加」（2026-08-12 実機で確認）。
- //   同じ画面にある「ショートカットに追加」はFirefox内の見出しで、ホーム画面には出ない
- aFire:{t:'メニューから入れます',
-        d:['右上の「⋮」を押し、','「その他」の中にある','「ホーム画面にアプリを追加」。'],
-        b:[{l:'とじる',go:null,p:1}]},
- // ★メニューの形は版によって「≡」だったり「⋮」だったりするので形を決め打ちしない
- aSams:{t:'メニューから足します',
-        d:['画面の右下のメニューを押し、','「ページを追加」を押します。','次に「ホーム画面」を選ぶ。'],
-        b:[{l:'とじる',go:null,p:1}]},
+        b:[{l:'Chrome',go:'sChrome'},{l:'Edge',go:'sEdge'},{l:'Firefox',go:'sFire'},
+           {l:'Galaxyの標準ブラウザ',go:'sSams'},{l:'その他・わからない',go:'sOther'}]},
+
+ // ── パソコン・特別な機種・逃げ道 ───────────────────
  pc:{t:'パソコンでご覧の場合',
         d:['パソコンにはホーム画面が','ありません。お気に入りに','入れてお使いください。'],
         b:[{l:'とじる',go:null,p:1}]},
- aOther:{t:'メニューの中を探します',
-        d:['メニューを開いて','「ホーム画面」「追加」','「インストール」を探します。'],
-        b:[{l:'とじる',go:null,p:1}]}
+ // ★らくらくスマホ等は追加自体ができない機種がある（無理をさせない）
+ rakuraku:{t:'かんたんスマホの方へ',
+        d:['この種類の機種は、追加が','できないことがあります。','ブックマークに入れるか、','ご家族にご相談ください。'],
+        b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},
+ altBookmark:{t:'ほかの見方もあります',
+        d:['無理に追加しなくても、','「お気に入り」に入れると','次から開きやすくなります。','ご家族に頼むのも近道です。'],
+        b:[{l:'とじる',go:null,p:1}]},
+
+ // ── つまずいた時（帯の「困った時」から）─────────────
+ troubleI:{t:'うまくいかない時',
+        d:['よくあるつまずきです。','あてはまる物を選んでください。'],
+        b:[{l:'「ホーム画面に追加」が無い',go:'iEdit'},{l:'マークが見つからない',go:'iDots'},
+           {l:'アイコンが出ない',go:'findIcon'},{l:'別の方法で見る',go:'altBookmark'},
+           {l:'手順にもどる',go:'@back',p:1}]},
+ troubleA:{t:'うまくいかない時',
+        d:['よくあるつまずきです。','あてはまる物を選んでください。'],
+        b:[{l:'項目が見つからない',go:'sOther'},{l:'アイコンが出ない',go:'findIcon'},
+           {l:'かんたんスマホの方',go:'rakuraku'},{l:'別の方法で見る',go:'altBookmark'},
+           {l:'手順にもどる',go:'@back',p:1}]},
+ troubleIn:{t:'開き直せない時',
+        d:['このまま（アプリの中）でも','放送は見られます。'],
+        b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},
+
+ // ══ ここから下は「上部のやりかた帯」（strip:1）══════════════
+ //  ★押させる物は無い。手順を出したまま、端末のメニューを操作してもらう。
+ //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
+ sShare:{strip:1, ic:'share', tr:'troubleI',
+        d:['①このマークを押す','②「ホーム画面に追加」','③右上の「追加」',
+           '※無い時は「表示を増やす」','※か、一覧を下へたどる']},
+ sDots:{strip:1, ic:'dots', tr:'troubleI',
+        d:['①このマークを押す','②「共有」を押す','③「ホーム画面に追加」','④右上の「追加」',
+           '※無い時は「表示を増やす」']},
+ // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
+ sChrome:{strip:1, ic:'menu', tr:'troubleA',
+        d:['①右上の「⋮」を押す','②「アプリを','　インストール」か','　「ホーム画面に追加」','③「インストール」を押す']},
+ // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
+ sEdge:{strip:1, ic:'bars', tr:'troubleA',
+        d:['①右下の「≡」を押す','②「電話に追加」をさがす','　（横にめくると出ます）','③「インストール」を押す']},
+ // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
+ sFire:{strip:1, ic:'menu', tr:'troubleA',
+        d:['①右上の「⋮」を押す','②「その他」を押す','③「ホーム画面にアプリ','　を追加」を押す','④「ホーム画面に追加」']},
+ // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
+ sSams:{strip:1, ic:'menu', tr:'troubleA',
+        d:['①右下のメニューを押す','②「ページを追加」','③「ホーム画面」を選ぶ','④「追加」を押す']},
+ sOther:{strip:1, tr:'troubleA',
+        d:['①「⋮」か「≡」を押す','②「ホーム画面に追加」','　などの言葉をさがす','③出た画面で「追加」']},
+ // ★アプリ内ブラウザからの開き直し。言葉はアプリごとに少し違うため幅を持たせる
+ sInApp:{strip:1, ic:'dots', tr:'troubleIn',
+        d:['①「…」をさがして押す','　（右下や右上にある）','②「ブラウザで開く」','　に似た言葉を押す','③開いたら、もう一度','　「ホーム画面に置く」']}
 };
 
-// 探してもらうマークの絵。iOSの共有・iOS26の「…」・Androidの「⋮」
+// 探してもらうマークの絵。iOSの共有・iOS26の「…」・Androidの「⋮」・Edgeの「≡」
 var REG_ICON={
  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+
        '<path d="M12 3v11"/><path d="M8.2 6.8 12 3l3.8 3.8"/>'+
@@ -2161,7 +2229,9 @@ var REG_ICON={
       '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="12" r="1.15" fill="currentColor" stroke="none"/>'+
       '<circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>',
  menu:'<svg viewBox="0 0 24 24" fill="currentColor">'+
-      '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>'
+      '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>',
+ bars:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">'+
+      '<path d="M4 6h16M4 12h16M4 18h16"/></svg>'
 };
 function regEls(){
   return {w:document.getElementById('reg'), box:document.getElementById('reg-box'),
@@ -2175,11 +2245,13 @@ function regShow(key){
     //   （その中のブラウザにはホーム画面へ追加する機能が無い）
     if(regInApp())            key='inApp';
     else if(_regPrompt)       key='oneTap';
-    else if(regIsApple())     key='iBrowser';   // ★isIOSではなく専用判定。iPadで外れていた
+    else if(regIsApple())     key='iShare';    // ★isIOSではなく専用判定。iPadで外れていた
     else if(regIsPc())        key='pc';
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
+  if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
+  try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2201,6 +2273,50 @@ function regShow(key){
     try{ if(first) first.focus({preventScroll:true}); }catch(_){ }
   }
 }
+// ── 上部の「やりかた帯」──────────────────────
+//  中央の窓と暗幕をしまい、画面上端に手順を出したままにする。
+//  押させる物が無いので、共有シートやメニューを開いたままでも読める
+var _regStripLast=null;
+function regStripShow(key){
+  var sc=REG[key]; if(!sc || !sc.strip) return;
+  var st=document.getElementById('reg-strip'); if(!st) return;
+  var e=regEls(); if(e.w) e.w.classList.remove('on');
+  _regAt=key; _regStripLast=key;
+  var ic=document.getElementById('rs-icon');
+  if(sc.ic && REG_ICON[sc.ic]){ ic.innerHTML=REG_ICON[sc.ic]; ic.style.display='flex'; }
+  else { ic.textContent=''; ic.style.display='none'; }
+  var tx=document.getElementById('rs-txt'); tx.textContent='';
+  sc.d.forEach(function(L){
+    var dv=document.createElement('div');
+    // ※や（で始まる行は補足＝少し小さく。全角空白始まりは手順の続き＝同じ大きさ
+    if(/^※/.test(L) || /^　?（/.test(L)) dv.className='note';
+    dv.textContent=L.replace(/^※/,'※ ');
+    tx.appendChild(dv);
+  });
+  st.classList.add('on');
+  try{ regFabSync(); }catch(_){}
+}
+function regStripHide(){
+  try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
+}
+// ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
+function regFabSync(){
+  try{
+    var f=document.getElementById('reg-fab'); if(!f) return;
+    var show = hasPoweredOn && !regHome() && _tourMode===0 && !isExpanded;
+    try{ if(isSilk || isTvPcMode()) show=false; }catch(_){}
+    try{ if(document.getElementById('reg').classList.contains('on')) show=false; }catch(_){}
+    var st=document.getElementById('reg-strip');
+    if(st && st.classList.contains('on')){
+      show=false;
+      // ★全画面で見始めたら帯は引っ込める（映像に被せない）。状態は壊さない
+      if(isExpanded) st.classList.remove('on');
+    }
+    try{ var sp=document.getElementById('settings-panel');
+         if(sp && sp.classList.contains('open')) show=false; }catch(_){}
+    f.classList.toggle('on', !!show);
+  }catch(_){}
+}
 // 箱の高さを実測し、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
 function regFit(){
   var e=regEls(); if(!e.box) return;
@@ -2210,6 +2326,11 @@ function regFit(){
 }
 function regPick(b){
   if(b.go==='@prompt'){ regDoPrompt(); return; }
+  if(b.go==='@back'){                 // 「手順にもどる」＝直前の帯へ
+    if(_regStripLast && REG[_regStripLast]) regShow(_regStripLast);
+    else regShow('route');
+    return;
+  }
   if(!b.go){ regEnd(); return; }
   regShow(b.go);
 }
@@ -2231,6 +2352,7 @@ function regEnd(){
   var e=regEls(); if(!e.w) return;
   var at=_regAt;
   e.w.classList.remove('on');
+  regStripHide();
   _regAt=null;
   try{
     // ★すでに'done'の人は何をしても'done'のまま。設定から開いて閉じた時に
@@ -2243,6 +2365,7 @@ function regEnd(){
       }
     }
   }catch(_){}
+  try{ regFabSync(); }catch(_){}
 }
 function regDone(){                       // もう自動で出さない状態か
   try{ return localStorage.getItem(REG_KEY)==='done'; }catch(_){ return false; }
@@ -4698,6 +4821,7 @@ function init(){
   // 初回だけ「使い方の説明を見ますか？」と尋ねる。画面が組み上がってから出す
   setTimeout(function(){ try{ tourAskIfFirst(); }catch(_){} }, 400);
   uiInterval(updateClock,1000);
+  uiInterval(regFabSync,1000);   // 呼び戻し「？」の出し入れ（冪等）
   setInterval(periodicCheck,10000);   // 番組の切り替えの要。裏に回っても止めない
   // シークバーと再生アイコンの追従。0.1秒ごとにYouTubeへ状態を聞いていたが、
   // 目で見て違いが出ない範囲で0.25秒に緩めた（問い合わせ回数が毎秒10回→4回）
