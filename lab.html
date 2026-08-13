@@ -1187,6 +1187,13 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-box.tight3 #reg-txt{font-size:13px;line-height:1.3;}
 #reg-box.tight3 #reg-btns{margin-top:5px;gap:4px;}
 #reg-box.tight3 .reg-btn{padding:6px 10px;font-size:13px;}
+#reg-box.tight4{padding:5px 10px 5px;}
+#reg-box.tight4 #reg-icon{width:26px;height:26px;margin-bottom:2px;border-radius:8px;}
+#reg-box.tight4 #reg-icon svg{width:17px;height:17px;}
+#reg-box.tight4 #reg-ttl{font-size:13px;margin-bottom:1px;}
+#reg-box.tight4 #reg-txt{font-size:12.5px;line-height:1.25;}
+#reg-box.tight4 #reg-btns{margin-top:4px;gap:3px;}
+#reg-box.tight4 .reg-btn{padding:5px 8px;font-size:12.5px;}
 /* ★詰めてもまだ入らない時だけボタンを2列にする（横向きで選択肢が多い画面）。
    入るなら付かない＝誤発動しても何も変わらない。主ボタン(.go)だけは横いっぱいのまま */
 #reg-box.cols #reg-btns{display:grid;grid-template-columns:1fr 1fr;}
@@ -1194,6 +1201,15 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* ★最も詰めた時だけ、主ボタンも2列に混ぜて1行ぶん節約する。
    色は金色のままなので、どれが主かは分かる（2026-08-13：選択肢6つの画面で必要になった） */
 #reg-box.cols.tight2 #reg-btns .reg-btn.go{grid-column:auto;}
+/* ── 6か所ピッカー（矢印の場所を選ぶ画面）──
+   破線の枠＝画面の絵。上の段と下の段を離して置き、実際の画面の上下と対応させる */
+#reg-box.pick #reg-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;row-gap:30px;
+  border:2px dashed #9fb0a8;border-radius:14px;padding:12px 10px;}
+#reg-box.pick #reg-btns .reg-btn[data-zone]{padding:11px 6px;}
+#reg-box.pick #reg-btns .reg-btn:not([data-zone]){grid-column:1 / -1;margin-top:-14px;}
+#reg-box.pick.tight #reg-btns{row-gap:18px;}
+#reg-box.pick.tight2 #reg-btns{row-gap:12px;padding:8px 8px;}
+#reg-box.pick.tight3 #reg-btns{row-gap:8px;padding:6px 6px;}
 .reg-btn{border:0;border-radius:10px;padding:13px 14px;font-family:inherit;
   font-size:16px;font-weight:700;cursor:pointer;background:#ececec;color:#41504a;}
 .reg-btn.go{background:var(--gold);color:#fff;}
@@ -1206,54 +1222,29 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      だから「やる」段階は画面の上に手順を出したままにする。
      暗幕なし・押す必要なし＝端末の操作を一切妨げない。
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
-/* 登録作業のあいだ、周囲を暗くして案内だけを明るく残す。
-   さらに、押すマークがある列の側の画面の端に、細い光る線を出す（2026-08-13）。
-   ブラウザの道具の列はページの外にあり、何がどこにあるかJavaScriptからは見えない。
-   並びは端末・ブラウザ・向きで全部違うため「一点を指す」ことはできない。
-   線は列の端いっぱいに引くので、どの端末でも外さない。
-   （暗さをゆるめるだけの案も試したが「肝心のマークの部分が明るいのか分からない」
-     との実機での指摘により、線を出す形に戻した） */
+/* 登録作業のあいだ、周囲を暗くする（帯の時だけ。中央の窓は自分で暗くする） */
 #reg-dim{position:fixed;inset:0;z-index:2147483645;display:none;
   background:rgba(0,0,0,.66);pointer-events:none;}
 #reg-dim.on{display:block;}
-#reg-band{position:fixed;left:0;right:0;z-index:2147483647;display:none;
-  height:var(--bandH,26px);pointer-events:none;
-  animation:regBand 1.9s ease-in-out infinite;}
-#reg-band.on{display:block;}
-#reg-band.b-u{top:0;
-  background:linear-gradient(to bottom, rgba(255,215,105,.5), rgba(255,215,105,0));
-  box-shadow:inset 0 4px 0 #ffd769, 0 4px 16px rgba(255,215,105,.35);}
-#reg-band.b-d{bottom:0;
-  background:linear-gradient(to top, rgba(255,215,105,.5), rgba(255,215,105,0));
-  box-shadow:inset 0 -4px 0 #ffd769, 0 -4px 16px rgba(255,215,105,.35);}
-@keyframes regBand{0%,100%{opacity:1}50%{opacity:.5}}
-/* 動きを減らす設定の端末では明滅させない（線は出したままにする） */
-@media (prefers-reduced-motion: reduce){ #reg-band{animation:none!important;} }
-/* 押すマークがある側は「暗くしない」＝そこだけ明るいまま残す。
-   ★端末の道具の列（マークそのもの）はページの外なので、ページから明るくはできない。
-     できるのは「ページ側のその端を暗くしない」こと。線と合わせて、見る場所を示す
-     （--hiD=下の列がある時 / --hiU=上の列がある時。上は案内カードと重ならない高さ） */
-:root{--hiD:min(104px, 22vh);--hiU:min(44px, 12vh);}
-#reg.hi-d{background:linear-gradient(to bottom,
-  rgba(0,0,0,.74) calc(100% - var(--hiD)), rgba(0,0,0,0) calc(100% - var(--hiD) + 14px));}
-#reg.hi-u{background:linear-gradient(to top,
-  rgba(0,0,0,.74) calc(100% - var(--hiU)), rgba(0,0,0,0) calc(100% - var(--hiU) + 14px));}
-#reg-dim.hi-d{background:linear-gradient(to bottom,
-  rgba(0,0,0,.66) calc(100% - var(--hiD)), rgba(0,0,0,0) calc(100% - var(--hiD) + 14px));}
-#reg-dim.hi-u{background:linear-gradient(to top,
-  rgba(0,0,0,.66) calc(100% - var(--hiU)), rgba(0,0,0,0) calc(100% - var(--hiU) + 14px));}
-/* ※窓の縦位置は regFitTo が「実際に使った床」から計算して直接指定する
-   （明るく残す帯を避けたか、線だけ避けたかで正しい中心が変わるため） */
-/* ★画面がとても低い端末（古いiPhoneの横向き=約230px）でだけ線を細くする。
-   線は「押す場所の目印」なので消さない。細くしても役目は果たす。
-   ふつうの横向き（約275〜290px）は26pxのまま＝見やすさを落とさない */
-@media (max-height:250px){
-  :root{--bandH:14px;}
-  #reg-band.b-u{box-shadow:inset 0 3px 0 #ffd769, 0 3px 12px rgba(255,215,105,.35);}
-  #reg-band.b-d{box-shadow:inset 0 -3px 0 #ffd769, 0 -3px 12px rgba(255,215,105,.35);}
-}
-/* 上の線を出す時だけ、案内をわずかに下げて重ならないようにする */
-#reg-strip.low{top:calc(env(safe-area-inset-top) + var(--hiU,44px) + 8px);}
+/* ── 押すマークを指す矢印（2026-08-13 矢印方式に回帰）──
+   ブラウザの道具の列はページの外にあり、位置はJavaScriptから見えないうえ、
+   利用者の設定でも変わる（iOS26のSafariは3種類・Galaxyは上下を切替できる）。
+   だから「ブラウザごとの既定位置に出す → ちがえば6か所から選んで動かす」の2段構え。
+   白い矢じり＋濃い縁取り＝暗幕の上でもカードのそばでも見える（金色は見づらいとの実機指摘） */
+#reg-arw{position:fixed;z-index:2147483647;display:none;width:48px;height:48px;
+  margin-left:-24px;pointer-events:none;
+  filter:drop-shadow(0 2px 8px rgba(0,0,0,.65));}
+#reg-arw.on{display:block;}
+#reg-arw svg{width:100%;height:100%;display:block;}
+#reg-arw.a-d{animation:raBobD 1.15s ease-in-out infinite;}
+#reg-arw.a-u{animation:raBobU 1.15s ease-in-out infinite;}
+@keyframes raBobD{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+@keyframes raBobU{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+/* 動きを減らす設定の端末では揺らさない（矢印は出したまま・位置と向きは正しいまま）。
+   2026-08-13実機：この設定でCSSアニメは必ず止まる。止まっても指す役目は果たす */
+@media (prefers-reduced-motion: reduce){#reg-arw.a-d,#reg-arw.a-u{animation:none!important;}}
+/* ※カードの上端・左右の避けは regStripFit がJSで一元管理する
+   （矢印の大きさが画面の高さで変わるため。同じ数を2か所に書くと必ずずれる） */
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
   margin:0 auto;max-width:620px;
   z-index:2147483647;display:none;background:#fff;color:#1a2520;
@@ -1275,18 +1266,25 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* 番号は固定幅の丸にする＝「が入っても文の頭が必ず揃う（2026-08-12指示） */
 .rs-step{display:flex;gap:10px;align-items:flex-start;margin-top:9px;}
 .rs-step:first-child{margin-top:0;}
-.rs-n{flex:0 0 auto;width:27px;height:27px;border-radius:50%;background:var(--green);color:#fff;
-  font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.rs-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;
+  font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
 .rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.5;}
 /* 補足は直前の手順にぶら下げる。番号の幅ぶん下げて、手順の文の頭に揃える */
-.rs-sub{margin:4px 0 0 37px;font-size:15px;font-weight:600;color:#41504a;line-height:1.5;}
+.rs-sub{margin:4px 0 0 40px;font-size:15px;font-weight:600;color:#41504a;line-height:1.5;}
+/* 押す言葉は「枠」で強調する（2026-08-13承認：カードの重要部分を枠付きに）。
+   文中の「…」を自動でこの枠に変える＝画面に実際に出ている言葉と一字一句同じものだけが入る */
+.rs-key{display:inline-block;background:#fffbe9;border:2px solid #c9a13b;border-radius:9px;
+  padding:1px 7px;margin:1px 1px;font-weight:800;color:#1a2520;line-height:1.4;white-space:nowrap;}
 /* 文の中に置くマーク。「押す物」だと分かるよう、上の大きなマークと同じ薄い枠に入れる。
    大きさはemなので、詰め表示になっても文字と一緒に縮む */
 .rs-mk{display:inline-flex;align-items:center;justify-content:center;
   width:1.5em;height:1.5em;vertical-align:-0.42em;margin:0 2px;
   background:#f2f4f3;border-radius:.34em;}
 .rs-mk svg{width:1.05em;height:1.05em;display:block;}
-#rs-foot{display:flex;justify-content:flex-end;margin-top:13px;}
+#rs-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:13px;}
+#rs-fix{border:0;background:none;color:#41504a;text-decoration:underline;text-underline-offset:3px;
+  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;padding:8px 2px;
+  white-space:nowrap;-webkit-tap-highlight-color:transparent;}
 #rs-help{border:0;background:var(--gold);color:#fff;border-radius:11px;padding:12px 20px;
   font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
   -webkit-tap-highlight-color:transparent;}
@@ -1311,7 +1309,8 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.narrow #rs-icon svg{width:30px;height:30px;}
 #reg-strip.narrow #rs-ttl{font-size:15px;}
 #reg-strip.narrow .rs-t{font-size:16px;line-height:1.4;}
-#reg-strip.narrow .rs-sub{font-size:13px;}   /* 字下げ37pxは触らない＝文の頭が揃ったまま */
+#reg-strip.narrow .rs-sub{font-size:13px;}   /* 字下げは触らない＝文の頭が揃ったまま */
+#reg-strip.narrow .rs-key{padding:0 5px;border-width:1.5px;border-radius:7px;}
 /* 2列かつ極端に狭い横向き（iPhone SE横568x320など）で、上を詰めてもまだ折り返す時の2段目。
    番号の丸も小さくして、補足の字下げ（丸23px＋すき間10px＝33px）を文の頭に合わせ直す */
 #reg-strip.narrow2 #rs-icon{width:36px;height:36px;border-radius:9px;}
@@ -1320,6 +1319,7 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.narrow2 .rs-n{width:23px;height:23px;font-size:13px;}
 #reg-strip.narrow2 .rs-t{font-size:15px;}
 #reg-strip.narrow2 .rs-sub{font-size:12px;margin-left:33px;}
+#reg-strip.narrow2 .rs-key{padding:0 3px;border-width:1px;border-radius:5px;margin:0 1px;}
 /* ★詰めてもまだ中身が隠れる時の一段（小さい端末の横向き）。
    切れて読めないより、少し小さくても全部見える方が良い（2026-08-13指示） */
 #reg-strip.tight2{padding:8px 11px;}
@@ -1350,6 +1350,27 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight3 .rs-sub{font-size:12px;line-height:1.25;margin-left:28px;}
 #reg-strip.tight3 #rs-foot{margin-top:4px;}
 #reg-strip.tight3 #rs-help{padding:5px 12px;font-size:12.5px;}
+/* ★とても低い画面で矢印と共存するための最終段（tight3でもまだ隠れる時だけ） */
+#reg-strip.tight4{padding:5px 8px;}
+#reg-strip.tight4 #rs-head{gap:7px;}
+#reg-strip.tight4 #rs-icon{width:26px;height:26px;border-radius:7px;}
+#reg-strip.tight4 #rs-icon svg{width:18px;height:18px;}
+#reg-strip.tight4 #rs-close{width:26px;height:26px;font-size:15px;border-radius:7px;}
+#reg-strip.tight4 #rs-ttl{font-size:12.5px;}
+#reg-strip.tight4 #rs-txt{margin-top:3px;}
+#reg-strip.tight4 .rs-step{margin-top:2px;}
+#reg-strip.tight4 .rs-t{font-size:12.5px;line-height:1.25;}
+#reg-strip.tight4 .rs-n{width:16px;height:16px;font-size:10.5px;}
+#reg-strip.tight4 .rs-sub{font-size:11px;line-height:1.22;margin-left:26px;}
+#reg-strip.tight4 #rs-foot{margin-top:3px;}
+#reg-strip.tight4 #rs-help{padding:4px 10px;font-size:12px;}
+#reg-strip.tight4 #rs-fix{font-size:11px;}
+#reg-strip.tight4 .rs-key{padding:0 3px;border-width:1px;border-radius:5px;}
+#reg-strip.tight .rs-key{padding:1px 7px;}
+#reg-strip.tight2 .rs-key{padding:0 5px;border-width:1.5px;border-radius:7px;}
+#reg-strip.tight3 .rs-key{padding:0 4px;border-width:1.5px;border-radius:6px;}
+#reg-strip.tight2 #rs-fix{font-size:12.5px;}
+#reg-strip.tight3 #rs-fix{font-size:12px;}
 /* ── 呼び戻し用の「？」。ホーム画面から開くようになれば出ない（2026-08-12承認） ── */
 #reg-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
   z-index:2147483646;display:none;width:46px;height:46px;border-radius:50%;
@@ -1545,7 +1566,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.04-lab（押す側を明るく残す・手順中も継続）</div>
+    <div class="ps-version">version 3.05-lab（矢印方式・6か所から選び直せる）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1817,7 +1838,7 @@ html.tvpc #settings-panel .set-link{
 </div>
 <!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
 <div id="reg-dim"></div>
-<div id="reg-band"></div>
+<div id="reg-arw"></div>
 <div id="reg-strip">
   <div id="rs-head">
     <div id="rs-icon"></div>
@@ -1825,7 +1846,7 @@ html.tvpc #settings-panel .set-link{
     <button id="rs-close" title="とじる">×</button>
   </div>
   <div id="rs-txt"></div>
-  <div id="rs-foot"><button id="rs-help">困った時</button></div>
+  <div id="rs-foot"><button id="rs-fix">矢印の場所を直す</button><button id="rs-help">困った時</button></div>
 </div>
 <button id="reg-fab" title="ホーム画面への追加案内">？</button>
 
@@ -2204,11 +2225,15 @@ function tourAskIfFirst(){
       // ★回すと押すマークの位置も出てくる画面も変わり、いま出している指示と食い違う。
       //   古い指示のまま進めると必ず詰まるので、最初からやり直してもらう（2026-08-13指示）
       if(_regOri && _regOri!==regOri()){
-        _regArwAns='';
+        _regArwAns=''; _regArwPick={};
         try{ regShow('start'); }catch(_){}
       }else{
-        try{ regFit(); regStripFit(); }catch(_){}
+        try{ regArwShow(_regArwNow); regFit(); regStripFit(); }catch(_){}
       }
+    }else if(_regOri && _regOri!==regOri()){
+      // ★案内を閉じたまま回した時も、覚えた場所は捨てる。縦で選んだ場所は横では別の意味になる
+      //   （2026-08-14 検査が発見：閉じて回して開き直すと古い場所を指し続けていた）
+      _regArwAns=''; _regArwPick={}; _regOri=regOri();
     }
     if(_tourMode===2){ tourPoint(0,''); return; }
     if(_tourMode!==3) return;
@@ -2225,6 +2250,11 @@ function tourAskIfFirst(){
     var sc=REG[_regAt]; regShow((sc&&sc.tr)||'start'); });
   var rx=document.getElementById('rs-close');
   if(rx) rx.addEventListener('click', function(ev){ ev.stopPropagation(); regEnd(); });
+  // 「矢印の場所を直す」→ 6か所ピッカーへ（選んだら、いまの手順カードに戻る）
+  var rfx=document.getElementById('rs-fix');
+  if(rfx) rfx.addEventListener('click', function(ev){ ev.stopPropagation();
+    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
+    _regPickFrom=_regAt; _regPickGo=_regAt; regShow('whereMark'); });
   // 呼び戻し用の「？」。ホーム画面から開くようになれば regFabSync が出さない
   var rf=document.getElementById('reg-fab');
   if(rf) rf.addEventListener('click', function(ev){ ev.stopPropagation();
@@ -2385,27 +2415,52 @@ var REG={
         b:[{l:'ブラウザで開く',go:'@escape',p:1},{l:'とじる',go:null}]},
 
  // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
- iChrome:{t:'このマークを探します', ic:'share',
-        d:['アドレスバーの右にあります。','どちらにありましたか。'],
-        b:[{l:'画面の上にあった',go:'sChromeI',ar:'ur',p:1},
-           {l:'画面の下にあった',go:'sChromeI',ar:'dr'},
+ iChrome:{t:'このマークを探します', ic:'share', arw:'ur',
+        d:['矢印の先にありますか。','まだ押さないでください。'],
+        b:[{l:'見つかった',go:'sChromeI',p:1},
+           {l:'ちがう場所にあった',go:'@where:sChromeI'},
            {l:'見当たらない',go:'iSafari'}]},
  // ★Chrome公式ヘルプで確認（2026-08-13）。Safariと道筋が違う。
  //   Chromeのメニュー(⋯)に「共有」は上の方に無く、Safariの手順では詰まる。
  //   正しくは アドレスバーの右の共有 →「ホーム画面に追加」→「追加」
- sChromeI:{strip:1, ic:'share', tr:'troubleI', h:'この順に押します',
+ sChromeI:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'この{share}を押す'},
            {sub:'アドレスバーの右にあります'},
            {n:2,t:'「ホーム画面に追加」'},
            {sub:'下へたどると出てきます'},
            {n:3,t:'「追加」を押す'}]},
- iShare:{t:'このマークを探します', ic:'share',
-        d:['画面のどこにありますか。'],
-        b:[{l:'画面の下にある',go:'sShare',ar:'d'},{l:'右上にある',go:'sShare',ar:'ur'},
-           {l:'見当たらない',go:'iDots'},{l:'LINEやXの中で見ている',go:'inApp'}]},
- iDots:{t:'このマークを探します', ic:'dots', ar:'d',
-        d:['画面の下か右下にあります。','まだ押さないでください。'],
-        b:[{l:'見つかった',go:'sDots',p:1},{l:'それも無い',go:'iSafari'}]},
+ iShare:{t:'このマークを探します', ic:'share', arw:'@apple',
+        d:['矢印の先にありますか。','まだ押さないでください。'],
+        b:[{l:'見つかった',go:'sShare',p:1},
+           {l:'ちがう場所にあった',go:'@where:sShare'},
+           {l:'それは無い',go:'iDots'},
+           {l:'LINEやXの中で見ている',go:'inApp'}]},
+ iDots:{t:'このマークを探します', ic:'dots', arw:'dr',
+        d:['矢印の先にありますか。','まだ押さないでください。'],
+        b:[{l:'見つかった',go:'sDots',p:1},
+           {l:'ちがう場所にあった',go:'@where:sDots'},
+           {l:'それも無い',go:'iSafari'}]},
+ // ★iOS26のSafariは初期設定「コンパクト」＝道具の列に共有が無く「…」が入口（2026-08-13調査：
+ //   設定→Safari→タブで3種類から選べる）。変えている人は「どこにも無い」→共有の確認へ回す
+ iDots26:{t:'このマークを探します', ic:'dots', arw:'dr',
+        d:['矢印の先にありますか。','まだ押さないでください。'],
+        b:[{l:'見つかった',go:'sDots',p:1},
+           {l:'ちがう場所にあった',go:'@where:sDots'},
+           {l:'どこにも無い',go:'iShare2'}]},
+ iShare2:{t:'このマークを探します', ic:'share', arw:'dc',
+        d:['矢印の先にありますか。'],
+        b:[{l:'見つかった',go:'sShare',p:1},
+           {l:'ちがう場所にあった',go:'@where:sShare'},
+           {l:'どこにも無い',go:'iSafari'},
+           {l:'LINEやXの中で見ている',go:'inApp'}]},
+ // ── 6か所ピッカー：マークの場所を選ぶと、矢印がそこへ動く ──
+ //   ブラウザの道具の列はページの外＝位置はJSから見えないうえ、利用者の設定でも変わる。
+ //   だから最後は本人に選んでもらう＝どの端末・どの設定でも必ず正しい場所を指せる（2026-08-13承認）
+ whereMark:{t:'マークはどこにありますか', pick:1,
+        d:['マークのある場所を','押してください。'],
+        b:[{l:'左上',zone:'ul'},{l:'上',zone:'uc'},{l:'右上',zone:'ur'},
+           {l:'左下',zone:'dl'},{l:'下',zone:'dc'},{l:'右下',zone:'dr'},
+           {l:'もどる',go:'@pickback'}]},
  iEdit:{t:'一覧に見当たらない時',
         d:['一覧の一番下にある','「アクションを編集」を押すと','足すことができます。'],
         b:[{l:'とじる',go:null,p:1},{l:'それでも無い',go:'iSafari'}]},
@@ -2429,7 +2484,7 @@ var REG={
  pc:{t:'パソコンでご覧の場合',
         d:['お気に入り（ブックマーク）に','入れておくと、次から','すぐ開けます。'],
         b:[{l:'とじる',go:null,p:1},{l:'アイコンで開きたい',go:'pcApp'}]},
- pcApp:{t:'デスクトップに置く',
+ pcApp:{t:'デスクトップに置く', arw:'ur',
         d:['Macは「共有」から','「Dockに追加」。Windowsは','ChromeやEdgeの「⋮」から','「インストール」を選びます。'],
         b:[{l:'とじる',go:null,p:1}]},
  // ★シニア向け機種。2026-08-12にメーカー・キャリアの取説で手順を確定させた
@@ -2443,7 +2498,7 @@ var REG={
         b:[{l:'らくらくスマートフォン',go:'sRaku'},{l:'かんたんスマホ',go:'sYahoo'},
            {l:'BASIO・あんしんスマホ',go:'sOther'},{l:'わからない',go:'rakuMark'}]},
  // 機種名が分からない人向け。しおりの有無だけで確実に振り分けられる
- rakuMark:{t:'画面の上を見てください', ic:'book',
+ rakuMark:{t:'画面の上を見てください', ic:'book', arw:'uc',
         d:['このマーク（しおり）が','ありますか。'],
         b:[{l:'ある',go:'sRaku',p:1},{l:'無い',go:'sOther'}]},
  altBookmark:{t:'ほかの見方もあります',
@@ -2491,14 +2546,14 @@ var REG={
  //  n=番号つきの手順／sub=直前の手順にぶら下げる補足（見当たらない時・次に何が出るか）。
  //  補足は「その手順の直後」に置く＝つまずく場所で読める（2026-08-12指示）。
  //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
- sShare:{strip:1, ic:'share', tr:'troubleI', h:'この順に押します',
+ sShare:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'このマークを押す'},
            {sub:'見当たらない時は「表示を増やす」'},
            {sub:'古い機種は一覧を下へたどります'},
            {n:2,t:'「ホーム画面に追加」'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:3,t:'右上の「追加」を押す'}]},
- sDots:{strip:1, ic:'dots', tr:'troubleI', h:'この順に押します',
+ sDots:{strip:1, arw:'@ans', ic:'dots', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'このマークを押す'},
            {n:2,t:'「共有」を押す'},
            {sub:'見当たらない時は「表示を増やす」'},
@@ -2507,7 +2562,7 @@ var REG={
            {sub:'→ 名前を決める画面が出ます'},
            {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
- sChrome:{strip:1, ar:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
+ sChrome:{strip:1, arw:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {sub:'色のついた丸のこともあります'},
            {n:2,t:'「アプリをインストール」'},
@@ -2515,21 +2570,21 @@ var REG={
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
- sEdge:{strip:1, ar:'dr', ic:'bars', tr:'troubleA', h:'この順に押します',
+ sEdge:{strip:1, arw:'dr', ic:'bars', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下の{bars}を押す'},
            {n:2,t:'「電話に追加」を押す'},
            {sub:'横にめくると出てきます'},
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
- sFire:{strip:1, ar:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
+ sFire:{strip:1, arw:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {n:2,t:'「その他」を押す'},
            {sub:'メニューの下のほうにあります'},
            {n:3,t:'「ホーム画面にアプリを追加」'},
            {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
- sSams:{strip:1, ar:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
+ sSams:{strip:1, arw:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下のメニューを押す'},
            {sub:'{bars}か{menu}の形です'},
            {n:2,t:'「ページを追加」を押す'},
@@ -2539,7 +2594,7 @@ var REG={
  // ★らくらくスマホ(FCNT)。他機種と違い「共有」も「⋮」も出てこない。ドコモF-53E取説p.68の逐語
  //   「登録したブックマークをホーム画面の『よく使うブックマーク』カテゴリに貼り付けるかどうかの
  //     確認画面が表示されますので、［貼る］／［貼らない］を選択して設定できます」
- sRaku:{strip:1, ar:'u', ic:'book', tr:'troubleR', h:'この順に押します',
+ sRaku:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'この順に押します',
         s:[{n:1,t:'上の{book}を押す（しおり）'},
            {sub:'画面の上、「検索」のとなり'},   // FCNT FAQ 20668 の逐語「「検索」ボタン右隣」
            {n:2,t:'「現在のページを登録」'},
@@ -2548,7 +2603,7 @@ var REG={
            {n:4,t:'「貼る」を押す'},
            {sub:'「よく使うブックマーク」に入ります'}]},
  // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
- sRaku2:{strip:1, ar:'u', ic:'book', tr:'troubleR', h:'あとから貼る場合',
+ sRaku2:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'あとから貼る場合',
         s:[{n:1,t:'上の「しおり」を押す'},
            {n:2,t:'「メニュー」を押す'},
            {n:3,t:'「ホーム画面に貼る」'},
@@ -2564,7 +2619,7 @@ var REG={
            {n:2,t:'「ホーム画面に追加」'},
            {n:3,t:'「追加」を押す'},
            {n:4,t:'「OK」を押す'}]},
- sOther:{strip:1, tr:'troubleA', h:'この順に押します',
+ sOther:{strip:1, arw:'ur', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'{menu}か{bars}を押す'},
            {sub:'色のついた丸のこともあります'},
            {n:2,t:'「ホーム画面に追加」を探す'},
@@ -2611,24 +2666,33 @@ function regShow(key){
     //   （その中のブラウザにはホーム画面へ追加する機能が無い）
     if(regInApp())            key='inApp';
     else if(_regPrompt)       key='oneTap';
-    else if(regIsApple())     key=(/CriOS\//.test(navigator.userAgent)?'iChrome':'iShare');
-    // ★isIOSではなく専用判定。iPadで外れていた。iPhoneのChromeはSafariと道筋が違う
+    else if(regIsApple()){
+      // ★isIOSではなく専用判定。iPadで外れていた。iPhoneのChromeはSafariと道筋が違う。
+      //   iOS26のSafariは初期設定「コンパクト」＝道具の列に共有が無く「…」が入口（2026-08-13調査）。
+      //   設定で変えた人は iDots26 の「どこにも無い」→ 共有の確認(iShare2) で拾う
+      var _iu=navigator.userAgent, _im=/iPhone OS (\d+)_/.exec(_iu);
+      if(/CriOS\//.test(_iu))                 key='iChrome';
+      else if(_im && parseInt(_im[1],10)>=26) key='iDots26';
+      else                                    key='iShare';
+    }
     else if(regIsPc())        key='pc';
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
-  // ★「押すマークがどちら側にあるか」は、次の手順の画面へも引き継ぐ。
-  //   引き継がないと、手順カードに変わった瞬間に明るい帯も線も消える
-  //   （2026-08-13 実機写真で発覚：⋯の手順カードで何も光っていなかった）
-  if(sc.ar) _regArwAns=sc.ar;
   _regOri=regOri();                            // この画面を出した時の向きを覚える
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  // 中央の窓は自分で暗くするので暗幕は出さない。
-  // ★どちら側かが分かったら、そのあとの画面でもずっと明るく強調し続ける（2026-08-13指示）
-  try{ regHiOn(sc.ar || _regArwAns, false); }catch(_){}
   _regAt=key;
+  // 中央の窓は自分で暗くするので暗幕は出さない。
+  // ★答えを聞く画面は、開いた時に既定の場所を覚える＝「見つかった」を押すだけで
+  //   次の手順カードが同じ場所を指せる（2026-08-13承認の「既定＋直せる」方式）
+  try{
+    regAuxOff();
+    var _z=regArwZoneOf(key, sc);
+    if(_z && sc.arw) _regArwAns=_z;
+    regArwShow(_z);
+  }catch(_){}
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
   // アプリのアイコンを見せる画面（何が手に入るかを先に見せる）。
@@ -2648,12 +2712,14 @@ function regShow(key){
     e.icon.textContent=''; e.icon.classList.remove('on');
     e.icon.classList.remove('app'); e.icon.classList.remove('round');
   }
+  e.box.classList.toggle('pick', !!sc.pick);
   e.ttl.textContent=sc.t;
   tourLines(e.txt, sc.d);
   e.btns.textContent='';
   sc.b.forEach(function(b){
     var el=document.createElement('button');
     el.className='reg-btn'+(b.p?' go':'');
+    if(b.zone) el.setAttribute('data-zone', b.zone);
     el.textContent=b.l;
     el.addEventListener('click', function(ev){ ev.stopPropagation(); regPick(b); });
     e.btns.appendChild(el);
@@ -2673,10 +2739,18 @@ var _regStripLast=null;
 //   実物の写真は機種とOSの版で違ってしまうので使わない。こちらで描いた図なら版が変わっても外れない。
 //   文中の {menu} {bars} {dots} {share} {book} を、その場でマークに差し替える。
 //   差し替える中身は REG_ICON（こちらで用意した定数）だけ＝外から来た文字は入らない
+// 「…」で囲んだ言葉（画面に実際に出ている名前）を、枠付きの強調に変える（2026-08-13承認）
+function regKeyText(el, txt){
+  var seg=String(txt).split(/「([^」]*)」/);   // 偶数番目が地の文、奇数番目が枠に入れる言葉
+  for(var j=0;j<seg.length;j++){
+    if(j%2===0){ if(seg[j]) el.appendChild(document.createTextNode(seg[j])); }
+    else if(seg[j]){ var k=document.createElement('span'); k.className='rs-key'; k.textContent=seg[j]; el.appendChild(k); }
+  }
+}
 function regMarkText(el, str){
   var parts=String(str).split(/\{(\w+)\}/);   // 偶数番目が文、奇数番目がマーク名
   for(var i=0;i<parts.length;i++){
-    if(i%2===0){ if(parts[i]) el.appendChild(document.createTextNode(parts[i])); }
+    if(i%2===0){ if(parts[i]) regKeyText(el, parts[i]); }
     else if(REG_ICON[parts[i]]){
       var s=document.createElement('span'); s.className='rs-mk';
       s.innerHTML=REG_ICON[parts[i]];
@@ -2684,42 +2758,78 @@ function regMarkText(el, str){
     }else{ el.appendChild(document.createTextNode('{'+parts[i]+'}')); }  // 名前を間違えたら気づけるように
   }
 }
-var _regArwAns='';   // iShareなどで利用者が答えたマークの列（'u'=上 / 'd'=下）
+var _regArwAns='';   // 利用者が確かめた／選んだマークの場所（'ul'〜'dr'の6か所）
+var _regArwPick={};  // 既定の場所を固定で持つ手順カードに対する、利用者の選び直し
+var _regArwNow='';   // いま矢印が指している場所（寸法合わせと検査が読む）
+var _regPickFrom=null, _regPickGo=null;   // 6か所ピッカーの戻り先と行き先
 var _regOri='';      // 案内を出した時の画面の向き
 function regOri(){ return innerWidth>innerHeight ? 'yoko' : 'tate'; }
-// 登録作業のあいだ周囲を暗くし、押すマークがある列の端に光る線を出す。
-// 列が分かっているのは「本人に聞いた時」だけ。分からなければ線は出さない＝決めつけない。
-//   spec … 'u'（上の列） / 'd'（下の列）
-//   暗幕 … 手順の帯の時だけ出す（中央の窓は自分で暗くするため）
-function regHiOn(spec, 暗幕を出す){
-  var d=document.getElementById('reg-dim'), b=document.getElementById('reg-band'),
-      st=document.getElementById('reg-strip');
-  var v=String(spec||'').charAt(0);
-  regHiSize();
-  var box=document.getElementById('reg-box'), w=document.getElementById('reg');
-  if(d) d.className = 暗幕を出す ? 'on' : '';
-  if(st) st.classList.remove('low');
-  if(w){ w.classList.remove('hi-u'); w.classList.remove('hi-d'); }
-  if(b){
-    b.className='';
-    if(v==='u'||v==='d'){
-      b.className='on b-'+v;
-      // 押すマークがある側を「暗くしない」＝明るいまま残す。窓でも帯でも同じにする
-      if(暗幕を出す && d) d.className='on hi-'+v;
-      else if(w) w.classList.add('hi-'+v);
-      if(v==='u' && st) st.classList.add('low');    // 上の帯と重ならないよう案内を下げる
-    }
-  }
+// ── 矢印の表示 ─────────────────────────────
+// 場所は6か所：'ul','uc','ur'（上の左/中央/右）／'dl','dc','dr'（下の左/中央/右）。
+// 横は画面幅の13%・50%・87%＝端のマークにも中央のマークにも届く位置。
+// 縦はCSSが端末の切り欠き(safe-area)を足して端に置く。
+var REG_ARW_SVG={
+ d:'<svg viewBox="0 0 48 48"><path d="M10 16 L24 36 L38 16" fill="none" stroke="#10201a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 16 L24 36 L38 16" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ u:'<svg viewBox="0 0 48 48"><path d="M10 32 L24 12 L38 32" fill="none" stroke="#10201a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 32 L24 12 L38 32" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+// その画面で矢印が指すべき場所。利用者が選び直した場所 ＞ 画面の指定。
+//   '@ans'=利用者の答えに従う／'@apple'=iPhoneは下の中央・iPadは右上（実機写真で確認）
+function regArwZoneOf(key, sc){
+  if(_regArwPick[key]) return _regArwPick[key];
+  var z=(sc&&sc.arw)||'';
+  if(z==='@ans')   return _regArwAns||'';
+  if(z==='@apple') return /iPhone/.test(navigator.userAgent)?'dc':'ur';
+  return z;
 }
-function regHiOff(){
-  var d=document.getElementById('reg-dim'), b=document.getElementById('reg-band'),
-      st=document.getElementById('reg-strip');
-  if(d) d.className='';
-  if(b) b.className='';
-  if(st) st.classList.remove('low');
+function regArwShow(zone){
+  var a=document.getElementById('reg-arw'); if(!a) return;
+  zone=String(zone||'');
+  var v=zone.charAt(0), h=zone.charAt(1);
+  _regArwNow='';
+  if((v!=='u'&&v!=='d')||(h!=='l'&&h!=='c'&&h!=='r')){ a.className=''; return; }
+  _regArwNow=zone;
+  // ★とても低い画面（古いiPhone横向き=約230px）では矢印を小さくして場所を空ける。
+  //   矢じり・端からの余白・揺れ10px の合計が regArwSpace() と一致するように書く
+  var sm=innerHeight<=250;
+  var size=sm?32:48, inset=sm?8:16;
+  a.style.width=size+'px'; a.style.height=size+'px'; a.style.marginLeft=(-size/2)+'px';
+  if(v==='d'){ a.style.bottom='calc(env(safe-area-inset-bottom) + '+inset+'px)'; a.style.top='auto'; }
+  else       { a.style.top='calc(env(safe-area-inset-top) + '+inset+'px)'; a.style.bottom='auto'; }
+  var x= h==='l' ? innerWidth*0.13 : h==='c' ? innerWidth*0.5 : innerWidth*0.87;
+  x=Math.max(30, Math.min(innerWidth-30, Math.round(x)));
+  a.style.left=x+'px';
+  a.innerHTML=REG_ARW_SVG[v];
+  a.className='on a-'+v;
+}
+// 矢印・暗幕・カードの避け位置をまとめて消す（次の画面が自分の分だけ出し直す）
+function regAuxOff(){
+  try{ document.getElementById('reg-arw').className=''; }catch(_){}
+  _regArwNow='';
+  try{ document.getElementById('reg-dim').className=''; }catch(_){}
+  try{ var _st=document.getElementById('reg-strip');
+       _st.style.top=''; _st.style.left=''; _st.style.right=''; }catch(_){}
   try{ document.getElementById('reg-box').style.top=''; }catch(_){}
-  try{ var w=document.getElementById('reg'); w.classList.remove('hi-u'); w.classList.remove('hi-d'); }catch(_){}
 }
+// 端末の切り欠き(safe-area)の実寸。CSSのenv()はJSから読めないため、
+// 測定用の見えない要素にenvを入れて実測する（推測しない・一次情報。
+// ★同じ数をCSSとJSに別々に書くと必ずずれる＝2026-08-13 min()をJSが0と読んだ失敗）
+var _regSafeProbe=null;
+function regSafe(){
+  if(!_regSafeProbe){
+    _regSafeProbe=document.createElement('div');
+    _regSafeProbe.style.cssText='position:fixed;left:-9999px;top:0;width:0;height:0;'+
+      'visibility:hidden;pointer-events:none;'+
+      'padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);';
+    document.body.appendChild(_regSafeProbe);
+  }
+  var cs=getComputedStyle(_regSafeProbe);
+  return {t:parseFloat(cs.paddingTop)||0, b:parseFloat(cs.paddingBottom)||0};
+}
+// 案内を置いてよい範囲。矢印の居場所（矢じり48＋揺れ10＋余白16）には案内を置かない。
+// 矢印が無ければ従来どおり画面いっぱい＝誤発動しても何も変わらない
+function regArwSpace(){ return innerHeight<=250 ? 50 : 74; }   // 8+32+10 ／ 16+48+10（regArwShowと一体）
+function regCeil(){ return _regArwNow.charAt(0)==='u' ? regSafe().t+regArwSpace() : 0; }
+function regFloor(){ return _regArwNow.charAt(0)==='d' ? innerHeight-regSafe().b-regArwSpace() : innerHeight; }
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
@@ -2743,70 +2853,36 @@ function regStripShow(key){
     row.appendChild(nn); row.appendChild(tt); item.appendChild(row); tx.appendChild(item);
   });
   st.classList.add('on');
-  // ★順番が大事：先に線を決めて（上の線なら案内を下げて）から寸法を合わせる。
+  // ★順番が大事：先に矢印の場所を決めて（上向きなら案内を下げて）から寸法を合わせる。
   //   逆にすると、下げた分を勘定できず画面の下で切れる（2026-08-13 実機で2回発生）
-  try{ regHiOn(REG[key].ar || _regArwAns, true); }catch(_){}
+  try{
+    var _z=regArwZoneOf(key, sc);
+    regArwShow(_z);
+    document.getElementById('reg-dim').className='on';
+    var _fx=document.getElementById('rs-fix');
+    if(_fx) _fx.textContent = _z ? '矢印の場所を直す' : '矢印で場所を示す';
+  }catch(_){}
   regStripFit();
   try{ regFabSync(); }catch(_){}
 }
-// 案内を置いてよい下端。下に光る線が出ている時は、その線に被せない。
-// 線は「押す場所の目印」なので、隠したら意味が無くなる。
-// ★推測値ではなく、実際に出ている線の位置を測って使う（誤発動しても線が無ければ画面の下＝従来どおり）
-//   強い=true … 明るく残す帯まるごとを避ける（見せたい所を案内で塞がない）
-//   強い=false … 線だけ避ける（狭い画面で、避けきれない時のゆるめた基準）
-// 明るく残す帯の高さを決めてCSSにも渡す。
-// ★CSSの min() はJavaScriptから数値として読めない（parseFloatがNaNになる）ので、
-//   数はここで一箇所だけ決めて、CSSへは実数のpxで渡す＝両者が食い違わない
-//   （2026-08-13の失敗：CSS側の min() をJSが0と読み、明るい帯を避けられていなかった）
-function regHiSize(){
-  // ★下限36px。線(最大26px)＋余白8px より狭くすると、線しか見えず「明るい」と分からない
-  var d=Math.round(Math.max(Math.min(104, innerHeight*0.22), 36));
-  var u=Math.round(Math.max(Math.min(44,  innerHeight*0.12), 36));
-  try{
-    var rt=document.documentElement.style;
-    rt.setProperty('--hiD', d+'px');
-    rt.setProperty('--hiU', u+'px');
-  }catch(_){}
-  return {d:d, u:u};
-}
-// 上に明るく残す帯がある時、案内を置いてよい上端
-function regCeil(){
-  try{
-    var b=document.getElementById('reg-band');
-    if(b && b.classList.contains('on') && b.classList.contains('b-u')){
-      return Math.min(regHiSize().u, innerHeight*0.25);
-    }
-  }catch(_){}
-  return 0;
-}
-function regFloor(強い){
-  try{
-    var b=document.getElementById('reg-band');
-    if(b && b.classList.contains('on') && b.classList.contains('b-d')){
-      var r=b.getBoundingClientRect();
-      if(r.height>0 && r.top>0){
-        if(!強い) return r.top-10;   // 線のすぐ上に10pxだけ明るい余白を必ず残す
-        return Math.max(innerHeight-regHiSize().d, Math.min(r.top, innerHeight*0.45));
-      }
-    }
-  }catch(_){}
-  return innerHeight;
-}
 // 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
-function regStripFitTo(床){
+function regStripFitTo(床, 横避け){
   var st=document.getElementById('reg-strip'); if(!st) return true;
   // ★前の画面の詰めを必ず先に全部外す。narrowを残したまま測ると縮んだ寸法で
   //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
   st.classList.remove('tight'); st.classList.remove('wide'); st.classList.remove('tight2');
-  st.classList.remove('tight3');
+  st.classList.remove('tight3'); st.classList.remove('tight4');
   st.classList.remove('narrow'); st.classList.remove('narrow2');
   st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
   var top=st.getBoundingClientRect().top;
-  // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
-  var limit=Math.min(床-top-10, innerHeight*0.6);
+  // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準。
+  //   横に避けている時はカードが操作を妨げない位置にあるので、高さを全部使ってよい
+  var limit = 横避け ? (床-top-10) : Math.min(床-top-10, innerHeight*0.6);
   if(st.getBoundingClientRect().height>limit) st.classList.add('tight');
-  // 幅はあるが高さが足りない（横向き等）時は2列にして高さを半分にする
-  if(st.getBoundingClientRect().height>limit && st.getBoundingClientRect().width>=420) st.classList.add('wide');
+  // 幅はあるが高さが足りない（横向き等）時は2列にして高さを半分にする。
+  // ★横に避けている時(1)は幅が細い＝2列だと必ず折り返すので1列のまま縦に使う。
+  //   1列で入りきらない特大カードだけ(2)で2列も許す（折り返しはnarrowの段が吸収する）
+  if(横避け!==1 && st.getBoundingClientRect().height>limit && st.getBoundingClientRect().width>=420) st.classList.add('wide');
   // それでも入らない時は詰めたまま。画面外・線の上に出さないことを優先
   if(st.getBoundingClientRect().bottom>床-4) st.classList.add('tight');
   regStripNoWrap(st);
@@ -2818,6 +2894,10 @@ function regStripFitTo(床){
   if(st.scrollHeight>st.clientHeight+1 || st.getBoundingClientRect().bottom>床-4){
     st.classList.add('tight3'); regStripNoWrap(st);
   }
+  // ★矢印と共存する最終段（全部見えることを最優先）
+  if(st.scrollHeight>st.clientHeight+1 || st.getBoundingClientRect().bottom>床-4){
+    st.classList.add('tight4'); regStripNoWrap(st);
+  }
   // ★最後の保険：ここまでやっても入らない画面では、帯の中でたどれるようにする。
   //   切れて読めないより良い（2026-08-13 実機で下がはみ出していた）
   var rr=st.getBoundingClientRect();
@@ -2827,9 +2907,26 @@ function regStripFitTo(床){
   }
   return st.scrollHeight<=st.clientHeight+1 && st.getBoundingClientRect().bottom<=床+0.5;
 }
-// まず「明るく残す帯」ごと避けて置いてみる。どうしても入らない狭い画面だけ、線の上までに緩める
 function regStripFit(){
-  if(!regStripFitTo(regFloor(true))) regStripFitTo(regFloor(false));
+  var st=document.getElementById('reg-strip'); if(!st) return;
+  st.style.left=''; st.style.right='';
+  var z=_regArwNow, 床=regFloor();
+  // 上に矢印がある時は、カードを矢印の下から始める
+  st.style.top = z.charAt(0)==='u' ? 'calc(env(safe-area-inset-top) + '+regArwSpace()+'px)' : '';
+  // ★とても低い画面で矢印が左か右の時は、縦ではなく「横に」避ける：
+  //   カードは高さを全部使い、矢印の列だけ空ける＝手順は全部見え、矢印も正確なまま
+  if(z && innerHeight<=250 && (z.charAt(1)==='l'||z.charAt(1)==='r')){
+    var a=document.getElementById('reg-arw'), r=a.getBoundingClientRect();
+    if(z.charAt(1)==='r') st.style.right=Math.round(innerWidth-r.left+8)+'px';
+    else                  st.style.left =Math.round(r.right+8)+'px';
+    st.style.top='';           // 横で避けたので上端は通常どおり
+    // まず1列・全高で。入りきらない特大カードだけ2列も試す（それでも駄目なら1列+送り）
+    if(!regStripFitTo(innerHeight, 1)){
+      if(!regStripFitTo(innerHeight, 2)) regStripFitTo(innerHeight, 1);
+    }
+    return;
+  }
+  regStripFitTo(床);
 }
 
 function regStripNoWrap(st){
@@ -2861,7 +2958,7 @@ function regStripNoWrap(st){
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regHiOff(); }catch(_){}
+  try{ regAuxOff(); }catch(_){}
 }
 // ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
 function regFabSync(){
@@ -2874,7 +2971,7 @@ function regFabSync(){
     if(st && st.classList.contains('on')){
       show=false;
       // ★全画面で見始めたら帯は引っ込める（映像に被せない）。状態は壊さない
-      if(isExpanded){ st.classList.remove('on'); try{ regHiOff(); }catch(_){} }
+      if(isExpanded){ st.classList.remove('on'); try{ regAuxOff(); }catch(_){} }
     }
     try{ var sp=document.getElementById('settings-panel');
          if(sp && sp.classList.contains('open')) show=false; }catch(_){}
@@ -2889,7 +2986,7 @@ function regFitTo(天井,床){
   var 高さ=床-天井;
   e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
   e.box.classList.remove('tight'); e.box.classList.remove('cols'); e.box.classList.remove('tight2');
-  e.box.classList.remove('tight3');
+  e.box.classList.remove('tight3'); e.box.classList.remove('tight4');
   e.box.style.maxHeight=''; e.box.style.overflowY='';   // 前回の保険を外してから測る
   if(e.box.getBoundingClientRect().height > 高さ-12) e.box.classList.add('tight');
   // 詰めてもまだ入らない時だけ2列にする。実測してから付けるので、入る画面は今までどおり1列
@@ -2903,6 +3000,8 @@ function regFitTo(天井,床){
   if(e.box.getBoundingClientRect().height > 高さ-12) e.box.classList.add('tight2');
   // ★とても低い画面（古いiPhoneの横向き=約230px）用のもう一段
   if(e.box.getBoundingClientRect().height > 高さ-12) e.box.classList.add('tight3');
+  // ★矢印と共存する最終段（全部見えることを最優先）
+  if(e.box.getBoundingClientRect().height > 高さ-12) e.box.classList.add('tight4');
   // ★最後の保険：ここまでやっても入らない画面では、窓の中でたどれるようにする。
   //   上下に切れて読めない・押せないより良い（2026-08-13の総点検で発覚）
   if(e.box.getBoundingClientRect().height > 高さ-12){
@@ -2911,13 +3010,23 @@ function regFitTo(天井,床){
   }
   return e.box.scrollHeight<=e.box.clientHeight+1;
 }
-// まず「明るく残す帯」ごと避けて置いてみる。どうしても入らない狭い画面だけ、線の上までに緩める
-function regFit(){
-  if(!regFitTo(regCeil(), regFloor(true))) regFitTo(0, regFloor(false));
-}
+function regFit(){ regFitTo(regCeil(), regFloor()); }
 
 function regPick(b){
-  if(b.ar) _regArwAns=b.ar;   // 「画面の下」「右上」という利用者自身の答えを覚える
+  if(b.zone){                       // 6か所ピッカーで場所を選んだ
+    _regArwAns=b.zone;
+    try{
+      // 行き先が固定の場所を持つカードなら、その画面に対する選び直しとして覚える
+      var _g=_regPickGo && REG[_regPickGo];
+      if(_g && _g.arw && _g.arw!=='@ans') _regArwPick[_regPickGo]=b.zone;
+    }catch(_){}
+    regShow(_regPickGo||'route'); return;
+  }
+  if(typeof b.go==='string' && b.go.indexOf('@where:')===0){   // ピッカーを開く
+    _regPickFrom=_regAt; _regPickGo=b.go.slice(7);
+    regShow('whereMark'); return;
+  }
+  if(b.go==='@pickback'){ regShow(_regPickFrom||_regStripLast||'route'); return; }
   if(b.go==='@prompt'){ regDoPrompt(); return; }
   if(b.go==='@escape'){ regDoEscape(); return; }
   if(b.go==='@back'){                 // 「手順にもどる」＝直前の帯へ
