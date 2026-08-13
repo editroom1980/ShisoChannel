@@ -1183,47 +1183,34 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      だから「やる」段階は画面の上に手順を出したままにする。
      暗幕なし・押す必要なし＝端末の操作を一切妨げない。
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
-/* 押すボタンの方向を指す矢印（2026-08-13・実機の指摘を受けて改訂）。
-   ウェブページはブラウザ自身のボタンの上に描けない決まりがあるため、
-   画面の端まで寄せて「この先にあります」と指す。ここが物理的な限界。
-   周囲を暗くして矢印だけを残す（使い方説明と同じ考え方）。
-   位置が2通りある画面では、両方に出して間に「どちらかに」と書く＝
-   曖昧なものを曖昧なまま正しく伝える。決めつけない。 */
+/* 押す場所を示す帯（2026-08-13・実機4台の指摘を受けて作り直し）。
+   ブラウザの道具の列はページの外にあり、何がどこにあるかJavaScriptからは見えない。
+   並びは 端末・ブラウザ・向き で全部違う（iPad SafariとChromeですら違う）。
+   実機4台で4回とも違うボタンを指したため、「一点を指す」考え方をやめた。
+   分かるのは「上の列か下の列か」だけ（本人に聞いている）。
+   そこで、その列の側の端いっぱいに帯を光らせて範囲で示す＝常に正しい。 */
 #reg-dim{position:fixed;inset:0;z-index:2147483645;display:none;
   background:rgba(0,0,0,.66);pointer-events:none;}
 #reg-dim.on{display:block;}
-/* 中央の窓(#reg)より後ろに置いてあるので、同じ重なり順でも矢印が上に出る */
-#reg-arw{position:fixed;inset:0;z-index:2147483647;display:none;pointer-events:none;}
-#reg-arw.on{display:block;}
-.ra{position:absolute;width:52px;height:52px;color:#ffd769;
-  filter:drop-shadow(0 0 10px rgba(0,0,0,.9));}
-.ra svg{width:100%;height:100%;display:block;}
-.ra.d{left:50%;margin-left:-26px;bottom:2px;}
-.ra.dr{right:8px;bottom:2px;}
-/* iPhone/iPadのSafariは、下の道具の列のボタンを左右対称に約14.5%内側へ置く
-   （2026-08-13 実機の写真から実測：画面幅390pxで、⋯の中心が右端から約56px）。
-   端に寄せたままだと⋯より右にズレるため、その位置へ合わせる。
-   割合で持たせてあるので画面幅が変わっても付いていく。 */
-.ra.dr.ios{right:calc(14.5% - 26px);}
-.ra.u{left:50%;margin-left:-26px;top:calc(env(safe-area-inset-top) + 4px);}
-.ra.ur{right:8px;top:calc(env(safe-area-inset-top) + 4px);}
-.ra.u svg,.ra.ur svg{transform:rotate(180deg);}
-.ra.d,.ra.dr{animation:regArwD 1.6s ease-in-out infinite;}
-.ra.u,.ra.ur{animation:regArwU 1.6s ease-in-out infinite;}
-@keyframes regArwD{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
-@keyframes regArwU{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-/* 動きを減らす設定の端末では、動かす代わりに明るさで気づかせる */
-@media (prefers-reduced-motion: reduce){
-  .ra{animation:regArwFade 1.8s ease-in-out infinite!important;}
-}
-@keyframes regArwFade{0%,100%{opacity:1}50%{opacity:.45}}
-/* 2か所に出す時、その間に置く言葉 */
-#ra-txt{position:absolute;left:50%;transform:translateX(-50%);bottom:60px;
-  background:rgba(0,0,0,.88);color:#fff;font-size:14.5px;font-weight:700;
-  padding:8px 15px;border-radius:999px;white-space:nowrap;letter-spacing:.3px;}
-#ra-txt.up{bottom:auto;top:calc(env(safe-area-inset-top) + 62px);}
-/* 上向きの時だけ帯を下げて、画面の上に矢印の場所をあける */
-#reg-strip.low{top:calc(env(safe-area-inset-top) + 62px);}
+#reg-band{position:fixed;left:0;right:0;z-index:2147483647;display:none;
+  height:54px;pointer-events:none;box-sizing:border-box;
+  align-items:center;justify-content:center;gap:9px;
+  background:rgba(255,215,105,.30);color:#fff5d6;
+  font-weight:800;font-size:17px;letter-spacing:.4px;
+  text-shadow:0 1px 4px rgba(0,0,0,.95);
+  animation:regBand 1.9s ease-in-out infinite;}
+#reg-band.on{display:flex;}
+#reg-band.b-u{top:0;border-bottom:4px solid #ffd769;
+  box-shadow:0 8px 22px rgba(0,0,0,.6), inset 0 -14px 22px -14px rgba(255,215,105,.55);}
+#reg-band.b-d{bottom:0;border-top:4px solid #ffd769;
+  box-shadow:0 -8px 22px rgba(0,0,0,.6), inset 0 14px 22px -14px rgba(255,215,105,.55);}
+#reg-band .rb-ic{width:30px;height:30px;flex:0 0 30px;display:block;color:#fff5d6;}
+#reg-band .rb-ic svg{width:100%;height:100%;display:block;}
+@keyframes regBand{0%,100%{opacity:1}50%{opacity:.58}}
+/* 動きを減らす設定の端末では明滅させない（帯は出したままにする） */
+@media (prefers-reduced-motion: reduce){ #reg-band{animation:none!important;} }
+/* 上の帯を出す時だけ、案内の帯を下げて場所をあける */
+#reg-strip.low{top:calc(env(safe-area-inset-top) + 64px);}
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
   margin:0 auto;max-width:620px;
   z-index:2147483647;display:none;background:#fff;color:#1a2520;
@@ -1485,7 +1472,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.97-lab（横向きで帯と窓が切れるのを根治）</div>
+    <div class="ps-version">version 3.00-lab（押す列を帯で示す・回転でやり直し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1757,7 +1744,7 @@ html.tvpc #settings-panel .set-link{
 </div>
 <!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
 <div id="reg-dim"></div>
-<div id="reg-arw"></div>
+<div id="reg-band"></div>
 <div id="reg-strip">
   <div id="rs-head">
     <div id="rs-icon"></div>
@@ -2140,7 +2127,16 @@ function tourAskIfFirst(){
   e.w.addEventListener('click', function(){ if(_tourMode===2||_tourMode===3) tourNext(); });
   // 画面の向きや大きさが変わったら、光らせる位置を測り直す
   window.addEventListener('resize', function(){
-    if(_regAt){ try{ regFit(); regStripFit(); }catch(_){} }
+    if(_regAt){
+      // ★回すと押すマークの位置も出てくる画面も変わり、いま出している指示と食い違う。
+      //   古い指示のまま進めると必ず詰まるので、最初からやり直してもらう（2026-08-13指示）
+      if(_regOri && _regOri!==regOri()){
+        _regArwAns='';
+        try{ regShow('start'); }catch(_){}
+      }else{
+        try{ regFit(); regStripFit(); }catch(_){}
+      }
+    }
     if(_tourMode===2){ tourPoint(0,''); return; }
     if(_tourMode!==3) return;
     // 回すと項目が増減する（縦のiPhoneには音量つまみが無い）ので数え直し、
@@ -2316,7 +2312,7 @@ var REG={
         b:[{l:'ブラウザで開く',go:'@escape',p:1},{l:'とじる',go:null}]},
 
  // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
- iChrome:{t:'このマークを探します', ic:'share', ar:'ur,dr', arTxt:'このどちらかにありませんか',
+ iChrome:{t:'このマークを探します', ic:'share',
         d:['アドレスバーの右にあります。','どちらにありましたか。'],
         b:[{l:'画面の上にあった',go:'sChromeI',ar:'ur',p:1},
            {l:'画面の下にあった',go:'sChromeI',ar:'dr'},
@@ -2334,7 +2330,7 @@ var REG={
         d:['画面のどこにありますか。'],
         b:[{l:'画面の下にある',go:'sShare',ar:'d'},{l:'右上にある',go:'sShare',ar:'ur'},
            {l:'見当たらない',go:'iDots'},{l:'LINEやXの中で見ている',go:'inApp'}]},
- iDots:{t:'このマークを探します', ic:'dots', ar:'d,dr', arTxt:'このどちらかにありませんか',
+ iDots:{t:'このマークを探します', ic:'dots', ar:'d',
         d:['画面の下か右下にあります。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sDots',p:1},{l:'それも無い',go:'iSafari'}]},
  iEdit:{t:'一覧に見当たらない時',
@@ -2548,10 +2544,11 @@ function regShow(key){
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
+  _regOri=regOri();                            // この画面を出した時の向きを覚える
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regArwShow(sc.ar, sc.arTxt, false); }catch(_){}   // 中央の窓でも指せる（窓は元から暗い）
+  try{ regBandShow(sc.ar, sc.ic, false); }catch(_){}   // 中央の窓でも光らせる（窓は元から暗い）
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2608,66 +2605,45 @@ function regMarkText(el, str){
     }else{ el.appendChild(document.createTextNode('{'+parts[i]+'}')); }  // 名前を間違えたら気づけるように
   }
 }
-var _regArwAns='';   // iShareで利用者が答えたマークの位置
-var REG_ARW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '+
-  'stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15"/><path d="M5.5 12.5 12 19l6.5-6.5"/></svg>';
-// 矢印を出す。向きは「手順の文がすでに書いている位置」だけ。書いていない画面には出さない。
-//   spec … 'd'（下）'dr'（右下）'u'（上）'ur'（右上）。'd,dr' のように2か所も指定できる
-//   txt  … 2か所の時に間へ出す言葉（「このどちらかにありませんか」等）
-//   dim  … 周囲を暗くするか（中央の窓は元から暗くなるので、その時は false）
-function regArwShow(spec, txt, dim){
-  var a=document.getElementById('reg-arw'), d=document.getElementById('reg-dim'),
+var _regArwAns='';   // iShareなどで利用者が答えたマークの列（'u'=上 / 'd'=下）
+var _regOri='';      // 案内を出した時の画面の向き
+function regOri(){ return innerWidth>innerHeight ? 'yoko' : 'tate'; }
+// 押す場所の「列」を光らせる。上か下かは本人に聞いた答えだけを使う＝決めつけない。
+//   spec … 'u'（上の列） / 'd'（下の列）。空なら出さない
+//   ic   … その画面で探してもらうマークの名前（帯の中にも出す）
+//   dim  … 周囲を暗くするか（中央の窓は元から暗いので false）
+function regBandShow(spec, ic, dim){
+  var b=document.getElementById('reg-band'), d=document.getElementById('reg-dim'),
       st=document.getElementById('reg-strip');
-  if(!a) return;
-  a.className=''; a.innerHTML='';
+  if(!b) return;
+  b.className=''; b.innerHTML='';
   if(d) d.classList.remove('on');
   if(st) st.classList.remove('low');
-  if(!spec) return;
-  var dirs=String(spec).split(','), up=false, n=0;
-  for(var i=0;i<dirs.length;i++){
-    var v=dirs[i].replace(/\s/g,'');
-    if(v!=='d'&&v!=='dr'&&v!=='u'&&v!=='ur') continue;   // 知らない指定は無視
-    var e=document.createElement('div');
-    // iPhone/iPadは下の道具の列のボタン位置が独特なので、そこへ寄せる
-    var ios=false; try{ ios=regIsApple(); }catch(_){}
-    e.className='ra '+v+(ios?' ios':''); e.innerHTML=REG_ARW;
-    a.appendChild(e); n++;
-    if(v==='u'||v==='ur') up=true;
-  }
-  if(!n) return;
-  if(txt && n>1){
-    var t=document.createElement('div'); t.id='ra-txt'; t.textContent=txt;
-    if(up) t.className='up';
-    a.appendChild(t);
-  }
-  a.className='on';
-  if(up && st) st.classList.add('low');   // 帯を下げて、上に矢印の場所をあける
+  var v=String(spec||'').charAt(0);          // 'dr'→'d' / 'ur'→'u' も受ける
+  if(v!=='u' && v!=='d') return;
+  var ih='';
+  if(ic && REG_ICON[ic]) ih='<span class="rb-ic">'+REG_ICON[ic]+'</span>';
+  b.innerHTML=ih+'<span>この中にあります</span>';
+  b.className='on b-'+v;
+  if(v==='u' && st) st.classList.add('low');  // 上の帯と重ならないよう案内を下げる
   if(dim && d) d.classList.add('on');
-  try{ regArwFit(); }catch(_){}
+  try{ regBandFit(); }catch(_){}
 }
-function regArwHide(){ regArwShow(''); }
-// 置いたあとに実測して、出してはいけないものを隠す（回転や狭い画面の保険）。
-//  ・横向きは出さない：ブラウザの道具の列の配置が最も読めず、画面も低いため
-//    間違った場所を指す危険が高い。文章の案内だけで進めてもらう
-//  ・窓や帯と重なるものは隠す：狭い画面では避けようがないため
-// regFit / regStripFit の最後から呼ぶ＝回転でも自動で測り直される
-function regArwFit(){
-  var a=document.getElementById('reg-arw'); if(!a) return;
-  var 品=[].slice.call(a.querySelectorAll('.ra,#ra-txt'));
-  if(!品.length) return;
-  品.forEach(function(e){ e.style.display=''; });          // 毎回いったん戻してから判定
-  if(innerWidth>innerHeight){ 品.forEach(function(e){ e.style.display='none'; }); return; }
+function regBandHide(){ regBandShow(''); }
+// 置いたあとに実測して、出してはいけない時は隠す（狭い画面の保険）。
+// regFit / regStripFit の最後から呼ぶ＝回転や寸法変化でも測り直される。
+function regBandFit(){
+  var b=document.getElementById('reg-band'); if(!b) return;
+  if(!b.classList.contains('on')) return;
   var st=document.getElementById('reg-strip'), w=document.getElementById('reg');
   var 対象=null;
   if(st && st.classList.contains('on')) 対象=st;
   else if(w && w.classList.contains('on')) 対象=document.getElementById('reg-box');
+  b.style.display='';
   if(!対象) return;
-  var b=対象.getBoundingClientRect();
-  品.forEach(function(e){
-    var r=e.getBoundingClientRect();
-    var かぶる = !(r.right<b.left||r.left>b.right||r.bottom<b.top||r.top>b.bottom);
-    if(かぶる) e.style.display='none';
-  });
+  var r=b.getBoundingClientRect(), t=対象.getBoundingClientRect();
+  // 案内そのものと重なる時は帯を引っ込める（読めなくなるより良い）
+  if(!(r.right<t.left||r.left>t.right||r.bottom<t.top||r.top>t.bottom)) b.style.display='none';
 }
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
@@ -2692,10 +2668,12 @@ function regStripShow(key){
     row.appendChild(nn); row.appendChild(tt); item.appendChild(row); tx.appendChild(item);
   });
   st.classList.add('on');
+  // ★順番が大事：先に帯を決めて（上の帯なら案内を下げて）から寸法を合わせる。
+  //   逆にすると、下げた分を勘定できず画面の下で切れる（2026-08-13 実機で2回発生）
+  // 列を本人に聞いた画面は、その答えどおりに光らせる（決め打ちしない）
+  try{ regBandShow(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : ''),
+                   REG[key].ic, true); }catch(_){}
   regStripFit();
-  // 位置を本人に聞いた画面は、その答えどおりに指す（決め打ちしない）
-  try{ regArwShow(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : ''),
-                  REG[key].arTxt, true); }catch(_){}
   try{ regFabSync(); }catch(_){}
 }
 // 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
@@ -2705,9 +2683,6 @@ function regStripFit(){
   //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
   st.classList.remove('tight'); st.classList.remove('wide');
   st.classList.remove('narrow'); st.classList.remove('narrow2');
-  // ★横向きでは矢印を出さないので、帯を下げる必要もない。
-  //   下げたまま測ると高さを62px損して、内容が画面の下で切れる（2026-08-13 実機で発覚）
-  if(innerWidth>innerHeight) st.classList.remove('low');
   st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
   var top=st.getBoundingClientRect().top;
   // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
@@ -2725,7 +2700,7 @@ function regStripFit(){
     st.style.maxHeight=Math.max(120, innerHeight-rr.top-8)+'px';
     st.style.overflowY='auto';
   }
-  try{ regArwFit(); }catch(_){}
+  try{ regBandFit(); }catch(_){}
 }
 
 function regStripNoWrap(st){
@@ -2757,7 +2732,7 @@ function regStripNoWrap(st){
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regArwHide(); }catch(_){}
+  try{ regBandHide(); }catch(_){}
 }
 // ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
 function regFabSync(){
@@ -2770,7 +2745,7 @@ function regFabSync(){
     if(st && st.classList.contains('on')){
       show=false;
       // ★全画面で見始めたら帯は引っ込める（映像に被せない）。状態は壊さない
-      if(isExpanded){ st.classList.remove('on'); try{ regArwHide(); }catch(_){} }
+      if(isExpanded){ st.classList.remove('on'); try{ regBandHide(); }catch(_){} }
     }
     try{ var sp=document.getElementById('settings-panel');
          if(sp && sp.classList.contains('open')) show=false; }catch(_){}
@@ -2797,7 +2772,7 @@ function regFit(){
     e.box.style.maxHeight=(innerHeight-12)+'px';
     e.box.style.overflowY='auto';
   }
-  try{ regArwFit(); }catch(_){}
+  try{ regBandFit(); }catch(_){}
 }
 
 function regPick(b){
