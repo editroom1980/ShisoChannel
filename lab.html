@@ -1485,7 +1485,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.95-lab（矢印の位置を本人に聞く）</div>
+    <div class="ps-version">version 2.96-lab（横向き・狭い画面での重なりを解消）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2643,8 +2643,32 @@ function regArwShow(spec, txt, dim){
   a.className='on';
   if(up && st) st.classList.add('low');   // 帯を下げて、上に矢印の場所をあける
   if(dim && d) d.classList.add('on');
+  try{ regArwFit(); }catch(_){}
 }
 function regArwHide(){ regArwShow(''); }
+// 置いたあとに実測して、出してはいけないものを隠す（回転や狭い画面の保険）。
+//  ・横向きは出さない：ブラウザの道具の列の配置が最も読めず、画面も低いため
+//    間違った場所を指す危険が高い。文章の案内だけで進めてもらう
+//  ・窓や帯と重なるものは隠す：狭い画面では避けようがないため
+// regFit / regStripFit の最後から呼ぶ＝回転でも自動で測り直される
+function regArwFit(){
+  var a=document.getElementById('reg-arw'); if(!a) return;
+  var 品=[].slice.call(a.querySelectorAll('.ra,#ra-txt'));
+  if(!品.length) return;
+  品.forEach(function(e){ e.style.display=''; });          // 毎回いったん戻してから判定
+  if(innerWidth>innerHeight){ 品.forEach(function(e){ e.style.display='none'; }); return; }
+  var st=document.getElementById('reg-strip'), w=document.getElementById('reg');
+  var 対象=null;
+  if(st && st.classList.contains('on')) 対象=st;
+  else if(w && w.classList.contains('on')) 対象=document.getElementById('reg-box');
+  if(!対象) return;
+  var b=対象.getBoundingClientRect();
+  品.forEach(function(e){
+    var r=e.getBoundingClientRect();
+    var かぶる = !(r.right<b.left||r.left>b.right||r.bottom<b.top||r.top>b.bottom);
+    if(かぶる) e.style.display='none';
+  });
+}
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
@@ -2690,8 +2714,9 @@ function regStripFit(){
   // それでも入らない時は詰めたまま。画面外に出さないことを優先
   if(st.getBoundingClientRect().bottom>innerHeight-4) st.classList.add('tight');
   regStripNoWrap(st);
+  try{ regArwFit(); }catch(_){}
 }
-// 幅が足りずに折り返した文があるかを実測し、あった時だけ詰める（無ければ何もしない＝冪等）
+
 function regStripNoWrap(st){
   st=st||document.getElementById('reg-strip'); if(!st) return;
   st.classList.remove('narrow'); st.classList.remove('narrow2');
@@ -2754,7 +2779,9 @@ function regFit(){
     //   横向きで発動する仕組みなので幅には余裕がある。窓ごと広げて1行に戻す
     e.box.style.width=Math.min(innerWidth-24, 560)+'px';
   }
+  try{ regArwFit(); }catch(_){}
 }
+
 function regPick(b){
   if(b.ar) _regArwAns=b.ar;   // 「画面の下」「右上」という利用者自身の答えを覚える
   if(b.go==='@prompt'){ regDoPrompt(); return; }
