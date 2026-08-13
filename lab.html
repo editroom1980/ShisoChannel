@@ -1229,8 +1229,21 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 @keyframes regBand{0%,100%{opacity:1}50%{opacity:.5}}
 /* 動きを減らす設定の端末では明滅させない（線は出したままにする） */
 @media (prefers-reduced-motion: reduce){ #reg-band{animation:none!important;} }
-/* 下に線がある時は、線を除いた場所の真ん中に窓を置き直す（線に被せない） */
-#reg-box.lift{top:calc(50% - var(--bandH,26px) / 2);}
+/* 押すマークがある側は「暗くしない」＝そこだけ明るいまま残す。
+   ★端末の道具の列（マークそのもの）はページの外なので、ページから明るくはできない。
+     できるのは「ページ側のその端を暗くしない」こと。線と合わせて、見る場所を示す
+     （--hiD=下の列がある時 / --hiU=上の列がある時。上は案内カードと重ならない高さ） */
+:root{--hiD:min(104px, 22vh);--hiU:min(44px, 12vh);}
+#reg.hi-d{background:linear-gradient(to bottom,
+  rgba(0,0,0,.74) calc(100% - var(--hiD)), rgba(0,0,0,0) calc(100% - var(--hiD) + 14px));}
+#reg.hi-u{background:linear-gradient(to top,
+  rgba(0,0,0,.74) calc(100% - var(--hiU)), rgba(0,0,0,0) calc(100% - var(--hiU) + 14px));}
+#reg-dim.hi-d{background:linear-gradient(to bottom,
+  rgba(0,0,0,.66) calc(100% - var(--hiD)), rgba(0,0,0,0) calc(100% - var(--hiD) + 14px));}
+#reg-dim.hi-u{background:linear-gradient(to top,
+  rgba(0,0,0,.66) calc(100% - var(--hiU)), rgba(0,0,0,0) calc(100% - var(--hiU) + 14px));}
+/* ※窓の縦位置は regFitTo が「実際に使った床」から計算して直接指定する
+   （明るく残す帯を避けたか、線だけ避けたかで正しい中心が変わるため） */
 /* ★画面がとても低い端末（古いiPhoneの横向き=約230px）でだけ線を細くする。
    線は「押す場所の目印」なので消さない。細くしても役目は果たす。
    ふつうの横向き（約275〜290px）は26pxのまま＝見やすさを落とさない */
@@ -1240,7 +1253,7 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
   #reg-band.b-d{box-shadow:inset 0 -3px 0 #ffd769, 0 -3px 12px rgba(255,215,105,.35);}
 }
 /* 上の線を出す時だけ、案内をわずかに下げて重ならないようにする */
-#reg-strip.low{top:calc(env(safe-area-inset-top) + var(--bandH,26px) + 8px);}
+#reg-strip.low{top:calc(env(safe-area-inset-top) + var(--hiU,44px) + 8px);}
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
   margin:0 auto;max-width:620px;
   z-index:2147483647;display:none;background:#fff;color:#1a2520;
@@ -1532,7 +1545,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.03-lab（光る線に戻す・詰めの並び順を修正）</div>
+    <div class="ps-version">version 3.04-lab（押す側を明るく残す・手順中も継続）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2604,12 +2617,17 @@ function regShow(key){
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
+  // ★「押すマークがどちら側にあるか」は、次の手順の画面へも引き継ぐ。
+  //   引き継がないと、手順カードに変わった瞬間に明るい帯も線も消える
+  //   （2026-08-13 実機写真で発覚：⋯の手順カードで何も光っていなかった）
+  if(sc.ar) _regArwAns=sc.ar;
   _regOri=regOri();                            // この画面を出した時の向きを覚える
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  // 中央の窓は自分で暗くするので暗幕は出さない。列が分かっていれば線だけ出す
-  try{ regHiOn(sc.ar, false); }catch(_){}
+  // 中央の窓は自分で暗くするので暗幕は出さない。
+  // ★どちら側かが分かったら、そのあとの画面でもずっと明るく強調し続ける（2026-08-13指示）
+  try{ regHiOn(sc.ar || _regArwAns, false); }catch(_){}
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2677,16 +2695,19 @@ function regHiOn(spec, 暗幕を出す){
   var d=document.getElementById('reg-dim'), b=document.getElementById('reg-band'),
       st=document.getElementById('reg-strip');
   var v=String(spec||'').charAt(0);
-  var box=document.getElementById('reg-box');
+  regHiSize();
+  var box=document.getElementById('reg-box'), w=document.getElementById('reg');
   if(d) d.className = 暗幕を出す ? 'on' : '';
   if(st) st.classList.remove('low');
-  if(box) box.classList.remove('lift');
+  if(w){ w.classList.remove('hi-u'); w.classList.remove('hi-d'); }
   if(b){
     b.className='';
     if(v==='u'||v==='d'){
       b.className='on b-'+v;
-      if(v==='u' && st) st.classList.add('low');    // 上の線と重ならないよう案内を下げる
-      if(v==='d' && box) box.classList.add('lift'); // 下の線ぶん窓を持ち上げる
+      // 押すマークがある側を「暗くしない」＝明るいまま残す。窓でも帯でも同じにする
+      if(暗幕を出す && d) d.className='on hi-'+v;
+      else if(w) w.classList.add('hi-'+v);
+      if(v==='u' && st) st.classList.add('low');    // 上の帯と重ならないよう案内を下げる
     }
   }
 }
@@ -2696,7 +2717,8 @@ function regHiOff(){
   if(d) d.className='';
   if(b) b.className='';
   if(st) st.classList.remove('low');
-  try{ document.getElementById('reg-box').classList.remove('lift'); }catch(_){}
+  try{ document.getElementById('reg-box').style.top=''; }catch(_){}
+  try{ var w=document.getElementById('reg'); w.classList.remove('hi-u'); w.classList.remove('hi-d'); }catch(_){}
 }
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
@@ -2723,33 +2745,63 @@ function regStripShow(key){
   st.classList.add('on');
   // ★順番が大事：先に線を決めて（上の線なら案内を下げて）から寸法を合わせる。
   //   逆にすると、下げた分を勘定できず画面の下で切れる（2026-08-13 実機で2回発生）
-  try{ regHiOn(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : ''), true); }catch(_){}
+  try{ regHiOn(REG[key].ar || _regArwAns, true); }catch(_){}
   regStripFit();
   try{ regFabSync(); }catch(_){}
 }
 // 案内を置いてよい下端。下に光る線が出ている時は、その線に被せない。
 // 線は「押す場所の目印」なので、隠したら意味が無くなる。
 // ★推測値ではなく、実際に出ている線の位置を測って使う（誤発動しても線が無ければ画面の下＝従来どおり）
-function regFloor(){
+//   強い=true … 明るく残す帯まるごとを避ける（見せたい所を案内で塞がない）
+//   強い=false … 線だけ避ける（狭い画面で、避けきれない時のゆるめた基準）
+// 明るく残す帯の高さを決めてCSSにも渡す。
+// ★CSSの min() はJavaScriptから数値として読めない（parseFloatがNaNになる）ので、
+//   数はここで一箇所だけ決めて、CSSへは実数のpxで渡す＝両者が食い違わない
+//   （2026-08-13の失敗：CSS側の min() をJSが0と読み、明るい帯を避けられていなかった）
+function regHiSize(){
+  // ★下限36px。線(最大26px)＋余白8px より狭くすると、線しか見えず「明るい」と分からない
+  var d=Math.round(Math.max(Math.min(104, innerHeight*0.22), 36));
+  var u=Math.round(Math.max(Math.min(44,  innerHeight*0.12), 36));
+  try{
+    var rt=document.documentElement.style;
+    rt.setProperty('--hiD', d+'px');
+    rt.setProperty('--hiU', u+'px');
+  }catch(_){}
+  return {d:d, u:u};
+}
+// 上に明るく残す帯がある時、案内を置いてよい上端
+function regCeil(){
+  try{
+    var b=document.getElementById('reg-band');
+    if(b && b.classList.contains('on') && b.classList.contains('b-u')){
+      return Math.min(regHiSize().u, innerHeight*0.25);
+    }
+  }catch(_){}
+  return 0;
+}
+function regFloor(強い){
   try{
     var b=document.getElementById('reg-band');
     if(b && b.classList.contains('on') && b.classList.contains('b-d')){
       var r=b.getBoundingClientRect();
-      if(r.height>0 && r.top>0) return r.top;
+      if(r.height>0 && r.top>0){
+        if(!強い) return r.top-10;   // 線のすぐ上に10pxだけ明るい余白を必ず残す
+        return Math.max(innerHeight-regHiSize().d, Math.min(r.top, innerHeight*0.45));
+      }
     }
   }catch(_){}
   return innerHeight;
 }
 // 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
-function regStripFit(){
-  var st=document.getElementById('reg-strip'); if(!st) return;
+function regStripFitTo(床){
+  var st=document.getElementById('reg-strip'); if(!st) return true;
   // ★前の画面の詰めを必ず先に全部外す。narrowを残したまま測ると縮んだ寸法で
   //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
   st.classList.remove('tight'); st.classList.remove('wide'); st.classList.remove('tight2');
   st.classList.remove('tight3');
   st.classList.remove('narrow'); st.classList.remove('narrow2');
   st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
-  var top=st.getBoundingClientRect().top, 床=regFloor();
+  var top=st.getBoundingClientRect().top;
   // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
   var limit=Math.min(床-top-10, innerHeight*0.6);
   if(st.getBoundingClientRect().height>limit) st.classList.add('tight');
@@ -2773,7 +2825,11 @@ function regStripFit(){
     st.style.maxHeight=Math.max(120, 床-rr.top-8)+'px';
     st.style.overflowY='auto';
   }
-
+  return st.scrollHeight<=st.clientHeight+1 && st.getBoundingClientRect().bottom<=床+0.5;
+}
+// まず「明るく残す帯」ごと避けて置いてみる。どうしても入らない狭い画面だけ、線の上までに緩める
+function regStripFit(){
+  if(!regStripFitTo(regFloor(true))) regStripFitTo(regFloor(false));
 }
 
 function regStripNoWrap(st){
@@ -2826,33 +2882,38 @@ function regFabSync(){
   }catch(_){}
 }
 // 箱の高さを実測し、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
-function regFit(){
-  var e=regEls(); if(!e.box) return;
+function regFitTo(天井,床){
+  var e=regEls(); if(!e.box) return true;
+  // 使える場所（天井〜床）の真ん中に置く。線や明るい帯がなければ従来どおり画面の中央
+  e.box.style.top=Math.round((天井+床)/2)+'px';
+  var 高さ=床-天井;
   e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
   e.box.classList.remove('tight'); e.box.classList.remove('cols'); e.box.classList.remove('tight2');
   e.box.classList.remove('tight3');
   e.box.style.maxHeight=''; e.box.style.overflowY='';   // 前回の保険を外してから測る
-  // 下に光る線が出ている時は、その線を隠さない高さまでしか使わない
-  var 床=regFloor();
-  if(e.box.getBoundingClientRect().height > 床-12) e.box.classList.add('tight');
+  if(e.box.getBoundingClientRect().height > 高さ-12) e.box.classList.add('tight');
   // 詰めてもまだ入らない時だけ2列にする。実測してから付けるので、入る画面は今までどおり1列
-  if(e.box.getBoundingClientRect().height > 床-12){
+  if(e.box.getBoundingClientRect().height > 高さ-12){
     e.box.classList.add('cols');
     // ★2列にするとボタンが半分の幅になり、長い名前が折り返してしまう。
     //   横向きで発動する仕組みなので幅には余裕がある。窓ごと広げて1行に戻す
     e.box.style.width=Math.min(innerWidth-24, 560)+'px';
   }
   // ★それでも入らないならもう一段小さくする。中身が全部見えることを優先する
-  if(e.box.getBoundingClientRect().height > 床-12) e.box.classList.add('tight2');
+  if(e.box.getBoundingClientRect().height > 高さ-12) e.box.classList.add('tight2');
   // ★とても低い画面（古いiPhoneの横向き=約230px）用のもう一段
-  if(e.box.getBoundingClientRect().height > 床-12) e.box.classList.add('tight3');
+  if(e.box.getBoundingClientRect().height > 高さ-12) e.box.classList.add('tight3');
   // ★最後の保険：ここまでやっても入らない画面では、窓の中でたどれるようにする。
   //   上下に切れて読めない・押せないより良い（2026-08-13の総点検で発覚）
-  if(e.box.getBoundingClientRect().height > 床-12){
-    e.box.style.maxHeight=(床-12)+'px';
+  if(e.box.getBoundingClientRect().height > 高さ-12){
+    e.box.style.maxHeight=(高さ-12)+'px';
     e.box.style.overflowY='auto';
   }
-
+  return e.box.scrollHeight<=e.box.clientHeight+1;
+}
+// まず「明るく残す帯」ごと避けて置いてみる。どうしても入らない狭い画面だけ、線の上までに緩める
+function regFit(){
+  if(!regFitTo(regCeil(), regFloor(true))) regFitTo(0, regFloor(false));
 }
 
 function regPick(b){
