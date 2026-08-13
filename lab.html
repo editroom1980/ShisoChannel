@@ -1185,32 +1185,38 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
 /* 押すボタンの方向を指す矢印（2026-08-13・実機の指摘を受けて改訂）。
    ウェブページはブラウザ自身のボタンの上に描けない決まりがあるため、
-   画面の端まで寄せて「この先にあります」と指す。
-   周囲を暗くして矢印だけを残す＝他に見るものが無くなる（使い方説明と同じ考え方）。
-   手順の文がすでに位置を書いている画面にだけ出す＝新しい主張は足さない。 */
+   画面の端まで寄せて「この先にあります」と指す。ここが物理的な限界。
+   周囲を暗くして矢印だけを残す（使い方説明と同じ考え方）。
+   位置が2通りある画面では、両方に出して間に「どちらかに」と書く＝
+   曖昧なものを曖昧なまま正しく伝える。決めつけない。 */
 #reg-dim{position:fixed;inset:0;z-index:2147483645;display:none;
   background:rgba(0,0,0,.66);pointer-events:none;}
 #reg-dim.on{display:block;}
-#reg-arw{position:fixed;z-index:2147483646;display:none;pointer-events:none;
-  width:52px;height:52px;color:#ffd769;filter:drop-shadow(0 0 10px rgba(0,0,0,.9));}
+/* 中央の窓(#reg)より後ろに置いてあるので、同じ重なり順でも矢印が上に出る */
+#reg-arw{position:fixed;inset:0;z-index:2147483647;display:none;pointer-events:none;}
 #reg-arw.on{display:block;}
-#reg-arw svg{width:100%;height:100%;display:block;}
-/* 下向きは画面の下端ぴったりへ。ブラウザのバーは真下にある */
-#reg-arw.a-d{left:50%;margin-left:-26px;bottom:2px;}
-#reg-arw.a-dr{right:8px;bottom:2px;}
-/* 上向きは画面の上端へ。帯は下げて場所をあける（.lowが付く） */
-#reg-arw.a-u{left:50%;margin-left:-26px;top:calc(env(safe-area-inset-top) + 4px);}
-#reg-arw.a-ur{right:8px;top:calc(env(safe-area-inset-top) + 4px);}
-#reg-arw.a-d,#reg-arw.a-dr{animation:regArwD 1.6s ease-in-out infinite;}
-#reg-arw.a-u,#reg-arw.a-ur{animation:regArwU 1.6s ease-in-out infinite;}
+.ra{position:absolute;width:52px;height:52px;color:#ffd769;
+  filter:drop-shadow(0 0 10px rgba(0,0,0,.9));}
+.ra svg{width:100%;height:100%;display:block;}
+.ra.d{left:50%;margin-left:-26px;bottom:2px;}
+.ra.dr{right:8px;bottom:2px;}
+.ra.u{left:50%;margin-left:-26px;top:calc(env(safe-area-inset-top) + 4px);}
+.ra.ur{right:8px;top:calc(env(safe-area-inset-top) + 4px);}
+.ra.u svg,.ra.ur svg{transform:rotate(180deg);}
+.ra.d,.ra.dr{animation:regArwD 1.6s ease-in-out infinite;}
+.ra.u,.ra.ur{animation:regArwU 1.6s ease-in-out infinite;}
 @keyframes regArwD{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
 @keyframes regArwU{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 /* 動きを減らす設定の端末では、動かす代わりに明るさで気づかせる */
 @media (prefers-reduced-motion: reduce){
-  #reg-arw{animation:none!important;}
-  #reg-arw.on{animation:regArwFade 1.8s ease-in-out infinite!important;}
+  .ra{animation:regArwFade 1.8s ease-in-out infinite!important;}
 }
 @keyframes regArwFade{0%,100%{opacity:1}50%{opacity:.45}}
+/* 2か所に出す時、その間に置く言葉 */
+#ra-txt{position:absolute;left:50%;transform:translateX(-50%);bottom:60px;
+  background:rgba(0,0,0,.88);color:#fff;font-size:14.5px;font-weight:700;
+  padding:8px 15px;border-radius:999px;white-space:nowrap;letter-spacing:.3px;}
+#ra-txt.up{bottom:auto;top:calc(env(safe-area-inset-top) + 62px);}
 /* 上向きの時だけ帯を下げて、画面の上に矢印の場所をあける */
 #reg-strip.low{top:calc(env(safe-area-inset-top) + 62px);}
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
@@ -1474,7 +1480,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.91-lab（矢印を暗幕で強調・位置を修正）</div>
+    <div class="ps-version">version 2.92-lab（2か所に矢印＋どちらかに）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2309,7 +2315,7 @@ var REG={
         d:['画面のどこにありますか。'],
         b:[{l:'画面の下にある',go:'sShare',ar:'d'},{l:'右上にある',go:'sShare',ar:'ur'},
            {l:'見当たらない',go:'iDots'},{l:'LINEやXの中で見ている',go:'inApp'}]},
- iDots:{t:'このマークを探します', ic:'dots',
+ iDots:{t:'このマークを探します', ic:'dots', ar:'d,dr', arTxt:'このどちらかにありませんか',
         d:['画面の下か右下にあります。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sDots',p:1},{l:'それも無い',go:'iSafari'}]},
  iEdit:{t:'一覧に見当たらない時',
@@ -2525,7 +2531,7 @@ function regShow(key){
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regArwHide(); }catch(_){}   // 帯から中央の窓へ移る時、矢印を残さない
+  try{ regArwShow(sc.ar, sc.arTxt, false); }catch(_){}   // 中央の窓でも指せる（窓は元から暗い）
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2586,30 +2592,36 @@ var _regArwAns='';   // iShareで利用者が答えたマークの位置
 var REG_ARW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '+
   'stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15"/><path d="M5.5 12.5 12 19l6.5-6.5"/></svg>';
 // 矢印を出す。向きは「手順の文がすでに書いている位置」だけ。書いていない画面には出さない。
-// 周囲を暗くして矢印だけ残す。上向きの時は帯を下げて、画面の上に場所をあける。
-function regArwShow(dir){
+//   spec … 'd'（下）'dr'（右下）'u'（上）'ur'（右上）。'd,dr' のように2か所も指定できる
+//   txt  … 2か所の時に間へ出す言葉（「このどちらかにありませんか」等）
+//   dim  … 周囲を暗くするか（中央の窓は元から暗くなるので、その時は false）
+function regArwShow(spec, txt, dim){
   var a=document.getElementById('reg-arw'), d=document.getElementById('reg-dim'),
       st=document.getElementById('reg-strip');
   if(!a) return;
   a.className=''; a.innerHTML='';
   if(d) d.classList.remove('on');
   if(st) st.classList.remove('low');
-  if(!dir) return;
-  a.innerHTML=REG_ARW;
-  if(dir==='u'||dir==='ur'){
-    a.firstChild.style.transform='rotate(180deg)';
-    if(st) st.classList.add('low');       // 帯を下げて、上に矢印の場所をあける
+  if(!spec) return;
+  var dirs=String(spec).split(','), up=false, n=0;
+  for(var i=0;i<dirs.length;i++){
+    var v=dirs[i].replace(/\s/g,'');
+    if(v!=='d'&&v!=='dr'&&v!=='u'&&v!=='ur') continue;   // 知らない指定は無視
+    var e=document.createElement('div'); e.className='ra '+v; e.innerHTML=REG_ARW;
+    a.appendChild(e); n++;
+    if(v==='u'||v==='ur') up=true;
   }
-  a.className='on a-'+dir;
-  if(d) d.classList.add('on');
+  if(!n) return;
+  if(txt && n>1){
+    var t=document.createElement('div'); t.id='ra-txt'; t.textContent=txt;
+    if(up) t.className='up';
+    a.appendChild(t);
+  }
+  a.className='on';
+  if(up && st) st.classList.add('low');   // 帯を下げて、上に矢印の場所をあける
+  if(dim && d) d.classList.add('on');
 }
-function regArwHide(){
-  var a=document.getElementById('reg-arw'), d=document.getElementById('reg-dim'),
-      st=document.getElementById('reg-strip');
-  if(a){ a.className=''; a.innerHTML=''; }
-  if(d) d.classList.remove('on');
-  if(st) st.classList.remove('low');
-}
+function regArwHide(){ regArwShow(''); }
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
@@ -2634,7 +2646,7 @@ function regStripShow(key){
   });
   st.classList.add('on');
   regStripFit();
-  try{ regArwShow(REG[key].ar || (key==='sShare' ? _regArwAns : '')); }catch(_){}
+  try{ regArwShow(REG[key].ar || (key==='sShare' ? _regArwAns : ''), REG[key].arTxt, true); }catch(_){}
   try{ regFabSync(); }catch(_){}
 }
 // 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
