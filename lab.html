@@ -1183,6 +1183,23 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      だから「やる」段階は画面の上に手順を出したままにする。
      暗幕なし・押す必要なし＝端末の操作を一切妨げない。
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
+/* 押すボタンの方向を指す矢印（2026-08-13）。
+   ウェブページはブラウザ自身のボタンの上に描けない決まりがあるため、
+   画面の端から「この先にあります」と指す形にする。
+   手順の文がすでに位置を書いている画面にだけ出す＝新しい主張は足さない。 */
+#reg-arw{position:fixed;z-index:2147483646;display:none;pointer-events:none;
+  width:46px;height:46px;color:#c8992a;filter:drop-shadow(0 2px 7px rgba(0,0,0,.55));}
+#reg-arw.on{display:block;}
+#reg-arw svg{width:100%;height:100%;display:block;}
+#reg-arw.a-d{left:50%;margin-left:-23px;bottom:calc(env(safe-area-inset-bottom) + 14px);}
+#reg-arw.a-dr{right:12px;bottom:calc(env(safe-area-inset-bottom) + 14px);}
+#reg-arw.a-ur{right:12px;}
+#reg-arw.a-u{left:50%;margin-left:-23px;}
+#reg-arw.a-d,#reg-arw.a-dr{animation:regArwD 1.6s ease-in-out infinite;}
+#reg-arw.a-ur,#reg-arw.a-u{animation:regArwU 1.6s ease-in-out infinite;}
+@keyframes regArwD{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+@keyframes regArwU{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@media (prefers-reduced-motion: reduce){ #reg-arw{animation:none!important;} }
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
   margin:0 auto;max-width:620px;
   z-index:2147483647;display:none;background:#fff;color:#1a2520;
@@ -1444,7 +1461,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.89-lab（案内にアイコンを見せる）</div>
+    <div class="ps-version">version 2.90-lab（押す方向を矢印で示す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1715,6 +1732,7 @@ html.tvpc #settings-panel .set-link{
   </div>
 </div>
 <!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
+<div id="reg-arw"></div>
 <div id="reg-strip">
   <div id="rs-head">
     <div id="rs-icon"></div>
@@ -2275,7 +2293,7 @@ var REG={
  // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
  iShare:{t:'このマークを探します', ic:'share',
         d:['画面のどこにありますか。'],
-        b:[{l:'画面の下にある',go:'sShare'},{l:'右上にある',go:'sShare'},
+        b:[{l:'画面の下にある',go:'sShare',ar:'d'},{l:'右上にある',go:'sShare',ar:'ur'},
            {l:'見当たらない',go:'iDots'},{l:'LINEやXの中で見ている',go:'inApp'}]},
  iDots:{t:'このマークを探します', ic:'dots',
         d:['画面の下か右下にあります。','まだ押さないでください。'],
@@ -2381,7 +2399,7 @@ var REG={
            {sub:'→ 名前を決める画面が出ます'},
            {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
- sChrome:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+ sChrome:{strip:1, ar:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {sub:'色のついた丸のこともあります'},
            {n:2,t:'「アプリをインストール」'},
@@ -2389,21 +2407,21 @@ var REG={
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
- sEdge:{strip:1, ic:'bars', tr:'troubleA', h:'この順に押します',
+ sEdge:{strip:1, ar:'dr', ic:'bars', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下の{bars}を押す'},
            {n:2,t:'「電話に追加」を押す'},
            {sub:'横にめくると出てきます'},
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
- sFire:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+ sFire:{strip:1, ar:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {n:2,t:'「その他」を押す'},
            {sub:'メニューの下のほうにあります'},
            {n:3,t:'「ホーム画面にアプリを追加」'},
            {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
- sSams:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+ sSams:{strip:1, ar:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下のメニューを押す'},
            {sub:'{bars}か{menu}の形です'},
            {n:2,t:'「ページを追加」を押す'},
@@ -2413,7 +2431,7 @@ var REG={
  // ★らくらくスマホ(FCNT)。他機種と違い「共有」も「⋮」も出てこない。ドコモF-53E取説p.68の逐語
  //   「登録したブックマークをホーム画面の『よく使うブックマーク』カテゴリに貼り付けるかどうかの
  //     確認画面が表示されますので、［貼る］／［貼らない］を選択して設定できます」
- sRaku:{strip:1, ic:'book', tr:'troubleR', h:'この順に押します',
+ sRaku:{strip:1, ar:'u', ic:'book', tr:'troubleR', h:'この順に押します',
         s:[{n:1,t:'上の{book}を押す（しおり）'},
            {sub:'画面の上、「検索」のとなり'},   // FCNT FAQ 20668 の逐語「「検索」ボタン右隣」
            {n:2,t:'「現在のページを登録」'},
@@ -2422,7 +2440,7 @@ var REG={
            {n:4,t:'「貼る」を押す'},
            {sub:'「よく使うブックマーク」に入ります'}]},
  // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
- sRaku2:{strip:1, ic:'book', tr:'troubleR', h:'あとから貼る場合',
+ sRaku2:{strip:1, ar:'u', ic:'book', tr:'troubleR', h:'あとから貼る場合',
         s:[{n:1,t:'上の「しおり」を押す'},
            {n:2,t:'「メニュー」を押す'},
            {n:3,t:'「ホーム画面に貼る」'},
@@ -2493,6 +2511,7 @@ function regShow(key){
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
+  try{ regArwHide(); }catch(_){}   // 帯から中央の窓へ移る時、矢印を残さない
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2549,6 +2568,26 @@ function regMarkText(el, str){
     }else{ el.appendChild(document.createTextNode('{'+parts[i]+'}')); }  // 名前を間違えたら気づけるように
   }
 }
+var _regArwAns='';   // iShareで利用者が答えたマークの位置
+var REG_ARW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '+
+  'stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15"/><path d="M5.5 12.5 12 19l6.5-6.5"/></svg>';
+// 矢印を出す。向きは「手順の文がすでに書いている位置」だけ。書いていない画面には出さない。
+function regArwShow(dir){
+  var a=document.getElementById('reg-arw'); if(!a) return;
+  a.className='';
+  if(!dir){ a.innerHTML=''; return; }
+  a.innerHTML=REG_ARW;
+  // 上を指す時は矢印を反転させる
+  a.firstChild.style.transform=(dir==='u'||dir==='ur')?'rotate(180deg)':'';
+  a.className='on a-'+dir;
+  // 上向きは帯の下に置く（帯が画面の上を占めているため、重ねない）
+  if(dir==='u'||dir==='ur'){
+    var st=document.getElementById('reg-strip');
+    var b=st?st.getBoundingClientRect().bottom:0;
+    a.style.top=Math.round(b+10)+'px'; a.style.bottom='';
+  }else{ a.style.top=''; }
+}
+function regArwHide(){ var a=document.getElementById('reg-arw'); if(a){ a.className=''; a.innerHTML=''; } }
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
@@ -2573,6 +2612,7 @@ function regStripShow(key){
   });
   st.classList.add('on');
   regStripFit();
+  try{ regArwShow(REG[key].ar || (key==='sShare' ? _regArwAns : '')); }catch(_){}
   try{ regFabSync(); }catch(_){}
 }
 // 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
@@ -2622,6 +2662,7 @@ function regStripNoWrap(st){
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
+  try{ regArwHide(); }catch(_){}
 }
 // ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
 function regFabSync(){
@@ -2634,7 +2675,7 @@ function regFabSync(){
     if(st && st.classList.contains('on')){
       show=false;
       // ★全画面で見始めたら帯は引っ込める（映像に被せない）。状態は壊さない
-      if(isExpanded) st.classList.remove('on');
+      if(isExpanded){ st.classList.remove('on'); try{ regArwHide(); }catch(_){} }
     }
     try{ var sp=document.getElementById('settings-panel');
          if(sp && sp.classList.contains('open')) show=false; }catch(_){}
@@ -2656,6 +2697,7 @@ function regFit(){
   }
 }
 function regPick(b){
+  if(b.ar) _regArwAns=b.ar;   // 「画面の下」「右上」という利用者自身の答えを覚える
   if(b.go==='@prompt'){ regDoPrompt(); return; }
   if(b.go==='@escape'){ regDoEscape(); return; }
   if(b.go==='@back'){                 // 「手順にもどる」＝直前の帯へ
