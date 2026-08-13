@@ -1485,7 +1485,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.93-lab（右下の矢印をボタン位置へ）</div>
+    <div class="ps-version">version 2.94-lab（iPhoneのChromeに対応）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2316,6 +2316,18 @@ var REG={
         b:[{l:'ブラウザで開く',go:'@escape',p:1},{l:'とじる',go:null}]},
 
  // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
+ iChrome:{t:'このマークを探します', ic:'share', ar:'ur,dr',
+        d:['アドレスバーの右にあります。','画面の上か下です。'],
+        b:[{l:'見つかった',go:'sChromeI',p:1},{l:'見当たらない',go:'iSafari'}]},
+ // ★Chrome公式ヘルプで確認（2026-08-13）。Safariと道筋が違う。
+ //   Chromeのメニュー(⋯)に「共有」は上の方に無く、Safariの手順では詰まる。
+ //   正しくは アドレスバーの右の共有 →「ホーム画面に追加」→「追加」
+ sChromeI:{strip:1, ic:'share', ar:'ur,dr', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'この{share}を押す'},
+           {sub:'アドレスバーの右にあります'},
+           {n:2,t:'「ホーム画面に追加」'},
+           {sub:'下へたどると出てきます'},
+           {n:3,t:'「追加」を押す'}]},
  iShare:{t:'このマークを探します', ic:'share',
         d:['画面のどこにありますか。'],
         b:[{l:'画面の下にある',go:'sShare',ar:'d'},{l:'右上にある',go:'sShare',ar:'ur'},
@@ -2528,7 +2540,8 @@ function regShow(key){
     //   （その中のブラウザにはホーム画面へ追加する機能が無い）
     if(regInApp())            key='inApp';
     else if(_regPrompt)       key='oneTap';
-    else if(regIsApple())     key='iShare';    // ★isIOSではなく専用判定。iPadで外れていた
+    else if(regIsApple())     key=(/CriOS\//.test(navigator.userAgent)?'iChrome':'iShare');
+    // ★isIOSではなく専用判定。iPadで外れていた。iPhoneのChromeはSafariと道筋が違う
     else if(regIsPc())        key='pc';
     else                      key='aBrowser';
   }
