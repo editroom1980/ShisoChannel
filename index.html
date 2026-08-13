@@ -1149,6 +1149,11 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
   background:#f2f4f3;color:#1a2520;align-items:center;justify-content:center;}
 #reg-icon.on{display:flex;}
 #reg-icon svg{width:38px;height:38px;display:block;}
+/* アプリのアイコンを見せる時は枠いっぱいに。形は端末に合わせる
+   （iPhoneとパソコンは角丸、Androidは丸く切り抜かれるため） */
+#reg-icon.app{background:none;overflow:hidden;}
+#reg-icon.app img{width:100%;height:100%;display:block;object-fit:cover;}
+#reg-icon.app.round{border-radius:50%;}
 #reg-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
 #reg-txt{font-size:16px;line-height:1.65;}
 #reg-btns{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
@@ -1438,7 +1443,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.88</div>
+    <div class="ps-version">version 2.89</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2232,7 +2237,7 @@ function regIsPc(){                       // パソコン＝ホーム画面が�
 //  画面の定義。d は行ごとの配列（折り返しを決め打ちするため）
 var REG={
  // ── 入口（中央の窓）─────────────────────────────
- start:{t:'ホーム画面に置きませんか',
+ start:{t:'ホーム画面に置きませんか', app:1,
         d:['アイコンを押すだけで','すぐ放送が始まります。'],
         b:[{l:'ホーム画面に置く',go:'route',p:1},{l:'あとにする',go:null}]},
 
@@ -2490,8 +2495,23 @@ function regShow(key){
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
-  if(sc.ic && REG_ICON[sc.ic]){ e.icon.innerHTML=REG_ICON[sc.ic]; e.icon.classList.add('on'); }
-  else { e.icon.textContent=''; e.icon.classList.remove('on'); }
+  // アプリのアイコンを見せる画面（何が手に入るかを先に見せる）。
+  // その端末のホーム画面に実際に出る絵を出す＝iPhoneは元の絵、Androidは丸用の絵。
+  if(sc.app){
+    var _ap=regIsApple(), _pc=regIsPc();
+    var _src=_ap?'icon-180.png?v=245':(_pc?'icon-192.png?v=245':'icon-mask-v2.png');
+    e.icon.innerHTML='<img src="'+_src+'" alt="しそチャンNETのアイコン">';
+    e.icon.classList.add('on'); e.icon.classList.add('app');
+    e.icon.classList.toggle('round', !_ap && !_pc);   // Androidだけ丸
+  }
+  else if(sc.ic && REG_ICON[sc.ic]){
+    e.icon.innerHTML=REG_ICON[sc.ic]; e.icon.classList.add('on');
+    e.icon.classList.remove('app'); e.icon.classList.remove('round');
+  }
+  else {
+    e.icon.textContent=''; e.icon.classList.remove('on');
+    e.icon.classList.remove('app'); e.icon.classList.remove('round');
+  }
   e.ttl.textContent=sc.t;
   tourLines(e.txt, sc.d);
   e.btns.textContent='';
