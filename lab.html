@@ -1161,10 +1161,22 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* ★横向きのiPhoneなど画面が低い時だけ、実測ではみ出した場合に詰める（regFit が付ける）。
    @media(height)は使わない＝iOSがアプリ内ブラウザ復帰時に判定を凍らせるため */
 #reg-box.tight{padding:12px 16px 12px;}
+/* ★詰めてもまだ中身が隠れる時の最後の一段。切れて読めないより、少し小さくても
+   全部見える方が良い（2026-08-13指示：中身が全部収まって見えるようにしろ） */
+#reg-box.tight2{padding:9px 14px 9px;}
+#reg-box.tight2 #reg-icon{width:38px;height:38px;margin-bottom:4px;border-radius:10px;}
+#reg-box.tight2 #reg-icon svg{width:23px;height:23px;}
+#reg-box.tight2 #reg-ttl{font-size:15px;margin-bottom:2px;}
+#reg-box.tight2 #reg-txt{font-size:14px;line-height:1.38;}
+#reg-box.tight2 #reg-btns{margin-top:7px;gap:5px;}
+#reg-box.tight2 .reg-btn{padding:7px 12px;font-size:14px;}
 /* ★詰めてもまだ入らない時だけボタンを2列にする（横向きで選択肢が多い画面）。
    入るなら付かない＝誤発動しても何も変わらない。主ボタン(.go)だけは横いっぱいのまま */
 #reg-box.cols #reg-btns{display:grid;grid-template-columns:1fr 1fr;}
 #reg-box.cols #reg-btns .reg-btn.go{grid-column:1 / -1;}
+/* ★最も詰めた時だけ、主ボタンも2列に混ぜて1行ぶん節約する。
+   色は金色のままなので、どれが主かは分かる（2026-08-13：選択肢6つの画面で必要になった） */
+#reg-box.cols.tight2 #reg-btns .reg-btn.go{grid-column:auto;}
 #reg-box.tight #reg-icon{width:44px;height:44px;margin-bottom:6px;border-radius:11px;}
 #reg-box.tight #reg-icon svg{width:27px;height:27px;}
 #reg-box.tight #reg-ttl{font-size:16px;margin-bottom:3px;}
@@ -1183,34 +1195,22 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      だから「やる」段階は画面の上に手順を出したままにする。
      暗幕なし・押す必要なし＝端末の操作を一切妨げない。
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
-/* 押す場所を示す帯（2026-08-13・実機4台の指摘を受けて作り直し）。
-   ブラウザの道具の列はページの外にあり、何がどこにあるかJavaScriptからは見えない。
-   並びは 端末・ブラウザ・向き で全部違う（iPad SafariとChromeですら違う）。
-   実機4台で4回とも違うボタンを指したため、「一点を指す」考え方をやめた。
-   分かるのは「上の列か下の列か」だけ（本人に聞いている）。
-   そこで、その列の側の端いっぱいに帯を光らせて範囲で示す＝常に正しい。 */
+/* 登録作業のあいだ、周囲を暗くして案内だけを明るく残す（2026-08-13）。
+   当初は押す場所を矢印や光る線で指そうとしたが、ブラウザの道具の列はページの外にあり、
+   何がどこにあるかJavaScriptからは見えない。並びは端末・ブラウザ・向きで全部違い、
+   実機4台で4回とも違うボタンを指した（iPadのSafariとChromeですら並びが違う）。
+   さらに線を出すと案内を下げる必要があり、横向きで中身が切れる原因にもなった。
+   → 場所を示すのはやめ、暗くして案内に集中してもらう形にした。これは常に正しい。 */
 #reg-dim{position:fixed;inset:0;z-index:2147483645;display:none;
-  background:rgba(0,0,0,.66);pointer-events:none;}
+  background:rgba(0,0,0,.66);pointer-events:none;
+  transition:background .45s ease;}
 #reg-dim.on{display:block;}
-#reg-band{position:fixed;left:0;right:0;z-index:2147483647;display:none;
-  height:54px;pointer-events:none;box-sizing:border-box;
-  align-items:center;justify-content:center;gap:9px;
-  background:rgba(255,215,105,.30);color:#fff5d6;
-  font-weight:800;font-size:17px;letter-spacing:.4px;
-  text-shadow:0 1px 4px rgba(0,0,0,.95);
-  animation:regBand 1.9s ease-in-out infinite;}
-#reg-band.on{display:flex;}
-#reg-band.b-u{top:0;border-bottom:4px solid #ffd769;
-  box-shadow:0 8px 22px rgba(0,0,0,.6), inset 0 -14px 22px -14px rgba(255,215,105,.55);}
-#reg-band.b-d{bottom:0;border-top:4px solid #ffd769;
-  box-shadow:0 -8px 22px rgba(0,0,0,.6), inset 0 14px 22px -14px rgba(255,215,105,.55);}
-#reg-band .rb-ic{width:30px;height:30px;flex:0 0 30px;display:block;color:#fff5d6;}
-#reg-band .rb-ic svg{width:100%;height:100%;display:block;}
-@keyframes regBand{0%,100%{opacity:1}50%{opacity:.58}}
-/* 動きを減らす設定の端末では明滅させない（帯は出したままにする） */
-@media (prefers-reduced-motion: reduce){ #reg-band{animation:none!important;} }
-/* 上の帯を出す時だけ、案内の帯を下げて場所をあける */
-#reg-strip.low{top:calc(env(safe-area-inset-top) + 64px);}
+/* 押すマークがある列の側だけ、暗さをゆるめて明るく見せる。
+   硬い線を引かないので位置を誤ることがなく、高さも取らない（案内を下げずに済む） */
+#reg-dim.g-u{background:linear-gradient(to bottom,
+  rgba(0,0,0,.16) 0, rgba(0,0,0,.48) 70px, rgba(0,0,0,.70) 150px, rgba(0,0,0,.70) 100%);}
+#reg-dim.g-d{background:linear-gradient(to top,
+  rgba(0,0,0,.16) 0, rgba(0,0,0,.48) 70px, rgba(0,0,0,.70) 150px, rgba(0,0,0,.70) 100%);}
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
   margin:0 auto;max-width:620px;
   z-index:2147483647;display:none;background:#fff;color:#1a2520;
@@ -1249,6 +1249,19 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
   -webkit-tap-highlight-color:transparent;}
 /* 画面が狭い/低い時だけ詰める（実測して入らない時のみ regStripFit が付ける） */
 #reg-strip.tight{padding:11px 13px;}
+/* ★詰めてもまだ中身が隠れる時の最後の一段（小さい端末の横向き）。
+   切れて読めないより、少し小さくても全部見える方が良い（2026-08-13指示） */
+#reg-strip.tight2{padding:8px 11px;}
+#reg-strip.tight2 #rs-icon{width:40px;height:40px;border-radius:11px;}
+#reg-strip.tight2 #rs-icon svg{width:27px;height:27px;}
+#reg-strip.tight2 #rs-ttl{font-size:14.5px;}
+#reg-strip.tight2 #rs-txt{margin-top:6px;}
+#reg-strip.tight2 .rs-step{margin-top:4px;}
+#reg-strip.tight2 .rs-t{font-size:14.5px;line-height:1.32;}
+#reg-strip.tight2 .rs-sub{font-size:12.5px;line-height:1.3;}
+#reg-strip.tight2 .rs-n{width:20px;height:20px;font-size:12px;}
+#reg-strip.tight2 #rs-foot{margin-top:6px;}
+#reg-strip.tight2 #rs-help{padding:7px 13px;font-size:13.5px;}
 #reg-strip.tight #rs-icon{width:50px;height:50px;border-radius:13px;}
 #reg-strip.tight #rs-icon svg{width:34px;height:34px;}
 #reg-strip.tight #rs-ttl{font-size:16px;}
@@ -1472,7 +1485,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.00-lab（押す列を帯で示す・回転でやり直し）</div>
+    <div class="ps-version">version 3.01-lab（暗幕のグラデーションで列を示す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1744,7 +1757,6 @@ html.tvpc #settings-panel .set-link{
 </div>
 <!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
 <div id="reg-dim"></div>
-<div id="reg-band"></div>
 <div id="reg-strip">
   <div id="rs-head">
     <div id="rs-icon"></div>
@@ -2548,7 +2560,7 @@ function regShow(key){
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regBandShow(sc.ar, sc.ic, false); }catch(_){}   // 中央の窓でも光らせる（窓は元から暗い）
+  try{ regDimOff(); }catch(_){}   // 中央の窓は自分で暗くするので、こちらは出さない
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2608,42 +2620,16 @@ function regMarkText(el, str){
 var _regArwAns='';   // iShareなどで利用者が答えたマークの列（'u'=上 / 'd'=下）
 var _regOri='';      // 案内を出した時の画面の向き
 function regOri(){ return innerWidth>innerHeight ? 'yoko' : 'tate'; }
-// 押す場所の「列」を光らせる。上か下かは本人に聞いた答えだけを使う＝決めつけない。
-//   spec … 'u'（上の列） / 'd'（下の列）。空なら出さない
-//   ic   … その画面で探してもらうマークの名前（帯の中にも出す）
-//   dim  … 周囲を暗くするか（中央の窓は元から暗いので false）
-function regBandShow(spec, ic, dim){
-  var b=document.getElementById('reg-band'), d=document.getElementById('reg-dim'),
-      st=document.getElementById('reg-strip');
-  if(!b) return;
-  b.className=''; b.innerHTML='';
-  if(d) d.classList.remove('on');
-  if(st) st.classList.remove('low');
-  var v=String(spec||'').charAt(0);          // 'dr'→'d' / 'ur'→'u' も受ける
-  if(v!=='u' && v!=='d') return;
-  var ih='';
-  if(ic && REG_ICON[ic]) ih='<span class="rb-ic">'+REG_ICON[ic]+'</span>';
-  b.innerHTML=ih+'<span>この中にあります</span>';
-  b.className='on b-'+v;
-  if(v==='u' && st) st.classList.add('low');  // 上の帯と重ならないよう案内を下げる
-  if(dim && d) d.classList.add('on');
-  try{ regBandFit(); }catch(_){}
+// 登録作業のあいだ、周囲を暗くする。押すマークがある列が分かっている時は、
+// その側の暗さをゆるめて明るく見せる（硬い線は引かない＝位置を誤らない）。
+//   spec … 'u'（上の列） / 'd'（下の列）。空でも暗幕は出す
+function regDimOn(spec){
+  var d=document.getElementById('reg-dim'); if(!d) return;
+  var v=String(spec||'').charAt(0);
+  d.className='on' + ((v==='u'||v==='d') ? ' g-'+v : '');
 }
-function regBandHide(){ regBandShow(''); }
-// 置いたあとに実測して、出してはいけない時は隠す（狭い画面の保険）。
-// regFit / regStripFit の最後から呼ぶ＝回転や寸法変化でも測り直される。
-function regBandFit(){
-  var b=document.getElementById('reg-band'); if(!b) return;
-  if(!b.classList.contains('on')) return;
-  var st=document.getElementById('reg-strip'), w=document.getElementById('reg');
-  var 対象=null;
-  if(st && st.classList.contains('on')) 対象=st;
-  else if(w && w.classList.contains('on')) 対象=document.getElementById('reg-box');
-  b.style.display='';
-  if(!対象) return;
-  var r=b.getBoundingClientRect(), t=対象.getBoundingClientRect();
-  // 案内そのものと重なる時は帯を引っ込める（読めなくなるより良い）
-  if(!(r.right<t.left||r.left>t.right||r.bottom<t.top||r.top>t.bottom)) b.style.display='none';
+function regDimOff(){
+  var d=document.getElementById('reg-dim'); if(d) d.className='';
 }
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
@@ -2668,11 +2654,8 @@ function regStripShow(key){
     row.appendChild(nn); row.appendChild(tt); item.appendChild(row); tx.appendChild(item);
   });
   st.classList.add('on');
-  // ★順番が大事：先に帯を決めて（上の帯なら案内を下げて）から寸法を合わせる。
-  //   逆にすると、下げた分を勘定できず画面の下で切れる（2026-08-13 実機で2回発生）
-  // 列を本人に聞いた画面は、その答えどおりに光らせる（決め打ちしない）
-  try{ regBandShow(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : ''),
-                   REG[key].ic, true); }catch(_){}
+  // 作業中はずっと暗幕を出す。列が分かっていれば、その側の暗さをゆるめる
+  try{ regDimOn(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : '')); }catch(_){}
   regStripFit();
   try{ regFabSync(); }catch(_){}
 }
@@ -2681,7 +2664,7 @@ function regStripFit(){
   var st=document.getElementById('reg-strip'); if(!st) return;
   // ★前の画面の詰めを必ず先に全部外す。narrowを残したまま測ると縮んだ寸法で
   //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
-  st.classList.remove('tight'); st.classList.remove('wide');
+  st.classList.remove('tight'); st.classList.remove('wide'); st.classList.remove('tight2');
   st.classList.remove('narrow'); st.classList.remove('narrow2');
   st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
   var top=st.getBoundingClientRect().top;
@@ -2693,14 +2676,18 @@ function regStripFit(){
   // それでも入らない時は詰めたまま。画面外に出さないことを優先
   if(st.getBoundingClientRect().bottom>innerHeight-4) st.classList.add('tight');
   regStripNoWrap(st);
-  // ★最後の保険：詰めても入りきらない画面では、帯の中でたどれるようにする。
+  // ★それでも中身が隠れるならもう一段小さくする。全部見えることを優先する
+  if(st.scrollHeight>st.clientHeight+1 || st.getBoundingClientRect().bottom>innerHeight-4){
+    st.classList.add('tight2'); regStripNoWrap(st);
+  }
+  // ★最後の保険：ここまでやっても入らない画面では、帯の中でたどれるようにする。
   //   切れて読めないより良い（2026-08-13 実機で下がはみ出していた）
   var rr=st.getBoundingClientRect();
   if(rr.bottom>innerHeight-4){
     st.style.maxHeight=Math.max(120, innerHeight-rr.top-8)+'px';
     st.style.overflowY='auto';
   }
-  try{ regBandFit(); }catch(_){}
+
 }
 
 function regStripNoWrap(st){
@@ -2732,7 +2719,7 @@ function regStripNoWrap(st){
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regBandHide(); }catch(_){}
+  try{ regDimOff(); }catch(_){}
 }
 // ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
 function regFabSync(){
@@ -2745,7 +2732,7 @@ function regFabSync(){
     if(st && st.classList.contains('on')){
       show=false;
       // ★全画面で見始めたら帯は引っ込める（映像に被せない）。状態は壊さない
-      if(isExpanded){ st.classList.remove('on'); try{ regBandHide(); }catch(_){} }
+      if(isExpanded){ st.classList.remove('on'); try{ regDimOff(); }catch(_){} }
     }
     try{ var sp=document.getElementById('settings-panel');
          if(sp && sp.classList.contains('open')) show=false; }catch(_){}
@@ -2756,7 +2743,7 @@ function regFabSync(){
 function regFit(){
   var e=regEls(); if(!e.box) return;
   e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
-  e.box.classList.remove('tight'); e.box.classList.remove('cols');
+  e.box.classList.remove('tight'); e.box.classList.remove('cols'); e.box.classList.remove('tight2');
   e.box.style.maxHeight=''; e.box.style.overflowY='';   // 前回の保険を外してから測る
   if(e.box.getBoundingClientRect().height > innerHeight-12) e.box.classList.add('tight');
   // 詰めてもまだ入らない時だけ2列にする。実測してから付けるので、入る画面は今までどおり1列
@@ -2766,13 +2753,15 @@ function regFit(){
     //   横向きで発動する仕組みなので幅には余裕がある。窓ごと広げて1行に戻す
     e.box.style.width=Math.min(innerWidth-24, 560)+'px';
   }
-  // ★最後の保険：詰めても入らない画面では、窓の中でたどれるようにする。
+  // ★それでも入らないならもう一段小さくする。中身が全部見えることを優先する
+  if(e.box.getBoundingClientRect().height > innerHeight-12) e.box.classList.add('tight2');
+  // ★最後の保険：ここまでやっても入らない画面では、窓の中でたどれるようにする。
   //   上下に切れて読めない・押せないより良い（2026-08-13の総点検で発覚）
   if(e.box.getBoundingClientRect().height > innerHeight-12){
     e.box.style.maxHeight=(innerHeight-12)+'px';
     e.box.style.overflowY='auto';
   }
-  try{ regBandFit(); }catch(_){}
+
 }
 
 function regPick(b){
