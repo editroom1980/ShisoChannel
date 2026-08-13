@@ -1159,17 +1159,40 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-btns{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
 /* ★横向きのiPhoneなど画面が低い時だけ、実測ではみ出した場合に詰める（regFit が付ける）。
    @media(height)は使わない＝iOSがアプリ内ブラウザ復帰時に判定を凍らせるため */
+/* ★並び順が大事：tight → tight2 → tight3 の順に書く。同じ強さの指定なので
+   後に書いた方が勝つ。以前はtightを後ろに書いていて、tight2の字の大きさが
+   一切効いていなかった（2026-08-13の実測で発覚） */
 #reg-box.tight{padding:12px 16px 12px;}
-/* ★詰めてもまだ入らない時だけボタンを2列にする（横向きで選択肢が多い画面）。
-   入るなら付かない＝誤発動しても何も変わらない。主ボタン(.go)だけは横いっぱいのまま */
-#reg-box.cols #reg-btns{display:grid;grid-template-columns:1fr 1fr;}
-#reg-box.cols #reg-btns .reg-btn.go{grid-column:1 / -1;}
 #reg-box.tight #reg-icon{width:44px;height:44px;margin-bottom:6px;border-radius:11px;}
 #reg-box.tight #reg-icon svg{width:27px;height:27px;}
 #reg-box.tight #reg-ttl{font-size:16px;margin-bottom:3px;}
 #reg-box.tight #reg-txt{font-size:15px;line-height:1.45;}
 #reg-box.tight #reg-btns{margin-top:10px;gap:6px;}
 #reg-box.tight .reg-btn{padding:9px 14px;font-size:15px;}
+/* ★詰めてもまだ中身が隠れる時の一段。切れて読めないより、少し小さくても
+   全部見える方が良い（2026-08-13指示：中身が全部収まって見えるようにしろ） */
+#reg-box.tight2{padding:9px 14px 9px;}
+#reg-box.tight2 #reg-icon{width:38px;height:38px;margin-bottom:4px;border-radius:10px;}
+#reg-box.tight2 #reg-icon svg{width:23px;height:23px;}
+#reg-box.tight2 #reg-ttl{font-size:15px;margin-bottom:2px;}
+#reg-box.tight2 #reg-txt{font-size:14px;line-height:1.38;}
+#reg-box.tight2 #reg-btns{margin-top:7px;gap:5px;}
+#reg-box.tight2 .reg-btn{padding:7px 12px;font-size:14px;}
+/* ★とても低い画面（古いiPhoneの横向き=約230px）のための最後の一段 */
+#reg-box.tight3{padding:7px 12px 7px;}
+#reg-box.tight3 #reg-icon{width:32px;height:32px;margin-bottom:3px;border-radius:9px;}
+#reg-box.tight3 #reg-icon svg{width:20px;height:20px;}
+#reg-box.tight3 #reg-ttl{font-size:14px;margin-bottom:2px;}
+#reg-box.tight3 #reg-txt{font-size:13px;line-height:1.3;}
+#reg-box.tight3 #reg-btns{margin-top:5px;gap:4px;}
+#reg-box.tight3 .reg-btn{padding:6px 10px;font-size:13px;}
+/* ★詰めてもまだ入らない時だけボタンを2列にする（横向きで選択肢が多い画面）。
+   入るなら付かない＝誤発動しても何も変わらない。主ボタン(.go)だけは横いっぱいのまま */
+#reg-box.cols #reg-btns{display:grid;grid-template-columns:1fr 1fr;}
+#reg-box.cols #reg-btns .reg-btn.go{grid-column:1 / -1;}
+/* ★最も詰めた時だけ、主ボタンも2列に混ぜて1行ぶん節約する。
+   色は金色のままなので、どれが主かは分かる（2026-08-13：選択肢6つの画面で必要になった） */
+#reg-box.cols.tight2 #reg-btns .reg-btn.go{grid-column:auto;}
 .reg-btn{border:0;border-radius:10px;padding:13px 14px;font-family:inherit;
   font-size:16px;font-weight:700;cursor:pointer;background:#ececec;color:#41504a;}
 .reg-btn.go{background:var(--gold);color:#fff;}
@@ -1182,6 +1205,41 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      だから「やる」段階は画面の上に手順を出したままにする。
      暗幕なし・押す必要なし＝端末の操作を一切妨げない。
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
+/* 登録作業のあいだ、周囲を暗くして案内だけを明るく残す。
+   さらに、押すマークがある列の側の画面の端に、細い光る線を出す（2026-08-13）。
+   ブラウザの道具の列はページの外にあり、何がどこにあるかJavaScriptからは見えない。
+   並びは端末・ブラウザ・向きで全部違うため「一点を指す」ことはできない。
+   線は列の端いっぱいに引くので、どの端末でも外さない。
+   （暗さをゆるめるだけの案も試したが「肝心のマークの部分が明るいのか分からない」
+     との実機での指摘により、線を出す形に戻した） */
+#reg-dim{position:fixed;inset:0;z-index:2147483645;display:none;
+  background:rgba(0,0,0,.66);pointer-events:none;}
+#reg-dim.on{display:block;}
+#reg-band{position:fixed;left:0;right:0;z-index:2147483647;display:none;
+  height:var(--bandH,26px);pointer-events:none;
+  animation:regBand 1.9s ease-in-out infinite;}
+#reg-band.on{display:block;}
+#reg-band.b-u{top:0;
+  background:linear-gradient(to bottom, rgba(255,215,105,.5), rgba(255,215,105,0));
+  box-shadow:inset 0 4px 0 #ffd769, 0 4px 16px rgba(255,215,105,.35);}
+#reg-band.b-d{bottom:0;
+  background:linear-gradient(to top, rgba(255,215,105,.5), rgba(255,215,105,0));
+  box-shadow:inset 0 -4px 0 #ffd769, 0 -4px 16px rgba(255,215,105,.35);}
+@keyframes regBand{0%,100%{opacity:1}50%{opacity:.5}}
+/* 動きを減らす設定の端末では明滅させない（線は出したままにする） */
+@media (prefers-reduced-motion: reduce){ #reg-band{animation:none!important;} }
+/* 下に線がある時は、線を除いた場所の真ん中に窓を置き直す（線に被せない） */
+#reg-box.lift{top:calc(50% - var(--bandH,26px) / 2);}
+/* ★画面がとても低い端末（古いiPhoneの横向き=約230px）でだけ線を細くする。
+   線は「押す場所の目印」なので消さない。細くしても役目は果たす。
+   ふつうの横向き（約275〜290px）は26pxのまま＝見やすさを落とさない */
+@media (max-height:250px){
+  :root{--bandH:14px;}
+  #reg-band.b-u{box-shadow:inset 0 3px 0 #ffd769, 0 3px 12px rgba(255,215,105,.35);}
+  #reg-band.b-d{box-shadow:inset 0 -3px 0 #ffd769, 0 -3px 12px rgba(255,215,105,.35);}
+}
+/* 上の線を出す時だけ、案内をわずかに下げて重ならないようにする */
+#reg-strip.low{top:calc(env(safe-area-inset-top) + var(--bandH,26px) + 8px);}
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
   margin:0 auto;max-width:620px;
   z-index:2147483647;display:none;background:#fff;color:#1a2520;
@@ -1218,7 +1276,9 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #rs-help{border:0;background:var(--gold);color:#fff;border-radius:11px;padding:12px 20px;
   font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
   -webkit-tap-highlight-color:transparent;}
-/* 画面が狭い/低い時だけ詰める（実測して入らない時のみ regStripFit が付ける） */
+/* 画面が狭い/低い時だけ詰める（実測して入らない時のみ regStripFit が付ける）。
+   ★並び順が大事：tight → tight2 → tight3 の順に書く。同じ強さの指定なので後勝ち。
+     以前はtightを後ろに書いていて、tight2の字の大きさが効いていなかった */
 #reg-strip.tight{padding:11px 13px;}
 #reg-strip.tight #rs-icon{width:50px;height:50px;border-radius:13px;}
 #reg-strip.tight #rs-icon svg{width:34px;height:34px;}
@@ -1229,8 +1289,6 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight .rs-sub{font-size:14px;}
 #reg-strip.tight #rs-foot{margin-top:9px;}
 #reg-strip.tight #rs-help{padding:10px 16px;font-size:15px;}
-/* 横向きなど「幅はあるが高さが足りない」時は手順を2列にして高さを半分にする */
-#reg-strip.wide #rs-txt{column-count:2;column-gap:20px;}
 /* ★幅が足りず文が折り返した時だけ、マークを少し小さくして字を詰め、1行に戻す。
    「行末に2〜3文字だけ残す」形を作らないため（CLAUDE.mdルール10）。
    実測して折り返した時にだけ付くので、収まっている画面は今までどおり何も変わらない。
@@ -1248,6 +1306,36 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.narrow2 .rs-n{width:23px;height:23px;font-size:13px;}
 #reg-strip.narrow2 .rs-t{font-size:15px;}
 #reg-strip.narrow2 .rs-sub{font-size:12px;margin-left:33px;}
+/* ★詰めてもまだ中身が隠れる時の一段（小さい端末の横向き）。
+   切れて読めないより、少し小さくても全部見える方が良い（2026-08-13指示） */
+#reg-strip.tight2{padding:8px 11px;}
+#reg-strip.tight2 #rs-icon{width:40px;height:40px;border-radius:11px;}
+#reg-strip.tight2 #rs-icon svg{width:27px;height:27px;}
+#reg-strip.tight2 #rs-ttl{font-size:14.5px;}
+#reg-strip.tight2 #rs-txt{margin-top:6px;}
+#reg-strip.tight2 .rs-step{margin-top:4px;}
+#reg-strip.tight2 .rs-t{font-size:14.5px;line-height:1.32;}
+#reg-strip.tight2 .rs-sub{font-size:12.5px;line-height:1.3;}
+#reg-strip.tight2 .rs-n{width:20px;height:20px;font-size:12px;}
+#reg-strip.tight2 #rs-foot{margin-top:6px;}
+#reg-strip.tight2 #rs-help{padding:7px 13px;font-size:13.5px;}
+/* 横向きなど「幅はあるが高さが足りない」時は手順を2列にして高さを半分にする */
+#reg-strip.wide #rs-txt{column-count:2;column-gap:20px;}
+/* ★tight2でもまだ中身が隠れる、とても低い画面のための最後の一段（tight2に足して効く）。
+   丸を18pxにしたので、補足の字下げ（丸18＋すき間10＝28px）も合わせ直す */
+#reg-strip.tight3{padding:6px 10px;}
+#reg-strip.tight3 #rs-head{gap:8px;}
+#reg-strip.tight3 #rs-icon{width:32px;height:32px;border-radius:9px;}
+#reg-strip.tight3 #rs-icon svg{width:22px;height:22px;}
+#reg-strip.tight3 #rs-close{width:32px;height:32px;font-size:18px;border-radius:9px;}
+#reg-strip.tight3 #rs-ttl{font-size:13.5px;}
+#reg-strip.tight3 #rs-txt{margin-top:4px;}
+#reg-strip.tight3 .rs-step{margin-top:3px;}
+#reg-strip.tight3 .rs-t{font-size:13.5px;line-height:1.28;}
+#reg-strip.tight3 .rs-n{width:18px;height:18px;font-size:11px;}
+#reg-strip.tight3 .rs-sub{font-size:12px;line-height:1.25;margin-left:28px;}
+#reg-strip.tight3 #rs-foot{margin-top:4px;}
+#reg-strip.tight3 #rs-help{padding:5px 12px;font-size:12.5px;}
 /* ── 呼び戻し用の「？」。ホーム画面から開くようになれば出ない（2026-08-12承認） ── */
 #reg-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
   z-index:2147483646;display:none;width:46px;height:46px;border-radius:50%;
@@ -1443,7 +1531,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.89</div>
+    <div class="ps-version">version 2.90</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1714,6 +1802,8 @@ html.tvpc #settings-panel .set-link{
   </div>
 </div>
 <!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
+<div id="reg-dim"></div>
+<div id="reg-band"></div>
 <div id="reg-strip">
   <div id="rs-head">
     <div id="rs-icon"></div>
@@ -2096,7 +2186,16 @@ function tourAskIfFirst(){
   e.w.addEventListener('click', function(){ if(_tourMode===2||_tourMode===3) tourNext(); });
   // 画面の向きや大きさが変わったら、光らせる位置を測り直す
   window.addEventListener('resize', function(){
-    if(_regAt){ try{ regFit(); regStripFit(); }catch(_){} }
+    if(_regAt){
+      // ★回すと押すマークの位置も出てくる画面も変わり、いま出している指示と食い違う。
+      //   古い指示のまま進めると必ず詰まるので、最初からやり直してもらう（2026-08-13指示）
+      if(_regOri && _regOri!==regOri()){
+        _regArwAns='';
+        try{ regShow('start'); }catch(_){}
+      }else{
+        try{ regFit(); regStripFit(); }catch(_){}
+      }
+    }
     if(_tourMode===2){ tourPoint(0,''); return; }
     if(_tourMode!==3) return;
     // 回すと項目が増減する（縦のiPhoneには音量つまみが無い）ので数え直し、
@@ -2272,11 +2371,25 @@ var REG={
         b:[{l:'ブラウザで開く',go:'@escape',p:1},{l:'とじる',go:null}]},
 
  // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
+ iChrome:{t:'このマークを探します', ic:'share',
+        d:['アドレスバーの右にあります。','どちらにありましたか。'],
+        b:[{l:'画面の上にあった',go:'sChromeI',ar:'ur',p:1},
+           {l:'画面の下にあった',go:'sChromeI',ar:'dr'},
+           {l:'見当たらない',go:'iSafari'}]},
+ // ★Chrome公式ヘルプで確認（2026-08-13）。Safariと道筋が違う。
+ //   Chromeのメニュー(⋯)に「共有」は上の方に無く、Safariの手順では詰まる。
+ //   正しくは アドレスバーの右の共有 →「ホーム画面に追加」→「追加」
+ sChromeI:{strip:1, ic:'share', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'この{share}を押す'},
+           {sub:'アドレスバーの右にあります'},
+           {n:2,t:'「ホーム画面に追加」'},
+           {sub:'下へたどると出てきます'},
+           {n:3,t:'「追加」を押す'}]},
  iShare:{t:'このマークを探します', ic:'share',
         d:['画面のどこにありますか。'],
-        b:[{l:'画面の下にある',go:'sShare'},{l:'右上にある',go:'sShare'},
+        b:[{l:'画面の下にある',go:'sShare',ar:'d'},{l:'右上にある',go:'sShare',ar:'ur'},
            {l:'見当たらない',go:'iDots'},{l:'LINEやXの中で見ている',go:'inApp'}]},
- iDots:{t:'このマークを探します', ic:'dots',
+ iDots:{t:'このマークを探します', ic:'dots', ar:'d',
         d:['画面の下か右下にあります。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sDots',p:1},{l:'それも無い',go:'iSafari'}]},
  iEdit:{t:'一覧に見当たらない時',
@@ -2380,7 +2493,7 @@ var REG={
            {sub:'→ 名前を決める画面が出ます'},
            {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
- sChrome:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+ sChrome:{strip:1, ar:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {sub:'色のついた丸のこともあります'},
            {n:2,t:'「アプリをインストール」'},
@@ -2388,21 +2501,21 @@ var REG={
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
- sEdge:{strip:1, ic:'bars', tr:'troubleA', h:'この順に押します',
+ sEdge:{strip:1, ar:'dr', ic:'bars', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下の{bars}を押す'},
            {n:2,t:'「電話に追加」を押す'},
            {sub:'横にめくると出てきます'},
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
- sFire:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+ sFire:{strip:1, ar:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {n:2,t:'「その他」を押す'},
            {sub:'メニューの下のほうにあります'},
            {n:3,t:'「ホーム画面にアプリを追加」'},
            {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
- sSams:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+ sSams:{strip:1, ar:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下のメニューを押す'},
            {sub:'{bars}か{menu}の形です'},
            {n:2,t:'「ページを追加」を押す'},
@@ -2412,7 +2525,7 @@ var REG={
  // ★らくらくスマホ(FCNT)。他機種と違い「共有」も「⋮」も出てこない。ドコモF-53E取説p.68の逐語
  //   「登録したブックマークをホーム画面の『よく使うブックマーク』カテゴリに貼り付けるかどうかの
  //     確認画面が表示されますので、［貼る］／［貼らない］を選択して設定できます」
- sRaku:{strip:1, ic:'book', tr:'troubleR', h:'この順に押します',
+ sRaku:{strip:1, ar:'u', ic:'book', tr:'troubleR', h:'この順に押します',
         s:[{n:1,t:'上の{book}を押す（しおり）'},
            {sub:'画面の上、「検索」のとなり'},   // FCNT FAQ 20668 の逐語「「検索」ボタン右隣」
            {n:2,t:'「現在のページを登録」'},
@@ -2421,7 +2534,7 @@ var REG={
            {n:4,t:'「貼る」を押す'},
            {sub:'「よく使うブックマーク」に入ります'}]},
  // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
- sRaku2:{strip:1, ic:'book', tr:'troubleR', h:'あとから貼る場合',
+ sRaku2:{strip:1, ar:'u', ic:'book', tr:'troubleR', h:'あとから貼る場合',
         s:[{n:1,t:'上の「しおり」を押す'},
            {n:2,t:'「メニュー」を押す'},
            {n:3,t:'「ホーム画面に貼る」'},
@@ -2484,14 +2597,18 @@ function regShow(key){
     //   （その中のブラウザにはホーム画面へ追加する機能が無い）
     if(regInApp())            key='inApp';
     else if(_regPrompt)       key='oneTap';
-    else if(regIsApple())     key='iShare';    // ★isIOSではなく専用判定。iPadで外れていた
+    else if(regIsApple())     key=(/CriOS\//.test(navigator.userAgent)?'iChrome':'iShare');
+    // ★isIOSではなく専用判定。iPadで外れていた。iPhoneのChromeはSafariと道筋が違う
     else if(regIsPc())        key='pc';
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
+  _regOri=regOri();                            // この画面を出した時の向きを覚える
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
+  // 中央の窓は自分で暗くするので暗幕は出さない。列が分かっていれば線だけ出す
+  try{ regHiOn(sc.ar, false); }catch(_){}
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2548,6 +2665,38 @@ function regMarkText(el, str){
     }else{ el.appendChild(document.createTextNode('{'+parts[i]+'}')); }  // 名前を間違えたら気づけるように
   }
 }
+var _regArwAns='';   // iShareなどで利用者が答えたマークの列（'u'=上 / 'd'=下）
+var _regOri='';      // 案内を出した時の画面の向き
+function regOri(){ return innerWidth>innerHeight ? 'yoko' : 'tate'; }
+// 登録作業のあいだ周囲を暗くし、押すマークがある列の端に光る線を出す。
+// 列が分かっているのは「本人に聞いた時」だけ。分からなければ線は出さない＝決めつけない。
+//   spec … 'u'（上の列） / 'd'（下の列）
+//   暗幕 … 手順の帯の時だけ出す（中央の窓は自分で暗くするため）
+function regHiOn(spec, 暗幕を出す){
+  var d=document.getElementById('reg-dim'), b=document.getElementById('reg-band'),
+      st=document.getElementById('reg-strip');
+  var v=String(spec||'').charAt(0);
+  var box=document.getElementById('reg-box');
+  if(d) d.className = 暗幕を出す ? 'on' : '';
+  if(st) st.classList.remove('low');
+  if(box) box.classList.remove('lift');
+  if(b){
+    b.className='';
+    if(v==='u'||v==='d'){
+      b.className='on b-'+v;
+      if(v==='u' && st) st.classList.add('low');    // 上の線と重ならないよう案内を下げる
+      if(v==='d' && box) box.classList.add('lift'); // 下の線ぶん窓を持ち上げる
+    }
+  }
+}
+function regHiOff(){
+  var d=document.getElementById('reg-dim'), b=document.getElementById('reg-band'),
+      st=document.getElementById('reg-strip');
+  if(d) d.className='';
+  if(b) b.className='';
+  if(st) st.classList.remove('low');
+  try{ document.getElementById('reg-box').classList.remove('lift'); }catch(_){}
+}
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
@@ -2571,27 +2720,61 @@ function regStripShow(key){
     row.appendChild(nn); row.appendChild(tt); item.appendChild(row); tx.appendChild(item);
   });
   st.classList.add('on');
+  // ★順番が大事：先に線を決めて（上の線なら案内を下げて）から寸法を合わせる。
+  //   逆にすると、下げた分を勘定できず画面の下で切れる（2026-08-13 実機で2回発生）
+  try{ regHiOn(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : ''), true); }catch(_){}
   regStripFit();
   try{ regFabSync(); }catch(_){}
+}
+// 案内を置いてよい下端。下に光る線が出ている時は、その線に被せない。
+// 線は「押す場所の目印」なので、隠したら意味が無くなる。
+// ★推測値ではなく、実際に出ている線の位置を測って使う（誤発動しても線が無ければ画面の下＝従来どおり）
+function regFloor(){
+  try{
+    var b=document.getElementById('reg-band');
+    if(b && b.classList.contains('on') && b.classList.contains('b-d')){
+      var r=b.getBoundingClientRect();
+      if(r.height>0 && r.top>0) return r.top;
+    }
+  }catch(_){}
+  return innerHeight;
 }
 // 実測して、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
 function regStripFit(){
   var st=document.getElementById('reg-strip'); if(!st) return;
   // ★前の画面の詰めを必ず先に全部外す。narrowを残したまま測ると縮んだ寸法で
   //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
-  st.classList.remove('tight'); st.classList.remove('wide');
+  st.classList.remove('tight'); st.classList.remove('wide'); st.classList.remove('tight2');
+  st.classList.remove('tight3');
   st.classList.remove('narrow'); st.classList.remove('narrow2');
-  var top=st.getBoundingClientRect().top;
+  st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
+  var top=st.getBoundingClientRect().top, 床=regFloor();
   // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
-  var limit=Math.min(innerHeight-top-10, innerHeight*0.6);
+  var limit=Math.min(床-top-10, innerHeight*0.6);
   if(st.getBoundingClientRect().height>limit) st.classList.add('tight');
   // 幅はあるが高さが足りない（横向き等）時は2列にして高さを半分にする
   if(st.getBoundingClientRect().height>limit && st.getBoundingClientRect().width>=420) st.classList.add('wide');
-  // それでも入らない時は詰めたまま。画面外に出さないことを優先
-  if(st.getBoundingClientRect().bottom>innerHeight-4) st.classList.add('tight');
+  // それでも入らない時は詰めたまま。画面外・線の上に出さないことを優先
+  if(st.getBoundingClientRect().bottom>床-4) st.classList.add('tight');
   regStripNoWrap(st);
+  // ★それでも中身が隠れるならもう一段小さくする。全部見えることを優先する
+  if(st.scrollHeight>st.clientHeight+1 || st.getBoundingClientRect().bottom>床-4){
+    st.classList.add('tight2'); regStripNoWrap(st);
+  }
+  // ★とても低い画面（古いiPhoneの横向き=約230px）用のもう一段。ここまで来ることはまれ
+  if(st.scrollHeight>st.clientHeight+1 || st.getBoundingClientRect().bottom>床-4){
+    st.classList.add('tight3'); regStripNoWrap(st);
+  }
+  // ★最後の保険：ここまでやっても入らない画面では、帯の中でたどれるようにする。
+  //   切れて読めないより良い（2026-08-13 実機で下がはみ出していた）
+  var rr=st.getBoundingClientRect();
+  if(rr.bottom>床-4){
+    st.style.maxHeight=Math.max(120, 床-rr.top-8)+'px';
+    st.style.overflowY='auto';
+  }
+
 }
-// 幅が足りずに折り返した文があるかを実測し、あった時だけ詰める（無ければ何もしない＝冪等）
+
 function regStripNoWrap(st){
   st=st||document.getElementById('reg-strip'); if(!st) return;
   st.classList.remove('narrow'); st.classList.remove('narrow2');
@@ -2621,6 +2804,7 @@ function regStripNoWrap(st){
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
+  try{ regHiOff(); }catch(_){}
 }
 // ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
 function regFabSync(){
@@ -2633,7 +2817,7 @@ function regFabSync(){
     if(st && st.classList.contains('on')){
       show=false;
       // ★全画面で見始めたら帯は引っ込める（映像に被せない）。状態は壊さない
-      if(isExpanded) st.classList.remove('on');
+      if(isExpanded){ st.classList.remove('on'); try{ regHiOff(); }catch(_){} }
     }
     try{ var sp=document.getElementById('settings-panel');
          if(sp && sp.classList.contains('open')) show=false; }catch(_){}
@@ -2644,17 +2828,34 @@ function regFabSync(){
 function regFit(){
   var e=regEls(); if(!e.box) return;
   e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
-  e.box.classList.remove('tight'); e.box.classList.remove('cols');
-  if(e.box.getBoundingClientRect().height > innerHeight-12) e.box.classList.add('tight');
+  e.box.classList.remove('tight'); e.box.classList.remove('cols'); e.box.classList.remove('tight2');
+  e.box.classList.remove('tight3');
+  e.box.style.maxHeight=''; e.box.style.overflowY='';   // 前回の保険を外してから測る
+  // 下に光る線が出ている時は、その線を隠さない高さまでしか使わない
+  var 床=regFloor();
+  if(e.box.getBoundingClientRect().height > 床-12) e.box.classList.add('tight');
   // 詰めてもまだ入らない時だけ2列にする。実測してから付けるので、入る画面は今までどおり1列
-  if(e.box.getBoundingClientRect().height > innerHeight-12){
+  if(e.box.getBoundingClientRect().height > 床-12){
     e.box.classList.add('cols');
     // ★2列にするとボタンが半分の幅になり、長い名前が折り返してしまう。
     //   横向きで発動する仕組みなので幅には余裕がある。窓ごと広げて1行に戻す
     e.box.style.width=Math.min(innerWidth-24, 560)+'px';
   }
+  // ★それでも入らないならもう一段小さくする。中身が全部見えることを優先する
+  if(e.box.getBoundingClientRect().height > 床-12) e.box.classList.add('tight2');
+  // ★とても低い画面（古いiPhoneの横向き=約230px）用のもう一段
+  if(e.box.getBoundingClientRect().height > 床-12) e.box.classList.add('tight3');
+  // ★最後の保険：ここまでやっても入らない画面では、窓の中でたどれるようにする。
+  //   上下に切れて読めない・押せないより良い（2026-08-13の総点検で発覚）
+  if(e.box.getBoundingClientRect().height > 床-12){
+    e.box.style.maxHeight=(床-12)+'px';
+    e.box.style.overflowY='auto';
+  }
+
 }
+
 function regPick(b){
+  if(b.ar) _regArwAns=b.ar;   // 「画面の下」「右上」という利用者自身の答えを覚える
   if(b.go==='@prompt'){ regDoPrompt(); return; }
   if(b.go==='@escape'){ regDoEscape(); return; }
   if(b.go==='@back'){                 // 「手順にもどる」＝直前の帯へ
