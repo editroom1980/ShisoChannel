@@ -1,7 +1,14 @@
 {
- "updated": "2026-08-13T23:06:52+09:00",
+ "updated": "2026-08-14T00:13:40+09:00",
  "source": "宍粟市公式サイト",
  "items": [
+  {
+   "tag": "募集",
+   "title": "市営住宅入居者募集 8月27日まで",
+   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/14622.html",
+   "date": "8月14日",
+   "ts": "2026-08-14T00:00:00+09:00"
+  },
   {
    "tag": "募集",
    "title": "いちのみやふるさとまつり 出店・出展・出演団体募集",
@@ -78,13 +85,6 @@
    "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/15369.html",
    "date": "7月3日",
    "ts": "2026-07-03T15:00:00+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "はーとふるシネマinしそうぱる 映画「夜明けのすべて」を上映",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/kouzakyousitu/20177.html",
-   "date": "6月22日",
-   "ts": "2026-06-22T08:30:00+09:00"
   }
  ]
 }
