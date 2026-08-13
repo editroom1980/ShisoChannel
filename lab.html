@@ -1183,23 +1183,36 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      だから「やる」段階は画面の上に手順を出したままにする。
      暗幕なし・押す必要なし＝端末の操作を一切妨げない。
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
-/* 押すボタンの方向を指す矢印（2026-08-13）。
+/* 押すボタンの方向を指す矢印（2026-08-13・実機の指摘を受けて改訂）。
    ウェブページはブラウザ自身のボタンの上に描けない決まりがあるため、
-   画面の端から「この先にあります」と指す形にする。
+   画面の端まで寄せて「この先にあります」と指す。
+   周囲を暗くして矢印だけを残す＝他に見るものが無くなる（使い方説明と同じ考え方）。
    手順の文がすでに位置を書いている画面にだけ出す＝新しい主張は足さない。 */
+#reg-dim{position:fixed;inset:0;z-index:2147483645;display:none;
+  background:rgba(0,0,0,.66);pointer-events:none;}
+#reg-dim.on{display:block;}
 #reg-arw{position:fixed;z-index:2147483646;display:none;pointer-events:none;
-  width:46px;height:46px;color:#c8992a;filter:drop-shadow(0 2px 7px rgba(0,0,0,.55));}
+  width:52px;height:52px;color:#ffd769;filter:drop-shadow(0 0 10px rgba(0,0,0,.9));}
 #reg-arw.on{display:block;}
 #reg-arw svg{width:100%;height:100%;display:block;}
-#reg-arw.a-d{left:50%;margin-left:-23px;bottom:calc(env(safe-area-inset-bottom) + 14px);}
-#reg-arw.a-dr{right:12px;bottom:calc(env(safe-area-inset-bottom) + 14px);}
-#reg-arw.a-ur{right:12px;}
-#reg-arw.a-u{left:50%;margin-left:-23px;}
+/* 下向きは画面の下端ぴったりへ。ブラウザのバーは真下にある */
+#reg-arw.a-d{left:50%;margin-left:-26px;bottom:2px;}
+#reg-arw.a-dr{right:8px;bottom:2px;}
+/* 上向きは画面の上端へ。帯は下げて場所をあける（.lowが付く） */
+#reg-arw.a-u{left:50%;margin-left:-26px;top:calc(env(safe-area-inset-top) + 4px);}
+#reg-arw.a-ur{right:8px;top:calc(env(safe-area-inset-top) + 4px);}
 #reg-arw.a-d,#reg-arw.a-dr{animation:regArwD 1.6s ease-in-out infinite;}
-#reg-arw.a-ur,#reg-arw.a-u{animation:regArwU 1.6s ease-in-out infinite;}
+#reg-arw.a-u,#reg-arw.a-ur{animation:regArwU 1.6s ease-in-out infinite;}
 @keyframes regArwD{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
 @keyframes regArwU{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-@media (prefers-reduced-motion: reduce){ #reg-arw{animation:none!important;} }
+/* 動きを減らす設定の端末では、動かす代わりに明るさで気づかせる */
+@media (prefers-reduced-motion: reduce){
+  #reg-arw{animation:none!important;}
+  #reg-arw.on{animation:regArwFade 1.8s ease-in-out infinite!important;}
+}
+@keyframes regArwFade{0%,100%{opacity:1}50%{opacity:.45}}
+/* 上向きの時だけ帯を下げて、画面の上に矢印の場所をあける */
+#reg-strip.low{top:calc(env(safe-area-inset-top) + 62px);}
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
   margin:0 auto;max-width:620px;
   z-index:2147483647;display:none;background:#fff;color:#1a2520;
@@ -1461,7 +1474,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.90-lab（押す方向を矢印で示す）</div>
+    <div class="ps-version">version 2.91-lab（矢印を暗幕で強調・位置を修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1732,6 +1745,7 @@ html.tvpc #settings-panel .set-link{
   </div>
 </div>
 <!-- 上部のやりかた帯（登録の実行中だけ）と、呼び戻し用の？ -->
+<div id="reg-dim"></div>
 <div id="reg-arw"></div>
 <div id="reg-strip">
   <div id="rs-head">
@@ -2572,22 +2586,30 @@ var _regArwAns='';   // iShareで利用者が答えたマークの位置
 var REG_ARW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" '+
   'stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15"/><path d="M5.5 12.5 12 19l6.5-6.5"/></svg>';
 // 矢印を出す。向きは「手順の文がすでに書いている位置」だけ。書いていない画面には出さない。
+// 周囲を暗くして矢印だけ残す。上向きの時は帯を下げて、画面の上に場所をあける。
 function regArwShow(dir){
-  var a=document.getElementById('reg-arw'); if(!a) return;
-  a.className='';
-  if(!dir){ a.innerHTML=''; return; }
+  var a=document.getElementById('reg-arw'), d=document.getElementById('reg-dim'),
+      st=document.getElementById('reg-strip');
+  if(!a) return;
+  a.className=''; a.innerHTML='';
+  if(d) d.classList.remove('on');
+  if(st) st.classList.remove('low');
+  if(!dir) return;
   a.innerHTML=REG_ARW;
-  // 上を指す時は矢印を反転させる
-  a.firstChild.style.transform=(dir==='u'||dir==='ur')?'rotate(180deg)':'';
-  a.className='on a-'+dir;
-  // 上向きは帯の下に置く（帯が画面の上を占めているため、重ねない）
   if(dir==='u'||dir==='ur'){
-    var st=document.getElementById('reg-strip');
-    var b=st?st.getBoundingClientRect().bottom:0;
-    a.style.top=Math.round(b+10)+'px'; a.style.bottom='';
-  }else{ a.style.top=''; }
+    a.firstChild.style.transform='rotate(180deg)';
+    if(st) st.classList.add('low');       // 帯を下げて、上に矢印の場所をあける
+  }
+  a.className='on a-'+dir;
+  if(d) d.classList.add('on');
 }
-function regArwHide(){ var a=document.getElementById('reg-arw'); if(a){ a.className=''; a.innerHTML=''; } }
+function regArwHide(){
+  var a=document.getElementById('reg-arw'), d=document.getElementById('reg-dim'),
+      st=document.getElementById('reg-strip');
+  if(a){ a.className=''; a.innerHTML=''; }
+  if(d) d.classList.remove('on');
+  if(st) st.classList.remove('low');
+}
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
