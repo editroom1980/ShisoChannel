@@ -1138,7 +1138,15 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
    ・Android系は beforeinstallprompt が来たら「ボタン1つ」で入る（メニュー探し不要）
    ・iPhoneはOSに入れる仕組みが無いので、選択式で探し方を案内する
    ・文章はツアーと同じく行の折り返しを決め打ちする（CLAUDE.md 絶対ルール10） */
-#reg{position:fixed;inset:0;z-index:2147483647;display:none;background:rgba(0,0,0,0.74);}
+#reg{position:fixed;inset:0;z-index:2147483647;display:none;background:rgba(0,0,0,0.74);
+  transition:background .45s ease;}
+/* ★中央の窓も、押すマークがある列の側だけ暗さをゆるめる。
+   探している最中の画面(iDots等)こそ必要なので、窓の背景そのものに掛ける
+   （2026-08-13：窓は自分で暗くするから不要、と決めつけて出していなかった失敗） */
+#reg.g-u{background:linear-gradient(to bottom,
+  rgba(0,0,0,.16) 0, rgba(0,0,0,.52) 70px, rgba(0,0,0,.76) 150px, rgba(0,0,0,.76) 100%);}
+#reg.g-d{background:linear-gradient(to top,
+  rgba(0,0,0,.16) 0, rgba(0,0,0,.52) 70px, rgba(0,0,0,.76) 150px, rgba(0,0,0,.76) 100%);}
 #reg.on{display:block;}
 #reg-box{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
   background:#fff;color:#1a2520;border-radius:14px;padding:18px 18px 16px;
@@ -1485,7 +1493,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.01-lab（暗幕のグラデーションで列を示す）</div>
+    <div class="ps-version">version 3.02-lab（探す画面にもグラデーション）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2560,7 +2568,15 @@ function regShow(key){
   try{ statsRegStep('at',key); }catch(_){}     // どこまで進んだかを数える
   if(sc.strip){ regStripShow(key); return; }   // 「やる」段階は上部の帯へ
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regDimOff(); }catch(_){}   // 中央の窓は自分で暗くするので、こちらは出さない
+  // 中央の窓は自分で暗くするので、こちらの暗幕は出さない。
+  // ただし列が分かっている画面では、窓の背景そのものをグラデーションにする
+  try{
+    regDimOff();
+    var _w=document.getElementById('reg');
+    var _v=String(sc.ar||'').charAt(0);
+    _w.classList.remove('g-u'); _w.classList.remove('g-d');
+    if(_v==='u'||_v==='d') _w.classList.add('g-'+_v);
+  }catch(_){}
   _regAt=key;
   e.w.classList.add('on');
   e.box.style.width=tourTipW()+'px';
@@ -2631,6 +2647,10 @@ function regDimOn(spec){
 function regDimOff(){
   var d=document.getElementById('reg-dim'); if(d) d.className='';
 }
+function regWinGradOff(){
+  var w=document.getElementById('reg');
+  if(w){ w.classList.remove('g-u'); w.classList.remove('g-d'); }
+}
 function regStripShow(key){
   var sc=REG[key]; if(!sc || !sc.strip) return;
   var st=document.getElementById('reg-strip'); if(!st) return;
@@ -2655,7 +2675,8 @@ function regStripShow(key){
   });
   st.classList.add('on');
   // 作業中はずっと暗幕を出す。列が分かっていれば、その側の暗さをゆるめる
-  try{ regDimOn(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : '')); }catch(_){}
+  try{ regWinGradOff();
+       regDimOn(REG[key].ar || ((key==='sShare'||key==='sChromeI') ? _regArwAns : '')); }catch(_){}
   regStripFit();
   try{ regFabSync(); }catch(_){}
 }
@@ -2719,7 +2740,7 @@ function regStripNoWrap(st){
 }
 function regStripHide(){
   try{ document.getElementById('reg-strip').classList.remove('on'); }catch(_){}
-  try{ regDimOff(); }catch(_){}
+  try{ regDimOff(); regWinGradOff(); }catch(_){}
 }
 // ── 呼び戻し用の「？」。出してよい場面だけ出す（毎秒の同期＝冪等・誤発動しても無害）──
 function regFabSync(){
