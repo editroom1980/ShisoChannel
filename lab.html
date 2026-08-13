@@ -1485,7 +1485,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.96-lab（横向き・狭い画面での重なりを解消）</div>
+    <div class="ps-version">version 2.97-lab（横向きで帯と窓が切れるのを根治）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2705,6 +2705,10 @@ function regStripFit(){
   //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
   st.classList.remove('tight'); st.classList.remove('wide');
   st.classList.remove('narrow'); st.classList.remove('narrow2');
+  // ★横向きでは矢印を出さないので、帯を下げる必要もない。
+  //   下げたまま測ると高さを62px損して、内容が画面の下で切れる（2026-08-13 実機で発覚）
+  if(innerWidth>innerHeight) st.classList.remove('low');
+  st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
   var top=st.getBoundingClientRect().top;
   // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準
   var limit=Math.min(innerHeight-top-10, innerHeight*0.6);
@@ -2714,6 +2718,13 @@ function regStripFit(){
   // それでも入らない時は詰めたまま。画面外に出さないことを優先
   if(st.getBoundingClientRect().bottom>innerHeight-4) st.classList.add('tight');
   regStripNoWrap(st);
+  // ★最後の保険：詰めても入りきらない画面では、帯の中でたどれるようにする。
+  //   切れて読めないより良い（2026-08-13 実機で下がはみ出していた）
+  var rr=st.getBoundingClientRect();
+  if(rr.bottom>innerHeight-4){
+    st.style.maxHeight=Math.max(120, innerHeight-rr.top-8)+'px';
+    st.style.overflowY='auto';
+  }
   try{ regArwFit(); }catch(_){}
 }
 
@@ -2771,6 +2782,7 @@ function regFit(){
   var e=regEls(); if(!e.box) return;
   e.box.style.width=tourTipW()+'px';   // ★回転時は幅も測り直す（高さだけだと横で幅が古いまま）
   e.box.classList.remove('tight'); e.box.classList.remove('cols');
+  e.box.style.maxHeight=''; e.box.style.overflowY='';   // 前回の保険を外してから測る
   if(e.box.getBoundingClientRect().height > innerHeight-12) e.box.classList.add('tight');
   // 詰めてもまだ入らない時だけ2列にする。実測してから付けるので、入る画面は今までどおり1列
   if(e.box.getBoundingClientRect().height > innerHeight-12){
@@ -2778,6 +2790,12 @@ function regFit(){
     // ★2列にするとボタンが半分の幅になり、長い名前が折り返してしまう。
     //   横向きで発動する仕組みなので幅には余裕がある。窓ごと広げて1行に戻す
     e.box.style.width=Math.min(innerWidth-24, 560)+'px';
+  }
+  // ★最後の保険：詰めても入らない画面では、窓の中でたどれるようにする。
+  //   上下に切れて読めない・押せないより良い（2026-08-13の総点検で発覚）
+  if(e.box.getBoundingClientRect().height > innerHeight-12){
+    e.box.style.maxHeight=(innerHeight-12)+'px';
+    e.box.style.overflowY='auto';
   }
   try{ regArwFit(); }catch(_){}
 }
