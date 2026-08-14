@@ -1699,7 +1699,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.27-lab（iPhoneの追加をアイコン起動で数える）</div>
+    <div class="ps-version">version 3.28-lab（計測の取りこぼしと日付ズレを直した）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4448,7 +4448,16 @@ function _stQ(){ // キュー取得（壊れていたら初期化）
   if(!q||typeof q!=='object')q={v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}};
   q.v=q.v||{};q.s=q.s||{};q.hours=q.hours||{};q.imp=q.imp||{};q.clk=q.clk||{};q.titles=q.titles||{};
   q.reg=q.reg||{};   // 古い版が残したキューにも足す＝作りかけのデータで落ちない
+  // ★記録した日を覚える。23:59に見て0:01に送ると翌日に入ってしまうため（2026-08-15）
+  q.day=q.day||_stDay();
   return q;
+}
+// 溜まっている分が昨日以前のものなら、先にその日付で送り切ってから今日の分を貯める
+function _stQFreshen(){
+  try{
+    var q=_stQ(), today=_stDay();
+    if(q.day!==today){ statsFlush(false); }   // 送信成功時に新しい日のキューへ切り替わる
+  }catch(_){}
 }
 function _stQSave(q){try{localStorage.setItem(_stQKEY,JSON.stringify(q));}catch(_){}}
 function _stTitleOf(ytId){for(var i=0;i<CYCLE.length;i++)if(CYCLE[i].ytId===ytId)return CYCLE[i].title;return '';}
@@ -4566,24 +4575,28 @@ function statsFlush(useBeacon){
     // 再生中でも計時を止めずに現時点までを確定（スナップショット）
     if(_stSes.playing){_stSes.acc+=(Date.now()-_stSes.t0)/1000;_stSes.t0=Date.now();}
     _stCheckView();_stCommitSecs();
-    var q=_stQ();var day=_stDay();var dev=_stDevId();
+    var q=_stQ();
+    var day=q.day||_stDay();          // ★記録した日で送る（送信時の日ではない）
+    var today=_stDay();
+    var dev=_stDevId();
     var ping=false;
-    try{ping=(localStorage.getItem(_stPingKEY)!==day);}catch(_){ping=true;}
+    try{ping=(localStorage.getItem(_stPingKEY)!==today);}catch(_){ping=true;}
     var body=statsBuildCommit(q,day,dev,ping);
     if(!body)return;
     var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents:commit?key='+encodeURIComponent(FIREBASE.apiKey);
     var json=JSON.stringify(body);
     var sent=false;
-    if(useBeacon&&navigator.sendBeacon){
+    // ★sendBeaconは64KBを超えると黙って捨てられる。大きい時はfetchへ回す（2026-08-15調査）
+    if(useBeacon&&navigator.sendBeacon&&json.length<60000){
       try{sent=navigator.sendBeacon(url,new Blob([json],{type:'application/json'}));}catch(_){sent=false;}
-      if(sent){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
+      if(sent){ _stQSave({day:today,v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}}); try{localStorage.setItem(_stPingKEY,today);}catch(_){}}
       return;
     }
     _stFlushing=true;
     fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:json,keepalive:!!useBeacon})
     .then(function(r){
       _stFlushing=false;
-      if(r.ok){ _stQSave({v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}}); try{localStorage.setItem(_stPingKEY,day);}catch(_){}}
+      if(r.ok){ _stQSave({day:today,v:{},s:{},hours:{},imp:{},clk:{},titles:{},reg:{}}); try{localStorage.setItem(_stPingKEY,today);}catch(_){}}
     })
     .catch(function(){_stFlushing=false;}); // 失敗時はキュー保持→次回再送
   }catch(_){_stFlushing=false;}
@@ -4613,6 +4626,11 @@ function statsInit(){
   try{
     _stDevId();
     try{ statsHomeOpen(); }catch(_){}
+    try{ _stQFreshen(); }catch(_){}          // 日をまたいだ分を先に送り切る
+    // ★開いた時点で「今日この端末が使った」を送る。閉じ方によっては pagehide が
+    //   発火せず（アプリの強制終了・タブの一括クローズ等）、端末数を取りこぼすため。
+    //   1日1回・数バイトなので負荷にならない（2026-08-15）
+    setTimeout(function(){ try{ statsFlush(false); }catch(_){} }, 3000);
     setInterval(function(){try{statsFlush(false);}catch(_){}},600000); // 10分毎
     document.addEventListener('visibilitychange',function(){if(document.hidden){try{statsSessionEnd();statsFlush(true);}catch(_){}}});
     window.addEventListener('pagehide',function(){try{statsSessionEnd();statsFlush(true);}catch(_){}});
