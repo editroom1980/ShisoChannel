@@ -1119,6 +1119,11 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
    （ボタンは #tour-foot の右寄せのまま） */
 #tour-tip{text-align:center;}
 #tour-body{display:inline-block;text-align:left;max-width:100%;}
+/* ★起動画面の説明（初回起動時のみ）は、使い方と全く同じ仕組み・同じ見た目で出す。
+   ただしこれは1枚だけの説明なので、画面の他の場所は押せるままにする＝
+   説明を読んだらそのまま放送開始ボタンを押せる（2026-08-14指示） */
+#tour.pass{pointer-events:none;}
+#tour.pass #tour-tip{pointer-events:auto;}
 #tour-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
 #tour-txt{font-size:16px;line-height:1.65;}
 #tour-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
@@ -1379,6 +1384,19 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
   align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.35);
   -webkit-tap-highlight-color:transparent;}
 #reg-fab.on{display:flex;}
+/* ★「？」の位置に出す誘い（2026-08-14指示）。中央に割り込む窓はもう自動では出さない。
+   お知らせや番組表には被ってよい＝目立たせることを優先する。
+   同じ物の大小2つの形なので、押す場所も出す条件も1か所で決まる（ずれようがない） */
+#reg-fab.big{width:auto;height:auto;border-radius:14px;padding:12px 16px;
+  background:var(--gold);color:var(--forest);border-color:var(--gold2);
+  max-width:min(330px, calc(100vw - 24px));text-align:left;
+  box-shadow:0 6px 22px rgba(0,0,0,.45);}
+#reg-fab .rf-q{display:block;}
+#reg-fab .rf-big{display:none;}
+#reg-fab.big .rf-q{display:none;}
+#reg-fab.big .rf-big{display:block;}
+.rf-t{display:block;font-size:16px;font-weight:800;line-height:1.4;letter-spacing:.5px;}
+.rf-s{display:block;font-size:13px;font-weight:700;line-height:1.4;margin-top:3px;opacity:.85;}
 
 /* 実測値の画面表示（?debug=1 の時だけ）。原因を推測せず数値で確かめるための保険 */
 #tv-debug{
@@ -1566,7 +1584,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.05-lab（矢印方式・6か所から選び直せる）</div>
+    <div class="ps-version">version 3.08-lab（強調枠をボタンに密着）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1848,7 +1866,7 @@ html.tvpc #settings-panel .set-link{
   <div id="rs-txt"></div>
   <div id="rs-foot"><button id="rs-fix">矢印の場所を直す</button><button id="rs-help">困った時</button></div>
 </div>
-<button id="reg-fab" title="ホーム画面への追加案内">？</button>
+<button id="reg-fab" title="ホーム画面への追加案内"><span class="rf-q">？</span><span class="rf-big"><span class="rf-t">ホーム画面に追加しませんか？</span><span class="rf-s">普通のアプリとして使えます</span></span></button>
 
 <!-- 実測値の表示（?debug=1 の時だけ見える） -->
 <div id="tv-debug"></div>
@@ -1969,9 +1987,12 @@ function tourCenter(ttl,lines,nextLabel,skipLabel){
   if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
 }
 // 対象を光らせて説明を出す
+//  i … TOUR の番号、または {id,t,d} そのもの（起動画面の説明のような1枚だけの案内用）
 function tourPoint(i, counter, noScroll){
   var e=tourEls(); if(!e.w) return;
-  var s=TOUR[i], el=document.getElementById(s.id);
+  var s=(i && typeof i==='object') ? i : TOUR[i];
+  if(!s) return;
+  var el=document.getElementById(s.id);
   if(!el) return;
   var r=el.getBoundingClientRect();
   // 画面の外にある物（iPhone縦のお知らせなど）は、まず画面の中へスクロールしてから測る。
@@ -1995,7 +2016,9 @@ function tourPoint(i, counter, noScroll){
   //   （2026-08-12 実機写真で判明：上6px・下1pxのように偏っていた）。
   //   入る分だけ同じ幅を四方に取り、足りなければ全体を縮める。
   //   小さいボタンは大きめの輪で目立たせ、大きな四角は細めに当てて正確に見せる。
-  var P=6;   // ★対象にぴったり付ける。以前は16/8で、囲いが緩く見えた（2026-08-12指示）
+  // ★枠は対象にぴったり合わせる。線の太さ(3px)と同じ余白にすると、
+  //   金の輪の内側がちょうど対象のふちに接する（2026-08-14指示。以前は6pxで隙間が見えた）
+  var P=3;
   var hl,ht,hr,hb;
   if(round1){
     // ★丸で囲う物は必ず「真円」にする。対象の中心に合わせ、直径＝長辺＋余白×2。
@@ -2017,7 +2040,9 @@ function tourPoint(i, counter, noScroll){
   }
   e.hole.style.left=hl+'px';          e.hole.style.top=ht+'px';
   e.hole.style.width=Math.max(0,hr-hl)+'px'; e.hole.style.height=Math.max(0,hb-ht)+'px';
-  e.hole.style.borderRadius=small?'999px':'12px';   // 正方形なら丸、細長い音量つまみなら小判形
+  // 正方形なら丸、細長い音量つまみなら小判形。それ以外は対象と同じ丸みに余白を足す＝角も密着する
+  var 対象丸=0; try{ 対象丸=parseFloat(getComputedStyle(el).borderTopLeftRadius)||0; }catch(_){}
+  e.hole.style.borderRadius=small?'999px':(Math.round(対象丸+P)+'px');
   e.ttl.textContent=s.t;
   tourLines(e.txt, s.d2?[s.d,s.d2]:[s.d]);
   e.step.textContent=counter||'';
@@ -2177,6 +2202,9 @@ function tourFinish(){
     'とじる','');
 }
 function tourEnd(){
+  // 起動画面の説明を出している時の「とじる」は、これだけ閉じる。
+  // 使い方そのものは見ていないので「見た」と記録してはいけない
+  if(_psTipMode){ psTipHide(); return; }
   var e=tourEls(); if(!e.w) return;
   if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
   tourWatchClear();
@@ -2283,20 +2311,83 @@ function tourAskIfFirst(){
 //    「ボタン1つ」で登録できる（メニューを探させない）。iPhoneはOSに仕組みが無く手動のみ。
 // ══════════════════════════════════════════════
 var REG_KEY='shisochan_reg';
-var _regPrompt=null, _regAt=null, _regSeen=false;
+var _regPrompt=null, _regAt=null;
 var _regT0=Date.now();          // ページを開いた時刻。1タップ追加が使えるようになるまでの待ちに使う
 var _regInstalled=false;        // 端末に「もう追加済み」と教えてもらえた場合
 // ?reg=1 で「まだ一度も見ていない状態」に戻す（実機で自動表示を確かめるため。?debug=1と同じ使い方）
 // ★すでにホーム画面に追加してある端末では、追加済み検知が働いて案内が出ない＝検証できない。
 //   ?reg=1 の時だけは、その検知を無視して案内を出す（普段の動きは変えない）
 var _regForce=false;
-try{ if(/[?&]reg=1(&|$)/.test(location.search)){ localStorage.removeItem(REG_KEY); _regForce=true; } }catch(_){}
+// 初めてこのアプリを開いた人かどうかの記録（起動画面の説明を1回だけ出すため）
+var FIRST_KEY='shisochan_first';
+try{ if(/[?&]reg=1(&|$)/.test(location.search)){
+  localStorage.removeItem(REG_KEY); localStorage.removeItem(FIRST_KEY); _regForce=true; } }catch(_){}
+// ★起動画面の説明は「初回起動時のみ」（2026-08-14指示）。
+//   ★出すと起動画面が縦に伸びるので、低い画面（古いiPhoneの横向き等）では
+//     放送開始ボタンが画面の外へ押し出される。押せなくなるのは論外なので、
+//     「出したら実際にボタンが画面に収まるか」を実測し、収まらなければ出さない。
+//     推測ではなく実測なので、どの端末・どの向きでも外さない（2026-08-14の検査が検出）
+//   ★「使い方」で出るものと同じ形式にする（2026-08-14指示）。
+//     見た目を真似るのではなく、使い方と同じ関数(tourPoint)で描く＝作りが1つなのでずれようがない。
+//     ただし1枚だけの説明なので「次へ」は出さず、他の場所は押せるままにする。
+//   ★「この起動で出す人か」(_psTipOn)と「もう見せたと記録したか」(FIRST_KEY)は別物にする。
+//     一緒にすると、一度出した後に画面の幅が変わっただけで（URLバーの伸縮・回転）
+//     説明が消えてしまう（2026-08-14の検査が検出）
+var PS_TIP={id:'ps-btn', t:'放送開始', d:'ボタンを押すと放送が開始されます。'};
+var _psTipOn=false, _psTipMode=false, _psTipRect='';
+// ★対象の寸法は後から変わる（書体の読み込み・URLバーの伸縮・回転）。
+//   出した時の寸法を覚えておき、変わっていたら測り直す＝枠が対象からずれたままにならない。
+//   何度呼ばれても同じ結果になる（冪等）ので、誤って呼んでも壊れない
+//   （2026-08-14の実測で発覚：書体の読み込み前に測っていて、枠が左右10pxずつ内側にあった）
+function psTipRepoint(){
+  try{
+    if(!_psTipMode) return;
+    var b=document.getElementById('ps-btn'); if(!b) return;
+    var r=b.getBoundingClientRect(), now=r.width+'x'+r.height;
+    if(now===_psTipRect) return;
+    psTipSync();
+  }catch(_){}
+}
+function psTipInit(){
+  try{ _psTipOn = !localStorage.getItem(FIRST_KEY); }catch(_){ _psTipOn=false; }
+  // ホーム画面から開いた人には「使い方」そのものが始まる（tourAskIfFirst）。二重に出さない
+  try{ if(regHome()) _psTipOn=false; }catch(_){}
+  psTipSync();
+}
+function psTipHide(){
+  _psTipMode=false;
+  try{
+    var e=tourEls();
+    e.w.classList.remove('on','dim','pass');
+    e.hole.style.display='none'; e.tri.style.display='none';
+    e.next.style.display=''; e.step.style.display='';
+  }catch(_){}
+}
+function psTipSync(){
+  try{
+    var b=document.getElementById('ps-btn'), ps=document.getElementById('power-screen');
+    if(!b||!ps) return;
+    if(!_psTipOn){ if(_psTipMode) psTipHide(); return; }
+    if(_tourMode!==0){ if(_psTipMode) psTipHide(); return; }   // 使い方が動いている間は譲る
+    if(getComputedStyle(ps).display==='none'){ if(_psTipMode) psTipHide(); return; }
+    _psTipMode=true;
+    var e=tourEls();
+    tourPoint(PS_TIP, '', true);          // 使い方と同じ描き方（起動画面は動かさないのでスクロールしない）
+    e.next.style.display='none';          // 行き先が無いので「次へ」は出さない
+    e.step.style.display='none';          // 何枚目かの表示も無し
+    e.w.classList.add('pass');            // 放送開始ボタンはそのまま押せる
+    _psTipRect=b.getBoundingClientRect().width+'x'+b.getBoundingClientRect().height;
+    // 実際に出せた時だけ「見せた」と記録する＝出せなかった人には次の起動でまた出る。
+    // _psTipOn はこの起動の間そのまま＝出したあと幅が変わっても消えない
+    try{ localStorage.setItem(FIRST_KEY,'1'); }catch(_){}
+  }catch(_){}
+}
 
 // ★イベントは読み込み後しばらくして届くので、必ず先に受け口を用意しておく
 window.addEventListener('beforeinstallprompt', function(e){
   e.preventDefault();          // ブラウザの小さい帯は出さず、こちらのボタンで出す
   _regPrompt=e;
-  try{ regMaybeOffer(); }catch(_){}
+  try{ regFabSync(); }catch(_){}
 });
 window.addEventListener('appinstalled', function(){
   _regPrompt=null;
@@ -2380,9 +2471,11 @@ function regIsPc(){                       // パソコン＝ホーム画面が�
 //  画面の定義。d は行ごとの配列（折り返しを決め打ちするため）
 var REG={
  // ── 入口（中央の窓）─────────────────────────────
- start:{t:'ホーム画面に置きませんか', app:1,
-        d:['アイコンを押すだけで','すぐ放送が始まります。'],
-        b:[{l:'ホーム画面に置く',go:'route',p:1},{l:'あとにする',go:null}]},
+ // ★見出しと説明は「？」の位置に出す誘いと一字一句そろえる（2026-08-14指示）。
+ //   ずれると「押したら別の話が始まった」と感じさせるため、検査でも一致を機械照合する
+ start:{t:'ホーム画面に追加しませんか？', app:1,
+        d:['普通のアプリとして使えます'],
+        b:[{l:'ホーム画面に追加',go:'route',p:1},{l:'あとにする',go:null}]},
 
  // ── Android系：ボタン1つ（Chrome・Edgeで実際に発火することを実機で確認済み）
  oneTap:{t:'ホーム画面に追加します',
@@ -2976,6 +3069,7 @@ function regFabSync(){
     try{ var sp=document.getElementById('settings-panel');
          if(sp && sp.classList.contains('open')) show=false; }catch(_){}
     f.classList.toggle('on', !!show);
+    f.classList.toggle('big', !!(show && regOfferBig()));
   }catch(_){}
 }
 // 箱の高さを実測し、画面に入らない時だけ詰める。入るなら何も変えない＝誤発動しても無害
@@ -3108,37 +3202,24 @@ function regEnd(){
   }catch(_){}
   try{ regFabSync(); }catch(_){}
 }
-function regDone(){                       // もう自動で出さない状態か
-  try{ return localStorage.getItem(REG_KEY)==='done'; }catch(_){ return false; }
-}
-//  ★3秒後に1回だけだと、その瞬間に条件が揃っていないと二度と出なかった
-//    （使い方の説明が出ている・全画面で見ている 等）。5秒ごとに1分間ためす
-var _regSched=false;
+//  ★中央に割り込む窓を自動で出すのはやめた（2026-08-14指示：
+//    「動画を見ているといきなりポップアップが邪魔するのはよくない」）。
+//    代わりに「？」の位置へ大きい誘いを出す。出し入れは regFabSync が毎秒そろえる＝
+//    全画面・設定・使い方の説明など、どの場面から戻っても取りこぼさない
+var _regSched=false, _regOfferReady=false;
 function regSchedule(){
   if(_regSched) return;        // powerOnは復帰経路からも呼ばれる＝二重に仕掛けない
   _regSched=true;
-  setTimeout(function(){ try{ regMaybeOffer(); }catch(_){} }, 3000);
-  var n=0;
-  var iv=setInterval(function(){
-    n++;
-    try{ regMaybeOffer(); }catch(_){}
-    if(_regSeen || regDone() || n>12) clearInterval(iv);
-  }, 5000);
+  // 放送が始まった直後に出すと見始めた人の邪魔になるので、少し置いてから
+  setTimeout(function(){ _regOfferReady=true; try{ regFabSync(); }catch(_){} }, 3000);
 }
-//  出してよい場面かを見て、最初の画面を出す
-function regMaybeOffer(){
-  if(_regSeen || _regAt) return;
-  if(regHome()) return;                 // すでにホーム画面から開いている
-  if(_regInstalled && !_regForce) return;   // 端末が「もう追加済み」と答えた（?reg=1の時だけ無視して検証できる）
-  if(regMayGetPrompt()) return;         // 1タップ追加が使えるようになるのを少しだけ待つ
-  if(!hasPoweredOn) return;             // 放送を見始めるまでは出さない
-  if(_tourMode!==0) return;             // 使い方の説明が出ている間は出さない
-  if(isExpanded) return;                // 全画面で見ている最中は割り込まない
-  // ★テレビ・パソコンには「ホーム画面」が無い。TVは電気店が設置するので案内も不要
-  try{ if(isSilk || isTvPcMode()) return; }catch(_){}
-  if(regDone()) return;                 // 手順まで見た人・3回ことわった人には出さない
-  _regSeen=true;
-  regShow('start');
+//  「？」を大きい誘いの形にしてよいか。
+//  一度でも案内を開いた人（「あとにする」で閉じた人も含む）には出さない＝しつこくしない。
+//  その人には今までどおり小さい「？」だけが残るので、いつでも呼び戻せる
+function regOfferBig(){
+  if(!_regOfferReady) return false;     // 放送開始から少し待つ
+  if(regMayGetPrompt()) return false;   // 1タップ追加が使えるようになるのを少しだけ待つ
+  try{ return localStorage.getItem(REG_KEY)===null; }catch(_){ return false; }
 }
 
 //  サイト表示の窓（TV・PC用・2026-08-11）
@@ -4673,6 +4754,7 @@ window.addEventListener('pageshow',function(){ _uiTimersStart(); });
 applyOrientationClass();
 window.addEventListener('orientationchange', function(){ applyOrientationClass(); setTimeout(applyOrientationClass,200); setTimeout(applyOrientationClass,600); });
 window.addEventListener('resize', applyOrientationClass);
+window.addEventListener('resize', function(){ try{ psTipSync(); }catch(_){} });
 uiInterval(applyOrientationClass, 500);   // 凍結からの復帰も含め常に正しい向きへ追従
 
 // ══ ビューポート凍結の検知と復旧（2026-08-10・実機の生データで機構を確定）══
@@ -5404,6 +5486,7 @@ function armStartBtn(){
 function powerOn(){
   document.getElementById('power-screen').style.display='none';
   document.getElementById('main-content').style.display='block';
+  try{ psTipHide(); }catch(_){}   // 起動画面の説明はここで役目を終える
   // ★本体を表示した直後にヘッダー実高(--hdr-h)を測り直す（起動画面中の測定は非表示=高さ0で無効なため）＋
   //   ページのスクロール位置を0に固定（本文が固定ヘッダーの裏に潜り込む上ズレの保険）
   setHdrVar();
@@ -5628,7 +5711,10 @@ function init(){
   // 初回だけ「使い方の説明を見ますか？」と尋ねる。画面が組み上がってから出す
   setTimeout(function(){ try{ tourAskIfFirst(); }catch(_){} }, 400);
   uiInterval(updateClock,1000);
-  uiInterval(regFabSync,1000);   // 呼び戻し「？」の出し入れ（冪等）
+  uiInterval(regFabSync,1000);   // 「？」と誘いの出し入れ（冪等）
+  try{ psTipInit(); }catch(_){}  // 起動画面の説明（初回起動時のみ）
+  uiInterval(psTipRepoint,300);  // 枠が対象からずれていたら測り直す（冪等）
+  try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ psTipRepoint(); }); }catch(_){}
   setInterval(periodicCheck,10000);   // 番組の切り替えの要。裏に回っても止めない
   // シークバーと再生アイコンの追従。0.1秒ごとにYouTubeへ状態を聞いていたが、
   // 目で見て違いが出ない範囲で0.25秒に緩めた（問い合わせ回数が毎秒10回→4回）
