@@ -1434,13 +1434,13 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
    カードごと押すと、そのまま「このマークを探します」へ進む */
 #reg-fab.big{width:auto;height:auto;border:0;border-radius:14px;padding:12px 14px;
   background:#fff;color:#1a2520;
-  max-width:min(330px, calc(100vw - 24px));text-align:left;
+  max-width:min(376px, calc(100vw - 24px));text-align:left;
   box-shadow:0 8px 30px rgba(0,0,0,.5);}
 #reg-fab .rf-q{display:block;}
 #reg-fab .rf-big{display:none;}
 #reg-fab.big .rf-q{display:none;}
-#reg-fab.big .rf-big{display:flex;align-items:center;gap:12px;}
-#rf-ic{flex:0 0 auto;width:48px;height:48px;border-radius:11px;overflow:hidden;display:block;}
+#reg-fab.big .rf-big{display:flex;align-items:center;gap:10px;}
+#rf-ic{flex:0 0 auto;width:44px;height:44px;border-radius:10px;overflow:hidden;display:block;}
 #rf-ic img{width:100%;height:100%;display:block;object-fit:cover;}
 #rf-ic.round{border-radius:50%;}          /* Androidは丸く切り抜かれるため */
 .rf-tx{min-width:0;}
@@ -1448,12 +1448,12 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 .rf-s{display:block;font-size:13px;font-weight:600;color:#41504a;line-height:1.4;margin-top:2px;}
 /* ★狭い画面（iPhone SE等・幅320px）では見出しが23px足りず折り返す（2026-08-14実測）。
    同じ境目は使い方のカードでも使っている。詰めた後は余裕21pxで収まることを実測で確認 */
-@media (max-width:343px){
+@media (max-width:374px){
   #reg-fab.big{padding:10px;}
-  #reg-fab.big .rf-big{gap:10px;}
-  #rf-ic{width:42px;height:42px;border-radius:10px;}
-  .rf-t{font-size:14.5px;letter-spacing:0;}
-  .rf-s{font-size:12.5px;}
+  #reg-fab.big .rf-big{gap:8px;}
+  #rf-ic{width:40px;height:40px;border-radius:9px;}
+  .rf-t{font-size:13.5px;letter-spacing:0;}
+  .rf-s{font-size:12px;}
 }
 
 /* 実測値の画面表示（?debug=1 の時だけ）。原因を推測せず数値で確かめるための保険 */
@@ -1642,7 +1642,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.14-lab（開始画面の説明だけ0.3へ）</div>
+    <div class="ps-version">version 3.15-lab（文言変更・Androidの待ちを廃止）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1924,7 +1924,7 @@ html.tvpc #settings-panel .set-link{
   <div id="rs-txt"></div>
   <div id="rs-foot"><button id="rs-fix">矢印の場所を直す</button><button id="rs-help">困った時</button></div>
 </div>
-<button id="reg-fab" title="ホーム画面への追加案内"><span class="rf-q">？</span><span class="rf-big"><span id="rf-ic"></span><span class="rf-tx"><span class="rf-t">ホーム画面に追加しませんか？</span><span class="rf-s">普通のアプリとして使えます</span></span></span></button>
+<button id="reg-fab" title="ホーム画面への追加案内"><span class="rf-q">？</span><span class="rf-big"><span id="rf-ic"></span><span class="rf-tx"><span class="rf-t">ここからホーム画面に追加できます</span><span class="rf-s">追加すると普通のアプリとして使えます</span></span></span></button>
 
 <!-- 実測値の表示（?debug=1 の時だけ見える） -->
 <div id="tv-debug"></div>
@@ -2585,8 +2585,8 @@ var REG={
  // ── 入口（中央の窓）─────────────────────────────
  // ★見出しと説明は「？」の位置に出す誘いと一字一句そろえる（2026-08-14指示）。
  //   ずれると「押したら別の話が始まった」と感じさせるため、検査でも一致を機械照合する
- start:{t:'ホーム画面に追加しませんか？', app:1,
-        d:['普通のアプリとして使えます'],
+ start:{t:'ここからホーム画面に追加できます', app:1,
+        d:['追加すると普通のアプリとして使えます'],
         b:[{l:'ホーム画面に追加',go:'route',p:1},{l:'あとにする',go:null}]},
 
  // ── Android系：ボタン1つ（Chrome・Edgeで実際に発火することを実機で確認済み）
@@ -3345,8 +3345,10 @@ function regFabIcon(){
   }catch(_){}
 }
 function regOfferBig(){
-  if(!_regOfferReady) return false;     // 放送開始から少し待つ
-  if(regMayGetPrompt()) return false;   // 1タップ追加が使えるようになるのを少しだけ待つ
+  if(!_regOfferReady) return false;     // 放送開始から少し待つ（iPhone・Android共通で3秒）
+  // ★以前はAndroidだけ「1タップ追加が使えるようになるまで最大25秒」カードを出さずに待っていた。
+  //   いまは押した時点で行き先を決める（regShow('route')が_regPromptを見る）ので待つ必要がない。
+  //   待つとAndroidだけ最大25秒なにも出ず、iPhoneと間合いが変わってしまう（2026-08-14指示）
   try{ return localStorage.getItem(REG_KEY)===null; }catch(_){ return false; }
 }
 
