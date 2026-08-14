@@ -1349,9 +1349,16 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* 文の中に置くマーク。「押す物」だと分かるよう、上の大きなマークと同じ薄い枠に入れる。
    大きさはemなので、詰め表示になっても文字と一緒に縮む */
 .rs-mk{display:inline-flex;align-items:center;justify-content:center;
-  width:1.5em;height:1.5em;vertical-align:-0.42em;margin:0 2px;
-  background:#f2f4f3;border-radius:.34em;}
-.rs-mk svg{width:1.05em;height:1.05em;display:block;}
+  /* ★大きさは緑の強調(.rs-key)と揃える。あちらは line-height 1.45＋上下padding 2px で
+     高さが決まるので、同じ式で出す。ズレたら検査(C22)が落とす */
+  width:calc(1.45em + 4px);height:calc(1.45em + 4px);vertical-align:-0.18em;margin:0 2px;
+  /* ★上下位置は目分量で決めない。マークの中心と、隣の文字の中心を実測して合わせた値。
+     元の-0.42emは5.33px下だった（2026-08-14指摘）。強調と同じ大きさにした後は
+     -0.18emでズレ0.02px（大きさを変えたら測り直すこと） */
+  /* ★背景は白。項目に薄い面を敷いたので、灰色だと面と同化して枠が消える
+     （2026-08-14実測：面 #f4f6f4 と枠 #f2f4f3 がほぼ同色だった） */
+  background:#fff;border-radius:.34em;}
+.rs-mk svg{width:1.25em;height:1.25em;display:block;}
 #rs-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:13px;}
 #rs-fix{border:0;background:none;color:#41504a;text-decoration:underline;text-underline-offset:3px;
   font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;padding:8px 2px;
@@ -1691,7 +1698,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.22</div>
+    <div class="ps-version">version 3.27</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2678,15 +2685,16 @@ var REG={
         d:['矢印の先にありますか。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sChromeI',p:1},
            {l:'ちがう場所にあった',go:'@where:sChromeI'},
-           {l:'見当たらない',go:'iSafari'}]},
+           {l:'見つからない',go:'iSafari'}]},
  // ★Chrome公式ヘルプで確認（2026-08-13）。Safariと道筋が違う。
  //   Chromeのメニュー(⋯)に「共有」は上の方に無く、Safariの手順では詰まる。
  //   正しくは アドレスバーの右の共有 →「ホーム画面に追加」→「追加」
  sChromeI:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'この{share}を押す'},
            {sub:'アドレスバーの右にあります'},
-           {n:2,t:'「ホーム画面に追加」を押す'},
-           {sub:'見当たらない時は下へたどります'},
+           {n:2,t:'「ホーム画面に追加」を探して押す'},
+           {sub:'見当たらない時は「表示を増やす」'},
+           {sub:'または一覧を下へたどります'},
            {n:3,t:'「追加」を押す'}]},
  iShare:{t:'このマークを探します', ic:'share', arw:'@apple',
         d:['矢印の先にありますか。','まだ押さないでください。'],
@@ -2706,8 +2714,8 @@ var REG={
         b:[{l:'見つかった',go:'sDots',p:1},
            {l:'ちがう場所にあった',go:'@where:sDots'},
            {l:'見つからない',go:'iShare2'}]},
- iShare2:{t:'このマークを探します', ic:'share', arw:'dc',
-        d:['矢印の先にありますか。'],
+ iShare2:{t:'このマークを探します', ic:'share', arw:'@apple',
+        d:['矢印の先にありますか。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sShare',p:1},
            {l:'ちがう場所にあった',go:'@where:sShare'},
            {l:'見つからない',go:'iSafari'},
@@ -2726,6 +2734,12 @@ var REG={
  // ★「古い機種ではSafari以外は不可」と書いていたが誤り。iOS 16.4(2023年3月)以降は
  //   ChromeなどでもiPhoneのホーム画面に追加できる。ただし古いiOSやアプリ内では出ないので
  //   「できないことがある」に改めた（2026-08-12訂正）
+ // ★Safariで見ている人には出さない（regShowが iNoMark へ振り替える）。
+ //   自分がいま使っているブラウザを勧められても何もできず、行き止まりになっていた
+ iNoMark:{t:'マークが見つからない時',
+        d:['画面を横向きにすると','道具の列が上に移ります。','縦向きなら画面の下です。'],
+        b:[{l:'もう一度さがす',go:'@back',p:1},
+           {l:'別の方法を見る',go:'altBookmark'}]},
  iSafari:{t:'Safariで開き直します',
         d:['Safari以外では、追加が','できないことがあります。','Safariで開いてお試しください。'],
         b:[{l:'とじる',go:null,p:1}]},
@@ -2764,7 +2778,7 @@ var REG={
  // ── つまずいた時（帯の「困った時」から）─────────────
  troubleI:{t:'うまくいかない時',
         d:['よくあるつまずきです。','あてはまる物を選んでください。'],
-        b:[{l:'一覧に見当たらない',go:'iEdit'},{l:'マークが見つからない',go:'iDots'},
+        b:[{l:'一覧に見つからない',go:'iEdit'},{l:'マークが見つからない',go:'iDots'},
            {l:'アイコンが出ない',go:'findIconI'},{l:'別の方法で見る',go:'altBookmark'},
            {l:'手順にもどる',go:'@back',p:1}]},
  troubleA:{t:'うまくいかない時',
@@ -2776,7 +2790,7 @@ var REG={
  //   ホーム画面からアイコンだけ消した人がこの状態になり、追加の項目を探して詰まる（2026-08-12 実機で確認）
  alreadyIn:{t:'すでに入っています',
         d:['この端末には追加済みです。','メニューの「起動」を押せば','そのまま開けます。'],
-        b:[{l:'とじる',go:null,p:1},{l:'アイコンが見当たらない',go:'findIconA'}]},
+        b:[{l:'とじる',go:null,p:1},{l:'アイコンが見つからない',go:'findIconA'}]},
  troubleIn:{t:'開き直せない時',
         d:['このまま（アプリの中）でも','放送は見られます。'],
         b:[{l:'とじる',go:null,p:1},{l:'別の方法を見る',go:'altBookmark'}]},
@@ -2803,14 +2817,14 @@ var REG={
  //  補足は「その手順の直後」に置く＝つまずく場所で読める（2026-08-12指示）。
  //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
  sShare:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
-        s:[{n:1,t:'このマークを押す'},
+        s:[{n:1,t:'この{share}を押す'},
            {n:2,t:'「ホーム画面に追加」を探して押す'},
            {sub:'見当たらない時は「表示を増やす」'},
            {sub:'または一覧を下へたどります'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:3,t:'右上の「追加」を押す'}]},
  sDots:{strip:1, arw:'@ans', ic:'dots', tr:'troubleI', h:'この順に押します',
-        s:[{n:1,t:'このマークを押す'},
+        s:[{n:1,t:'この{dots}を押す'},
            {n:2,t:'「共有」を押す'},
            {n:3,t:'「ホーム画面に追加」を探して押す'},
            {sub:'見当たらない時は「表示を増やす」'},
@@ -2818,35 +2832,48 @@ var REG={
            {sub:'→ 名前を決める画面が出ます'},
            {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
+ // ★2026-08-14 Androidエミュレータ(Pixel 7/Android 14)で実測：メニューは全11項目あり
+ //   「インストール」は下から4番目。縦向きは全部見えるが、横向きは画面が低く
+ //   下へたどらないと出ない。iOSと同じで「見当たらない時は」の一行が要る
  sChrome:{strip:1, arw:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {sub:'色のついた丸のこともあります'},
            {n:2,t:'「アプリをインストール」を押す'},
+           {sub:'見当たらない時は下へたどります'},
            {sub:'「ホーム画面に追加」の時もあります'},
            {n:3,t:'「インストール」を押す'},
-           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
+           {sub:'→ もう一度たずねられたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
  sEdge:{strip:1, arw:'dr', ic:'bars', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下の{bars}を押す'},
            {n:2,t:'「電話に追加」を探して押す'},
            {sub:'横にめくると出てきます'},
            {n:3,t:'「インストール」を押す'},
-           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
+           {sub:'→ もう一度たずねられたら「追加」'}]},
  // ★Firefoxの項目名は「ホーム画面にアプリを追加」。「その他」の中にある（実機確認）
+ // ★2026-08-14 Androidエミュレータで実測（日本語・Firefox 153）：
+ //   ・アドレスバーは初回設定で「画面上部／画面下部」を選べる。下にした人は
+ //     メニューも下に移るので「右上の」と決めつけない
+ //   ・「その他」は上から5番目で、スクロールせずに見える（「下のほう」は不正確だった）
+ //   ・「ホーム画面にアプリを追加」のすぐ上に「ショートカットに追加」がある。
+ //     そちらはFirefoxの中だけの追加で、ホーム画面にアイコンは出ない
  sFire:{strip:1, arw:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
-        s:[{n:1,t:'右上の{menu}を押す'},
+        s:[{n:1,t:'{menu}を押す'},
+           {sub:'画面の上か下にあります'},
            {n:2,t:'「その他」を押す'},
-           {sub:'メニューの下のほうにあります'},
            {n:3,t:'「ホーム画面にアプリを追加」を押す'},
+           {sub:'「ショートカット」ではありません'},
            {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
+ // ★2026-08-14 Androidエミュレータで実測（日本語・Samsungブラウザ）：
+ //   道具の列は画面の下、メニューは右下92%。「ページを追加」→追加先の一覧→
+ //   最後の確認は「追加」ではなく「ホーム画面に追加」だった（案内が違っていた）
  sSams:{strip:1, arw:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
-        s:[{n:1,t:'右下のメニューを押す'},
-           {sub:'{bars}か{menu}の形です'},
+        s:[{n:1,t:'右下の{bars}か{menu}を押す'},
            {n:2,t:'「ページを追加」を押す'},
            {sub:'→ 追加先をえらぶ画面が出ます'},
            {n:3,t:'「ホーム画面」を選ぶ'},
-           {n:4,t:'「追加」を押す'}]},
+           {n:4,t:'「ホーム画面に追加」を押す'}]},
  // ★らくらくスマホ(FCNT)。他機種と違い「共有」も「⋮」も出てこない。ドコモF-53E取説p.68の逐語
  //   「登録したブックマークをホーム画面の『よく使うブックマーク』カテゴリに貼り付けるかどうかの
  //     確認画面が表示されますので、［貼る］／［貼らない］を選択して設定できます」
@@ -2860,7 +2887,7 @@ var REG={
            {sub:'「よく使うブックマーク」に入ります'}]},
  // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
  sRaku2:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'あとから貼る場合',
-        s:[{n:1,t:'上の「しおり」を押す'},
+        s:[{n:1,t:'上の{book}を押す'},
            {n:2,t:'「メニュー」を押す'},
            {n:3,t:'「ホーム画面に貼る」を押す'},
            {n:4,t:'このページを選ぶ'},
@@ -2886,8 +2913,7 @@ var REG={
  // ★位置はアプリで違う。LINEのAndroid版は右上、iPhone版とXは画面の下（各社の案内で確認）。
  //   「右下などの」と決めつけていたので両方を書くよう改めた（2026-08-12訂正）
  sInApp:{strip:1, ic:'dots', tr:'troubleIn', h:'ブラウザで開き直す',
-        s:[{n:1,t:'右下か右上のマークを押す'},
-           {sub:'{dots}や{bars}の形です'},
+        s:[{n:1,t:'右下か右上の{dots}か{bars}を押す'},
            {n:2,t:'「ブラウザで開く」を押す'},
            {sub:'「Safariで開く」でも同じ'},
            {sub:'→ ブラウザが開き直ります'},
@@ -2915,8 +2941,20 @@ function regEls(){
     ttl:document.getElementById('reg-ttl'), txt:document.getElementById('reg-txt'),
     btns:document.getElementById('reg-btns'), icon:document.getElementById('reg-icon')};
 }
+// いま見ているのがiPhone/iPadの「Safari」か。Chrome等でもアプリ内でもなければSafari
+function regIsSafariIOS(){
+  try{
+    if(!regIsApple()) return false;
+    if(/CriOS\/|EdgiOS\/|FxiOS\/|OPiOS\//.test(navigator.userAgent)) return false;
+    if(regInApp()) return false;
+    return true;
+  }catch(_){ return false; }
+}
 function regShow(key){
   var e=regEls(); if(!e.w) return;
+  // ★Safariで見ている人に「Safariで開き直します」は無意味で、しかも行き止まり。
+  //   道具の場所は向きで変わるので、その助言へ振り替える（2026-08-14指摘）
+  if(key==='iSafari' && regIsSafariIOS()) key='iNoMark';
   if(key==='route'){
     // ★パソコンには登録の案内を出さない（2026-08-14指示）。どの分岐よりも先に見る＝
     //   インストールできるパソコンでも「追加します」が出ない
@@ -2931,7 +2969,10 @@ function regShow(key){
       //   設定で変えた人は iDots26 の「どこにも無い」→ 共有の確認(iShare2) で拾う
       var _iu=navigator.userAgent, _im=/iPhone OS (\d+)_/.exec(_iu);
       if(/CriOS\//.test(_iu))                 key='iChrome';
-      else if(_im && parseInt(_im[1],10)>=26) key='iDots26';
+      // ★iOS26の「…」は縦向きの道具の列にあるもの。横向きは道具が上に並び直して
+      //   共有マークが直接出る＝「…」は存在しない（2026-08-14 実機写真）。
+      //   横向きの人に無い物を探させていたので、向きで振り分ける
+      else if(_im && parseInt(_im[1],10)>=26 && innerWidth<=innerHeight) key='iDots26';
       else                                    key='iShare';
     }
     else                      key='aBrowser';
@@ -3032,11 +3073,18 @@ var REG_ARW_SVG={
 };
 // その画面で矢印が指すべき場所。利用者が選び直した場所 ＞ 画面の指定。
 //   '@ans'=利用者の答えに従う／'@apple'=iPhoneは下の中央・iPadは右上（実機写真で確認）
+// iPhone/iPadのSafariで「共有」がある場所。★向きで変わる（2026-08-14 実機写真で確認）。
+//   縦向き＝道具の列は画面の下／横向き＝画面の上に一列に並び、共有は右寄り。
+//   ここを固定にしていたため、横向きで矢印が毎回外れていた
+function regAppleZone(){
+  try{ if(!/iPhone/.test(navigator.userAgent)) return 'ur'; }catch(_){ return 'ur'; }
+  return innerWidth>innerHeight ? 'ur' : 'dc';
+}
 function regArwZoneOf(key, sc){
   if(_regArwPick[key]) return _regArwPick[key];
   var z=(sc&&sc.arw)||'';
   if(z==='@ans')   return _regArwAns||'';
-  if(z==='@apple') return /iPhone/.test(navigator.userAgent)?'dc':'ur';
+  if(z==='@apple') return regAppleZone();
   return z;
 }
 function regArwShow(zone){
@@ -4539,11 +4587,31 @@ function statsFlush(useBeacon){
     .catch(function(){_stFlushing=false;}); // 失敗時はキュー保持→次回再送
   }catch(_){_stFlushing=false;}
 }
+// ★iPhoneには「ホーム画面に追加された」を知る仕組みが無い。
+//   appinstalled / beforeinstallprompt / getInstalledRelatedApps は3つとも
+//   Safariにもホーム画面から開いた時にも存在しない（2026-08-15 iOSシミュレータで実測）。
+//   代わりに「アイコンから開いた」を数える＝追加して実際に使い始めた人が分かる。
+//   端末ごとに1回だけ数えるので、同じ人が何度開いても増えない。
+//   ・standalone   … navigator.standalone と display-mode の両方で判定（regHome）
+//   ・src=home     … manifestのstart_urlに付けた印。iOSがstart_urlを使うことは実測済み。
+//                    Safariで手で開いた場合と区別でき、standalone判定の裏取りになる
+var _stHomeKEY='shisochan_home_counted';
+function statsHomeOpen(){
+  try{
+    if(!_stEnabled()) return;
+    if(!regHome()) return;                                  // ブラウザで見ている間は数えない
+    if(localStorage.getItem(_stHomeKEY)==='1') return;      // この端末では数え済み
+    localStorage.setItem(_stHomeKEY,'1');
+    statsRegStep('homeOpen');
+    if(/[?&]src=home(&|$)/.test(location.search)) statsRegStep('homeUrl');
+  }catch(_){}
+}
 function statsInit(){
   try{_stExclSwitch();}catch(_){} // 除外の切り替えは、計測の可否を見る前に行う（解除もできるように）
   if(!_stEnabled())return;
   try{
     _stDevId();
+    try{ statsHomeOpen(); }catch(_){}
     setInterval(function(){try{statsFlush(false);}catch(_){}},600000); // 10分毎
     document.addEventListener('visibilitychange',function(){if(document.hidden){try{statsSessionEnd();statsFlush(true);}catch(_){}}});
     window.addEventListener('pagehide',function(){try{statsSessionEnd();statsFlush(true);}catch(_){}});
