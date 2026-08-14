@@ -1600,7 +1600,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.09-lab（枠と三角のズレ根治・誘いを白カードへ）</div>
+    <div class="ps-version">version 3.10-lab（強調枠は画面の端でも真円のまま）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2042,15 +2042,11 @@ function tourPoint(i, counter, noScroll){
     //   つぶれた楕円になっていた（2026-08-12 実機写真で判明）。
     var cx=(r.left+r.right)/2, cy=(r.top+r.bottom)/2;
     var D=Math.min(Math.max(r.width,r.height)+P*2, innerWidth, innerHeight);
-    var cl=cx-D/2, ct=cy-D/2;
-    // ★画面のふちにぶつかる時は、寄せずに真円をあきらめる。
-    //   寄せると輪の中心が対象からずれ、「枠がズレている」と見える
-    //   （2026-08-14実測：設定ボタンで上0px・下11px＝中心が5px下だった）
-    if(cl<0 || ct<0 || cl+D>innerWidth || ct+D>innerHeight){
-      round1=false;
-    }else{
-      hl=cl; ht=ct; hr=cl+D; hb=ct+D;
-    }
+    // ★画面のふちにぶつかっても、寄せない・形も変えない。必ず対象の中心に真円を置く。
+    //   ・寄せる → 輪の中心が対象からずれる（2026-08-14実測：上0px/下11px）
+    //   ・小判形にする → 円でなくなり違和感が出る（2026-08-14 実機で指摘）
+    //   はみ出した側は画面のふちで切れるだけ。対象自体がふちにあるので自然に見える
+    hl=cx-D/2; ht=cy-D/2; hr=hl+D; hb=ht+D;
   }
   if(!round1){
     var pad=Math.min(P, Math.max(0,r.left), Math.max(0,r.top),
