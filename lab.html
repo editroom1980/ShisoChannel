@@ -1312,19 +1312,31 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* ★手順どうしの間隔は「手順＋その補足のかたまり」に付ける。
    手順の行(.rs-step)に付けると、各かたまりの先頭なので :first-child が効いて
    間隔が消える（2026-08-14実測：縦向きで0pxだった） */
-.rs-item{break-inside:avoid;-webkit-column-break-inside:avoid;margin-top:22px;}
+/* ★どの番号がどこまでを指すのかを、薄い角丸の面で囲って示す（2026-08-14指示）。
+   内側の余白も変数1か所で持ち、詰め段で小さくする＝同じ数を2か所に書かない */
+.rs-item{break-inside:avoid;-webkit-column-break-inside:avoid;margin-top:var(--rs-gapv);
+  background:rgba(45,92,62,.055);border-radius:12px;
+  padding:var(--rs-pady) var(--rs-padx);
+  /* ★面のぶん中身が細くなると文が折り返し、字を小さくする段が発動してしまう
+     （2026-08-14実測：縦390pxで18px→16px）。左右は外へ広げて中身の幅を保つ */
+  margin-left:calc(-1 * var(--rs-padx));margin-right:calc(-1 * var(--rs-padx));}
+/* 2列は列の間が詰まってしまうので外へは広げない（横向きは幅に余裕がある） */
+#reg-strip.wide .rs-col .rs-item{margin-left:0;margin-right:0;}
 .rs-item:first-child{margin-top:0;}
 /* 番号は固定幅の丸にする＝「が入っても文の頭が必ず揃う（2026-08-12指示） */
 /* ★手順どうしの間は広く、手順とその補足の間は狭くする。
    これで「どの補足がどの手順に掛かるか」が見ただけで分かる（近接の原理）。
    GOV.UKの手順案内も「段落と、その下のリストの間隔は段落どうしより狭くする」と定めている。
    なお縦線でつなぐ案は、GOV.UKが利用者テストの末に混乱を招くとして廃止している */
-.rs-step{display:flex;gap:12px;align-items:flex-start;margin-top:0;}
-.rs-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;
+/* ★丸の大きさとすき間は「ここ1か所」だけに書く。補足の字下げはそこから計算する。
+   同じ数を2か所に書くと必ずずれる（2026-08-14実測：tight2で10px、tight3/4・narrow2で2pxずれていた） */
+#reg-strip,#reg-box{--rs-n:30px;--rs-gap:12px;--rs-gapv:22px;--rs-pady:9px;--rs-padx:11px;}
+.rs-step{display:flex;gap:var(--rs-gap);align-items:flex-start;margin-top:0;}
+.rs-n{flex:0 0 auto;width:var(--rs-n);height:var(--rs-n);border-radius:50%;background:var(--green);color:#fff;
   font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
 .rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.55;}
 /* 補足は直前の手順にぶら下げる。番号の幅ぶん下げて、手順の文の頭に揃える */
-.rs-sub{margin:4px 0 0 42px;font-size:15px;font-weight:600;color:#41504a;line-height:1.55;}
+.rs-sub{margin:4px 0 0 calc(var(--rs-n) + var(--rs-gap));font-size:15px;font-weight:600;color:#41504a;line-height:1.55;}
 /* 押す言葉は「枠」で強調する（2026-08-13承認：カードの重要部分を枠付きに）。
    文中の「…」を自動でこの枠に変える＝画面に実際に出ている言葉と一字一句同じものだけが入る */
 /* 押す言葉は、番号の丸と同じ「緑地に白」でそろえる（2026-08-14指示：統一感を持たせろ） */
@@ -1356,11 +1368,21 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight #rs-icon svg{width:34px;height:34px;}
 #reg-strip.tight #rs-ttl{font-size:16px;}
 #reg-strip.tight #rs-txt{margin-top:9px;}
-#reg-strip.tight .rs-item{margin-top:15px;}
+#reg-strip.tight{--rs-gapv:11px;--rs-pady:6px;--rs-padx:10px;}
 #reg-strip.tight .rs-item:first-child{margin-top:0;}
 #reg-strip.tight .rs-t{font-size:16px;line-height:1.4;}
 #reg-strip.tight .rs-sub{font-size:14px;margin-top:3px;}
 #reg-strip.tight #rs-foot{margin-top:9px;}
+/* ★字を小さくする前の一段：余白だけを削って入らないか試す。
+   字の大きさは読みやすさに直結するので最後まで守る（2026-08-14指示「大きくなっていい」）。
+   実測では横向き750x292で、これがあると16pxのまま入る（無いと14.5pxまで落ちていた） */
+#reg-strip.snug{padding:8px 12px;}
+#reg-strip.snug #rs-icon{width:44px;height:44px;border-radius:11px;}
+#reg-strip.snug #rs-icon svg{width:30px;height:30px;}
+#reg-strip.snug #rs-txt{margin-top:6px;}
+#reg-strip.snug{--rs-gapv:7px;--rs-pady:4px;--rs-padx:9px;}
+#reg-strip.snug .rs-item:first-child{margin-top:0;}
+#reg-strip.snug #rs-foot{margin-top:6px;}
 #reg-strip.tight #rs-help{padding:10px 16px;font-size:15px;}
 /* ★幅が足りず文が折り返した時だけ、マークを少し小さくして字を詰め、1行に戻す。
    「行末に2〜3文字だけ残す」形を作らないため（CLAUDE.mdルール10）。
@@ -1377,9 +1399,10 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.narrow2 #rs-icon{width:36px;height:36px;border-radius:9px;}
 #reg-strip.narrow2 #rs-icon svg{width:25px;height:25px;}
 #reg-strip.narrow2 #rs-ttl{font-size:14px;}
-#reg-strip.narrow2 .rs-n{width:23px;height:23px;font-size:13px;}
+#reg-strip.narrow2{--rs-n:23px;--rs-gap:8px;}   /* すき間も詰める＝字を小さくせずに1行へ戻す */
+#reg-strip.narrow2 .rs-n{font-size:13px;}
 #reg-strip.narrow2 .rs-t{font-size:15px;}
-#reg-strip.narrow2 .rs-sub{font-size:12px;margin-left:33px;}
+#reg-strip.narrow2 .rs-sub{font-size:12px;}
 #reg-strip.narrow2 .rs-key{padding:0 3px;border-width:1px;border-radius:5px;margin:0 1px;}
 /* ★詰めてもまだ中身が隠れる時の一段（小さい端末の横向き）。
    切れて読めないより、少し小さくても全部見える方が良い（2026-08-13指示） */
@@ -1388,15 +1411,23 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight2 #rs-icon svg{width:27px;height:27px;}
 #reg-strip.tight2 #rs-ttl{font-size:14.5px;}
 #reg-strip.tight2 #rs-txt{margin-top:6px;}
-#reg-strip.tight2 .rs-item{margin-top:11px;}
+#reg-strip.tight2{--rs-gapv:11px;--rs-pady:5px;--rs-padx:8px;}
 #reg-strip.tight2 .rs-item:first-child{margin-top:0;}
 #reg-strip.tight2 .rs-t{font-size:14.5px;line-height:1.32;}
 #reg-strip.tight2 .rs-sub{font-size:12.5px;line-height:1.3;margin-top:2px;}
-#reg-strip.tight2 .rs-n{width:20px;height:20px;font-size:12px;}
+#reg-strip.tight2{--rs-n:20px;}
+#reg-strip.tight2 .rs-n{font-size:12px;}
 #reg-strip.tight2 #rs-foot{margin-top:6px;}
 #reg-strip.tight2 #rs-help{padding:7px 13px;font-size:13.5px;}
 /* 横向きなど「幅はあるが高さが足りない」時は手順を2列にして高さを半分にする */
-#reg-strip.wide #rs-txt{column-count:2;column-gap:20px;}
+/* ★2列は段組みではなく格子にする。段組みは列幅を必ず等分するので、
+   中身の短い左列に余白が溜まり「真ん中が空く」（実測：列幅288に中身170＝118px余り）。
+   格子なら列幅が中身に合い、justify-content:center で全体が中央に寄る。
+   縦の間隔は row-gap で入れる＝両列とも先頭が上端で揃う（2026-08-14指示） */
+#reg-strip.wide #rs-txt{display:flex;justify-content:center;align-items:flex-start;column-gap:20px;}
+#reg-strip.wide .rs-col{display:flex;flex-direction:column;}
+#reg-strip.wide .rs-col .rs-item{margin-top:var(--rs-gapv);}
+#reg-strip.wide .rs-col .rs-item:first-child{margin-top:0;}
 /* ★tight2でもまだ中身が隠れる、とても低い画面のための最後の一段（tight2に足して効く）。
    丸を18pxにしたので、補足の字下げ（丸18＋すき間10＝28px）も合わせ直す */
 #reg-strip.tight3{padding:6px 10px;}
@@ -1406,11 +1437,12 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight3 #rs-close{width:32px;height:32px;font-size:18px;border-radius:9px;}
 #reg-strip.tight3 #rs-ttl{font-size:13.5px;}
 #reg-strip.tight3 #rs-txt{margin-top:4px;}
-#reg-strip.tight3 .rs-item{margin-top:9px;}
+#reg-strip.tight3{--rs-gapv:9px;--rs-pady:4px;--rs-padx:7px;}
 #reg-strip.tight3 .rs-item:first-child{margin-top:0;}
 #reg-strip.tight3 .rs-t{font-size:13.5px;line-height:1.28;}
-#reg-strip.tight3 .rs-n{width:18px;height:18px;font-size:11px;}
-#reg-strip.tight3 .rs-sub{font-size:12px;line-height:1.25;margin-left:28px;margin-top:2px;}
+#reg-strip.tight3{--rs-n:18px;}
+#reg-strip.tight3 .rs-n{font-size:11px;}
+#reg-strip.tight3 .rs-sub{font-size:12px;line-height:1.25;margin-top:2px;}
 #reg-strip.tight3 #rs-foot{margin-top:4px;}
 #reg-strip.tight3 #rs-help{padding:5px 12px;font-size:12.5px;}
 /* ★とても低い画面で矢印と共存するための最終段（tight3でもまだ隠れる時だけ） */
@@ -1421,11 +1453,12 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight4 #rs-close{width:26px;height:26px;font-size:15px;border-radius:7px;}
 #reg-strip.tight4 #rs-ttl{font-size:12.5px;}
 #reg-strip.tight4 #rs-txt{margin-top:3px;}
-#reg-strip.tight4 .rs-item{margin-top:7px;}
+#reg-strip.tight4{--rs-gapv:7px;--rs-pady:3px;--rs-padx:6px;}
 #reg-strip.tight4 .rs-item:first-child{margin-top:0;}
 #reg-strip.tight4 .rs-t{font-size:12.5px;line-height:1.25;}
-#reg-strip.tight4 .rs-n{width:16px;height:16px;font-size:10.5px;}
-#reg-strip.tight4 .rs-sub{font-size:11px;line-height:1.22;margin-left:26px;margin-top:1px;}
+#reg-strip.tight4{--rs-n:16px;}
+#reg-strip.tight4 .rs-n{font-size:10.5px;}
+#reg-strip.tight4 .rs-sub{font-size:11px;line-height:1.22;margin-top:1px;}
 #reg-strip.tight4 #rs-foot{margin-top:3px;}
 #reg-strip.tight4 #rs-help{padding:4px 10px;font-size:12px;}
 #reg-strip.tight4 #rs-fix{font-size:11px;}
@@ -1659,7 +1692,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.20-lab（案内の文言と出す相手を見直し）</div>
+    <div class="ps-version">version 3.22-lab（項目を薄い面で囲って境界を示す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2653,8 +2686,8 @@ var REG={
  sChromeI:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'この{share}を押す'},
            {sub:'アドレスバーの右にあります'},
-           {n:2,t:'「ホーム画面に追加」'},
-           {sub:'下へたどると出てきます'},
+           {n:2,t:'「ホーム画面に追加」を押す'},
+           {sub:'見当たらない時は下へたどります'},
            {n:3,t:'「追加」を押す'}]},
  iShare:{t:'このマークを探します', ic:'share', arw:'@apple',
         d:['矢印の先にありますか。','まだ押さないでください。'],
@@ -2772,31 +2805,31 @@ var REG={
  //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
  sShare:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'このマークを押す'},
+           {n:2,t:'「ホーム画面に追加」を探して押す'},
            {sub:'見当たらない時は「表示を増やす」'},
            {sub:'または一覧を下へたどります'},
-           {n:2,t:'「ホーム画面に追加」'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:3,t:'右上の「追加」を押す'}]},
  sDots:{strip:1, arw:'@ans', ic:'dots', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'このマークを押す'},
            {n:2,t:'「共有」を押す'},
+           {n:3,t:'「ホーム画面に追加」を探して押す'},
            {sub:'見当たらない時は「表示を増やす」'},
            {sub:'または一覧を下へたどります'},
-           {n:3,t:'「ホーム画面に追加」'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
  sChrome:{strip:1, arw:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {sub:'色のついた丸のこともあります'},
-           {n:2,t:'「アプリをインストール」'},
+           {n:2,t:'「アプリをインストール」を押す'},
            {sub:'「ホーム画面に追加」の時もあります'},
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
  sEdge:{strip:1, arw:'dr', ic:'bars', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下の{bars}を押す'},
-           {n:2,t:'「電話に追加」を押す'},
+           {n:2,t:'「電話に追加」を探して押す'},
            {sub:'横にめくると出てきます'},
            {n:3,t:'「インストール」を押す'},
            {sub:'→ 端末がもう一度たずねたら「追加」'}]},
@@ -2805,7 +2838,7 @@ var REG={
         s:[{n:1,t:'右上の{menu}を押す'},
            {n:2,t:'「その他」を押す'},
            {sub:'メニューの下のほうにあります'},
-           {n:3,t:'「ホーム画面にアプリを追加」'},
+           {n:3,t:'「ホーム画面にアプリを追加」を押す'},
            {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
  sSams:{strip:1, arw:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
@@ -2821,7 +2854,7 @@ var REG={
  sRaku:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'この順に押します',
         s:[{n:1,t:'上の{book}を押す（しおり）'},
            {sub:'画面の上、「検索」のとなり'},   // FCNT FAQ 20668 の逐語「「検索」ボタン右隣」
-           {n:2,t:'「現在のページを登録」'},
+           {n:2,t:'「現在のページを登録」を押す'},
            {n:3,t:'「登録する」を押す'},
            {sub:'→ 貼るかどうか聞かれます'},
            {n:4,t:'「貼る」を押す'},
@@ -2830,9 +2863,9 @@ var REG={
  sRaku2:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'あとから貼る場合',
         s:[{n:1,t:'上の「しおり」を押す'},
            {n:2,t:'「メニュー」を押す'},
-           {n:3,t:'「ホーム画面に貼る」'},
+           {n:3,t:'「ホーム画面に貼る」を押す'},
            {n:4,t:'このページを選ぶ'},
-           {n:5,t:'「ホーム画面に貼る」'},
+           {n:5,t:'「ホーム画面に貼る」を押す'},
            {sub:'同じ言葉を2回押します'}]},
  // ★かんたんスマホ(京セラ/Y!mobile)。ブラウザはYahoo!。Y!mobile公式マニュアル 07-01 の逐語
  //   マークの形はY!mobileのマニュアル画像（kantan-sumaho-3_icon_190）で「⋮」と確認済み。
@@ -2840,16 +2873,16 @@ var REG={
  sYahoo:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'{menu}を押す'},
            {sub:'画面の下か右上にあります'},
-           {n:2,t:'「ホーム画面に追加」'},
+           {n:2,t:'「ホーム画面に追加」を押す'},
            {n:3,t:'「追加」を押す'},
            {n:4,t:'「OK」を押す'}]},
  sOther:{strip:1, arw:'ur', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'{menu}か{bars}を押す'},
            {sub:'色のついた丸のこともあります'},
-           {n:2,t:'「ホーム画面に追加」を探す'},
+           {n:2,t:'「ホーム画面に追加」を押す'},
            {sub:'「アプリをインストール」とも出ます'},
            {n:3,t:'出た画面で「追加」を押す'},
-           {sub:'→ 端末がもう一度たずねたら「追加」'}]},
+           {sub:'→ もう一度たずねられたら「追加」'}]},
  // ★アプリ内ブラウザからの開き直し。言葉はアプリごとに少し違うため幅を持たせる
  // ★位置はアプリで違う。LINEのAndroid版は右上、iPhone版とXは画面の下（各社の案内で確認）。
  //   「右下などの」と決めつけていたので両方を書くよう改めた（2026-08-12訂正）
@@ -2859,7 +2892,7 @@ var REG={
            {n:2,t:'「ブラウザで開く」を押す'},
            {sub:'「Safariで開く」でも同じ'},
            {sub:'→ ブラウザが開き直ります'},
-           {n:3,t:'もう一度「ホーム画面に置く」'}]}
+           {n:3,t:'もう一度この案内を開く'}]}
 };
 
 // 探してもらうマークの絵。iOSの共有・iOS26の「…」・Androidの「⋮」・Edgeの「≡」
@@ -3098,20 +3131,30 @@ function regStripFitTo(床, 横避け){
   //   tightの要否を誤判定し、開く順番で見た目が変わってしまう
   st.classList.remove('tight'); st.classList.remove('wide'); st.classList.remove('tight2');
   st.classList.remove('tight3'); st.classList.remove('tight4');
-  st.classList.remove('narrow'); st.classList.remove('narrow2');
+  st.classList.remove('narrow'); st.classList.remove('narrow2'); st.classList.remove('snug');
+  try{ regStripRows(st); }catch(_){}
   st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
   var top=st.getBoundingClientRect().top;
-  // ★画面の6割を超えたら詰める。「入るか」ではなく「端末の操作を妨げないか」が基準。
-  //   横に避けている時はカードが操作を妨げない位置にあるので、高さを全部使ってよい
-  var limit = 横避け ? (床-top-10) : Math.min(床-top-10, innerHeight*0.6);
+  // ★カードは使える高さを全部使ってよい（2026-08-14指示「大きくなってもいい」）。
+  //   以前は画面の6割で抑えていたが、そのぶん字が小さくなって読みにくくなっていた。
+  //   押してほしいマークは、上向きなら上端(top)、下向きなら床(regFloor)で既に避けている。
+  //   端末のシートが開けばどのみちカードは隠れるので、遠慮する意味がない
+  var limit = 床-top-10;
   if(st.getBoundingClientRect().height>limit) st.classList.add('tight');
   // 幅はあるが高さが足りない（横向き等）時は2列にして高さを半分にする。
   // ★横に避けている時(1)は幅が細い＝2列だと必ず折り返すので1列のまま縦に使う。
   //   1列で入りきらない特大カードだけ(2)で2列も許す（折り返しはnarrowの段が吸収する）
   if(横避け!==1 && st.getBoundingClientRect().height>limit && st.getBoundingClientRect().width>=420) st.classList.add('wide');
+  // ★格子は自分では折り返さないので、何行で折り返すかをここで決める。
+  //   前半を左・後半を右＝段組みの時と同じ分かれ方になる
+  regStripRows(st);
   // それでも入らない時は詰めたまま。画面外・線の上に出さないことを優先
   if(st.getBoundingClientRect().bottom>床-4) st.classList.add('tight');
   regStripNoWrap(st);
+  // ★まず「余白だけ」を削る。字を小さくするのは、これでも入らない時だけ
+  if(st.scrollHeight>st.clientHeight+1 || st.getBoundingClientRect().bottom>床-4){
+    st.classList.add('snug'); regStripNoWrap(st);
+  }
   // ★それでも中身が隠れるならもう一段小さくする。全部見えることを優先する
   if(st.scrollHeight>st.clientHeight+1 || st.getBoundingClientRect().bottom>床-4){
     st.classList.add('tight2'); regStripNoWrap(st);
@@ -3139,8 +3182,10 @@ function regStripFit(){
   var z=_regArwNow, 床=regFloor();
   // 上に矢印がある時は、カードを矢印の下から始める
   st.style.top = z.charAt(0)==='u' ? 'calc(env(safe-area-inset-top) + '+regArwSpace()+'px)' : '';
-  // ★とても低い画面で矢印が左か右の時は、縦ではなく「横に」避ける：
-  //   カードは高さを全部使い、矢印の列だけ空ける＝手順は全部見え、矢印も正確なまま
+  // ★矢印が左か右の時は、縦ではなく「横に」避ける：
+  //   カードは高さを全部使い、矢印の列だけ空ける＝手順は全部見え、矢印も正確なまま。
+  //   ★一度これを横向き全般に広げたが逆効果だった：横に避けると幅が減って2列にできず、
+  //     1列で縦に伸びて字が小さくなる（実測 750x292 で16px→14.5px）。とても低い画面だけに戻す
   if(z && innerHeight<=250 && (z.charAt(1)==='l'||z.charAt(1)==='r')){
     var a=document.getElementById('reg-arw'), r=a.getBoundingClientRect();
     if(z.charAt(1)==='r') st.style.right=Math.round(innerWidth-r.left+8)+'px';
@@ -3155,6 +3200,27 @@ function regStripFit(){
   regStripFitTo(床);
 }
 
+// 2列の時は「列」を2本作ってかたまりを振り分ける。1列に戻す時は元の並びへ戻す＝冪等。
+// ★格子(grid)で組むと行の高さが左右で揃えられ、短いかたまりの下に空白ができる
+//   （2026-08-14 実測：手順1の下に117pxの空き）。列ごとに独立して縦へ詰める
+function regStripRows(st){
+  st=st||document.getElementById('reg-strip'); if(!st) return;
+  var tx=document.getElementById('rs-txt'); if(!tx) return;
+  var cols=tx.querySelectorAll(':scope > .rs-col');
+  if(cols.length){                                  // まず必ず平らに戻してから測る
+    var f=document.createDocumentFragment();
+    for(var i=0;i<cols.length;i++){ while(cols[i].firstChild) f.appendChild(cols[i].firstChild); }
+    tx.textContent=''; tx.appendChild(f);
+  }
+  if(!st.classList.contains('wide')) return;
+  var items=[].slice.call(tx.querySelectorAll('.rs-item'));
+  if(items.length<2) return;
+  var 半=Math.ceil(items.length/2);
+  var a=document.createElement('div'), b=document.createElement('div');
+  a.className='rs-col'; b.className='rs-col';
+  items.forEach(function(it,i){ (i<半?a:b).appendChild(it); });
+  tx.textContent=''; tx.appendChild(a); tx.appendChild(b);
+}
 function regStripNoWrap(st){
   st=st||document.getElementById('reg-strip'); if(!st) return;
   st.classList.remove('narrow'); st.classList.remove('narrow2');
