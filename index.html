@@ -1128,7 +1128,7 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #tour.dim{background:rgba(0,0,0,0.45);}
 /* ★周囲の暗さは0.45。0.74だと背景の「しそチャンNET」の文字も読めないほど暗かった
    （2026-08-14指示：強調部分がちょっと見やすく目立つ程度でいい）。
-   白文字と深緑の見え方＝0.74で1.9:1（読めない）→0.45で4.9:1（読める） */
+   白文字と深緑の見え方＝0.74で1.9:1（読めない）→0.45で5.1:1（読める） */
 #tour-hole{position:fixed;border:3px solid var(--gold2);box-shadow:0 0 0 9999px rgba(0,0,0,0.45);
   pointer-events:none;transition:none;}
 #tour-tri{position:fixed;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;pointer-events:none;}
@@ -1143,6 +1143,9 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* ★起動画面の説明（初回起動時のみ）は、使い方と全く同じ仕組み・同じ見た目で出す。
    ただしこれは1枚だけの説明なので、画面の他の場所は押せるままにする＝
    説明を読んだらそのまま放送開始ボタンを押せる（2026-08-14指示） */
+/* ★開始画面の説明だけ、周囲をさらに明るく（0.3）。実機で0.45は「まだ少し暗い」との判断
+   （2026-08-14指示：0.3は開始画面だけ）。使い方と登録案内は0.45のまま */
+#tour.pass #tour-hole{box-shadow:0 0 0 9999px rgba(0,0,0,0.3);}
 #tour.pass{pointer-events:none;}
 #tour.pass #tour-tip{pointer-events:auto;}
 /* ★1枚だけの説明は細くする（2026-08-14指示）。「とじる」を本文の隣に置くと
@@ -1179,7 +1182,9 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
    ・Android系は beforeinstallprompt が来たら「ボタン1つ」で入る（メニュー探し不要）
    ・iPhoneはOSに入れる仕組みが無いので、選択式で探し方を案内する
    ・文章はツアーと同じく行の折り返しを決め打ちする（CLAUDE.md 絶対ルール10） */
-#reg{position:fixed;inset:0;z-index:2147483647;display:none;background:rgba(0,0,0,0.74);}
+/* ★暗さは使い方（#tour-hole）と同じ0.45にそろえる（2026-08-14指示）。
+   0.74は背景の文字が読めないほど暗かった */
+#reg{position:fixed;inset:0;z-index:2147483647;display:none;background:rgba(0,0,0,0.45);}
 #reg.on{display:block;}
 #reg-box{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
   background:#fff;color:#1a2520;border-radius:14px;padding:18px 18px 16px;
@@ -1265,7 +1270,7 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
      画面の端に貼り付けず少し浮かせる＝「窓」として認識できる見た目にする（2026-08-12指示）。 */
 /* 登録作業のあいだ、周囲を暗くする（帯の時だけ。中央の窓は自分で暗くする） */
 #reg-dim{position:fixed;inset:0;z-index:2147483645;display:none;
-  background:rgba(0,0,0,.66);pointer-events:none;}
+  background:rgba(0,0,0,.45);pointer-events:none;}
 #reg-dim.on{display:block;}
 /* ── 押すマークを指す矢印（2026-08-13 矢印方式に回帰）──
    ブラウザの道具の列はページの外にあり、位置はJavaScriptから見えないうえ、
@@ -1636,7 +1641,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.98</div>
+    <div class="ps-version">version 2.99</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
