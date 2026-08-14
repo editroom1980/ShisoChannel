@@ -1307,21 +1307,22 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #rs-close{flex:0 0 auto;border:0;background:#ececec;color:#41504a;width:42px;height:42px;
   border-radius:11px;font-size:21px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;
   -webkit-tap-highlight-color:transparent;}
-#rs-txt{margin-top:12px;}
+#rs-txt{margin-top:14px;}
 /* 手順＋その補足をひと塊にする。2列にした時に切り離されないため */
 .rs-item{break-inside:avoid;-webkit-column-break-inside:avoid;}
 /* 番号は固定幅の丸にする＝「が入っても文の頭が必ず揃う（2026-08-12指示） */
-.rs-step{display:flex;gap:10px;align-items:flex-start;margin-top:9px;}
+.rs-step{display:flex;gap:12px;align-items:flex-start;margin-top:15px;}
 .rs-step:first-child{margin-top:0;}
 .rs-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;
   font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
-.rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.5;}
+.rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.55;}
 /* 補足は直前の手順にぶら下げる。番号の幅ぶん下げて、手順の文の頭に揃える */
-.rs-sub{margin:4px 0 0 40px;font-size:15px;font-weight:600;color:#41504a;line-height:1.5;}
+.rs-sub{margin:7px 0 0 42px;font-size:15px;font-weight:600;color:#41504a;line-height:1.55;}
 /* 押す言葉は「枠」で強調する（2026-08-13承認：カードの重要部分を枠付きに）。
    文中の「…」を自動でこの枠に変える＝画面に実際に出ている言葉と一字一句同じものだけが入る */
-.rs-key{display:inline-block;background:#fffbe9;border:2px solid #c9a13b;border-radius:9px;
-  padding:1px 7px;margin:1px 1px;font-weight:800;color:#1a2520;line-height:1.4;white-space:nowrap;}
+/* 押す言葉は、番号の丸と同じ「緑地に白」でそろえる（2026-08-14指示：統一感を持たせろ） */
+.rs-key{display:inline-block;background:var(--green);border:0;border-radius:8px;
+  padding:2px 10px;margin:0 2px;font-weight:700;color:#fff;line-height:1.45;white-space:nowrap;}
 /* 文の中に置くマーク。「押す物」だと分かるよう、上の大きなマークと同じ薄い枠に入れる。
    大きさはemなので、詰め表示になっても文字と一緒に縮む */
 .rs-mk{display:inline-flex;align-items:center;justify-content:center;
@@ -1642,7 +1643,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.16-lab（Androidは1タップで追加画面へ）</div>
+    <div class="ps-version">version 3.17-lab（文言統一・手順カードを見やすく）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1924,7 +1925,7 @@ html.tvpc #settings-panel .set-link{
   <div id="rs-txt"></div>
   <div id="rs-foot"><button id="rs-fix">矢印の場所を直す</button><button id="rs-help">困った時</button></div>
 </div>
-<button id="reg-fab" title="ホーム画面への追加案内"><span class="rf-q">？</span><span class="rf-big"><span id="rf-ic"></span><span class="rf-tx"><span class="rf-t">ここからホーム画面に追加できます</span><span class="rf-s">追加すると普通のアプリとして使えます</span></span></span></button>
+<button id="reg-fab" title="ホーム画面への追加案内"><span class="rf-q">？</span><span class="rf-big"><span id="rf-ic"></span><span class="rf-tx"><span class="rf-t">ホーム画面に追加しませんか？</span><span class="rf-s">普通のアプリとして使えます</span></span></span></button>
 
 <!-- 実測値の表示（?debug=1 の時だけ見える） -->
 <div id="tv-debug"></div>
@@ -2590,8 +2591,8 @@ var REG={
  // ── 入口（中央の窓）─────────────────────────────
  // ★見出しと説明は「？」の位置に出す誘いと一字一句そろえる（2026-08-14指示）。
  //   ずれると「押したら別の話が始まった」と感じさせるため、検査でも一致を機械照合する
- start:{t:'ここからホーム画面に追加できます', app:1,
-        d:['追加すると普通のアプリとして使えます'],
+ start:{t:'ホーム画面に追加しませんか？', app:1,
+        d:['普通のアプリとして使えます'],
         b:[{l:'ホーム画面に追加',go:'route',p:1},{l:'あとにする',go:null}]},
 
  // ── Android系：ボタン1つ（Chrome・Edgeで実際に発火することを実機で確認済み）
@@ -2643,25 +2644,25 @@ var REG={
         d:['矢印の先にありますか。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sShare',p:1},
            {l:'ちがう場所にあった',go:'@where:sShare'},
-           {l:'それは無い',go:'iDots'},
+           {l:'見つからない',go:'iDots'},
            {l:'LINEやXの中で見ている',go:'inApp'}]},
  iDots:{t:'このマークを探します', ic:'dots', arw:'dr',
         d:['矢印の先にありますか。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sDots',p:1},
            {l:'ちがう場所にあった',go:'@where:sDots'},
-           {l:'それも無い',go:'iSafari'}]},
+           {l:'見つからない',go:'iSafari'}]},
  // ★iOS26のSafariは初期設定「コンパクト」＝道具の列に共有が無く「…」が入口（2026-08-13調査：
  //   設定→Safari→タブで3種類から選べる）。変えている人は「どこにも無い」→共有の確認へ回す
  iDots26:{t:'このマークを探します', ic:'dots', arw:'dr',
         d:['矢印の先にありますか。','まだ押さないでください。'],
         b:[{l:'見つかった',go:'sDots',p:1},
            {l:'ちがう場所にあった',go:'@where:sDots'},
-           {l:'どこにも無い',go:'iShare2'}]},
+           {l:'見つからない',go:'iShare2'}]},
  iShare2:{t:'このマークを探します', ic:'share', arw:'dc',
         d:['矢印の先にありますか。'],
         b:[{l:'見つかった',go:'sShare',p:1},
            {l:'ちがう場所にあった',go:'@where:sShare'},
-           {l:'どこにも無い',go:'iSafari'},
+           {l:'見つからない',go:'iSafari'},
            {l:'LINEやXの中で見ている',go:'inApp'}]},
  // ── 6か所ピッカー：マークの場所を選ぶと、矢印がそこへ動く ──
  //   ブラウザの道具の列はページの外＝位置はJSから見えないうえ、利用者の設定でも変わる。
