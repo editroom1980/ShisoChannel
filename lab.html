@@ -1699,7 +1699,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.26-lab（Android4種を実機で確かめ案内を正した）</div>
+    <div class="ps-version">version 3.27-lab（iPhoneの追加をアイコン起動で数える）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4588,11 +4588,31 @@ function statsFlush(useBeacon){
     .catch(function(){_stFlushing=false;}); // 失敗時はキュー保持→次回再送
   }catch(_){_stFlushing=false;}
 }
+// ★iPhoneには「ホーム画面に追加された」を知る仕組みが無い。
+//   appinstalled / beforeinstallprompt / getInstalledRelatedApps は3つとも
+//   Safariにもホーム画面から開いた時にも存在しない（2026-08-15 iOSシミュレータで実測）。
+//   代わりに「アイコンから開いた」を数える＝追加して実際に使い始めた人が分かる。
+//   端末ごとに1回だけ数えるので、同じ人が何度開いても増えない。
+//   ・standalone   … navigator.standalone と display-mode の両方で判定（regHome）
+//   ・src=home     … manifestのstart_urlに付けた印。iOSがstart_urlを使うことは実測済み。
+//                    Safariで手で開いた場合と区別でき、standalone判定の裏取りになる
+var _stHomeKEY='shisochan_home_counted';
+function statsHomeOpen(){
+  try{
+    if(!_stEnabled()) return;
+    if(!regHome()) return;                                  // ブラウザで見ている間は数えない
+    if(localStorage.getItem(_stHomeKEY)==='1') return;      // この端末では数え済み
+    localStorage.setItem(_stHomeKEY,'1');
+    statsRegStep('homeOpen');
+    if(/[?&]src=home(&|$)/.test(location.search)) statsRegStep('homeUrl');
+  }catch(_){}
+}
 function statsInit(){
   try{_stExclSwitch();}catch(_){} // 除外の切り替えは、計測の可否を見る前に行う（解除もできるように）
   if(!_stEnabled())return;
   try{
     _stDevId();
+    try{ statsHomeOpen(); }catch(_){}
     setInterval(function(){try{statsFlush(false);}catch(_){}},600000); // 10分毎
     document.addEventListener('visibilitychange',function(){if(document.hidden){try{statsSessionEnd();statsFlush(true);}catch(_){}}});
     window.addEventListener('pagehide',function(){try{statsSessionEnd();statsFlush(true);}catch(_){}});

@@ -4,7 +4,7 @@
   "description": "宍粟市の市民インターネット放送 開発検証版",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./lab.html",
+  "start_url": "./lab.html?src=home",
   "scope": "./",
   "id": "/lab",
   "display": "standalone",
