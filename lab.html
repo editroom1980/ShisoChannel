@@ -1309,15 +1309,22 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
   -webkit-tap-highlight-color:transparent;}
 #rs-txt{margin-top:14px;}
 /* 手順＋その補足をひと塊にする。2列にした時に切り離されないため */
-.rs-item{break-inside:avoid;-webkit-column-break-inside:avoid;}
+/* ★手順どうしの間隔は「手順＋その補足のかたまり」に付ける。
+   手順の行(.rs-step)に付けると、各かたまりの先頭なので :first-child が効いて
+   間隔が消える（2026-08-14実測：縦向きで0pxだった） */
+.rs-item{break-inside:avoid;-webkit-column-break-inside:avoid;margin-top:22px;}
+.rs-item:first-child{margin-top:0;}
 /* 番号は固定幅の丸にする＝「が入っても文の頭が必ず揃う（2026-08-12指示） */
-.rs-step{display:flex;gap:12px;align-items:flex-start;margin-top:15px;}
-.rs-step:first-child{margin-top:0;}
+/* ★手順どうしの間は広く、手順とその補足の間は狭くする。
+   これで「どの補足がどの手順に掛かるか」が見ただけで分かる（近接の原理）。
+   GOV.UKの手順案内も「段落と、その下のリストの間隔は段落どうしより狭くする」と定めている。
+   なお縦線でつなぐ案は、GOV.UKが利用者テストの末に混乱を招くとして廃止している */
+.rs-step{display:flex;gap:12px;align-items:flex-start;margin-top:0;}
 .rs-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;
   font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
 .rs-t{flex:1 1 auto;min-width:0;font-size:18px;font-weight:700;line-height:1.55;}
 /* 補足は直前の手順にぶら下げる。番号の幅ぶん下げて、手順の文の頭に揃える */
-.rs-sub{margin:7px 0 0 42px;font-size:15px;font-weight:600;color:#41504a;line-height:1.55;}
+.rs-sub{margin:4px 0 0 42px;font-size:15px;font-weight:600;color:#41504a;line-height:1.55;}
 /* 押す言葉は「枠」で強調する（2026-08-13承認：カードの重要部分を枠付きに）。
    文中の「…」を自動でこの枠に変える＝画面に実際に出ている言葉と一字一句同じものだけが入る */
 /* 押す言葉は、番号の丸と同じ「緑地に白」でそろえる（2026-08-14指示：統一感を持たせろ） */
@@ -1344,9 +1351,10 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight #rs-icon svg{width:34px;height:34px;}
 #reg-strip.tight #rs-ttl{font-size:16px;}
 #reg-strip.tight #rs-txt{margin-top:9px;}
-#reg-strip.tight .rs-step{margin-top:6px;}
+#reg-strip.tight .rs-item{margin-top:15px;}
+#reg-strip.tight .rs-item:first-child{margin-top:0;}
 #reg-strip.tight .rs-t{font-size:16px;line-height:1.4;}
-#reg-strip.tight .rs-sub{font-size:14px;}
+#reg-strip.tight .rs-sub{font-size:14px;margin-top:3px;}
 #reg-strip.tight #rs-foot{margin-top:9px;}
 #reg-strip.tight #rs-help{padding:10px 16px;font-size:15px;}
 /* ★幅が足りず文が折り返した時だけ、マークを少し小さくして字を詰め、1行に戻す。
@@ -1375,9 +1383,10 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight2 #rs-icon svg{width:27px;height:27px;}
 #reg-strip.tight2 #rs-ttl{font-size:14.5px;}
 #reg-strip.tight2 #rs-txt{margin-top:6px;}
-#reg-strip.tight2 .rs-step{margin-top:4px;}
+#reg-strip.tight2 .rs-item{margin-top:11px;}
+#reg-strip.tight2 .rs-item:first-child{margin-top:0;}
 #reg-strip.tight2 .rs-t{font-size:14.5px;line-height:1.32;}
-#reg-strip.tight2 .rs-sub{font-size:12.5px;line-height:1.3;}
+#reg-strip.tight2 .rs-sub{font-size:12.5px;line-height:1.3;margin-top:2px;}
 #reg-strip.tight2 .rs-n{width:20px;height:20px;font-size:12px;}
 #reg-strip.tight2 #rs-foot{margin-top:6px;}
 #reg-strip.tight2 #rs-help{padding:7px 13px;font-size:13.5px;}
@@ -1392,10 +1401,11 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight3 #rs-close{width:32px;height:32px;font-size:18px;border-radius:9px;}
 #reg-strip.tight3 #rs-ttl{font-size:13.5px;}
 #reg-strip.tight3 #rs-txt{margin-top:4px;}
-#reg-strip.tight3 .rs-step{margin-top:3px;}
+#reg-strip.tight3 .rs-item{margin-top:9px;}
+#reg-strip.tight3 .rs-item:first-child{margin-top:0;}
 #reg-strip.tight3 .rs-t{font-size:13.5px;line-height:1.28;}
 #reg-strip.tight3 .rs-n{width:18px;height:18px;font-size:11px;}
-#reg-strip.tight3 .rs-sub{font-size:12px;line-height:1.25;margin-left:28px;}
+#reg-strip.tight3 .rs-sub{font-size:12px;line-height:1.25;margin-left:28px;margin-top:2px;}
 #reg-strip.tight3 #rs-foot{margin-top:4px;}
 #reg-strip.tight3 #rs-help{padding:5px 12px;font-size:12.5px;}
 /* ★とても低い画面で矢印と共存するための最終段（tight3でもまだ隠れる時だけ） */
@@ -1406,10 +1416,11 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #reg-strip.tight4 #rs-close{width:26px;height:26px;font-size:15px;border-radius:7px;}
 #reg-strip.tight4 #rs-ttl{font-size:12.5px;}
 #reg-strip.tight4 #rs-txt{margin-top:3px;}
-#reg-strip.tight4 .rs-step{margin-top:2px;}
+#reg-strip.tight4 .rs-item{margin-top:7px;}
+#reg-strip.tight4 .rs-item:first-child{margin-top:0;}
 #reg-strip.tight4 .rs-t{font-size:12.5px;line-height:1.25;}
 #reg-strip.tight4 .rs-n{width:16px;height:16px;font-size:10.5px;}
-#reg-strip.tight4 .rs-sub{font-size:11px;line-height:1.22;margin-left:26px;}
+#reg-strip.tight4 .rs-sub{font-size:11px;line-height:1.22;margin-left:26px;margin-top:1px;}
 #reg-strip.tight4 #rs-foot{margin-top:3px;}
 #reg-strip.tight4 #rs-help{padding:4px 10px;font-size:12px;}
 #reg-strip.tight4 #rs-fix{font-size:11px;}
@@ -1643,7 +1654,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.17-lab（文言統一・手順カードを見やすく）</div>
+    <div class="ps-version">version 3.18-lab（手順と補足の関係を明確に）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2674,7 +2685,7 @@ var REG={
            {l:'もどる',go:'@pickback'}]},
  iEdit:{t:'一覧に見当たらない時',
         d:['一覧の一番下にある','「アクションを編集」を押すと','足すことができます。'],
-        b:[{l:'とじる',go:null,p:1},{l:'それでも無い',go:'iSafari'}]},
+        b:[{l:'とじる',go:null,p:1},{l:'見つからない',go:'iSafari'}]},
  // ★「古い機種ではSafari以外は不可」と書いていたが誤り。iOS 16.4(2023年3月)以降は
  //   ChromeなどでもiPhoneのホーム画面に追加できる。ただし古いiOSやアプリ内では出ないので
  //   「できないことがある」に改めた（2026-08-12訂正）
@@ -2711,7 +2722,7 @@ var REG={
  // 機種名が分からない人向け。しおりの有無だけで確実に振り分けられる
  rakuMark:{t:'画面の上を見てください', ic:'book', arw:'uc',
         d:['このマーク（しおり）が','ありますか。'],
-        b:[{l:'ある',go:'sRaku',p:1},{l:'無い',go:'sOther'}]},
+        b:[{l:'見つかった',go:'sRaku',p:1},{l:'見つからない',go:'sOther'}]},
  altBookmark:{t:'ほかの見方もあります',
         d:['無理に追加しなくても、','「お気に入り」に入れると','次から開きやすくなります。','ご家族に頼むのも近道です。'],
         b:[{l:'とじる',go:null,p:1}]},
