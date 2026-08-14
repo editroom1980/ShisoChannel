@@ -1350,8 +1350,12 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* 文の中に置くマーク。「押す物」だと分かるよう、上の大きなマークと同じ薄い枠に入れる。
    大きさはemなので、詰め表示になっても文字と一緒に縮む */
 .rs-mk{display:inline-flex;align-items:center;justify-content:center;
-  width:1.5em;height:1.5em;vertical-align:-0.42em;margin:0 2px;
-  background:#f2f4f3;border-radius:.34em;}
+  width:1.5em;height:1.5em;vertical-align:-0.09em;margin:0 2px;
+  /* ★上下位置は目分量で決めない。マークの中心と、隣の文字の中心を実測して合わせた値。
+     -0.42emだと5.33px下にずれていた（2026-08-14指摘）。-0.09emでズレ0.05px */
+  /* ★背景は白。項目に薄い面を敷いたので、灰色だと面と同化して枠が消える
+     （2026-08-14実測：面 #f4f6f4 と枠 #f2f4f3 がほぼ同色だった） */
+  background:#fff;border-radius:.34em;}
 .rs-mk svg{width:1.05em;height:1.05em;display:block;}
 #rs-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:13px;}
 #rs-fix{border:0;background:none;color:#41504a;text-decoration:underline;text-underline-offset:3px;
@@ -1692,7 +1696,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.22-lab（項目を薄い面で囲って境界を示す）</div>
+    <div class="ps-version">version 3.23-lab（押す物を文の中に出し高さと色を整えた）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2686,8 +2690,9 @@ var REG={
  sChromeI:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'この{share}を押す'},
            {sub:'アドレスバーの右にあります'},
-           {n:2,t:'「ホーム画面に追加」を押す'},
-           {sub:'見当たらない時は下へたどります'},
+           {n:2,t:'「ホーム画面に追加」を探して押す'},
+           {sub:'見当たらない時は「表示を増やす」'},
+           {sub:'または一覧を下へたどります'},
            {n:3,t:'「追加」を押す'}]},
  iShare:{t:'このマークを探します', ic:'share', arw:'@apple',
         d:['矢印の先にありますか。','まだ押さないでください。'],
@@ -2804,14 +2809,14 @@ var REG={
  //  補足は「その手順の直後」に置く＝つまずく場所で読める（2026-08-12指示）。
  //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
  sShare:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
-        s:[{n:1,t:'このマークを押す'},
+        s:[{n:1,t:'この{share}を押す'},
            {n:2,t:'「ホーム画面に追加」を探して押す'},
            {sub:'見当たらない時は「表示を増やす」'},
            {sub:'または一覧を下へたどります'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:3,t:'右上の「追加」を押す'}]},
  sDots:{strip:1, arw:'@ans', ic:'dots', tr:'troubleI', h:'この順に押します',
-        s:[{n:1,t:'このマークを押す'},
+        s:[{n:1,t:'この{dots}を押す'},
            {n:2,t:'「共有」を押す'},
            {n:3,t:'「ホーム画面に追加」を探して押す'},
            {sub:'見当たらない時は「表示を増やす」'},
@@ -2842,8 +2847,7 @@ var REG={
            {sub:'→ 出た画面で「ホーム画面に追加」'}]},
  // ★メニューの形は版で違う（⋮や≡）ため決め打ちしない
  sSams:{strip:1, arw:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
-        s:[{n:1,t:'右下のメニューを押す'},
-           {sub:'{bars}か{menu}の形です'},
+        s:[{n:1,t:'右下の{bars}か{menu}を押す'},
            {n:2,t:'「ページを追加」を押す'},
            {sub:'→ 追加先をえらぶ画面が出ます'},
            {n:3,t:'「ホーム画面」を選ぶ'},
@@ -2861,7 +2865,7 @@ var REG={
            {sub:'「よく使うブックマーク」に入ります'}]},
  // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
  sRaku2:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'あとから貼る場合',
-        s:[{n:1,t:'上の「しおり」を押す'},
+        s:[{n:1,t:'上の{book}を押す'},
            {n:2,t:'「メニュー」を押す'},
            {n:3,t:'「ホーム画面に貼る」を押す'},
            {n:4,t:'このページを選ぶ'},
@@ -2887,8 +2891,7 @@ var REG={
  // ★位置はアプリで違う。LINEのAndroid版は右上、iPhone版とXは画面の下（各社の案内で確認）。
  //   「右下などの」と決めつけていたので両方を書くよう改めた（2026-08-12訂正）
  sInApp:{strip:1, ic:'dots', tr:'troubleIn', h:'ブラウザで開き直す',
-        s:[{n:1,t:'右下か右上のマークを押す'},
-           {sub:'{dots}や{bars}の形です'},
+        s:[{n:1,t:'右下か右上の{dots}か{bars}を押す'},
            {n:2,t:'「ブラウザで開く」を押す'},
            {sub:'「Safariで開く」でも同じ'},
            {sub:'→ ブラウザが開き直ります'},
