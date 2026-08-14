@@ -1659,7 +1659,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.19-lab（強調の字が小さくなる不具合を根治）</div>
+    <div class="ps-version">version 3.20-lab（案内の文言と出す相手を見直し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2705,15 +2705,12 @@ var REG={
            {l:'Galaxyの標準ブラウザ',go:'sSams'},{l:'らくらく・かんたんスマホ',go:'rakuraku'},
            {l:'その他・わからない',go:'sOther'}]},
 
- // ── パソコン・特別な機種・逃げ道 ───────────────────
- // ★「パソコンにはホーム画面がありません」と書いていたが誤り。Mac Safariは共有→「Dockに追加」、
- //   WindowsのChrome/Edgeは「⋮」→インストールでアイコンにできる。誤った断定をやめた（2026-08-12訂正）
- pc:{t:'パソコンでご覧の場合',
-        d:['お気に入り（ブックマーク）に','入れておくと、次から','すぐ開けます。'],
-        b:[{l:'とじる',go:null,p:1},{l:'アイコンで開きたい',go:'pcApp'}]},
- pcApp:{t:'デスクトップに置く', arw:'ur',
-        d:['Macは「共有」から','「Dockに追加」。Windowsは','ChromeやEdgeの「⋮」から','「インストール」を選びます。'],
-        b:[{l:'とじる',go:null,p:1}]},
+ // ── 特別な機種・逃げ道 ─────────────────────────
+ // ★パソコン向けの案内（pc / pcApp）は 2026-08-14 に廃止した。
+ //   Mac/Windowsの追加手順は実機で確かめられておらず、しかもOSではなくブラウザで
+ //   道筋が変わる（MacでChromeを使う人に「共有」と言うと詰まる）。
+ //   確かめられない案内を出し続けるより、出さないほうが安全という判断（ユーザー指示）。
+ //   入口は3つとも塞いである＝カード・設定の項目・道筋の分岐
  // ★シニア向け機種。2026-08-12にメーカー・キャリアの取説で手順を確定させた
  //   ・らくらくスマホ(FCNT)＝独自の「インターネット」。しおり→登録→［貼る］で置ける
  //   ・かんたんスマホ(京セラ/Y!mobile)＝Yahoo!。メニュー→ホーム画面に追加
@@ -2776,7 +2773,7 @@ var REG={
  sShare:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
         s:[{n:1,t:'このマークを押す'},
            {sub:'見当たらない時は「表示を増やす」'},
-           {sub:'古い機種は一覧を下へたどります'},
+           {sub:'または一覧を下へたどります'},
            {n:2,t:'「ホーム画面に追加」'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:3,t:'右上の「追加」を押す'}]},
@@ -2784,7 +2781,7 @@ var REG={
         s:[{n:1,t:'このマークを押す'},
            {n:2,t:'「共有」を押す'},
            {sub:'見当たらない時は「表示を増やす」'},
-           {sub:'古い機種は一覧を下へたどります'},
+           {sub:'または一覧を下へたどります'},
            {n:3,t:'「ホーム画面に追加」'},
            {sub:'→ 名前を決める画面が出ます'},
            {n:4,t:'右上の「追加」を押す'}]},
@@ -2889,6 +2886,9 @@ function regEls(){
 function regShow(key){
   var e=regEls(); if(!e.w) return;
   if(key==='route'){
+    // ★パソコンには登録の案内を出さない（2026-08-14指示）。どの分岐よりも先に見る＝
+    //   インストールできるパソコンでも「追加します」が出ない
+    if(regIsPc())             return;
     // ★順番が大事。LINEやXの中で開いている時は、OSに関係なく先に開き直してもらう
     //   （その中のブラウザにはホーム画面へ追加する機能が無い）
     if(regInApp())            key='inApp';
@@ -2902,7 +2902,6 @@ function regShow(key){
       else if(_im && parseInt(_im[1],10)>=26) key='iDots26';
       else                                    key='iShare';
     }
-    else if(regIsPc())        key='pc';
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
@@ -3192,7 +3191,9 @@ function regFabSync(){
   try{
     var f=document.getElementById('reg-fab'); if(!f) return;
     var show = hasPoweredOn && !regHome() && !(_regInstalled&&!_regForce) && _tourMode===0 && !isExpanded;
-    try{ if(isSilk || isTvPcMode()) show=false; }catch(_){}
+    // ★パソコンは窓の大きさに関わらず出さない。isTvPcModeは幅1000px以上でしか
+    //   効かないので、小さい窓のパソコンに出ていた（2026-08-14指示で廃止）
+    try{ if(isSilk || isTvPcMode() || regIsPc()) show=false; }catch(_){}
     try{ if(document.getElementById('reg').classList.contains('on')) show=false; }catch(_){}
     var st=document.getElementById('reg-strip');
     if(st && st.classList.contains('on')){
@@ -3850,10 +3851,13 @@ function rememberVolume(){
 function applyOpts(){
   try{
     var b=document.body;
-    // すでにホーム画面から開いている人には「ホーム画面に登録する」を出さない
+    // すでにホーム画面から開いている人と、パソコンの人には
+    // 「ホーム画面に登録する」を出さない（パソコンは2026-08-14指示で廃止）
     try{
       var lr=document.getElementById('lnk-reg');
-      if(lr) lr.style.display = regHome() ? 'none' : '';
+      var 隠す=false;
+      try{ 隠す = regHome() || regIsPc(); }catch(_){ 隠す = regHome(); }
+      if(lr) lr.style.display = 隠す ? 'none' : '';
     }catch(_){}
     b.classList.toggle('text-1', OPTS.text===1);
     b.classList.toggle('text-2', OPTS.text===2);
