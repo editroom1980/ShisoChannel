@@ -1328,6 +1328,11 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 /* 押す言葉は「枠」で強調する（2026-08-13承認：カードの重要部分を枠付きに）。
    文中の「…」を自動でこの枠に変える＝画面に実際に出ている言葉と一字一句同じものだけが入る */
 /* 押す言葉は、番号の丸と同じ「緑地に白」でそろえる（2026-08-14指示：統一感を持たせろ） */
+/* ★iOSは画面に合わせて勝手に文字を膨らませる（text autosizing）。この時、
+   枠付きの強調は inline-block なので膨らまず、強調の字だけ小さく見える。
+   さらに本文(16px)と補足(14px)の大小関係まで潰れる（2026-08-14 実機写真で判明）。
+   案内の中だけ自動拡大を止め、指定した大きさのまま出す＝机上の実測と実機が一致する */
+#reg-strip,#reg-box,#tour-tip{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .rs-key{display:inline-block;background:var(--green);border:0;border-radius:8px;
   padding:2px 10px;margin:0 2px;font-weight:700;color:#fff;line-height:1.45;white-space:nowrap;}
 /* 文の中に置くマーク。「押す物」だと分かるよう、上の大きなマークと同じ薄い枠に入れる。
@@ -1654,7 +1659,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.18-lab（手順と補足の関係を明確に）</div>
+    <div class="ps-version">version 3.19-lab（強調の字が小さくなる不具合を根治）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
