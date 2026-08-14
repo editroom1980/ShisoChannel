@@ -61,6 +61,25 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .ps-btn:active{opacity:0.85;}
 .ps-btn.loading{opacity:0.55;pointer-events:none;cursor:default;letter-spacing:2px;}
 .ps-hint{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;}
+/* ★横向きなど画面が低い時だけ、実測ではみ出した場合に詰める（psFit が付ける）。
+   @media(height)は使わない＝iOSがアプリ内ブラウザ復帰時に判定を凍らせるため。
+   並び順が大事：tight → tight2 の順に書く（同じ強さなので後勝ち）。
+   2026-08-14実測：568x230で必要372px（画面230）＝142pxはみ出し、放送開始ボタンが押せなかった */
+#power-screen.tight{gap:10px;}
+#power-screen.tight .ps-logo-main{font-size:22px;}
+#power-screen.tight .ps-version{margin-top:6px;}
+#power-screen.tight .ps-test-badge{margin-top:8px;padding:3px 12px;font-size:12px;}
+#power-screen.tight .ps-date-str{font-size:15px;margin-bottom:-4px;}
+#power-screen.tight .ps-clock{font-size:32px;letter-spacing:3px;}
+#power-screen.tight .ps-btn{margin-top:4px;padding:11px 38px;font-size:15px;}
+#power-screen.tight2{gap:6px;}
+#power-screen.tight2 .ps-logo-main{font-size:18px;}
+#power-screen.tight2 .ps-version{margin-top:3px;}
+#power-screen.tight2 .ps-test-badge{margin-top:5px;padding:2px 10px;font-size:11px;}
+#power-screen.tight2 .ps-date-str{font-size:13px;margin-bottom:-3px;}
+#power-screen.tight2 .ps-clock{font-size:24px;letter-spacing:2px;}
+#power-screen.tight2 .ps-btn{margin-top:2px;padding:8px 30px;font-size:14px;}
+#power-screen.tight2 .ps-hint{font-size:10px;}
 
 /* ══ ヘッダー ══ */
 #main-content{display:none;background:var(--forest);}/* 余白を深緑に統一（ノッチ帯=システムが塗る深緑と一致・縦横一貫）。カード/動画は各自の背景で不変 */
@@ -1106,8 +1125,11 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #tour.on{display:block;}
 /* 最初の問いかけと最後のお知らせは指す対象が無いので、背面全体を同じ濃さで暗くする
    （説明中の暗さ rgba(0,0,0,.74) と同じ。ツアー中ずっと同じ見え方に揃えるため） */
-#tour.dim{background:rgba(0,0,0,0.74);}
-#tour-hole{position:fixed;border:3px solid var(--gold2);box-shadow:0 0 0 9999px rgba(0,0,0,0.74);
+#tour.dim{background:rgba(0,0,0,0.45);}
+/* ★周囲の暗さは0.45。0.74だと背景の「しそチャンNET」の文字も読めないほど暗かった
+   （2026-08-14指示：強調部分がちょっと見やすく目立つ程度でいい）。
+   白文字と深緑の見え方＝0.74で1.9:1（読めない）→0.45で4.9:1（読める） */
+#tour-hole{position:fixed;border:3px solid var(--gold2);box-shadow:0 0 0 9999px rgba(0,0,0,0.45);
   pointer-events:none;transition:none;}
 #tour-tri{position:fixed;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;pointer-events:none;}
 #tour-tip{position:fixed;background:#fff;color:#1a2520;border-radius:14px;padding:16px 18px;
@@ -1123,6 +1145,21 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
    説明を読んだらそのまま放送開始ボタンを押せる（2026-08-14指示） */
 #tour.pass{pointer-events:none;}
 #tour.pass #tour-tip{pointer-events:auto;}
+/* ★1枚だけの説明は細くする（2026-08-14指示）。「とじる」を本文の隣に置くと
+   1段ぶん低くなり、低い画面でも起動画面を圧迫しない */
+/* ★上揃えにする。中央揃えのままだと「とじる」を下げた分だけ本文も動いてしまい、
+   何度合わせてもずれる（2026-08-14実測：-4pxが残った） */
+#tour-tip.slim{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;}
+#tour-tip.slim #tour-body{flex:1 1 auto;}
+#tour-tip.slim #tour-ttl{font-size:15px;margin-bottom:2px;}
+#tour-tip.slim #tour-txt{font-size:14px;line-height:1.45;}
+/* 位置は psTipSync が実測して margin-top に入れる（見出しを含めた真ん中ではなく本文の行に合わせる） */
+#tour-tip.slim #tour-foot{flex:0 0 auto;align-self:flex-start;margin-top:0;}
+#tour-tip.slim .tour-btn{padding:8px 14px;font-size:14px;}
+/* ★狭い画面（幅320px等）の縦向きでは、本文が4px足りず折り返して行末に2文字だけ残る
+   （2026-08-14実測：要る272px／ある268px）。この説明の本文だけ少し詰める。
+   境目343pxは使い方のカードと同じ */
+@media (max-width:343px){ #tour-tip.pstip #tour-txt{font-size:14px;} }
 #tour-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
 #tour-txt{font-size:16px;line-height:1.65;}
 #tour-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
@@ -1599,7 +1636,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 2.97</div>
+    <div class="ps-version">version 2.98</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2065,7 +2102,8 @@ function tourPoint(i, counter, noScroll){
   e.step.textContent=counter||'';
   e.skip.textContent='とじる'; e.skip.style.display='';
   // 吹き出しは、上下左右のうち入る側へ置く
-  var TW=tourTipW();
+  // 1枚だけの説明（起動画面）は細くしたいので、その場の指定があれば使う
+  var TW=(s.w? Math.max(200, Math.min(s.w, innerWidth-16)) : tourTipW());
   e.tip.style.width=TW+'px'; e.tip.style.transform='none';
   e.tip.style.left='-9999px'; e.tip.style.top='0px';   // 先に幅だけ決めて高さを測る
   var TH=e.tip.offsetHeight||150;
@@ -2358,6 +2396,11 @@ try{ if(/[?&]reg=1(&|$)/.test(location.search)){
 //   ★「この起動で出す人か」(_psTipOn)と「もう見せたと記録したか」(FIRST_KEY)は別物にする。
 //     一緒にすると、一度出した後に画面の幅が変わっただけで（URLバーの伸縮・回転）
 //     説明が消えてしまう（2026-08-14の検査が検出）
+// ★幅352pxは実測で決めた値：本文が1行に要る幅238＋「とじる」70＋左右の余白28＋すき間12＝348。
+//   これより狭いと本文が2行になり、行末に数文字だけ残る（CLAUDE.md 絶対ルール10）
+// ★幅352pxは実測で決めた値：本文が1行に要る幅238＋「とじる」70＋左右の余白28＋すき間12＝348。
+//   これより狭いと本文が2行になり、行末に数文字だけ残る（CLAUDE.md 絶対ルール10）
+var PS_TIP_W=352;
 var PS_TIP={id:'ps-btn', t:'放送開始', d:'ボタンを押すと放送が開始されます。'};
 var _psTipOn=false, _psTipMode=false, _psTipRect='';
 // ★対象の寸法は後から変わる（書体の読み込み・URLバーの伸縮・回転）。
@@ -2373,6 +2416,23 @@ function psTipRepoint(){
     psTipSync();
   }catch(_){}
 }
+// ★起動画面が画面に収まらない時だけ詰める。入るなら何も変えない＝誤発動しても無害。
+//   放送開始ボタンが画面の外に出ると押せない＝アプリが始められないので最優先で直す
+//   （2026-08-14実測：568x230で必要372px・画面230＝142pxはみ出していた）
+function psFit(){
+  try{
+    var ps=document.getElementById('power-screen'), b=document.getElementById('ps-btn');
+    if(!ps||!b) return;
+    if(getComputedStyle(ps).display==='none') return;
+    ps.classList.remove('tight'); ps.classList.remove('tight2');   // 前の詰めを外してから測る
+    function はみ出す(){
+      var r=b.getBoundingClientRect();
+      return (ps.scrollHeight>ps.clientHeight+1) || r.top<2 || r.bottom>innerHeight-2;
+    }
+    if(はみ出す()) ps.classList.add('tight');
+    if(はみ出す()) ps.classList.add('tight2');
+  }catch(_){}
+}
 function psTipInit(){
   try{ _psTipOn = !localStorage.getItem(FIRST_KEY); }catch(_){ _psTipOn=false; }
   // ホーム画面から開いた人には「使い方」そのものが始まる（tourAskIfFirst）。二重に出さない
@@ -2384,6 +2444,8 @@ function psTipHide(){
   try{
     var e=tourEls();
     e.w.classList.remove('on','dim','pass');
+    e.tip.classList.remove('slim'); e.tip.classList.remove('pstip');
+    try{ document.getElementById('tour-foot').style.marginTop=''; }catch(_){}
     e.hole.style.display='none'; e.tri.style.display='none';
     e.next.style.display=''; e.step.style.display='';
   }catch(_){}
@@ -2395,12 +2457,31 @@ function psTipSync(){
     if(!_psTipOn){ if(_psTipMode) psTipHide(); return; }
     if(_tourMode!==0){ if(_psTipMode) psTipHide(); return; }   // 使い方が動いている間は譲る
     if(getComputedStyle(ps).display==='none'){ if(_psTipMode) psTipHide(); return; }
+    psFit();
     _psTipMode=true;
     var e=tourEls();
+    // ★横並び（細い形）にするのは「横向き」かつ幅が足りる時だけ。
+    //   縦向きは今までどおりの縦並び（2026-08-14指示：縦は戻せ）。
+    //   幅が足りないまま横並びにすると本文が2行になり、行末に数文字だけ残る（絶対ルール10）
+    var 横並び = (innerWidth>innerHeight) && (innerWidth >= PS_TIP_W + 16);
+    e.tip.classList.add('pstip');         // 起動画面の説明だけに効く指定の目印
+    e.tip.classList.toggle('slim', 横並び);
+    PS_TIP.w = 横並び ? PS_TIP_W : 0;      // 縦向きは従来の幅(tourTipW)に戻す
     tourPoint(PS_TIP, '', true);          // 使い方と同じ描き方（起動画面は動かさないのでスクロールしない）
     e.next.style.display='none';          // 行き先が無いので「次へ」は出さない
     e.step.style.display='none';          // 何枚目かの表示も無し
     e.w.classList.add('pass');            // 放送開始ボタンはそのまま押せる
+    // ★「とじる」の高さを本文の行に合わせる（見出しを含めた真ん中だと12px上にずれる＝実測）。
+    //   数を決め打ちせず、その場で測って入れる＝書体や文字数が変わっても合い続ける
+    if(横並び){
+      var _ft=document.getElementById('tour-foot');
+      _ft.style.marginTop='0px';        // ★先に戻してから測る。前回の値が残ったまま測ると必ずずれる
+      var _tx=document.getElementById('tour-txt').getBoundingClientRect();
+      var _fr=_ft.getBoundingClientRect(), _bd=document.getElementById('tour-body').getBoundingClientRect();
+      _ft.style.marginTop=Math.max(0, Math.round((_tx.top+_tx.bottom)/2 - _fr.height/2 - _bd.top))+'px';
+    }else{
+      document.getElementById('tour-foot').style.marginTop='';
+    }
     _psTipRect=b.getBoundingClientRect().width+'x'+b.getBoundingClientRect().height;
     // 実際に出せた時だけ「見せた」と記録する＝出せなかった人には次の起動でまた出る。
     // _psTipOn はこの起動の間そのまま＝出したあと幅が変わっても消えない
@@ -4795,7 +4876,7 @@ window.addEventListener('pageshow',function(){ _uiTimersStart(); });
 applyOrientationClass();
 window.addEventListener('orientationchange', function(){ applyOrientationClass(); setTimeout(applyOrientationClass,200); setTimeout(applyOrientationClass,600); });
 window.addEventListener('resize', applyOrientationClass);
-window.addEventListener('resize', function(){ try{ psTipSync(); }catch(_){} });
+window.addEventListener('resize', function(){ try{ psFit(); psTipSync(); }catch(_){} });
 uiInterval(applyOrientationClass, 500);   // 凍結からの復帰も含め常に正しい向きへ追従
 
 // ══ ビューポート凍結の検知と復旧（2026-08-10・実機の生データで機構を確定）══
@@ -5753,6 +5834,7 @@ function init(){
   setTimeout(function(){ try{ tourAskIfFirst(); }catch(_){} }, 400);
   uiInterval(updateClock,1000);
   uiInterval(regFabSync,1000);   // 「？」と誘いの出し入れ（冪等）
+  try{ psFit(); }catch(_){}      // 起動画面が画面に収まるように詰める（実測）
   try{ psTipInit(); }catch(_){}  // 起動画面の説明（初回起動時のみ）
   uiInterval(psTipRepoint,300);  // 枠が対象からずれていたら測り直す（冪等）
   try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ psTipRepoint(); }); }catch(_){}
