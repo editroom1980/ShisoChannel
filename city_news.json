@@ -1,7 +1,14 @@
 {
- "updated": "2026-08-14T09:42:43+09:00",
+ "updated": "2026-08-14T12:11:58+09:00",
  "source": "宍粟市公式サイト",
  "items": [
+  {
+   "tag": "募集",
+   "title": "「宍粟市ふるさと納税」PRにご協力ください",
+   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/20800.html",
+   "date": "8月14日",
+   "ts": "2026-08-14T12:00:30+09:00"
+  },
   {
    "tag": "募集",
    "title": "市営住宅入居者募集 8月27日まで",
@@ -39,6 +46,13 @@
   },
   {
    "tag": "くらし",
+   "title": "宍粟市地域防災計画を改訂しました（令和8年7月改訂）",
+   "url": "https://www.city.shiso.lg.jp/kurashi/bosaibohankotsu/saigainisonaete/10790.html",
+   "date": "7月31日",
+   "ts": "2026-07-31T09:00:00+09:00"
+  },
+  {
+   "tag": "くらし",
    "title": "地域公共交通会議",
    "url": "https://www.city.shiso.lg.jp/kurashi/kotsudoro/kokyokotu/13892.html",
    "date": "7月21日",
@@ -71,20 +85,6 @@
    "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/21791.html",
    "date": "7月9日",
    "ts": "2026-07-09T17:10:48+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "8/25「ひょうごのお魚料理教室～タコ編～」参加者募集",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/kouzakyousitu/18725.html",
-   "date": "7月9日",
-   "ts": "2026-07-09T17:06:35+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "宍粟市美術展 出展作品を募集",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/15369.html",
-   "date": "7月3日",
-   "ts": "2026-07-03T15:00:00+09:00"
   }
  ]
 }
