@@ -1126,8 +1126,11 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #tour.on{display:block;}
 /* 最初の問いかけと最後のお知らせは指す対象が無いので、背面全体を同じ濃さで暗くする
    （説明中の暗さ rgba(0,0,0,.74) と同じ。ツアー中ずっと同じ見え方に揃えるため） */
-#tour.dim{background:rgba(0,0,0,0.74);}
-#tour-hole{position:fixed;border:3px solid var(--gold2);box-shadow:0 0 0 9999px rgba(0,0,0,0.74);
+#tour.dim{background:rgba(0,0,0,0.45);}
+/* ★周囲の暗さは0.45。0.74だと背景の「しそチャンNET」の文字も読めないほど暗かった
+   （2026-08-14指示：強調部分がちょっと見やすく目立つ程度でいい）。
+   白文字と深緑の見え方＝0.74で1.9:1（読めない）→0.45で4.9:1（読める） */
+#tour-hole{position:fixed;border:3px solid var(--gold2);box-shadow:0 0 0 9999px rgba(0,0,0,0.45);
   pointer-events:none;transition:none;}
 #tour-tri{position:fixed;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;pointer-events:none;}
 #tour-tip{position:fixed;background:#fff;color:#1a2520;border-radius:14px;padding:16px 18px;
@@ -1145,12 +1148,19 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 #tour.pass #tour-tip{pointer-events:auto;}
 /* ★1枚だけの説明は細くする（2026-08-14指示）。「とじる」を本文の隣に置くと
    1段ぶん低くなり、低い画面でも起動画面を圧迫しない */
-#tour-tip.slim{display:flex;align-items:center;gap:12px;padding:12px 14px;}
+/* ★上揃えにする。中央揃えのままだと「とじる」を下げた分だけ本文も動いてしまい、
+   何度合わせてもずれる（2026-08-14実測：-4pxが残った） */
+#tour-tip.slim{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;}
 #tour-tip.slim #tour-body{flex:1 1 auto;}
 #tour-tip.slim #tour-ttl{font-size:15px;margin-bottom:2px;}
 #tour-tip.slim #tour-txt{font-size:14px;line-height:1.45;}
-#tour-tip.slim #tour-foot{flex:0 0 auto;margin-top:0;}
+/* 位置は psTipSync が実測して margin-top に入れる（見出しを含めた真ん中ではなく本文の行に合わせる） */
+#tour-tip.slim #tour-foot{flex:0 0 auto;align-self:flex-start;margin-top:0;}
 #tour-tip.slim .tour-btn{padding:8px 14px;font-size:14px;}
+/* ★狭い画面（幅320px等）の縦向きでは、本文が4px足りず折り返して行末に2文字だけ残る
+   （2026-08-14実測：要る272px／ある268px）。この説明の本文だけ少し詰める。
+   境目343pxは使い方のカードと同じ */
+@media (max-width:343px){ #tour-tip.pstip #tour-txt{font-size:14px;} }
 #tour-ttl{font-size:17px;font-weight:700;color:var(--green);margin-bottom:6px;letter-spacing:.5px;}
 #tour-txt{font-size:16px;line-height:1.65;}
 #tour-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
@@ -1627,7 +1637,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.11-lab（横向きで放送開始が押せる・説明を細く）</div>
+    <div class="ps-version">version 3.12-lab（暗さをゆるめる・とじるを本文の高さへ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2389,7 +2399,10 @@ try{ if(/[?&]reg=1(&|$)/.test(location.search)){
 //     説明が消えてしまう（2026-08-14の検査が検出）
 // ★幅352pxは実測で決めた値：本文が1行に要る幅238＋「とじる」70＋左右の余白28＋すき間12＝348。
 //   これより狭いと本文が2行になり、行末に数文字だけ残る（CLAUDE.md 絶対ルール10）
-var PS_TIP={id:'ps-btn', t:'放送開始', d:'ボタンを押すと放送が開始されます。', w:352};
+// ★幅352pxは実測で決めた値：本文が1行に要る幅238＋「とじる」70＋左右の余白28＋すき間12＝348。
+//   これより狭いと本文が2行になり、行末に数文字だけ残る（CLAUDE.md 絶対ルール10）
+var PS_TIP_W=352;
+var PS_TIP={id:'ps-btn', t:'放送開始', d:'ボタンを押すと放送が開始されます。'};
 var _psTipOn=false, _psTipMode=false, _psTipRect='';
 // ★対象の寸法は後から変わる（書体の読み込み・URLバーの伸縮・回転）。
 //   出した時の寸法を覚えておき、変わっていたら測り直す＝枠が対象からずれたままにならない。
@@ -2432,7 +2445,8 @@ function psTipHide(){
   try{
     var e=tourEls();
     e.w.classList.remove('on','dim','pass');
-    e.tip.classList.remove('slim');
+    e.tip.classList.remove('slim'); e.tip.classList.remove('pstip');
+    try{ document.getElementById('tour-foot').style.marginTop=''; }catch(_){}
     e.hole.style.display='none'; e.tri.style.display='none';
     e.next.style.display=''; e.step.style.display='';
   }catch(_){}
@@ -2447,14 +2461,28 @@ function psTipSync(){
     psFit();
     _psTipMode=true;
     var e=tourEls();
-    // ★「とじる」を本文の隣に置くと細くなるが、そのぶん本文の欄が狭くなる。
-    //   幅が足りない画面では本文が2行になり、行末に数文字だけ残る（絶対ルール10）。
-    //   入る画面だけ横並びにする＝数はPS_TIP.wの1か所だけで決まる（2026-08-14実測）
-    e.tip.classList.toggle('slim', innerWidth >= PS_TIP.w + 16);
+    // ★横並び（細い形）にするのは「横向き」かつ幅が足りる時だけ。
+    //   縦向きは今までどおりの縦並び（2026-08-14指示：縦は戻せ）。
+    //   幅が足りないまま横並びにすると本文が2行になり、行末に数文字だけ残る（絶対ルール10）
+    var 横並び = (innerWidth>innerHeight) && (innerWidth >= PS_TIP_W + 16);
+    e.tip.classList.add('pstip');         // 起動画面の説明だけに効く指定の目印
+    e.tip.classList.toggle('slim', 横並び);
+    PS_TIP.w = 横並び ? PS_TIP_W : 0;      // 縦向きは従来の幅(tourTipW)に戻す
     tourPoint(PS_TIP, '', true);          // 使い方と同じ描き方（起動画面は動かさないのでスクロールしない）
     e.next.style.display='none';          // 行き先が無いので「次へ」は出さない
     e.step.style.display='none';          // 何枚目かの表示も無し
     e.w.classList.add('pass');            // 放送開始ボタンはそのまま押せる
+    // ★「とじる」の高さを本文の行に合わせる（見出しを含めた真ん中だと12px上にずれる＝実測）。
+    //   数を決め打ちせず、その場で測って入れる＝書体や文字数が変わっても合い続ける
+    if(横並び){
+      var _ft=document.getElementById('tour-foot');
+      _ft.style.marginTop='0px';        // ★先に戻してから測る。前回の値が残ったまま測ると必ずずれる
+      var _tx=document.getElementById('tour-txt').getBoundingClientRect();
+      var _fr=_ft.getBoundingClientRect(), _bd=document.getElementById('tour-body').getBoundingClientRect();
+      _ft.style.marginTop=Math.max(0, Math.round((_tx.top+_tx.bottom)/2 - _fr.height/2 - _bd.top))+'px';
+    }else{
+      document.getElementById('tour-foot').style.marginTop='';
+    }
     _psTipRect=b.getBoundingClientRect().width+'x'+b.getBoundingClientRect().height;
     // 実際に出せた時だけ「見せた」と記録する＝出せなかった人には次の起動でまた出る。
     // _psTipOn はこの起動の間そのまま＝出したあと幅が変わっても消えない
