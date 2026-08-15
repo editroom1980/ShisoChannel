@@ -1902,7 +1902,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.58-lab（掴みの秒数を設定に合わせ・全画面でマウス中はバーを保つ）</div>
+    <div class="ps-version">version 3.59-lab（シークは押し続けで1→10→20→30秒に速くなる早送りへ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4378,12 +4378,7 @@ function _tvGrabKind(el){
   return null;
 }
 function _tvGrabStep(kind,dir){
-  // 1押しの秒数は「送り・戻しの秒数」の設定に従う（ボタンと同じ値。
-  // 10秒固定にしていたため設定と食い違っていた・2026-08-16の総点検で発覚）
-  if(kind==='seek'){
-    var 秒=30; try{ if(OPTS&&OPTS.skip) 秒=OPTS.skip; }catch(_){}
-    seekRel(dir==='left'?-秒:秒); return;
-  }
+  if(kind==='seek'){ _tvSeekAccel(dir); return; }
   var v=document.getElementById('vol-slider'); if(!v) return;   // 1押し＝5。マウスと同じ経路(onVolSlider)で反映
   var val=parseInt(v.value||'0',10)+(dir==='left'?-5:5);
   if(val<0)val=0; if(val>100)val=100;
@@ -4391,6 +4386,28 @@ function _tvGrabStep(kind,dir){
 }
 function _tvGrabRelease(){
   if(_tvGrab){ try{ _tvGrab.classList.remove('tvgrab'); }catch(_){} _tvGrab=null; }
+  _ffHold=0; _ffPend=0;                       // 早送りの速さも最初に戻す
+  if(_ffTimer){ clearTimeout(_ffTimer); _ffTimer=null; }
+}
+// ── シークバーの早送り（掴み中に左右を押し続ける）──────────────
+//  押し続けた長さで速さが4段階に増える（1秒→10秒→20秒→30秒ずつ送る）。
+//  リモコンの自動連打（押しっぱなしで何度も届く）を数えて段を上げ、
+//  400ms届かなければ「離した」とみなして1秒に戻す。
+//  実際のジャンプは150msに1回へまとめる＝YouTubeを叩きすぎない（2026-08-16指示）
+var _ffHold=0, _ffLastAt=0, _ffPend=0, _ffTimer=null;
+function _tvSeekDan(n){ return (n<=4)?1:(n<=10)?10:(n<=18)?20:30; }
+function _tvSeekAccel(dir){
+  var now=Date.now();
+  if(now-_ffLastAt>400) _ffHold=0;            // 離した＝最初の速さから
+  _ffLastAt=now; _ffHold++;
+  var 段=_tvSeekDan(_ffHold);
+  _ffPend += (dir==='left'? -段 : 段);
+  if(!_ffTimer) _ffTimer=setTimeout(_tvSeekFlush,150);
+}
+function _tvSeekFlush(){
+  _ffTimer=null;
+  var d=_ffPend; _ffPend=0;
+  if(d){ try{ seekRel(d); }catch(_){} }
 }
 
 // 決定＝いま選ばれている物を押す。番組の行は中の番組名(pinfo)を押す
