@@ -1785,7 +1785,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.44-lab（ヘルプを画面の大きさに合わせて作り直し）</div>
+    <div class="ps-version">version 3.45-lab（テレビが縦並びになるのを修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3789,6 +3789,14 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteV
 var _tvW=0,_tvHmax=0;
 // 横並びをやめて縦並びに切り替える窓幅（px）。ここ1か所だけに書く
 var TVPC_NARROW=1400;
+// ★テレビは「幅は1400px未満だが、横長で高さが低い」画面。幅だけで縦並びを決めると
+//   テレビが縦並びになり、1画面に収まるはずのものが収まらない
+//   （2026-08-15 実機のGoogle TVで発覚：横幅が1400px未満のため縦並びになっていた）。
+//   16:9に近い横長（幅が高さの1.7倍以上）は、幅が狭くても横並びのままにする。
+//   パソコンの窓を縮めた時（1010x760=1.33倍・1280x800=1.6倍）は今までどおり縦並び。
+function isWideScreen(){
+  try{ return innerHeight>0 && (innerWidth/innerHeight)>=1.7; }catch(_){ return false; }
+}
 function updateTvH(){
   try{
     var on=isTvPcMode();
@@ -3800,7 +3808,8 @@ function updateTvH(){
     //   高さは見ない＝URLバーやツールバーの出没で並びが変わらない
     // ★テレビ用アプリは幅が1400px未満でも縦並びにしない（テレビは横一画面が正）。
     //   縦並びはスクロール前提で、リモコンでは下の番組表に届かなくなる
-    document.documentElement.classList.toggle('narrowpc', on && innerWidth<TVPC_NARROW && !IS_TVAPP);
+    document.documentElement.classList.toggle('narrowpc',
+      on && innerWidth<TVPC_NARROW && !IS_TVAPP && !isWideScreen());
     // ★設定画面の拡大率。基準は1400x900（横並びに切り替わる幅）。
     //   幅と高さの小さい方に合わせる＝拡大しても画面からはみ出さない。
     //   1.0未満にはしない（縮めると読みにくくなるだけ）
