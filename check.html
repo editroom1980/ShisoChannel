@@ -1693,23 +1693,27 @@ html.tvpc .news-ttl{
    ★左右を独立した縦並びにする（gridだと行の高さが左右で共有され、
      「アプリについて」が右の投稿カードに引き伸ばされて余白が生まれていた・実測234px）。
      TVモードの時だけJS(tvWrapSettings)が左右のラッパーを作る＝他の画面には一切影響しない。 */
+/* ★以前は「余白を残さない」ために各列の一枚を縦に引き伸ばしていたが、
+   広い画面ほど間延びし、色見本が縦長(実測136x206)、右列の項目が散らばっていた
+   （2026-08-15指摘）。中身に合った高さで止め、幅も広げすぎない形に改めた。
+   スマホでの色見本は191x46の横長。PCでもその形を保つ */
 html.tvpc #settings-panel .set-body{
-  display:flex;gap:12px;align-items:stretch;
+  display:flex;gap:12px;align-items:flex-start;
+  max-width:1040px;margin:0 auto;width:100%;
 }
 html.tvpc #settings-panel .set-col{
   display:flex;flex-direction:column;gap:12px;flex:1 1 0;min-width:0;
 }
-html.tvpc #settings-panel .set-sec{margin-bottom:0;}
-/* 各列で「伸びる担当」を1枚ずつ決める＝残りの高さを全部使い切り、余白を残さない */
-html.tvpc #settings-panel .set-col-l .set-sec:nth-child(2){flex:1 1 auto;min-height:0;}  /* 背景の色 */
-html.tvpc #settings-panel .set-col-r .set-sec:nth-child(1){flex:1 1 auto;min-height:0;}  /* 表示と動作 */
-
-/* 背景の色：4列×3段。色見本を縦にも伸ばしてカードの高さを使い切る（余白ゼロ） */
-html.tvpc #settings-panel .set-col-l .set-sec:nth-child(2){display:flex;flex-direction:column;}
+html.tvpc #settings-panel .set-sec{margin-bottom:0;flex:0 0 auto;}
+/* 背景の色：4列×3段。見本は横長のまま（縦に引き伸ばさない） */
 html.tvpc #settings-panel .set-colors{
   grid-template-columns:repeat(4,1fr);
-  flex:1;align-content:stretch;gap:10px;
+  gap:10px;
 }
+/* ★箱ごと比率で固定すると、下の名前が入りきらず次の段に重なる（実測：箱56に中身53）。
+   比率は色の四角(i)だけに持たせ、箱の高さは中身に合わせる */
+html.tvpc #settings-panel .set-color{height:auto;}
+html.tvpc #settings-panel .set-color i{height:auto;aspect-ratio:4 / 1.4;}
 html.tvpc #settings-panel .set-color{justify-content:center;}
 html.tvpc #settings-panel .set-color i{height:auto;flex:1;min-height:34px;}
 html.tvpc #settings-panel .set-color span{font-size:13px;}
@@ -1735,7 +1739,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.36-lab（動画の下に残っていた16pxの空きを除去）</div>
+    <div class="ps-version">version 3.37-lab（設定画面の間延びを直し常識的な幅に）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
