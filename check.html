@@ -1902,7 +1902,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.56-lab（バナーと音量の枠を実物に合わせて修正）</div>
+    <div class="ps-version">version 3.57-lab（画面が変わったらバーの掴みを離す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4246,6 +4246,11 @@ function _tvEnsure(){
   var L=_tvLayer();
   if(L!==_tvLastLayer || !_tvCur || !_tvVis(_tvCur)){
     var 同じ層=(L===_tvLastLayer);
+    // ★バーを掴んだまま別の画面（設定・全画面等）へ移ると、掴みが残って
+    //   左右キーが音量やシークに吸われ、その画面を操作できなくなる
+    //   （2026-08-16の監査で発覚：設定を開いても掴んだままだった）。
+    //   画面が変わったら必ず離す
+    if(!同じ層) _tvGrabRelease();
     _tvLastLayer=L;
     // ★設定の中で選択肢を押すと一覧が作り直され、前の要素が切り離される。
     //   先頭に戻すと現在地が飛んで、次の決定が別の物を押してしまう
