@@ -1698,13 +1698,25 @@ html.tvpc .news-ttl{
    （2026-08-15指摘）。中身に合った高さで止め、幅も広げすぎない形に改めた。
    スマホでの色見本は191x46の横長。PCでもその形を保つ */
 html.tvpc #settings-panel .set-body{
-  display:flex;gap:12px;align-items:flex-start;
+  display:flex;gap:12px;align-items:stretch;
   max-width:1040px;margin:0 auto;width:100%;
+  /* ★パネルの高さいっぱいに広げない。広げると列が縦に伸び、
+     右の区画が画面の下まで散らばっていた（2026-08-15実測：中身693に対し列1011） */
+  flex:0 0 auto;align-self:flex-start;
+  /* ★窓の大きさに合わせて全体を拡大する。中の文字がすべてpx固定なので、
+     倍率を掛けるのがいちばん確実（JSが --set-zoom を実測して入れる） */
+  zoom:var(--set-zoom, 1);
 }
 html.tvpc #settings-panel .set-col{
   display:flex;flex-direction:column;gap:12px;flex:1 1 0;min-width:0;
 }
 html.tvpc #settings-panel .set-sec{margin-bottom:0;flex:0 0 auto;}
+/* ★左右の高さをそろえる。区画と区画の間に隙間を作るのではなく、
+   「投稿・お問い合わせ」の中（題と説明の間など）の間隔を広げて吸わせる
+   （2026-08-15指示：ウインドウの間に隙間をあけるんじゃなくて中の間隔を広げろ） */
+html.tvpc #settings-panel .set-col-l,
+html.tvpc #settings-panel .set-col-r{justify-content:flex-start;}
+html.tvpc #settings-panel .set-col-r .set-sec:last-child{flex:1 1 auto;}
 /* 背景の色：4列×3段。見本は横長のまま（縦に引き伸ばさない） */
 html.tvpc #settings-panel .set-colors{
   grid-template-columns:repeat(4,1fr);
@@ -1727,6 +1739,15 @@ html.tvpc #settings-panel .set-col-l .set-sec:nth-child(3) .set-link-reset i{fon
 
 /* 表示と動作・投稿：中の項目の間隔を均等配分（カードの高さを使い切る） */
 html.tvpc #settings-panel .set-col-r .set-sec{display:flex;flex-direction:column;justify-content:space-between;}
+/* ★左に足りない分は、この区画の項目を等分に伸ばして受け取る */
+html.tvpc #settings-panel .set-col-r .set-sec:last-child .set-link{
+  flex:1 1 auto;align-items:stretch;
+}
+/* 伸びた分は「題」と「下の説明」の間隔になる */
+html.tvpc #settings-panel .set-col-r .set-sec:last-child .set-link-txt{
+  flex:1 1 auto;justify-content:space-between;
+}
+html.tvpc #settings-panel .set-col-r .set-sec:last-child .set-link-arw{align-self:center;}
 /* 項目そのものにも余裕を持たせる(TV/PCのみ) */
 html.tvpc #settings-panel .set-link{
   padding:12px 10px;
@@ -1739,7 +1760,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.37-lab（設定画面の間延びを直し常識的な幅に）</div>
+    <div class="ps-version">version 3.38-lab（設定画面の左右の高さを揃え窓に合わせて拡大）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3655,6 +3676,13 @@ function updateTvH(){
     //   モニターの大きさでは変えない＝どの環境でも同じところで切り替わる。
     //   高さは見ない＝URLバーやツールバーの出没で並びが変わらない
     document.documentElement.classList.toggle('narrowpc', on && innerWidth<TVPC_NARROW);
+    // ★設定画面の拡大率。基準は1400x900（横並びに切り替わる幅）。
+    //   幅と高さの小さい方に合わせる＝拡大しても画面からはみ出さない。
+    //   1.0未満にはしない（縮めると読みにくくなるだけ）
+    try{
+      var z = on ? Math.min(2.0, Math.max(1, Math.min(innerWidth/1400, innerHeight/900))) : 1;
+      document.documentElement.style.setProperty('--set-zoom', z.toFixed(3));
+    }catch(_){}
     if(!on){
       if(_tvW){ document.documentElement.style.removeProperty('--tvH'); _tvW=0; _tvHmax=0; }
       document.documentElement.classList.remove('narrowpc');
