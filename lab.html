@@ -1766,6 +1766,17 @@ html.tvpc #settings-panel .set-col-r .set-sec:last-child .set-link-arw{align-sel
 html.tvpc #settings-panel .set-link{
   padding:12px 10px;
 }
+
+/* ══ テレビ用アプリのリモコン操作（html.tvapp＝UAにShisochanTVがある時だけ）══
+   金色の枠＝いま選ばれている場所。十字キーで移動し、決定で押す。
+   この枠はリモコン操作に必須の現在地表示（これが無いとどこを押すのか分からない） */
+html.tvapp .tvfoc{outline:4px solid var(--gold2);outline-offset:2px;border-radius:8px;}
+html.tvapp .prow.tvfoc{outline-offset:-4px;}     /* 一覧の中は内側に描く＝端で切れない */
+html.tvapp #sb-news.tvfoc{outline-offset:-4px;}
+html.tvapp *:focus{outline:none;}                /* 素の焦点枠と二重にしない */
+/* テレビにはホーム画面が無いので「ホーム画面に登録する」は出さない（2026-08-15指示）。
+   消すのはテレビ用アプリだけ＝スマホ・PCの登録案内は今までどおり */
+html.tvapp #lnk-reg{display:none;}
 </style>
 </head>
 <body>
@@ -1774,7 +1785,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.41-lab（角丸と、枠が追いつかない遅れを修正）</div>
+    <div class="ps-version">version 3.44-lab（ヘルプを画面の大きさに合わせて作り直し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2075,6 +2086,29 @@ html.tvpc #settings-panel .set-link{
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
+// ══ テレビ用アプリ（ShisochanTV）の判定 ══
+// 設定済み機器（キオスク）のWebViewだけが、UAにこの印を付けて開く。
+// スマホ・PC・TVブラウザでは必ずfalse＝この印で始まるテレビ用の仕掛けは一切動かない。
+// どの関数よりも先に確定させるため、スクリプトの最上部に置く
+var IS_TVAPP=false;
+try{ IS_TVAPP=/ShisochanTV\//.test(navigator.userAgent); }catch(_){}
+// 画面の寸法指定（meta viewport の中身）は必ずこの関数を通す。
+// テレビ用アプリはCSSの幅を1280に固定＝テレビブラウザの実測(1280x720)と同じ環境。
+// 数字を持つのはここ1か所だけ（アプリ側には倍率を書かない＝2か所に書くと必ずずれる）
+function vpContent(extra){
+  if(IS_TVAPP){
+    var sc=(screen.width&&screen.width>0?screen.width:960)/1280;
+    sc=Math.round(sc*1000)/1000;
+    return 'width=1280, initial-scale='+sc+', maximum-scale='+sc+', user-scalable=no'+(extra||'');
+  }
+  return 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'+(extra||'');
+}
+if(IS_TVAPP){ try{
+  document.documentElement.classList.add('tvapp');
+  var _vp0=document.querySelector('meta[name="viewport"]');
+  if(_vp0) _vp0.setAttribute('content', vpContent(''));
+}catch(_){} }
+
 // ══════════════════════════════════════════════
 //  共通の小道具
 // ══════════════════════════════════════════════
@@ -3650,6 +3684,9 @@ function regOfferBig(){
 //   入る条件は従来どおり600px以上。維持は400px以上＝URLバーの出没では絶対に外れない。
 var _tvMode=false;
 function isTvPcMode(){
+  // ★テレビ用アプリは常にTV/PC扱い。WebViewの見かけの寸法（960x540等）に
+  //   左右されない＝アプリがテレビだと知っているので推測しない
+  if(IS_TVAPP){ _tvMode=true; return true; }
   var c=document.body.classList;
   var kind = !c.contains('ori-p') && !c.contains('ori-l') &&
              !c.contains('ori-tp') && !c.contains('ori-tl') && !c.contains('silk-mode');
@@ -3761,7 +3798,9 @@ function updateTvH(){
     // ★狭い窓では縦並びにする。境目は1400pxの固定値（ユーザー指定・2026-08-15）。
     //   モニターの大きさでは変えない＝どの環境でも同じところで切り替わる。
     //   高さは見ない＝URLバーやツールバーの出没で並びが変わらない
-    document.documentElement.classList.toggle('narrowpc', on && innerWidth<TVPC_NARROW);
+    // ★テレビ用アプリは幅が1400px未満でも縦並びにしない（テレビは横一画面が正）。
+    //   縦並びはスクロール前提で、リモコンでは下の番組表に届かなくなる
+    document.documentElement.classList.toggle('narrowpc', on && innerWidth<TVPC_NARROW && !IS_TVAPP);
     // ★設定画面の拡大率。基準は1400x900（横並びに切り替わる幅）。
     //   幅と高さの小さい方に合わせる＝拡大しても画面からはみ出さない。
     //   1.0未満にはしない（縮めると読みにくくなるだけ）
@@ -3934,6 +3973,203 @@ function attachNewsSwipe(el){
     }
   });
 }
+// ══════════════════════════════════════════════
+//  テレビ用アプリのリモコン操作（IS_TVAPPの時だけ働く）
+//  アプリが十字キー等を window.__tvKey('left'|'right'|'up'|'down'|'enter'|
+//  'back'|'playpause'|'rew'|'ff') で渡してくる。金色の枠(.tvfoc)で現在地を
+//  示し、決定でその要素のclickを押す。スマホ・PC・TVブラウザでは
+//  アプリがいない（__tvKeyが呼ばれない）ので一切動かない。
+// ══════════════════════════════════════════════
+var _tvCur=null, _tvLastLayer='', _tvSetIdx=0;   // _tvSetIdx=設定の中で何番目にいたか
+function _tvVis(el){
+  if(!el||!el.getBoundingClientRect) return false;
+  var r; try{ r=el.getBoundingClientRect(); }catch(_){ return false; }
+  if(r.width<=0||r.height<=0) return false;
+  var cs; try{ cs=getComputedStyle(el); }catch(_){ return false; }
+  return cs.display!=='none' && cs.visibility!=='hidden';
+}
+function _tvQ(sel){
+  var out=[], ns; try{ ns=document.querySelectorAll(sel); }catch(_){ return out; }
+  for(var i=0;i<ns.length;i++){ if(_tvVis(ns[i])) out.push(ns[i]); }
+  return out;
+}
+// いま画面の一番上にいる層。上ほど優先（使い方＞リンク先の窓＞設定＞全画面＞電源）
+function _tvLayer(){
+  try{
+    var t=document.getElementById('tour');
+    if(t&&t.classList.contains('on')) return 'tour';
+    var sv=document.getElementById('site-viewer');
+    if(sv&&sv.classList.contains('open')) return 'viewer';
+    var sp=document.getElementById('settings-panel');
+    if(sp&&sp.classList.contains('open')) return 'settings';
+    if(typeof isExpanded!=='undefined'&&isExpanded) return 'fs';
+    var ps=document.getElementById('power-screen');
+    if(ps&&getComputedStyle(ps).display!=='none') return 'power';
+  }catch(_){}
+  return 'main';
+}
+function _tvSet(el){
+  if(_tvCur&&_tvCur.classList){ try{ _tvCur.classList.remove('tvfoc'); }catch(_){} }
+  _tvCur=el||null;
+  if(_tvCur){
+    try{ _tvCur.classList.add('tvfoc'); }catch(_){}
+    try{ _tvCur.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(_){}
+    // 設定の中では「何番目か」を覚える（一覧の作り直しに備える）
+    try{ if(_tvLastLayer==='settings'){ var li=_tvSetList().indexOf(_tvCur); if(li>=0) _tvSetIdx=li; } }catch(_){}
+  }
+}
+// 各層の「最初に選ばれる場所」
+function _tvDefFor(L){
+  var q;
+  if(L==='tour')     q=_tvQ('#tour-next,#tour-skip');
+  else if(L==='power')   q=_tvQ('#ps-btn');
+  else if(L==='viewer')  q=_tvQ('#sv-back');
+  else if(L==='fs')      q=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-mute,#fs-close');
+  else if(L==='settings')q=_tvSetList();
+  else                   q=_tvQ('#ctrl-play');
+  return q.length?q[0]:null;
+}
+// 設定パネルの中の押せる物（上から順）。
+// ホーム画面登録(lnk-reg)はテレビ用アプリではCSSで消してあるので、
+// _tvVis が見えないと判断して自動的に候補から外れる（ここで名指しはしない）
+function _tvSetList(){
+  return _tvQ('#settings-panel button, #settings-panel .set-color');
+}
+// 層が変わっていたら選び直す（開閉のたびに呼ばれても壊れない＝冪等）
+function _tvEnsure(){
+  var L=_tvLayer();
+  if(L!==_tvLastLayer || !_tvCur || !_tvVis(_tvCur)){
+    var 同じ層=(L===_tvLastLayer);
+    _tvLastLayer=L;
+    // ★設定の中で選択肢を押すと一覧が作り直され、前の要素が切り離される。
+    //   先頭に戻すと現在地が飛んで、次の決定が別の物を押してしまう
+    //   （2026-08-15実測：色を選んだ直後の↓→決定がヘルプを開いた）。
+    //   同じ層に居る間は「何番目にいたか」で同じ場所へ戻る
+    if(L==='settings' && 同じ層){
+      var list=_tvSetList();
+      if(list.length){ _tvSet(list[Math.min(_tvSetIdx,list.length-1)]); return L; }
+    }
+    _tvSet(_tvDefFor(L));
+  }
+  return L;
+}
+// 設定パネル：←→は1つずつ、↑↓は「まとまり」（色の12個・3択ボタン等）を跳び越す
+function _tvSetGroupKey(el){
+  var g=null; try{ g=el.closest('.set-seg,.set-colors'); }catch(_){}
+  return g||el;
+}
+function _tvMoveSettings(dir){
+  var L=_tvSetList(); if(!L.length) return;
+  var i=L.indexOf(_tvCur); if(i<0){ _tvSet(L[Math.min(_tvSetIdx,L.length-1)]); return; }
+  if(dir==='left'){ if(i>0) _tvSet(L[i-1]); return; }
+  if(dir==='right'){ if(i<L.length-1) _tvSet(L[i+1]); return; }
+  var k=_tvSetGroupKey(L[i]), j;
+  if(dir==='down'){ for(j=i+1;j<L.length;j++){ if(_tvSetGroupKey(L[j])!==k){ _tvSet(L[j]); return; } } }
+  else            { for(j=i-1;j>=0;j--){ if(_tvSetGroupKey(L[j])!==k){ _tvSet(L[j]); return; } } }
+}
+// 本編：上段(LIVE・設定)／操作ボタン列／番組表の行／お知らせ の4つの間を移動する
+function _tvMoveMain(dir){
+  // 上段は画面の左→右の順（LIVE表示→設定）。querySelectorAllの文書順だと
+  // 歯車が先に来てしまう（ヘッダーが先・タイトル帯が後）ので、別々に取ってつなぐ
+  var top=_tvQ('#live-tap').concat(_tvQ('#h-gear'));
+  var ctrl=_tvQ('#ctrl-play,#ctrl-back30,#ctrl-fwd30,#ctrl-mute,#expand-open-btn');
+  var guide=_tvQ('#sb-list .prow');
+  var news=_tvQ('#sb-news');
+  var cur=_tvCur, gi;
+  function inn(arr){ return arr.indexOf(cur); }
+  if((gi=inn(ctrl))>=0){
+    if(dir==='left'&&gi>0) _tvSet(ctrl[gi-1]);
+    else if(dir==='right'){ if(gi<ctrl.length-1) _tvSet(ctrl[gi+1]); else if(guide.length) _tvSet(guide[0]); }
+    else if(dir==='up'&&top.length) _tvSet(top[0]);
+    else if(dir==='down'){ if(news.length) _tvSet(news[0]); else if(guide.length) _tvSet(guide[0]); }
+    return;
+  }
+  if((gi=inn(top))>=0){
+    if(dir==='left'&&gi>0) _tvSet(top[gi-1]);
+    else if(dir==='right'&&gi<top.length-1) _tvSet(top[gi+1]);
+    else if(dir==='down'){
+      if(cur===document.getElementById('h-gear')&&guide.length) _tvSet(guide[0]);
+      else if(ctrl.length) _tvSet(ctrl[0]);
+    }
+    return;
+  }
+  if((gi=inn(guide))>=0){
+    if(dir==='up'){ if(gi>0) _tvSet(guide[gi-1]); else if(top.length) _tvSet(top[top.length-1]); }
+    else if(dir==='down'){ if(gi<guide.length-1) _tvSet(guide[gi+1]); else if(news.length) _tvSet(news[0]); }
+    else if(dir==='left'&&ctrl.length) _tvSet(ctrl[0]);
+    return;
+  }
+  if(inn(news)>=0){
+    if(dir==='up'&&guide.length) _tvSet(guide[guide.length-1]);
+    else if(dir==='left'&&ctrl.length) _tvSet(ctrl[0]);
+    return;
+  }
+  _tvSet(_tvDefFor('main'));
+}
+function _tvMove(L,dir){
+  if(L==='settings'){ _tvMoveSettings(dir); return; }
+  if(L==='main'){ _tvMoveMain(dir); return; }
+  // 1列だけの層（使い方の次へ/とじる・全画面の操作列など）：←→で移動
+  var q=_tvDefFor(L), list;
+  if(L==='tour')      list=_tvQ('#tour-next,#tour-skip');
+  else if(L==='fs')   list=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-mute,#fs-close');
+  else if(L==='viewer')list=_tvQ('#sv-back');
+  else                list=_tvQ('#ps-btn');
+  if(!list.length) return;
+  var i=list.indexOf(_tvCur);
+  if(i<0){ _tvSet(list[0]); return; }
+  if((dir==='left'||dir==='up')&&i>0) _tvSet(list[i-1]);
+  else if((dir==='right'||dir==='down')&&i<list.length-1) _tvSet(list[i+1]);
+}
+// 窓(iframe)の中身をリモコンで読み進める。同じサイトの中の窓なので中を触れる。
+// 別のサイト（市の新着など）は触れないので、その時は窓の枠ごと動かす
+function _tvScrollViewer(dy){
+  var f=document.getElementById('sv-frame');
+  if(!f) return;
+  try{
+    var d=f.contentWindow.document;
+    var el=d.scrollingElement||d.documentElement;
+    if(el){ el.scrollTop+=dy; return; }
+  }catch(_){}
+  try{ document.getElementById('site-viewer').scrollTop+=dy; }catch(_){}
+}
+
+// 決定＝いま選ばれている物を押す。番組の行は中の番組名(pinfo)を押す
+function _tvEnter(){
+  var el=_tvCur;
+  if(!el||!_tvVis(el)){ el=_tvDefFor(_tvLayer()); if(!el) return; _tvSet(el); }
+  if(el.classList&&el.classList.contains('prow')){
+    var p=el.querySelector('.pinfo'); if(p){ p.click(); return; }
+  }
+  try{ el.click(); }catch(_){}
+}
+// 戻る＝一番上の層を閉じる。本編・電源画面では何もしない（キオスクに出口は無い）
+function _tvBackKey(L){
+  try{
+    if(L==='viewer'){ closeSiteViewer(); return true; }
+    if(L==='settings'){ closeSettings(); return true; }
+    if(L==='fs'){ closeExpand(); return true; }
+    if(L==='tour'){ var sk=document.getElementById('tour-skip'); if(sk&&_tvVis(sk)) sk.click(); return true; }
+  }catch(_){}
+  return true;
+}
+window.__tvKey=function(k){
+  if(!IS_TVAPP) return false;
+  try{
+    var L=_tvEnsure();
+    if(L==='fs'){ try{ showFsUi(); }catch(_){} }   // 全画面の操作列は放っておくと消えるため
+    if(k==='back'){ var r=_tvBackKey(L); setTimeout(_tvEnsure,350); return r; }
+    if(k==='playpause'){ var b1=document.getElementById(L==='fs'?'fs-play':'ctrl-play'); if(b1) b1.click(); return true; }
+    if(k==='rew'){ var b2=document.getElementById(L==='fs'?'fs-back30':'ctrl-back30'); if(b2) b2.click(); return true; }
+    if(k==='ff'){ var b3=document.getElementById(L==='fs'?'fs-fwd30':'ctrl-fwd30'); if(b3) b3.click(); return true; }
+    // 窓を開いている間は、上下＝中身を読み進める（押せる物は「もどる」1つだけ）
+    if(L==='viewer'&&(k==='up'||k==='down')){ _tvScrollViewer(k==='up'?-260:260); return true; }
+    if(k==='enter'){ _tvEnter(); setTimeout(_tvEnsure,350); return true; }
+    if(k==='left'||k==='right'||k==='up'||k==='down'){ _tvMove(L,k); return true; }
+  }catch(_){}
+  return true;
+};
+
 // ══════════════════════════════════════════════
 //  設定画面（2026-08-10・第1段階：背景色）
 //  ・別ページではなく「かぶせるパネル」。動画を止めずに開閉できる
@@ -5121,7 +5357,7 @@ function openExpand(){
   //   cover有りでは帯が消えてページの色がそのまま見える(=黒い全画面が透ける=帯黒✓)。coverを外すと帯は即・元の緑に戻る(実証済み)。
   //   よって「全画面中だけcover ON」が唯一の正解。通常時はcover無し=映像ズレは起きない(v1.79-83時代の実機で実証済み)。
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
-    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'); })();
+    if(vp) vp.setAttribute('content', vpContent(', viewport-fit=cover')); })();
   setThemeColor('#000000');
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
@@ -5444,7 +5680,7 @@ function closeExpand(){
   document.documentElement.style.background='';   // ルート背景を通常(深緑)へ復元
   // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
-    if(vp) vp.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); })();
+    if(vp) vp.setAttribute('content', vpContent('')); })();
   // 全画面バナー・映像の表示状態を復元（座標固定/フェード用のインライン指定を全て解除）
   (function(){ var sp=document.getElementById('fs-sponsor');
     if(sp){ sp.style.transition=''; sp.style.opacity=''; sp.style.top=''; sp.style.left=''; sp.style.transform=''; }
@@ -5776,7 +6012,10 @@ window.addEventListener('resize',hideClippedChipsSoon);
 //  タップ判定（スクロールと区別）
 // ══════════════════════════════════════════════
 function addTap(el,onTap){
-  var hasTouchSupport=('ontouchstart' in window);
+  // ★テレビ用アプリはリモコン操作＝指が無い。touch対応を名乗るWebViewでも
+  //   必ずclickで受ける。タッチ扱いにすると、リモコンの決定(click)を受ける口が
+  //   無くなり、決定ボタンで何も起きない（2026-08-15 Google TVエミュレータで実測）
+  var hasTouchSupport=('ontouchstart' in window) && !IS_TVAPP;
   if(hasTouchSupport){
     // タッチデバイス：touchend でスクロールと区別してタップ処理
     var startX=0,startY=0,moved=false;
@@ -6408,6 +6647,13 @@ function init(){
     var h=document.getElementById('lnk-help');
     if(h) h.addEventListener('click', function(){
       if(isTapBlocked()) return;
+      // ★テレビ用アプリは、ページごと移動すると戻る手段が無くなる（help.htmlには
+      //   リモコンの受け口が無い）。同じページの中の窓で開き、戻るで閉じられるようにする
+      //   （2026-08-15：ヘルプへ移動して戻れなくなった不具合の根治）
+      // ★テレビ用アプリには再読み込みの手段が無い。印を付けずに開くと、
+      //   説明を新しくしても古いものが出続ける（2026-08-15実測：作り直した
+      //   ヘルプが窓の中だけ古いままだった）。毎回取りに行かせる
+      if(IS_TVAPP && openSiteViewer('help.html?t='+Date.now())) return;
       setResumeFlag();
       location.href='help.html';
     });

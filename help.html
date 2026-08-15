@@ -112,6 +112,94 @@ figcaption{font-size:13px;color:rgba(255,255,255,.55);margin-top:8px;text-align:
 
 hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
 .foot{font-size:14px;color:rgba(255,255,255,.5);line-height:1.8;text-align:center;margin-top:10px;}
+
+/* ══════════════════════════════════════════════════════
+   ここから：画面の大きさに合わせた詰め方（2026-08-15指示）
+   「画面に合った大きさで、1画面になるべく多く収める」
+   ══════════════════════════════════════════════════════ */
+
+/* ── ① 図を引き伸ばさない ──
+   図の中身は300pxと720pxで描いてある。width:100%だけだと、広い画面で
+   1252pxまで伸びて画面を1枚まるごと潰していた（2026-08-15実測）。
+   中身の実寸を上限にすると、大きい画面でも読みやすい大きさで止まる */
+figure.fig-s svg{max-width:300px;margin:0 auto;}
+figure.fig-l svg{max-width:720px;margin:0 auto;}
+/* 段組みの中では、図は列の幅いっぱいまで（列からはみ出させない） */
+@media (min-width:990px){ figure.fig-l svg{max-width:100%;} }
+
+/* ── ② スマホ：余白と行間を詰めて、1画面に多く入れる ──
+   字の大きさは変えない（読みやすさは落とさない）。減らすのは
+   行間・節の間・図の余白だけ */
+body{line-height:1.7;}
+section{margin-bottom:20px;}
+h1{font-size:22px;margin:4px 0 2px;}
+.lead{margin-bottom:16px;line-height:1.6;}
+h2{margin-bottom:10px;padding:5px 12px;}
+p{margin-bottom:9px;}
+.note{padding:10px 12px;margin:10px 0;line-height:1.6;}
+figure{margin:10px 0 12px;}
+figcaption{margin-top:5px;}
+ol.steps{margin:10px 0;}
+ol.steps li{padding:9px 0 9px 40px;}
+ol.steps li::before{top:9px;width:27px;height:27px;font-size:14px;}
+.btns div{padding:8px 0;gap:12px;}
+.btns i{width:40px;height:40px;}
+.btns i svg{width:24px;height:24px;}
+hr{margin:18px 0;}
+
+/* ── ③ 広い画面（パソコン・テレビ）：2段組みにする ──
+   横に長い画面で1列に流すと、行が長すぎて読みにくく、縦に
+   8画面分も伸びていた（2026-08-15実測）。2列にすると縦が半分になり、
+   横幅も読みやすい長さに収まる。
+   節の途中で列が変わらないよう break-inside:avoid を付ける */
+/* ── スマホの横向き等（760〜989px）：ここも2段にする ──
+   1列だと行が816pxと長すぎて読みにくく、縦に10画面以上伸びていた（2026-08-15実測）。
+   この帯の列の幅は380px（画面が狭く460pxを2列は入らないため） */
+@media (min-width:760px) and (max-width:989px){
+  body{font-size:15px;line-height:1.65;}
+  .wrap{max-width:800px;margin:0 auto;}
+  .cols{column-count:2;column-gap:40px;
+        column-rule:1px solid rgba(255,255,255,.12);}
+  .cols section{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:18px;}
+  figure.fig-l svg{max-width:100%;}
+  .hint{display:none;}
+}
+
+/* ★列の幅は460pxに固定する。列の幅が画面ごとに変わると折り返す位置も変わり、
+   ある幅で「行末に2文字だけ残る」を直しても別の幅で再発する（2026-08-15実測：
+   1280で直したら1920で2か所再発）。幅を固定すれば、文章の直しは1回で全幅に効く。
+     2列 = 460×2 + すき間40 = 960
+     3列 = 460×3 + すき間40×2 = 1460 */
+@media (min-width:990px){
+  body{font-size:15px;line-height:1.65;}
+  .wrap{max-width:960px;margin:0 auto;}
+  .cols{
+    column-count:2;column-gap:40px;
+    /* 列の境目に細い線を引くと、どちらの列を読むのか迷わない */
+    column-rule:1px solid rgba(255,255,255,.12);
+  }
+  .cols section{
+    break-inside:avoid;-webkit-column-break-inside:avoid;
+    margin-bottom:18px;
+  }
+  h1{font-size:26px;}
+  .lead{font-size:14px;margin-bottom:18px;}
+  h2{font-size:16px;}
+  .note{font-size:14px;}
+  ol.steps b{font-size:15px;}
+  ol.steps span{font-size:13px;}
+  .btns p b{font-size:15px;}
+  .btns p span{font-size:13px;}
+  /* 広い画面では指で広げられないので、この案内は出さない */
+  .hint{display:none;}
+  .foot{margin-top:18px;}
+}
+
+/* ── ④ とても広い画面（テレビの1920など）：3段組み。列の幅は460pxのまま ── */
+@media (min-width:1490px){
+  .wrap{max-width:1460px;}
+  .cols{column-count:3;}
+}
 </style>
 </head>
 <body>
@@ -121,24 +209,27 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
   <span class="topbar-ttl">使い方</span>
 </div>
 
+<div class="wrap">
 <h1>しそチャンNET の使い方</h1>
 <p class="lead">はじめての方でも迷わないように、画面の見かたと操作を順にご説明します。</p>
+
+<div class="cols">
 
 <!-- ══ 1 ══ -->
 <section>
   <h2>しそチャンNET とは</h2>
-  <p>宍粟市のできごとや行事をお届けする、インターネットの放送局です。</p>
+  <p>宍粟市のできごとや行事をお届けするインターネット放送局です。</p>
   <div class="note">
     放送は毎日 <b>朝6時から夜12時まで</b>。<br>
-    テレビと同じように、時間になると番組がひとりでに切り替わります。
+    テレビと同じく、時間になると番組がひとりでに切り替わります。
   </div>
 </section>
 
 <!-- ══ 2 ══ -->
 <section>
   <h2>放送をはじめる</h2>
-  <p>アプリを開くと、下のような画面が出ます。まん中の金色のボタンを押してください。</p>
-  <figure>
+  <p>アプリを開くと下の画面が出ます。まん中の金色のボタンを押してください。</p>
+  <figure class="fig-s">
     <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="起動画面のイメージ">
       <rect width="300" height="300" fill="#1e3a28"/>
       <text x="150" y="92" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">しそチャン<tspan fill="#e8b84a">NET</tspan></text>
@@ -160,7 +251,7 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
 <section>
   <h2>画面の見かた</h2>
   <p class="hint">指で広げると大きくできます</p>
-  <figure>
+  <figure class="fig-l">
     <svg viewBox="0 0 720 566" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="放送中の画面と各部の説明">
       <rect width="720" height="566" fill="#16301f"/>
       <!-- ── 左：画面のイメージ ── -->
@@ -301,7 +392,7 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
 <!-- ══ 5 ══ -->
 <section>
   <h2>大きな画面で見る</h2>
-  <p>操作ボタンの右はしにある<b>「四すみの印」</b>を押すと、映像が画面いっぱいになります。</p>
+  <p>操作ボタンの右はしの<b>「四すみの印」</b>を押すと、映像が画面いっぱいになります。</p>
   <ol class="steps">
     <li><b>もとに戻すとき</b><span>画面を軽く触ると、下にボタンが出てきます。いちばん右の印を押してください。</span></li>
     <li><b>もっと大きく見たいとき</b><span>スマホを横向きにすると大きく見られます</span></li>
@@ -323,7 +414,7 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
   <h2>お知らせを読む</h2>
   <p>宍粟市のホームページから、新しいお知らせを自動で取り込んで表示しています。</p>
   <ol class="steps">
-    <li><b>押すと詳しく読めます</b><span>宍粟市のページが開きます。読み終わったら、画面の左上にある「戻る」で帰ってこられます。</span></li>
+    <li><b>押すと詳しく読めます</b><span>宍粟市のページが開きます。読み終えたら左上の「戻る」で帰れます。</span></li>
     <li><b>次のお知らせを見る</b><span>指で左右になぞると切り替わります。しばらく待っても自動で切り替わります。</span></li>
   </ol>
   <div class="note">
@@ -345,7 +436,7 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
 <!-- ══ 9 ══ -->
 <section>
   <h2>ホーム画面に置いて使う</h2>
-  <p>ホーム画面に置くと、ふつうのアプリと同じように、ひと押しで開けるようになります。</p>
+  <p>ホーム画面に置けば、ふつうのアプリと同じく一押しで開けます。</p>
   <div class="note">
     <b>iPhone・iPad の場合</b><br>
     ① Safari でこのページを開く<br>
@@ -374,10 +465,13 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.15);margin:26px 0;}
   </ol>
 </section>
 
+</div><!-- /cols -->
+
 <p class="foot">
   しそチャンNET<br>
   お問い合わせは、アプリの設定画面からお願いします。
 </p>
+</div><!-- /wrap -->
 
 <script>
 // 「もどる」：直前がアプリなら戻る。直接開かれた場合はアプリのトップへ。
