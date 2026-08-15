@@ -1851,9 +1851,19 @@ html.tvapp #live-tap.tvfoc,
 html.tvapp .ctrl-btn.tvfoc,html.tvapp .fs-ctrl-btn.tvfoc,
 html.tvapp .expand-open-btn.tvfoc,html.tvapp .set-link.tvfoc{border-radius:8px;}
 /* バナーの枠は入れ物（横に伸びる箱）ではなく、見えている画像にぴったり合わせる
-   （2026-08-16指摘：囲みの横幅が広すぎる）。入れ物の枠は消し、画像側に描く */
-html.tvapp #sponsor-banner.tvfoc{outline:none;}
-html.tvapp #sponsor-banner.tvfoc .sponsor-img{outline:4px solid var(--gold2);outline-offset:2px;border-radius:8px;}
+   （2026-08-16指摘：囲みの横幅が広すぎる）。入れ物の枠は消し、画像側に描く。
+   ★さらに：入れ物(.h-banner)は overflow:hidden で上下の余白が3pxしか無いため、
+   外側に描く枠(6px)は上下の線だけ切り落とされていた（2026-08-16実機写真で発覚：
+   左右の端の縦線だけ残り、上下が消えて見えた）。番組表の行(.prow)と同じ
+   「内側に描く」方式にする＝切られる余地がそもそも無い */
+/* ★枠は写真の「外側」に描く（2026-08-16指示）。外枠が上下だけ消えていた原因は
+   入れ物(.h-banner)の overflow:hidden（上下の余白3px＜枠の6px）。
+   選ばれている間だけ、入れ物のはみ出しを許可して外に描く。
+   （内側に描く案は「写真に枠が食い込む」ため不採用の指示）
+   写真そのものは .sponsor-img の overflow:hidden で箱に切り揃えられているので、
+   箱の外2pxに描く枠が写真に隠れることはない */
+html.tvapp #sponsor-banner.tvfoc{outline:none;overflow:visible;}
+html.tvapp #sponsor-banner.tvfoc .sponsor-img{outline:4px solid var(--gold2);outline-offset:2px;}
 /* 歯車は丸いので枠も「正しい円」で囲む（2026-08-16指摘）。
    箱そのものは横長（高さ19px固定）なので、outlineだと楕円になってしまう。
    箱の形に頼らず、中心に正方形の輪を重ねて描く（歯車アイコン18px＋余白で44px） */
@@ -1866,7 +1876,10 @@ html.tvapp #h-gear.tvfoc::after{
 }
 /* ×ボタンは画面の角に接しているため、枠は内側に円で描く＝画面からはみ出さない（2026-08-16指摘） */
 html.tvapp #set-close.tvfoc{border-radius:999px;outline-offset:-4px;}
-html.tvapp .vol-slider.tvfoc{border-radius:999px;}   /* 音量バーは細長い丸で囲む */
+/* 音量バーの枠：バーの箱は高さ4pxだが、丸いつまみは18px＝上下に約7px(css)はみ出す。
+   箱基準の枠(余白2px)ではつまみが枠を突き抜ける（実機実測：上31px/下35pxはみ出し）。
+   余白を9pxに広げ、つまみごと囲む（枠の中心は変わらないため位置ズレなし） */
+html.tvapp .vol-slider.tvfoc{border-radius:999px;outline-offset:9px;}
 html.tvapp .prow.tvfoc{outline-offset:-4px;}     /* 一覧の中は内側に描く＝端で切れない */
 html.tvapp #sb-news.tvfoc{outline-offset:-4px;}
 /* 背景の色：囲むのは「色の四角」だけ。下の文字まで含めない（2026-08-16指示） */
@@ -1889,7 +1902,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.55-lab（リモコン強化：バナー・バー掴み・色の格子・窓スクロール・枠の形）</div>
+    <div class="ps-version">version 3.56-lab（バナーと音量の枠を実物に合わせて修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
