@@ -1109,12 +1109,9 @@ body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-w
    URLバーが出て中身がはみ出しても、スクロールバーが原理的に出せない。
    実測: はみ出し100px→0・スクロール不能・動画とバナーの寸法は不変。
    min-height:0 は body{min-height:100vh}(51行目)の打ち消し */
-/* ★根っこも中身も「画面ちょうど」ではなく --tvH（画面より2px小さい整数）に
-   合わせる。100%だと端数（例 635.29px）になり、倍率0.85で丸めた時に
-   画面より1px大きくなる瞬間が生まれ、そこで棒が出る（updateTvHの説明を参照） */
-html.tvpc{height:var(--tvH, 100%);overflow:hidden;}
+html.tvpc{height:100%;overflow:hidden;}
 html.tvpc body{
-  position:fixed;top:0;left:0;width:100%;height:var(--tvH, 100%);
+  position:fixed;top:0;left:0;width:100%;height:100%;
   min-height:0;overflow:hidden;
 }
 html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;display:none;}
@@ -1860,7 +1857,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.53-lab（矢印を消す仕掛けを止めた・棒の切り分け）</div>
+    <div class="ps-version">version 3.54-lab（外れた2つの推測を元に戻した）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2165,22 +2162,6 @@ html.tvapp #lnk-reg{display:none;}
 // 設定済み機器（キオスク）のWebViewだけが、UAにこの印を付けて開く。
 // スマホ・PC・TVブラウザでは必ずfalse＝この印で始まるテレビ用の仕掛けは一切動かない。
 // どの関数よりも先に確定させるため、スクリプトの最上部に置く
-// ★マウスの矢印を消す仕掛け（body.cursor-hidden）は、テレビのブラウザで
-//   画面右端にスクロールバーが出る時刻と完全に一致していた
-//   （2026-08-16 ユーザーの実機観察：「ポインタが自動で消える時と完全一致」）。
-//   このクラスは「* に cursor:none」なので、付け外しのたびに
-//   ページ全要素のスタイルが計算し直される。十字キーでマウスを模している
-//   テレビのブラウザでは、ページが矢印を消した瞬間にスクロール表示へ
-//   切り替わることがありうる。よって既定では矢印を消さない。
-//   ?cursorhide=1 を付けると従来どおり消す（原因の切り分け用）。
-var CURSOR_HIDE=false;
-try{ CURSOR_HIDE=/[?&]cursorhide=1/.test(location.search); }catch(_){}
-function cursorHide(on){
-  try{
-    if(!CURSOR_HIDE) return;          // 既定＝矢印は消さない
-    document.body.classList.toggle('cursor-hidden', !!on);
-  }catch(_){}
-}
 var IS_TVAPP=false;
 try{ IS_TVAPP=/ShisochanTV\//.test(navigator.userAgent); }catch(_){}
 // 画面の寸法指定（meta viewport の中身）は必ずこの関数を通す。
@@ -3923,18 +3904,7 @@ function updateTvH(){
     //   （2026-08-15 実機で「URLバーが戻ると棒が出る」と判明）。
     //   ここは「覚えた最大」ではなく「いま画面に入る大きさ」を使う＝必ず収まる。
     //   _tvHmax は残す（幅を変えずに高さが戻った時、元の大きさへ戻すため）
-    // ★★「画面とページを同じ高さにする」設計そのものが、棒が出たり消えたりする原因。
-    //   テレビのブラウザは倍率が半端（実測0.85倍）。同じ高さを狙うと、
-    //   635px×0.85=539.75 のような端数が出て、丸め方ひとつで
-    //   「画面540 ＜ ページ541」に転ぶ＝1px超えた瞬間に棒が出る。
-    //   再レイアウト（10秒ごとの番組情報の更新など）のたびに転んだり戻ったりするので、
-    //   出たり消えたりを繰り返す（2026-08-16 ユーザーの「消えている瞬間がある」で確定）。
-    //   よって「ぴったり」を狙うのをやめ、必ず2px小さく作る。
-    //   2px×0.85＝1.7px分の余裕があり、どう丸めても画面を超えられない＝棒が出ない。
-    //   2pxは地の色と同じ場所に出るだけで見た目は変わらない
-    //   （通常時＝濃緑どうし／全画面中＝黒どうし）
-    var 端数のよゆう=2;
-    var 使う高さ=Math.max(1, Math.min(_tvHmax, innerHeight)-端数のよゆう);
+    var 使う高さ=Math.min(_tvHmax, innerHeight);
     document.documentElement.style.setProperty('--tvH', 使う高さ+'px');
     if(_dbgOn) updateDebugBox();
   }catch(_){}
@@ -3957,7 +3927,6 @@ function updateDebugBox(){
     'はみ出し '+(d.scrollHeight-innerHeight)+'px\n'+
     'バナー幅 '+Math.round((document.getElementById('sponsor-img')||{getBoundingClientRect:function(){return{width:0};}}).getBoundingClientRect().width)+'px\n'+
     '棒 '+dbgScrollbars()+'\n'+
-    '矢印消し '+(CURSOR_HIDE?'する':'しない')+'／今'+(document.body.classList.contains('cursor-hidden')?'消えている':'出ている')+'\n'+
     '右端 '+dbgRightEdge();
 }
 // ★画面の右端に「実際に何が描かれているか」を端末に名指しさせる（2026-08-15）。
@@ -6761,7 +6730,7 @@ function init(){
   // 開くだけで ①カーソル非表示 ②YT準備でき次第そのまま放送開始（未操作でも再生）
   // ③画面スリープ抑止。通常URL(?tvなし)では以下は一切実行されない。
   if(TVMODE){
-    cursorHide(true); // マウスが無い前提で最初から非表示（?cursorhide=1の時だけ効く）
+    document.body.classList.add('cursor-hidden'); // マウスが無い前提で最初から非表示
     var _tvStart=function(){
       if(hasPoweredOn) return;      // 既に開始済み(復帰経路等)なら二重起動しない
       if(ytReady){ powerOn(); }     // 放送開始ボタンを押したのと同じ状態にする
@@ -6782,14 +6751,14 @@ function init(){
   // マウスが動いたらカーソル＋コントロールバーを表示、2秒後に両方非表示
   var _globalCursorTimer=null;
   document.addEventListener('mousemove',function(){
-    cursorHide(false);
+    document.body.classList.remove('cursor-hidden');
     if(_globalCursorTimer)clearTimeout(_globalCursorTimer);
     // PC全画面中はコントロールバーも同時に表示（fsUiTimerはここで一元管理）
     if(isExpanded){ clearFsUiTimer(); showFsUi(); }
     _globalCursorTimer=setTimeout(function(){
       var inFs=!!(document.fullscreenElement||document.webkitFullscreenElement)||isExpanded||isSilk||TVMODE;
       if(inFs){
-        cursorHide(true);
+        document.body.classList.add('cursor-hidden');
         if(isExpanded) hideFsUi(); // コントロールバーも同時に非表示
       }
     },2000);
