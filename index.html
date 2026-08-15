@@ -457,10 +457,13 @@ body.fs-open .header{ background:#000; }
   -webkit-appearance:none;appearance:none;
   background:var(--green4);border-radius:2px;
   outline:none;cursor:pointer;flex-shrink:0;
+  /* ★つまみの大きさはここ1か所だけに書く。使い方の強調枠がこの値を読んで
+     つまみまで囲む（つまみは擬似要素なのでJSからは測れない・2026-08-15） */
+  --thumb:18px;
 }
 .vol-slider::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
-  width:18px;height:18px;border-radius:50%;
+  width:var(--thumb);height:var(--thumb);border-radius:50%;
   background:var(--green2);cursor:pointer;
 }
 
@@ -1512,6 +1515,10 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
   .rf-s{font-size:12px;}
 }
 
+/* 計測の確認（?statcheck=1）。実機で「何が送られるはずか」を目で見るための箱 */
+#stat-check{display:none;position:fixed;left:0;top:0;z-index:2147483647;
+  background:rgba(0,0,0,.88);color:#5f6;font:11px/1.5 ui-monospace,monospace;
+  padding:6px 8px;white-space:pre;max-width:100%;pointer-events:none;}
 /* 実測値の画面表示（?debug=1 の時だけ）。原因を推測せず数値で確かめるための保険 */
 #tv-debug{
   position:fixed;right:8px;top:8px;z-index:9999;
@@ -1631,12 +1638,51 @@ html.tvpc .h-gear svg{
 html{scrollbar-width:none;}
 html::-webkit-scrollbar{width:0;height:0;display:none;}
 html.tvpc .page{
-  height:calc(var(--tvH, 100vh) - var(--hdr-h, 97px));
   box-sizing:border-box;
   padding-bottom:16px;
   overflow:hidden;
-  grid-template-columns:calc((var(--tvH, 100vh) - var(--hdr-h, 97px) - 120px) * 16 / 9) 1fr;
+  /* ★動画の幅は「高さから16:9で逆算した値」と「使える横幅」の小さい方。
+     高さだけで決めていたため、窓を狭めると動画が窓からはみ出し、
+     番組表とお知らせが潰れて消えていた（2026-08-15実測：窓1220pxに対し動画列が1534px）。
+     使える横幅 = 100vw − 左右padding32 − 番組表300 − すき間16
+     （html.tvpcはoverflow:hiddenでスクロールバーが出ないので100vw=窓幅） */
+  --vidw:min(
+      calc((var(--tvH, 100vh) - var(--hdr-h, 97px) - 120px) * 16 / 9),
+      calc(100vw - 32px - 300px - 16px)
+    );
+  grid-template-columns:var(--vidw) 1fr;
+  /* ★高さも動画の幅から決める＝16:9を保ったまま全体が同じ比率で縮む。
+     幅だけ詰めると映像が横に潰れる（実測：窓2560pxで比率1.656）。
+     動画の高さ = 幅×9/16 ＋ タイトルバー44 ＋ 操作バー44 ＋ 上下padding32 = +120px。
+     この高さがそのまま「番組表＋お知らせ＋すき間」の高さになる（右列は同じ行にまたがる） */
+  height:min(
+      calc(var(--tvH, 100vh) - var(--hdr-h, 97px)),
+      calc(var(--vidw) * 9 / 16 + 120px)
+    );
 }
+/* ★狭い窓では横並びをやめ、動画→番組表→お知らせの縦並びにする（iPadと同じ形）。
+   1400pxはユーザー指定の固定幅。モニターの大きさでは変えない＝どの環境でも同じ挙動 */
+html.tvpc.narrowpc .page{
+  height:auto;
+  overflow:visible;
+  grid-template-columns:1fr;
+  grid-template-rows:auto auto auto;
+  grid-template-areas:
+    "player"
+    "guide"
+    "news";
+}
+html.tvpc.narrowpc{height:auto;overflow:auto;}
+/* ★縦並びの時は body の position:fixed を必ず解く。fixed のままだと body が
+   ページの流れから外れ、html の高さが0＝スクロールできる対象が消えるため、
+   画面の下にある番組表とお知らせに一生たどり着けない
+   （2026-08-15実測：body箱1599pxに対し html.scrollHeight は900のまま） */
+html.tvpc.narrowpc body{
+  position:static;top:auto;left:auto;width:auto;
+  height:auto;min-height:0;overflow:visible;
+}
+/* 縦並びの時は、動画は幅いっぱい・16:9。番組表は高さを詰めて内側でスクロール */
+html.tvpc.narrowpc .sidebar{height:auto;max-height:56vh;}
 /* 番組表は右カラムいっぱいに伸ばし、内側だけスクロールさせる（外にはみ出さない） */
 html.tvpc .sidebar{
   height:100%;max-height:100%;overflow:hidden;position:static;
@@ -1656,23 +1702,43 @@ html.tvpc .news-ttl{
    ★左右を独立した縦並びにする（gridだと行の高さが左右で共有され、
      「アプリについて」が右の投稿カードに引き伸ばされて余白が生まれていた・実測234px）。
      TVモードの時だけJS(tvWrapSettings)が左右のラッパーを作る＝他の画面には一切影響しない。 */
+/* ★以前は「余白を残さない」ために各列の一枚を縦に引き伸ばしていたが、
+   広い画面ほど間延びし、色見本が縦長(実測136x206)、右列の項目が散らばっていた
+   （2026-08-15指摘）。中身に合った高さで止め、幅も広げすぎない形に改めた。
+   スマホでの色見本は191x46の横長。PCでもその形を保つ */
+/* ★低い窓では中身がパネルより高くなり、下端（設定を元に戻す・修正を依頼する）に
+   一生届かなかった（2026-08-15実測：窓1600x620で中身649・パネル620・overflow:visible）。
+   v3.38以前から同じ。届かないままにはできないのでスクロールできるようにする */
+html.tvpc #settings-panel{overflow-y:auto;}
 html.tvpc #settings-panel .set-body{
   display:flex;gap:12px;align-items:stretch;
+  max-width:1040px;margin:0 auto;width:100%;
+  /* ★パネルの高さいっぱいに広げない。広げると列が縦に伸び、
+     右の区画が画面の下まで散らばっていた（2026-08-15実測：中身693に対し列1011） */
+  flex:0 0 auto;align-self:flex-start;
+  /* ★窓の大きさに合わせて全体を拡大する。中の文字がすべてpx固定なので、
+     倍率を掛けるのがいちばん確実（JSが --set-zoom を実測して入れる） */
+  zoom:var(--set-zoom, 1);
 }
 html.tvpc #settings-panel .set-col{
   display:flex;flex-direction:column;gap:12px;flex:1 1 0;min-width:0;
 }
-html.tvpc #settings-panel .set-sec{margin-bottom:0;}
-/* 各列で「伸びる担当」を1枚ずつ決める＝残りの高さを全部使い切り、余白を残さない */
-html.tvpc #settings-panel .set-col-l .set-sec:nth-child(2){flex:1 1 auto;min-height:0;}  /* 背景の色 */
-html.tvpc #settings-panel .set-col-r .set-sec:nth-child(1){flex:1 1 auto;min-height:0;}  /* 表示と動作 */
-
-/* 背景の色：4列×3段。色見本を縦にも伸ばしてカードの高さを使い切る（余白ゼロ） */
-html.tvpc #settings-panel .set-col-l .set-sec:nth-child(2){display:flex;flex-direction:column;}
+html.tvpc #settings-panel .set-sec{margin-bottom:0;flex:0 0 auto;}
+/* ★左右の高さをそろえる。区画と区画の間に隙間を作るのではなく、
+   「投稿・お問い合わせ」の中（題と説明の間など）の間隔を広げて吸わせる
+   （2026-08-15指示：ウインドウの間に隙間をあけるんじゃなくて中の間隔を広げろ） */
+html.tvpc #settings-panel .set-col-l,
+html.tvpc #settings-panel .set-col-r{justify-content:flex-start;}
+html.tvpc #settings-panel .set-col-r .set-sec:last-child{flex:1 1 auto;}
+/* 背景の色：4列×3段。見本は横長のまま（縦に引き伸ばさない） */
 html.tvpc #settings-panel .set-colors{
   grid-template-columns:repeat(4,1fr);
-  flex:1;align-content:stretch;gap:10px;
+  gap:10px;
 }
+/* ★箱ごと比率で固定すると、下の名前が入りきらず次の段に重なる（実測：箱56に中身53）。
+   比率は色の四角(i)だけに持たせ、箱の高さは中身に合わせる */
+html.tvpc #settings-panel .set-color{height:auto;}
+html.tvpc #settings-panel .set-color i{height:auto;aspect-ratio:4 / 1.4;}
 html.tvpc #settings-panel .set-color{justify-content:center;}
 html.tvpc #settings-panel .set-color i{height:auto;flex:1;min-height:34px;}
 html.tvpc #settings-panel .set-color span{font-size:13px;}
@@ -1686,6 +1752,15 @@ html.tvpc #settings-panel .set-col-l .set-sec:nth-child(3) .set-link-reset i{fon
 
 /* 表示と動作・投稿：中の項目の間隔を均等配分（カードの高さを使い切る） */
 html.tvpc #settings-panel .set-col-r .set-sec{display:flex;flex-direction:column;justify-content:space-between;}
+/* ★左に足りない分は、この区画の項目を等分に伸ばして受け取る */
+html.tvpc #settings-panel .set-col-r .set-sec:last-child .set-link{
+  flex:1 1 auto;align-items:stretch;
+}
+/* 伸びた分は「題」と「下の説明」の間隔になる */
+html.tvpc #settings-panel .set-col-r .set-sec:last-child .set-link-txt{
+  flex:1 1 auto;justify-content:space-between;
+}
+html.tvpc #settings-panel .set-col-r .set-sec:last-child .set-link-arw{align-self:center;}
 /* 項目そのものにも余裕を持たせる(TV/PCのみ) */
 html.tvpc #settings-panel .set-link{
   padding:12px 10px;
@@ -1698,7 +1773,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.28</div>
+    <div class="ps-version">version 3.41</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -1985,6 +2060,9 @@ html.tvpc #settings-panel .set-link{
 <!-- 実測値の表示（?debug=1 の時だけ見える） -->
 <div id="tv-debug"></div>
 
+<!-- 計測の確認（?statcheck=1 の時だけ見える）。送信はせず中身を見せるだけ -->
+<div id="stat-check"></div>
+
 <!-- サイト表示の窓（TV・PC）: リンク先をページを離れず開く。
      窓の枠(iframe)は開くたびにJSで作り直す＝閉じた時に枠ごと削除する。
      （src属性の差し替えは履歴に残り「間に何もないページ」が挟まる原因になるため） -->
@@ -2102,13 +2180,48 @@ function tourCenter(ttl,lines,nextLabel,skipLabel){
 }
 // 対象を光らせて説明を出す
 //  i … TOUR の番号、または {id,t,d} そのもの（起動画面の説明のような1枚だけの案内用）
+// ★対象の「見えている範囲」を返す。要素の箱だけを見ると、箱からはみ出している
+//   中身を切ってしまう（2026-08-15実測：設定は箱19pxに対し歯車のSVGが53.8px、
+//   音量は箱4pxに対しつまみが18px。どちらも枠が対象を横切っていた）。
+//   ・はみ出しを隠す器（overflowがvisibleでない）は、中身が外へ出られないので箱のまま
+//   ・つまみは擬似要素で測れないため、大きさはCSSの --thumb を読む（数は1か所だけ）
+function tourSeen(el){
+  var r=el.getBoundingClientRect();
+  // ★スマホ・タブレットは今までどおり「要素の箱」のまま。現状うまくいっているので
+  //   一切影響を与えない（2026-08-15指示）。広げるのはTV/パソコンの時だけ
+  if(!document.documentElement.classList.contains('tvpc')) return r;
+  var L=r.left,T=r.top,R=r.right,B=r.bottom;
+  try{
+    var cs=getComputedStyle(el);
+    var 隠す=(cs.overflow!=='visible'||cs.overflowX!=='visible'||cs.overflowY!=='visible');
+    if(!隠す){
+      for(var c=el.firstElementChild;c;c=c.nextElementSibling){
+        var s2=getComputedStyle(c);
+        if(s2.display==='none'||s2.visibility==='hidden') continue;
+        var q=c.getBoundingClientRect();
+        if(q.width<=0||q.height<=0) continue;
+        L=Math.min(L,q.left); T=Math.min(T,q.top);
+        R=Math.max(R,q.right); B=Math.max(B,q.bottom);
+      }
+    }
+    if(el.tagName==='INPUT' && el.type==='range'){
+      var th=parseFloat(cs.getPropertyValue('--thumb'))||0;
+      if(th>0){
+        var cy=(T+B)/2, cx=(L+R)/2;
+        T=Math.min(T,cy-th/2); B=Math.max(B,cy+th/2);
+        L=Math.min(L,cx-th/2); R=Math.max(R,cx+th/2);
+      }
+    }
+  }catch(_){}
+  return {left:L,top:T,right:R,bottom:B,width:R-L,height:B-T};
+}
 function tourPoint(i, counter, noScroll){
   var e=tourEls(); if(!e.w) return;
   var s=(i && typeof i==='object') ? i : TOUR[i];
   if(!s) return;
   var el=document.getElementById(s.id);
   if(!el) return;
-  var r=el.getBoundingClientRect();
+  var r=tourSeen(el);
   // 画面の外にある物（iPhone縦のお知らせなど）は、まず画面の中へスクロールしてから測る。
   // ★描き直しだけの呼び出し(noScroll)ではスクロールしない＝スクロール監視と取り合いにならない
   if(!noScroll && (r.top<0 || r.bottom>innerHeight)){
@@ -2116,16 +2229,28 @@ function tourPoint(i, counter, noScroll){
       var want=scrollY + r.top - Math.max(0,(innerHeight-r.height)/2);
       window.scrollTo(0, Math.max(0, Math.round(want)));
     }catch(_){}
-    r=el.getBoundingClientRect();
+    r=tourSeen(el);
   }
   e.w.classList.add('on'); e.w.classList.remove('dim');
   e.hole.style.display='';
   // 小さいボタンほど枠を広めに取り、丸く囲む
+  // ★丸み(999px)を使うかどうかは、今までどおり70px固定で決める。
+  //   ここを画面連動にしたら、大きな窓でお知らせ窓(300x123)まで「小さい物」と
+  //   見なされ、枠だけ真円に近い丸みになった（2026-08-15指摘。窓の短辺が1800pxを
+  //   超えると 300 < 短辺/6 が成立してしまう）。数は元のまま触らない
   var small=(r.width<70 && r.height<70);
   // ★真円にしてよいのは「ほぼ正方形」の物だけ。音量つまみのように細長い物まで
   //   真円にすると、丸が縦に伸びて吹き出しに重なる（2026-08-12実測）。
   //   設定(24x19)や各ボタン(34x34)は真円、LIVE表示(43x15)や音量つまみは小判形のまま。
-  var round1=small && (Math.max(r.width,r.height) <= Math.min(r.width,r.height)*2);
+  // ★円で囲うのは「ほぼ正方形の絵」だけ。TV/パソコンはアイコンが画面幅に比例して
+  //   大きくなる（歯車は2.8vw＝1920pxで53.8px・2560pxで71.7px）ため、70px固定だと
+  //   広い画面で急に四角い枠になっていた。そこで上限だけ画面に合わせ、
+  //   代わりに「正方形らしさ」を2.0倍→1.35倍に厳しくして、細長い物を巻き込まない。
+  //   スマホ・タブレットは元の式のまま（現状を1pxも変えない・2026-08-15指示）
+  var round1=document.documentElement.classList.contains('tvpc')
+    ? ((Math.max(r.width,r.height) <= Math.min(r.width,r.height)*1.35) &&
+       (Math.max(r.width,r.height) <= Math.min(innerWidth,innerHeight)/6))
+    : (small && (Math.max(r.width,r.height) <= Math.min(r.width,r.height)*2));
   // ★余白は四方そろえる。片側だけ画面のふちで削ると、枠が対象からズレて見える
   //   （2026-08-12 実機写真で判明：上6px・下1pxのように偏っていた）。
   //   入る分だけ同じ幅を四方に取り、足りなければ全体を縮める。
@@ -2158,7 +2283,8 @@ function tourPoint(i, counter, noScroll){
   e.hole.style.width=Math.max(0,hr-hl)+'px'; e.hole.style.height=Math.max(0,hb-ht)+'px';
   // 正方形なら丸、細長い音量つまみなら小判形。それ以外は対象と同じ丸みに余白を足す＝角も密着する
   var 対象丸=0; try{ 対象丸=parseFloat(getComputedStyle(el).borderTopLeftRadius)||0; }catch(_){}
-  e.hole.style.borderRadius=small?'999px':(Math.round(対象丸+P)+'px');
+  // 円で囲う物は大きさによらず丸いまま。それ以外は今までどおり（smallなら小判形）
+  e.hole.style.borderRadius=(round1||small)?'999px':(Math.round(対象丸+P)+'px');
   e.ttl.textContent=s.t;
   tourLines(e.txt, s.d2?[s.d,s.d2]:[s.d]);
   e.step.textContent=counter||'';
@@ -2212,6 +2338,7 @@ function tourPoint(i, counter, noScroll){
     }
   }
   _tourRect=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
+  tourObserve(el);
   if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
 }
 // 本編のpos番目を出す。出す直前に消えていた項目はその場で飛ばす
@@ -2257,22 +2384,45 @@ function tourWatchClear(){
   _tourWatchT.forEach(clearTimeout); _tourWatchT=[];
   if(_tourSync){ clearInterval(_tourSync); _tourSync=null; }
 }
+function tourObserveClear(){ try{ if(_tourRO) _tourRO.disconnect(); }catch(_){} }
 // ★対象の位置や大きさが変わったら枠を合わせ直す。
 //   バナーは10秒ごと、お知らせは8秒ごとに中身が変わり、画像の読み込みでも寸法が動く。
 //   一度測って終わりにすると、そのぶん枠がズレたまま残る（2026-08-12 実機写真で判明）
+// 対象の寸法が変わっていたら枠を作り直す。何も変わっていなければ何もしない（冪等）
+function tourFollow(){
+  if(_tourMode!==2 && _tourMode!==3) return false;
+  var i=(_tourMode===2)?0:_tourSeq[_tourPos];
+  if(i===undefined || !TOUR[i]) return false;
+  var el=document.getElementById(TOUR[i].id); if(!el) return false;
+  // ★枠を作った時と同じ物差し(tourSeen)で比べる。箱で比べると、はみ出す中身がある
+  //   歯車や音量では値が永久に一致せず、0.25秒ごとに描き直し続けてしまう（2026-08-15）
+  var r=tourSeen(el);
+  var key=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
+  if(key===_tourRect) return false;   // 変わっていなければ何もしない
+  _tourRect=key;
+  tourPoint(i, (_tourMode===2)?'':((_tourPos+1)+' / '+_tourSeq.length), true);
+  return true;
+}
 function tourSyncStart(){
   if(_tourSync) clearInterval(_tourSync);
   _tourSync=setInterval(function(){
     if(_tourMode!==2 && _tourMode!==3){ clearInterval(_tourSync); _tourSync=null; return; }
-    var i=(_tourMode===2)?0:_tourSeq[_tourPos];
-    if(i===undefined || !TOUR[i]) return;
-    var el=document.getElementById(TOUR[i].id); if(!el) return;
-    var r=el.getBoundingClientRect();
-    var key=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
-    if(key===_tourRect) return;      // 変わっていなければ何もしない
-    _tourRect=key;
-    tourPoint(i, (_tourMode===2)?'':((_tourPos+1)+' / '+_tourSeq.length), true);
+    tourFollow();
   }, 250);
+}
+// ★お知らせは8秒ごとに中身が変わり、下端が固定なので上へ伸びる。0.25秒ごとの
+//   見張りだけでは、その間ずっと枠が下にずれたまま見える（2026-08-15実測：52px・0.5秒）。
+//   寸法が変わった瞬間に合わせ直す。やることは見張りと同じなので、二重に効いても何も壊れない。
+//   スマホ・タブレットは現状のままにするためTV/パソコンだけに付ける（2026-08-15指示）
+var _tourRO=null;
+function tourObserve(el){
+  try{
+    if(!document.documentElement.classList.contains('tvpc')) return;
+    if(typeof ResizeObserver==='undefined') return;
+    if(!_tourRO) _tourRO=new ResizeObserver(function(){ tourFollow(); });
+    _tourRO.disconnect();
+    if(el) _tourRO.observe(el);
+  }catch(_){}
 }
 function tourWatch(){
   tourWatchClear();
@@ -2329,7 +2479,7 @@ function tourEnd(){
   if(_psTipMode){ psTipHide(); return; }
   var e=tourEls(); if(!e.w) return;
   if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
-  tourWatchClear();
+  tourWatchClear(); tourObserveClear();
   e.w.classList.remove('on','dim');
   e.hole.style.display='none'; e.tri.style.display='none';
   _tourMode=0; _tourPos=-1;
@@ -3599,14 +3749,28 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteV
 //        ③同じ幅で高さが増えた時は大きい方を採用(バーが引っ込んだ=正しい全画面)
 // 誤発動しても「少し余白が出る」だけで壊れない冪等な補正。
 var _tvW=0,_tvHmax=0;
+// 横並びをやめて縦並びに切り替える窓幅（px）。ここ1か所だけに書く
+var TVPC_NARROW=1400;
 function updateTvH(){
   try{
     var on=isTvPcMode();
     // TV/PC中はページ自体をスクロール不能に（html.tvpc→overflow:hidden）。
     // スクロールバーの出現が画面幅を奪い、vw基準のロゴ・バナーが動く連鎖を根絶する
     document.documentElement.classList.toggle('tvpc', on);
+    // ★狭い窓では縦並びにする。境目は1400pxの固定値（ユーザー指定・2026-08-15）。
+    //   モニターの大きさでは変えない＝どの環境でも同じところで切り替わる。
+    //   高さは見ない＝URLバーやツールバーの出没で並びが変わらない
+    document.documentElement.classList.toggle('narrowpc', on && innerWidth<TVPC_NARROW);
+    // ★設定画面の拡大率。基準は1400x900（横並びに切り替わる幅）。
+    //   幅と高さの小さい方に合わせる＝拡大しても画面からはみ出さない。
+    //   1.0未満にはしない（縮めると読みにくくなるだけ）
+    try{
+      var z = on ? Math.min(2.0, Math.max(1, Math.min(innerWidth/1400, innerHeight/900))) : 1;
+      document.documentElement.style.setProperty('--set-zoom', z.toFixed(3));
+    }catch(_){}
     if(!on){
       if(_tvW){ document.documentElement.style.removeProperty('--tvH'); _tvW=0; _tvHmax=0; }
+      document.documentElement.classList.remove('narrowpc');
       return;
     }
     // 幅が変わった時だけ基準を取り直す。高さの減少は常に無視＝URLバーの出没では動かない。
@@ -4399,6 +4563,23 @@ function _stOnPublicHost(){
 function _stIsProdPage(){
   try{return _stOnPublicHost()&&!/(^|\/)lab\.html$/i.test(location.pathname);}catch(_){return false;}
 }
+// ★?statcheck=1 … 計測が実機で動くかを確かめるための表示専用モード。
+//   ここでは _stEnabled は一切変えない（開いた場所を見る判定はC13が守る大事な壁）。
+//   代わりに「記録する側」だけを動かし、送信はせず画面に出す。
+//   送らないので、宍粟市の視聴者の数字は一切汚れない（2026-08-15）
+// ★確認モードは localStorage に覚える。ホーム画面へ追加すると開く先が
+//   manifestのstart_urlになり、URLの?statcheck=1が引き継がれないため
+//   （2026-08-15 実機で確認。JSでmanifestを差し替える手も試したが効かなかった）。
+//   ?statcheck=1 で入り、?statcheck=0 で抜ける
+var _stCheckKEY='shisochan_statcheck';
+var _stCheck=false;
+try{
+  if(/[?&]statcheck=1(&|$)/.test(location.search)){ localStorage.setItem(_stCheckKEY,'1'); }
+  else if(/[?&]statcheck=0(&|$)/.test(location.search)){ localStorage.removeItem(_stCheckKEY); }
+  _stCheck=(localStorage.getItem(_stCheckKEY)==='1');
+}catch(_){ _stCheck=/[?&]statcheck=1(&|$)/.test(location.search); }
+
+function _stCanRecord(){ return _stCheck || _stEnabled(); }   // 記録してよいか
 function _stEnabled(){return !!(FIREBASE.projectId&&FIREBASE.apiKey)&&!_stExcl&&_stIsProdPage();}
 function _stDay(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function _stDevId(){
@@ -4486,23 +4667,23 @@ function _stCommitSecs(){
 }
 // ── フック用の公開関数（各既存関数から1行で呼ばれる）──
 function statsSessionStart(ytId){
-  if(!_stEnabled())return;
+  if(!_stCanRecord())return;
   if(_stSes.id===ytId)return; // forceResync等の同一番組再ロードはセッション継続
   statsSessionEnd();
   _stSes={id:ytId,playing:false,t0:0,acc:0,sent:0,counted:false};
 }
 function statsSessionEnd(){
-  if(!_stEnabled()||!_stSes.id)return;
+  if(!_stCanRecord()||!_stSes.id)return;
   _stCloseSeg();_stCheckView();_stCommitSecs();
   _stSes={id:'',playing:false,t0:0,acc:0,sent:0,counted:false};
 }
 function statsOnState(st){
-  if(!_stEnabled()||!_stSes.id)return;
+  if(!_stCanRecord()||!_stSes.id)return;
   if(st===1){ if(!_stSes.playing){_stSes.playing=true;_stSes.t0=Date.now();} }
   else{ _stCloseSeg();_stCheckView();_stCommitSecs(); }
 }
 function statsBannerImp(name){
-  if(!_stEnabled())return;
+  if(!_stCanRecord())return;
   // 見えていない表示は数えない：電源画面中・タブ非表示中は除外
   var ps=document.getElementById('power-screen');
   if(ps&&ps.style.display!=='none')return;
@@ -4514,7 +4695,7 @@ function statsBannerImp(name){
   var q=_stQ();q.imp[name]=(q.imp[name]||0)+1;_stQSave(q);
 }
 function statsBannerClick(name){
-  if(!_stEnabled())return;
+  if(!_stCanRecord())return;
   var q=_stQ();q.clk[name]=(q.clk[name]||0)+1;_stQSave(q);
 }
 // 登録案内の足あと（どこまで進み、どこで閉じたか）。既存の計測に相乗りするので
@@ -4524,7 +4705,7 @@ function statsBannerClick(name){
 //   ok       追加が完了した（端末が知らせてきた時だけ）
 //   tapYes / tapNo  1タップ追加の確認画面で、追加した／やめた
 function statsRegStep(kind,key){
-  if(!_stEnabled())return;
+  if(!_stCanRecord())return;
   try{
     var k=key?(kind+'_'+key):kind;
     var q=_stQ(); q.reg[k]=(q.reg[k]||0)+1; _stQSave(q);
@@ -4569,7 +4750,7 @@ function statsBuildCommit(q,day,devId,pingNeeded){
   return writes.length?{writes:writes}:null;
 }
 function statsFlush(useBeacon){
-  if(!_stEnabled()||_stFlushing)return;
+  if(!_stCanRecord()||_stFlushing)return;
   try{
     // 再生中でも計時を止めずに現時点までを確定（スナップショット）
     if(_stSes.playing){_stSes.acc+=(Date.now()-_stSes.t0)/1000;_stSes.t0=Date.now();}
@@ -4582,6 +4763,7 @@ function statsFlush(useBeacon){
     try{ping=(localStorage.getItem(_stPingKEY)!==today);}catch(_){ping=true;}
     var body=statsBuildCommit(q,day,dev,ping);
     if(!body)return;
+    if(_stCheck){ _stCheckShow(q,day,ping,body); return; }   // 確認用：送らずに見せるだけ
     var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents:commit?key='+encodeURIComponent(FIREBASE.apiKey);
     var json=JSON.stringify(body);
     var sent=false;
@@ -4608,10 +4790,37 @@ function statsFlush(useBeacon){
 //   ・standalone   … navigator.standalone と display-mode の両方で判定（regHome）
 //   ・src=home     … manifestのstart_urlに付けた印。iOSがstart_urlを使うことは実測済み。
 //                    Safariで手で開いた場合と区別でき、standalone判定の裏取りになる
+// 確認用の表示（?statcheck=1）。何がどこへ送られるはずかを、そのまま並べる
+var _stCheckLog=[];
+function _stCheckShow(q,day,ping,body){
+  try{
+    if(body&&body.writes){
+      var 宛先=body.writes.map(function(w){ return w.update.name.split('/documents/')[1]; });
+      _stCheckLog.unshift(new Date().toLocaleTimeString()+' → '+宛先.join(' / '));
+      if(_stCheckLog.length>6) _stCheckLog.length=6;
+    }
+    // ★引数なしでも呼べる＝送信の機会が無くても、いまの状態を映せる。
+    //   送信時しか出さない作りにしていたため、実機で開いても何も見えなかった（2026-08-15の失敗）
+    if(!q){ q=_stQ(); }
+    if(day===undefined){ day=q.day||_stDay(); }
+    if(ping===undefined){ try{ ping=(localStorage.getItem(_stPingKEY)!==_stDay()); }catch(_){ ping=true; } }
+    var el=document.getElementById('stat-check'); if(!el) return;
+    el.textContent=
+      '【計測の確認】送信はしていません\n'
+      +'記録した日 '+(q.day||'-')+'  今日 '+_stDay()+'\n'
+      +'端末の印を送る '+(ping?'はい':'いいえ（今日は送信済み）')+'\n'
+      +'ホーム画面から '+(regHome()?'はい':'いいえ')
+      +'  数え済み '+(function(){try{return localStorage.getItem(_stHomeKEY)||'まだ';}catch(_){return '?';}})()+'\n'
+      +'視聴 '+Object.keys(q.v).length+'件  秒 '+Object.keys(q.s).length+'件'
+      +'  バナー '+Object.keys(q.imp).length+'件  案内 '+Object.keys(q.reg).length+'件\n'
+      +'── 送られるはずの宛先 ──\n'+(_stCheckLog.length?_stCheckLog.join('\n'):'（まだ送信の機会がありません）');
+    el.style.display='block';
+  }catch(_){}
+}
 var _stHomeKEY='shisochan_home_counted';
 function statsHomeOpen(){
   try{
-    if(!_stEnabled()) return;
+    if(!_stCanRecord()) return;
     if(!regHome()) return;                                  // ブラウザで見ている間は数えない
     if(localStorage.getItem(_stHomeKEY)==='1') return;      // この端末では数え済み
     localStorage.setItem(_stHomeKEY,'1');
@@ -4621,11 +4830,16 @@ function statsHomeOpen(){
 }
 function statsInit(){
   try{_stExclSwitch();}catch(_){} // 除外の切り替えは、計測の可否を見る前に行う（解除もできるように）
-  if(!_stEnabled())return;
+  if(!_stCanRecord())return;
   try{
     _stDevId();
     try{ statsHomeOpen(); }catch(_){}
     try{ _stQFreshen(); }catch(_){}          // 日をまたいだ分を先に送り切る
+    // ★確認モードは、送信の有無に関わらず起動直後から出し続ける
+    if(_stCheck){
+      setTimeout(function(){ try{ _stCheckShow(); }catch(_){} }, 600);
+      setInterval(function(){ try{ _stCheckShow(); }catch(_){} }, 2000);
+    }
     // ★開いた時点で「今日この端末が使った」を送る。閉じ方によっては pagehide が
     //   発火せず（アプリの強制終了・タブの一括クローズ等）、端末数を取りこぼすため。
     //   1日1回・数バイトなので負荷にならない（2026-08-15）
