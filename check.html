@@ -1109,9 +1109,12 @@ body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-w
    URLバーが出て中身がはみ出しても、スクロールバーが原理的に出せない。
    実測: はみ出し100px→0・スクロール不能・動画とバナーの寸法は不変。
    min-height:0 は body{min-height:100vh}(51行目)の打ち消し */
-html.tvpc{height:100%;overflow:hidden;}
+/* ★根っこも中身も「画面ちょうど」ではなく --tvH（画面より2px小さい整数）に
+   合わせる。100%だと端数（例 635.29px）になり、倍率0.85で丸めた時に
+   画面より1px大きくなる瞬間が生まれ、そこで棒が出る（updateTvHの説明を参照） */
+html.tvpc{height:var(--tvH, 100%);overflow:hidden;}
 html.tvpc body{
-  position:fixed;top:0;left:0;width:100%;height:100%;
+  position:fixed;top:0;left:0;width:100%;height:var(--tvH, 100%);
   min-height:0;overflow:hidden;
 }
 html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;display:none;}
@@ -1857,7 +1860,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.51-lab（全画面の板が1px高かったのを修正）</div>
+    <div class="ps-version">version 3.52-lab（ページを画面より2px小さくして棒が出ないようにした）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3904,7 +3907,18 @@ function updateTvH(){
     //   （2026-08-15 実機で「URLバーが戻ると棒が出る」と判明）。
     //   ここは「覚えた最大」ではなく「いま画面に入る大きさ」を使う＝必ず収まる。
     //   _tvHmax は残す（幅を変えずに高さが戻った時、元の大きさへ戻すため）
-    var 使う高さ=Math.min(_tvHmax, innerHeight);
+    // ★★「画面とページを同じ高さにする」設計そのものが、棒が出たり消えたりする原因。
+    //   テレビのブラウザは倍率が半端（実測0.85倍）。同じ高さを狙うと、
+    //   635px×0.85=539.75 のような端数が出て、丸め方ひとつで
+    //   「画面540 ＜ ページ541」に転ぶ＝1px超えた瞬間に棒が出る。
+    //   再レイアウト（10秒ごとの番組情報の更新など）のたびに転んだり戻ったりするので、
+    //   出たり消えたりを繰り返す（2026-08-16 ユーザーの「消えている瞬間がある」で確定）。
+    //   よって「ぴったり」を狙うのをやめ、必ず2px小さく作る。
+    //   2px×0.85＝1.7px分の余裕があり、どう丸めても画面を超えられない＝棒が出ない。
+    //   2pxは地の色と同じ場所に出るだけで見た目は変わらない
+    //   （通常時＝濃緑どうし／全画面中＝黒どうし）
+    var 端数のよゆう=2;
+    var 使う高さ=Math.max(1, Math.min(_tvHmax, innerHeight)-端数のよゆう);
     document.documentElement.style.setProperty('--tvH', 使う高さ+'px');
     if(_dbgOn) updateDebugBox();
   }catch(_){}
