@@ -1122,6 +1122,26 @@ html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;
 html.tvpc *{scrollbar-width:none;-ms-overflow-style:none;}
 html.tvpc *::-webkit-scrollbar{width:0;height:0;display:none;}
 
+/* ★上の指定（棒を消す書き方）が効かない作りのブラウザがある。実機のGoogle TVでは
+   消えずに残った（2026-08-15指摘）。そこでTV/PCでは「消す」に頼らず、
+   ①あふれさせない ②棒を枠の外へ追い出して切り落とす、の2手で確実に無くす。
+
+   ①時刻の行：244pxの枠に657pxの中身であふれていた（実測）。リモコンでは
+     横スクロールできないので、あふれ自体を止める。はみ出した時刻は
+     hideClippedChips が元から隠している */
+html.tvpc .time-bar{overflow-x:hidden;}
+
+/*  ②番組表の中身：縦スクロールは残す必要があるので、棒の幅ぶん外へ広げて
+      親（.sidebar は overflow:hidden）に切り落とさせる。
+      中身の位置は padding で戻すので見た目は変わらない */
+html.tvpc .sb-list{
+  overflow-y:scroll;
+  margin-right:-24px;padding-right:24px;
+}
+/* 全画面の入れ物と、リンク先の窓も同じ考えで棒を出さない */
+html.tvpc #player-wrap{overflow:hidden;}
+html.tvpc #site-viewer{overflow-y:scroll;margin-right:-24px;padding-right:24px;}
+
 /* ══ 使い方の説明ツアー（コーチマーク方式・2026-08-12）══
    実際の画面の上で、押せるボタンを1つずつ光らせて説明する。別ページの説明書を見なくて済む。
    ・対象だけを明るく残し、周りを暗くする（box-shadowの広がりで外側を覆う＝要素を1つ足すだけ）
@@ -1796,7 +1816,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.46-lab（テレビの下の余白と、細い棒の出っぱなしを修正）</div>
+    <div class="ps-version">version 3.47-lab（スクロールバーを確実に出さないようにした）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
