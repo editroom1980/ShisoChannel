@@ -1774,7 +1774,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.39-lab（強調枠のズレと、縦並びのスクロールを修正）</div>
+    <div class="ps-version">version 3.41-lab（角丸と、枠が追いつかない遅れを修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2235,17 +2235,23 @@ function tourPoint(i, counter, noScroll){
   e.w.classList.add('on'); e.w.classList.remove('dim');
   e.hole.style.display='';
   // 小さいボタンほど枠を広めに取り、丸く囲む
-  // ★「小さい物」の上限。スマホ・タブレットは今までどおり70px固定で変えない。
-  //   TV/パソコンだけ画面に合わせる。アイコンが画面幅に比例して大きくなるため
-  //   （歯車は2.8vw＝1920pxで53.8px・2560pxで71.7px）、70px固定だと同じ物が
-  //   広い画面で急に四角い枠になっていた（2026-08-15）
-  var 上限=document.documentElement.classList.contains('tvpc')
-             ? Math.min(innerWidth,innerHeight)/6 : 70;
-  var small=(r.width<上限 && r.height<上限);
+  // ★丸み(999px)を使うかどうかは、今までどおり70px固定で決める。
+  //   ここを画面連動にしたら、大きな窓でお知らせ窓(300x123)まで「小さい物」と
+  //   見なされ、枠だけ真円に近い丸みになった（2026-08-15指摘。窓の短辺が1800pxを
+  //   超えると 300 < 短辺/6 が成立してしまう）。数は元のまま触らない
+  var small=(r.width<70 && r.height<70);
   // ★真円にしてよいのは「ほぼ正方形」の物だけ。音量つまみのように細長い物まで
   //   真円にすると、丸が縦に伸びて吹き出しに重なる（2026-08-12実測）。
   //   設定(24x19)や各ボタン(34x34)は真円、LIVE表示(43x15)や音量つまみは小判形のまま。
-  var round1=small && (Math.max(r.width,r.height) <= Math.min(r.width,r.height)*2);
+  // ★円で囲うのは「ほぼ正方形の絵」だけ。TV/パソコンはアイコンが画面幅に比例して
+  //   大きくなる（歯車は2.8vw＝1920pxで53.8px・2560pxで71.7px）ため、70px固定だと
+  //   広い画面で急に四角い枠になっていた。そこで上限だけ画面に合わせ、
+  //   代わりに「正方形らしさ」を2.0倍→1.35倍に厳しくして、細長い物を巻き込まない。
+  //   スマホ・タブレットは元の式のまま（現状を1pxも変えない・2026-08-15指示）
+  var round1=document.documentElement.classList.contains('tvpc')
+    ? ((Math.max(r.width,r.height) <= Math.min(r.width,r.height)*1.35) &&
+       (Math.max(r.width,r.height) <= Math.min(innerWidth,innerHeight)/6))
+    : (small && (Math.max(r.width,r.height) <= Math.min(r.width,r.height)*2));
   // ★余白は四方そろえる。片側だけ画面のふちで削ると、枠が対象からズレて見える
   //   （2026-08-12 実機写真で判明：上6px・下1pxのように偏っていた）。
   //   入る分だけ同じ幅を四方に取り、足りなければ全体を縮める。
@@ -2278,7 +2284,8 @@ function tourPoint(i, counter, noScroll){
   e.hole.style.width=Math.max(0,hr-hl)+'px'; e.hole.style.height=Math.max(0,hb-ht)+'px';
   // 正方形なら丸、細長い音量つまみなら小判形。それ以外は対象と同じ丸みに余白を足す＝角も密着する
   var 対象丸=0; try{ 対象丸=parseFloat(getComputedStyle(el).borderTopLeftRadius)||0; }catch(_){}
-  e.hole.style.borderRadius=small?'999px':(Math.round(対象丸+P)+'px');
+  // 円で囲う物は大きさによらず丸いまま。それ以外は今までどおり（smallなら小判形）
+  e.hole.style.borderRadius=(round1||small)?'999px':(Math.round(対象丸+P)+'px');
   e.ttl.textContent=s.t;
   tourLines(e.txt, s.d2?[s.d,s.d2]:[s.d]);
   e.step.textContent=counter||'';
@@ -2332,6 +2339,7 @@ function tourPoint(i, counter, noScroll){
     }
   }
   _tourRect=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
+  tourObserve(el);
   if(uiNeedsFocus()){ try{ e.next.focus({preventScroll:true}); }catch(_){} }
 }
 // 本編のpos番目を出す。出す直前に消えていた項目はその場で飛ばす
@@ -2377,22 +2385,45 @@ function tourWatchClear(){
   _tourWatchT.forEach(clearTimeout); _tourWatchT=[];
   if(_tourSync){ clearInterval(_tourSync); _tourSync=null; }
 }
+function tourObserveClear(){ try{ if(_tourRO) _tourRO.disconnect(); }catch(_){} }
 // ★対象の位置や大きさが変わったら枠を合わせ直す。
 //   バナーは10秒ごと、お知らせは8秒ごとに中身が変わり、画像の読み込みでも寸法が動く。
 //   一度測って終わりにすると、そのぶん枠がズレたまま残る（2026-08-12 実機写真で判明）
+// 対象の寸法が変わっていたら枠を作り直す。何も変わっていなければ何もしない（冪等）
+function tourFollow(){
+  if(_tourMode!==2 && _tourMode!==3) return false;
+  var i=(_tourMode===2)?0:_tourSeq[_tourPos];
+  if(i===undefined || !TOUR[i]) return false;
+  var el=document.getElementById(TOUR[i].id); if(!el) return false;
+  // ★枠を作った時と同じ物差し(tourSeen)で比べる。箱で比べると、はみ出す中身がある
+  //   歯車や音量では値が永久に一致せず、0.25秒ごとに描き直し続けてしまう（2026-08-15）
+  var r=tourSeen(el);
+  var key=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
+  if(key===_tourRect) return false;   // 変わっていなければ何もしない
+  _tourRect=key;
+  tourPoint(i, (_tourMode===2)?'':((_tourPos+1)+' / '+_tourSeq.length), true);
+  return true;
+}
 function tourSyncStart(){
   if(_tourSync) clearInterval(_tourSync);
   _tourSync=setInterval(function(){
     if(_tourMode!==2 && _tourMode!==3){ clearInterval(_tourSync); _tourSync=null; return; }
-    var i=(_tourMode===2)?0:_tourSeq[_tourPos];
-    if(i===undefined || !TOUR[i]) return;
-    var el=document.getElementById(TOUR[i].id); if(!el) return;
-    var r=el.getBoundingClientRect();
-    var key=Math.round(r.left)+','+Math.round(r.top)+','+Math.round(r.width)+','+Math.round(r.height);
-    if(key===_tourRect) return;      // 変わっていなければ何もしない
-    _tourRect=key;
-    tourPoint(i, (_tourMode===2)?'':((_tourPos+1)+' / '+_tourSeq.length), true);
+    tourFollow();
   }, 250);
+}
+// ★お知らせは8秒ごとに中身が変わり、下端が固定なので上へ伸びる。0.25秒ごとの
+//   見張りだけでは、その間ずっと枠が下にずれたまま見える（2026-08-15実測：52px・0.5秒）。
+//   寸法が変わった瞬間に合わせ直す。やることは見張りと同じなので、二重に効いても何も壊れない。
+//   スマホ・タブレットは現状のままにするためTV/パソコンだけに付ける（2026-08-15指示）
+var _tourRO=null;
+function tourObserve(el){
+  try{
+    if(!document.documentElement.classList.contains('tvpc')) return;
+    if(typeof ResizeObserver==='undefined') return;
+    if(!_tourRO) _tourRO=new ResizeObserver(function(){ tourFollow(); });
+    _tourRO.disconnect();
+    if(el) _tourRO.observe(el);
+  }catch(_){}
 }
 function tourWatch(){
   tourWatchClear();
@@ -2449,7 +2480,7 @@ function tourEnd(){
   if(_psTipMode){ psTipHide(); return; }
   var e=tourEls(); if(!e.w) return;
   if(_tourWait){ clearInterval(_tourWait); _tourWait=null; }
-  tourWatchClear();
+  tourWatchClear(); tourObserveClear();
   e.w.classList.remove('on','dim');
   e.hole.style.display='none'; e.tri.style.display='none';
   _tourMode=0; _tourPos=-1;
