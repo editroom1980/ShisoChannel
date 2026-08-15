@@ -1860,7 +1860,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.52-lab（ページを画面より2px小さくして棒が出ないようにした）</div>
+    <div class="ps-version">version 3.53-lab（矢印を消す仕掛けを止めた・棒の切り分け）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2165,6 +2165,22 @@ html.tvapp #lnk-reg{display:none;}
 // 設定済み機器（キオスク）のWebViewだけが、UAにこの印を付けて開く。
 // スマホ・PC・TVブラウザでは必ずfalse＝この印で始まるテレビ用の仕掛けは一切動かない。
 // どの関数よりも先に確定させるため、スクリプトの最上部に置く
+// ★マウスの矢印を消す仕掛け（body.cursor-hidden）は、テレビのブラウザで
+//   画面右端にスクロールバーが出る時刻と完全に一致していた
+//   （2026-08-16 ユーザーの実機観察：「ポインタが自動で消える時と完全一致」）。
+//   このクラスは「* に cursor:none」なので、付け外しのたびに
+//   ページ全要素のスタイルが計算し直される。十字キーでマウスを模している
+//   テレビのブラウザでは、ページが矢印を消した瞬間にスクロール表示へ
+//   切り替わることがありうる。よって既定では矢印を消さない。
+//   ?cursorhide=1 を付けると従来どおり消す（原因の切り分け用）。
+var CURSOR_HIDE=false;
+try{ CURSOR_HIDE=/[?&]cursorhide=1/.test(location.search); }catch(_){}
+function cursorHide(on){
+  try{
+    if(!CURSOR_HIDE) return;          // 既定＝矢印は消さない
+    document.body.classList.toggle('cursor-hidden', !!on);
+  }catch(_){}
+}
 var IS_TVAPP=false;
 try{ IS_TVAPP=/ShisochanTV\//.test(navigator.userAgent); }catch(_){}
 // 画面の寸法指定（meta viewport の中身）は必ずこの関数を通す。
@@ -3941,6 +3957,7 @@ function updateDebugBox(){
     'はみ出し '+(d.scrollHeight-innerHeight)+'px\n'+
     'バナー幅 '+Math.round((document.getElementById('sponsor-img')||{getBoundingClientRect:function(){return{width:0};}}).getBoundingClientRect().width)+'px\n'+
     '棒 '+dbgScrollbars()+'\n'+
+    '矢印消し '+(CURSOR_HIDE?'する':'しない')+'／今'+(document.body.classList.contains('cursor-hidden')?'消えている':'出ている')+'\n'+
     '右端 '+dbgRightEdge();
 }
 // ★画面の右端に「実際に何が描かれているか」を端末に名指しさせる（2026-08-15）。
@@ -6744,7 +6761,7 @@ function init(){
   // 開くだけで ①カーソル非表示 ②YT準備でき次第そのまま放送開始（未操作でも再生）
   // ③画面スリープ抑止。通常URL(?tvなし)では以下は一切実行されない。
   if(TVMODE){
-    document.body.classList.add('cursor-hidden'); // マウスが無い前提で最初から非表示
+    cursorHide(true); // マウスが無い前提で最初から非表示（?cursorhide=1の時だけ効く）
     var _tvStart=function(){
       if(hasPoweredOn) return;      // 既に開始済み(復帰経路等)なら二重起動しない
       if(ytReady){ powerOn(); }     // 放送開始ボタンを押したのと同じ状態にする
@@ -6765,14 +6782,14 @@ function init(){
   // マウスが動いたらカーソル＋コントロールバーを表示、2秒後に両方非表示
   var _globalCursorTimer=null;
   document.addEventListener('mousemove',function(){
-    document.body.classList.remove('cursor-hidden');
+    cursorHide(false);
     if(_globalCursorTimer)clearTimeout(_globalCursorTimer);
     // PC全画面中はコントロールバーも同時に表示（fsUiTimerはここで一元管理）
     if(isExpanded){ clearFsUiTimer(); showFsUi(); }
     _globalCursorTimer=setTimeout(function(){
       var inFs=!!(document.fullscreenElement||document.webkitFullscreenElement)||isExpanded||isSilk||TVMODE;
       if(inFs){
-        document.body.classList.add('cursor-hidden');
+        cursorHide(true);
         if(isExpanded) hideFsUi(); // コントロールバーも同時に非表示
       }
     },2000);
