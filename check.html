@@ -1835,7 +1835,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.48-lab（設定画面の棒を塞ぎ、棒の出どころを表示できるようにした）</div>
+    <div class="ps-version">version 3.49-lab（URLバーが戻ると中身がはみ出して棒が出るのを修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3872,11 +3872,18 @@ function updateTvH(){
       document.documentElement.classList.remove('narrowpc');
       return;
     }
-    // 幅が変わった時だけ基準を取り直す。高さの減少は常に無視＝URLバーの出没では動かない。
+    // 幅が変わった時だけ基準を取り直す。高さの伸びは取り込む。
     // （旧・15%以上減で取り直す条件は削除。実機のURLバーがその閾値を超える大きさだったため）
     if(innerWidth!==_tvW){ _tvW=innerWidth; _tvHmax=innerHeight; }
     else if(innerHeight>_tvHmax){ _tvHmax=innerHeight; }
-    document.documentElement.style.setProperty('--tvH', _tvHmax+'px');
+    // ★高さの減少を無視すると、URLバーが戻った時に中身が画面からはみ出す。
+    //   実測（実機のGoogle TV相当・1129px幅）：画面が635→576pxに縮んだ時、
+    //   中身は635px前提のままで59pxはみ出し、スクロールバーが出ていた
+    //   （2026-08-15 実機で「URLバーが戻ると棒が出る」と判明）。
+    //   ここは「覚えた最大」ではなく「いま画面に入る大きさ」を使う＝必ず収まる。
+    //   _tvHmax は残す（幅を変えずに高さが戻った時、元の大きさへ戻すため）
+    var 使う高さ=Math.min(_tvHmax, innerHeight);
+    document.documentElement.style.setProperty('--tvH', 使う高さ+'px');
     if(_dbgOn) updateDebugBox();
   }catch(_){}
 }
@@ -3916,8 +3923,17 @@ function dbgScrollbars(){
       if(cs.display==='none') continue;
       var bw=(parseFloat(cs.borderLeftWidth)||0)+(parseFloat(cs.borderRightWidth)||0);
       var bh=(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0);
-      var v=Math.round(e.offsetWidth-e.clientWidth-bw);
-      var h=Math.round(e.offsetHeight-e.clientHeight-bh);
+      var v, h;
+      if(e===document.documentElement){
+        // ★根っこ(html)は offsetHeight が中身の高さになるため、その引き算では
+        //   棒の太さにならない（縦並びの時に531pxと誤検出した・2026-08-15）。
+        //   ページの棒は「窓の大きさ − 中身が使える大きさ」で測る
+        v=Math.round(innerWidth-e.clientWidth);
+        h=Math.round(innerHeight-e.clientHeight);
+      }else{
+        v=Math.round(e.offsetWidth-e.clientWidth-bw);
+        h=Math.round(e.offsetHeight-e.clientHeight-bh);
+      }
       if(!(v>1) && !(h>1)) continue;
       var 名=e.tagName.toLowerCase()+(e.id?'#'+e.id:'')+
              (e.className&&typeof e.className==='string'&&e.className?'.'+e.className.split(' ')[0]:'');
