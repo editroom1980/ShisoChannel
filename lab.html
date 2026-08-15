@@ -1636,12 +1636,44 @@ html.tvpc .h-gear svg{
 html{scrollbar-width:none;}
 html::-webkit-scrollbar{width:0;height:0;display:none;}
 html.tvpc .page{
-  height:calc(var(--tvH, 100vh) - var(--hdr-h, 97px));
   box-sizing:border-box;
   padding-bottom:16px;
   overflow:hidden;
-  grid-template-columns:calc((var(--tvH, 100vh) - var(--hdr-h, 97px) - 120px) * 16 / 9) 1fr;
+  /* ★動画の幅は「高さから16:9で逆算した値」と「使える横幅」の小さい方。
+     高さだけで決めていたため、窓を狭めると動画が窓からはみ出し、
+     番組表とお知らせが潰れて消えていた（2026-08-15実測：窓1220pxに対し動画列が1534px）。
+     使える横幅 = 100vw − 左右padding32 − 番組表300 − すき間16
+     （html.tvpcはoverflow:hiddenでスクロールバーが出ないので100vw=窓幅） */
+  --vidw:min(
+      calc((var(--tvH, 100vh) - var(--hdr-h, 97px) - 120px) * 16 / 9),
+      calc(100vw - 32px - 300px - 16px)
+    );
+  grid-template-columns:var(--vidw) 1fr;
+  /* ★高さも動画の幅から決める＝16:9を保ったまま全体が同じ比率で縮む。
+     幅だけ詰めると映像が横に潰れる（実測：窓2560pxで比率1.656）。
+     動画の高さ = 幅×9/16 ＋ タイトルバー44 ＋ 操作バー44 ＋ 上下padding32 = +120px。
+     この高さがそのまま「番組表＋お知らせ＋すき間」の高さになる（右列は同じ行にまたがる） */
+  height:min(
+      calc(var(--tvH, 100vh) - var(--hdr-h, 97px)),
+      calc(var(--vidw) * 9 / 16 + 120px)
+    );
 }
+/* ★狭い窓では横並びをやめ、動画→番組表→お知らせの縦並びにする（iPadと同じ形）。
+   1400pxはユーザー指定の固定幅。モニターの大きさでは変えない＝どの環境でも同じ挙動 */
+html.tvpc.narrowpc .page{
+  height:auto;
+  overflow:visible;
+  grid-template-columns:1fr;
+  grid-template-rows:auto auto auto;
+  grid-template-areas:
+    "player"
+    "guide"
+    "news";
+}
+html.tvpc.narrowpc{height:auto;overflow:auto;}
+html.tvpc.narrowpc body{height:auto;overflow:visible;}
+/* 縦並びの時は、動画は幅いっぱい・16:9。番組表は高さを詰めて内側でスクロール */
+html.tvpc.narrowpc .sidebar{height:auto;max-height:56vh;}
 /* 番組表は右カラムいっぱいに伸ばし、内側だけスクロールさせる（外にはみ出さない） */
 html.tvpc .sidebar{
   height:100%;max-height:100%;overflow:hidden;position:static;
@@ -1703,7 +1735,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.33-lab（計測確認は専用ページ check.html）</div>
+    <div class="ps-version">version 3.36-lab（動画の下に残っていた16pxの空きを除去）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3607,14 +3639,21 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteV
 //        ③同じ幅で高さが増えた時は大きい方を採用(バーが引っ込んだ=正しい全画面)
 // 誤発動しても「少し余白が出る」だけで壊れない冪等な補正。
 var _tvW=0,_tvHmax=0;
+// 横並びをやめて縦並びに切り替える窓幅（px）。ここ1か所だけに書く
+var TVPC_NARROW=1400;
 function updateTvH(){
   try{
     var on=isTvPcMode();
     // TV/PC中はページ自体をスクロール不能に（html.tvpc→overflow:hidden）。
     // スクロールバーの出現が画面幅を奪い、vw基準のロゴ・バナーが動く連鎖を根絶する
     document.documentElement.classList.toggle('tvpc', on);
+    // ★狭い窓では縦並びにする。境目は1400pxの固定値（ユーザー指定・2026-08-15）。
+    //   モニターの大きさでは変えない＝どの環境でも同じところで切り替わる。
+    //   高さは見ない＝URLバーやツールバーの出没で並びが変わらない
+    document.documentElement.classList.toggle('narrowpc', on && innerWidth<TVPC_NARROW);
     if(!on){
       if(_tvW){ document.documentElement.style.removeProperty('--tvH'); _tvW=0; _tvHmax=0; }
+      document.documentElement.classList.remove('narrowpc');
       return;
     }
     // 幅が変わった時だけ基準を取り直す。高さの減少は常に無視＝URLバーの出没では動かない。
