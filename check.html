@@ -1140,6 +1140,19 @@ html.tvpc .sb-list{
 }
 /* 全画面の入れ物と、リンク先の窓も同じ考えで棒を出さない */
 html.tvpc #player-wrap{overflow:hidden;}
+/* ★全画面(本物)の板が 100vw/100vh のままだった（2026-08-15）。
+   すぐ下の疑似全画面には「100vw/100vhは使うな」と注意書き付きで直してあるのに、
+   こちらだけ古い書き方が残っていた。vhは「上のURLバーが隠れた時の高さ」で固定される
+   ため、バーが戻ると板だけ画面より高くなり、あふれて棒が出る。
+   inset:0（四方を画面のふちに合わせる）なら、どの瞬間でも画面ちょうどになる。
+   iPhone/iPadは本物の全画面を使わない（疑似全画面のみ）ので影響しない。 */
+html.tvpc .player-wrap:fullscreen,
+html.tvpc .player-wrap:-webkit-full-screen{width:auto;height:auto;}
+/* ★全画面中、黒い板の下でまだ濃緑の地(#main-content)が描かれていた。
+   画面の表示倍率が整数でない端末（テレビ実測0.85倍）では板の右端が
+   画面の右端に届かず、その隙間から下の地が細い線に見える。
+   全画面中に下に隠れる物は、はじめから黒に揃える（html/bodyは既に黒） */
+html.tvpc body.fs-open #main-content{background:#000;}
 html.tvpc #site-viewer{overflow-y:scroll;margin-right:-24px;padding-right:24px;}
 
 /* ★CSSの中で「スクロールする」と書いてある所を全部洗い出して塞ぐ（2026-08-15）。
@@ -1835,7 +1848,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.49-lab（URLバーが戻ると中身がはみ出して棒が出るのを修正）</div>
+    <div class="ps-version">version 3.50-lab（全画面の板を画面ちょうどに・右端に何が居るか表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3904,7 +3917,37 @@ function updateDebugBox(){
     '--hdr-h '+(getComputedStyle(d).getPropertyValue('--hdr-h').trim()||'なし')+'\n'+
     'はみ出し '+(d.scrollHeight-innerHeight)+'px\n'+
     'バナー幅 '+Math.round((document.getElementById('sponsor-img')||{getBoundingClientRect:function(){return{width:0};}}).getBoundingClientRect().width)+'px\n'+
-    '棒 '+dbgScrollbars();
+    '棒 '+dbgScrollbars()+'\n'+
+    '右端 '+dbgRightEdge();
+}
+// ★画面の右端に「実際に何が描かれているか」を端末に名指しさせる（2026-08-15）。
+//   テレビでは右端に灰色の棒が見えるのに、棒(スクロールバー)の検査は「なし」と出る。
+//   ＝棒ではなく「全画面の黒い板の下にある物が、端で透けている」疑いがある。
+//   そこで右端の座標に実際に当たる物と、その地色を実機から取る。
+//   ここは測るだけで、何も動かさない
+function dbgRightEdge(){
+  try{
+    var y=Math.round(innerHeight/2);
+    var 当たる=function(x){
+      var e=document.elementFromPoint(x,y);
+      if(!e) return 'なし';
+      var t=e, 色='';
+      for(var k=0;k<6&&t;k++){
+        var c=getComputedStyle(t).backgroundColor||'';
+        if(c && c.indexOf('rgba(0, 0, 0, 0)')<0 && c!=='transparent'){
+          色=c.replace(/rgba?\(/,'').replace(/\)/,'').replace(/\s/g,'');
+          break;
+        }
+        t=t.parentElement;
+      }
+      return e.tagName.toLowerCase()+(e.id?'#'+e.id:'')+' '+色;
+    };
+    var pw=document.getElementById('player-wrap');
+    var r=pw?pw.getBoundingClientRect():null;
+    return 当たる(innerWidth-1)+'\n端8px '+当たる(innerWidth-8)+
+      '\n板右 '+(r?r.right.toFixed(1):'-')+' 窓 '+innerWidth+
+      ' 倍率'+(window.visualViewport?window.visualViewport.scale.toFixed(2):'-');
+  }catch(_){ return '?'; }
 }
 // ★どの入れ物がスクロールバーを出しているかを名指しする（2026-08-15）。
 //   作る側の環境（Chrome）では棒が消えるため、実機でしか分からない。
@@ -3921,6 +3964,11 @@ function dbgScrollbars(){
       if(typeof e.offsetWidth!=='number' || typeof e.clientWidth!=='number') continue;
       var cs=getComputedStyle(e);
       if(cs.display==='none') continue;
+      // ★行内の文字（em・span等）は clientWidth/Height が常に0なので、
+      //   引き算すると幅と高さがそのまま「棒の太さ」として出てしまう。
+      //   2026-08-15、実際に「em 縦79 横36」という嘘の検出が出た。
+      //   棒を出せるのは中身を入れる箱だけ＝client寸法を持つ物に限る
+      if(e.clientWidth===0 && e.clientHeight===0) continue;
       var bw=(parseFloat(cs.borderLeftWidth)||0)+(parseFloat(cs.borderRightWidth)||0);
       var bh=(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0);
       var v, h;
