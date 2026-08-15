@@ -1115,6 +1115,12 @@ html.tvpc body{
   min-height:0;overflow:hidden;
 }
 html.tvpc::-webkit-scrollbar,html.tvpc body::-webkit-scrollbar{width:0;height:0;display:none;}
+/* ★TV/PCでは、どの入れ物のスクロールバーも必ず消す。
+   htmlとbodyだけ消していたため、中でスクロールする箱（番組表など）の細い棒が
+   画面の右端に出たり出なかったりしていた（2026-08-15 実機のGoogle TVで指摘）。
+   リモコン操作では棒をつかめないので、出す意味が無い */
+html.tvpc *{scrollbar-width:none;-ms-overflow-style:none;}
+html.tvpc *::-webkit-scrollbar{width:0;height:0;display:none;}
 
 /* ══ 使い方の説明ツアー（コーチマーク方式・2026-08-12）══
    実際の画面の上で、押せるボタンを1つずつ光らせて説明する。別ページの説明書を見なくて済む。
@@ -1645,12 +1651,17 @@ html.tvpc .page{
   /* ★動画の幅は「高さから16:9で逆算した値」と「使える横幅」の小さい方。
      高さだけで決めていたため、窓を狭めると動画が窓からはみ出し、
      番組表とお知らせが潰れて消えていた（2026-08-15実測：窓1220pxに対し動画列が1534px）。
-     使える横幅 = 100vw − 左右padding32 − 番組表300 − すき間16
-     （html.tvpcはoverflow:hiddenでスクロールバーが出ないので100vw=窓幅） */
+     ★番組表の幅は300pxを基本とするが、足りない時は240pxまで縮める。
+       300px固定のままだと、横長で幅が足りない画面で動画が幅で頭打ちになり、
+       縦が余って画面の下に余白が出た（2026-08-15 実機のGoogle TVで実測：
+       画面1129x635・ヘッダー44 → 使える高さ591に対し中身559＝32px余り）。
+       番組表を縮めれば動画が縦を使い切り、画面の端まで収まる。
+     使える横幅 = 100vw − 左右padding32 − 番組表の最小240 − すき間16 */
   --vidw:min(
       calc((var(--tvH, 100vh) - var(--hdr-h, 97px) - 120px) * 16 / 9),
-      calc(100vw - 32px - 300px - 16px)
+      calc(100vw - 32px - 240px - 16px)
     );
+  /* 右列は残り全部＝240px以上。広い画面では300pxより広くなる */
   grid-template-columns:var(--vidw) 1fr;
   /* ★高さも動画の幅から決める＝16:9を保ったまま全体が同じ比率で縮む。
      幅だけ詰めると映像が横に潰れる（実測：窓2560pxで比率1.656）。
@@ -1785,7 +1796,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.45-lab（テレビが縦並びになるのを修正）</div>
+    <div class="ps-version">version 3.46-lab（テレビの下の余白と、細い棒の出っぱなしを修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
