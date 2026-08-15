@@ -1153,6 +1153,15 @@ html.tvpc .player-wrap:-webkit-full-screen{width:auto;height:auto;}
    画面の右端に届かず、その隙間から下の地が細い線に見える。
    全画面中に下に隠れる物は、はじめから黒に揃える（html/bodyは既に黒） */
 html.tvpc body.fs-open #main-content{background:#000;}
+/* ★全画面の板が画面より1px高かった（実機実測 2026-08-15：
+   窓576→板577／窓635→板636。どちらも きっかり+1px）。
+   表示倍率が0.85のような半端な値だと、四方をふちに合わせる指定でも
+   端数が出て板だけわずかにはみ出す。高さは --tvH（整数・必ず画面以下）に
+   合わせて決め打ちし、どの瞬間でもはみ出さないようにする。 */
+html.tvpc body.fs-open .player-wrap.expanded{
+  height:var(--tvH, 100%) !important;
+  bottom:auto !important;
+}
 html.tvpc #site-viewer{overflow-y:scroll;margin-right:-24px;padding-right:24px;}
 
 /* ★CSSの中で「スクロールする」と書いてある所を全部洗い出して塞ぐ（2026-08-15）。
@@ -1848,7 +1857,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.50-lab（全画面の板を画面ちょうどに・右端に何が居るか表示）</div>
+    <div class="ps-version">version 3.51-lab（全画面の板が1px高かったのを修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
