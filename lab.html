@@ -1842,9 +1842,41 @@ html.tvpc #settings-panel .set-link{
 /* ══ テレビ用アプリのリモコン操作（html.tvapp＝UAにShisochanTVがある時だけ）══
    金色の枠＝いま選ばれている場所。十字キーで移動し、決定で押す。
    この枠はリモコン操作に必須の現在地表示（これが無いとどこを押すのか分からない） */
-html.tvapp .tvfoc{outline:4px solid var(--gold2);outline-offset:2px;border-radius:8px;}
+/* 金枠は「形を変えずに囲む」。以前は border-radius:8px を対象そのものに強制していたため、
+   丸いトグル(素の角丸14px)や丸い歯車が、選ばれている間だけ角ばった形に変わって見えた
+   （2026-08-16指摘）。角丸の上書きは「透明で形の無い箱」だけに限定し、
+   見える形を持つ物（トグル・色見本・各ボタン）は自分の角丸のまま囲まれるようにする */
+html.tvapp .tvfoc{outline:4px solid var(--gold2);outline-offset:2px;}
+html.tvapp #live-tap.tvfoc,
+html.tvapp .ctrl-btn.tvfoc,html.tvapp .fs-ctrl-btn.tvfoc,
+html.tvapp .expand-open-btn.tvfoc,html.tvapp .set-link.tvfoc{border-radius:8px;}
+/* バナーの枠は入れ物（横に伸びる箱）ではなく、見えている画像にぴったり合わせる
+   （2026-08-16指摘：囲みの横幅が広すぎる）。入れ物の枠は消し、画像側に描く */
+html.tvapp #sponsor-banner.tvfoc{outline:none;}
+html.tvapp #sponsor-banner.tvfoc .sponsor-img{outline:4px solid var(--gold2);outline-offset:2px;border-radius:8px;}
+/* 歯車は丸いので枠も「正しい円」で囲む（2026-08-16指摘）。
+   箱そのものは横長（高さ19px固定）なので、outlineだと楕円になってしまう。
+   箱の形に頼らず、中心に正方形の輪を重ねて描く（歯車アイコン18px＋余白で44px） */
+html.tvapp #h-gear.tvfoc{outline:none;}
+html.tvapp #h-gear.tvfoc::after{
+  content:'';position:absolute;left:50%;top:50%;
+  width:44px;height:44px;transform:translate(-50%,-50%);
+  border:4px solid var(--gold2);border-radius:50%;
+  pointer-events:none;
+}
+/* ×ボタンは画面の角に接しているため、枠は内側に円で描く＝画面からはみ出さない（2026-08-16指摘） */
+html.tvapp #set-close.tvfoc{border-radius:999px;outline-offset:-4px;}
+html.tvapp .vol-slider.tvfoc{border-radius:999px;}   /* 音量バーは細長い丸で囲む */
 html.tvapp .prow.tvfoc{outline-offset:-4px;}     /* 一覧の中は内側に描く＝端で切れない */
 html.tvapp #sb-news.tvfoc{outline-offset:-4px;}
+/* 背景の色：囲むのは「色の四角」だけ。下の文字まで含めない（2026-08-16指示） */
+html.tvapp .set-color.tvfoc{outline:none;}
+html.tvapp .set-color.tvfoc i{outline:4px solid var(--gold2);outline-offset:2px;}
+/* バーを「掴んでいる」間は枠の色が変わる＝左右キーで動かせる状態の合図（決定/戻るで離す）。
+   白い操作帯の上では白い枠が見えない（実機で確認）ため、通常時は濃い緑、
+   全画面（黒い帯）の中では白にする */
+html.tvapp .tvgrab{outline-color:#2e5d46;}
+html.tvapp #fs-ctrl-bar .tvgrab{outline-color:#fff;}
 html.tvapp *:focus{outline:none;}                /* 素の焦点枠と二重にしない */
 /* テレビにはホーム画面が無いので「ホーム画面に登録する」は出さない（2026-08-15指示）。
    消すのはテレビ用アプリだけ＝スマホ・PCの登録案内は今までどおり */
@@ -1857,7 +1889,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.54-lab（外れた2つの推測を元に戻した）</div>
+    <div class="ps-version">version 3.55-lab（リモコン強化：バナー・バー掴み・色の格子・窓スクロール・枠の形）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4185,7 +4217,7 @@ function _tvDefFor(L){
   if(L==='tour')     q=_tvQ('#tour-next,#tour-skip');
   else if(L==='power')   q=_tvQ('#ps-btn');
   else if(L==='viewer')  q=_tvQ('#sv-back');
-  else if(L==='fs')      q=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-mute,#fs-close');
+  else if(L==='fs')      q=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-seek-bg,#fs-mute,#fs-vol-slider,#fs-close');
   else if(L==='settings')q=_tvSetList();
   else                   q=_tvQ('#ctrl-play');
   return q.length?q[0]:null;
@@ -4222,6 +4254,19 @@ function _tvSetGroupKey(el){
 function _tvMoveSettings(dir){
   var L=_tvSetList(); if(!L.length) return;
   var i=L.indexOf(_tvCur); if(i<0){ _tvSet(L[Math.min(_tvSetIdx,L.length-1)]); return; }
+  // ★背景の色（4列×3行の格子）の中では、↑↓は「1行ぶん」だけ動く。
+  //   以前は↑↓が12色全部を跳び越して外に出てしまい、2行目以降の色に
+  //   実質たどり着けなかった（2026-08-16指摘・実測：teal→↓→lnk-reset）。
+  //   列の数は決め打ちせず、その時のCSSの格子から数える
+  var grid=null; try{ grid=L[i].closest('.set-colors'); }catch(_){}
+  if(grid&&(dir==='up'||dir==='down')){
+    var cols=4; try{ cols=getComputedStyle(grid).gridTemplateColumns.split(' ').length||4; }catch(_){}
+    var cells=[], ci=-1, m;
+    for(m=0;m<L.length;m++){ if(L[m].closest&&L[m].closest('.set-colors')===grid){ if(L[m]===L[i]) ci=cells.length; cells.push(L[m]); } }
+    var nj=ci+(dir==='down'?cols:-cols);
+    if(ci>=0&&nj>=0&&nj<cells.length){ _tvSet(cells[nj]); return; }
+    // 端の行まで来たら、従来どおり隣のまとまりへ抜ける
+  }
   if(dir==='left'){ if(i>0) _tvSet(L[i-1]); return; }
   if(dir==='right'){ if(i<L.length-1) _tvSet(L[i+1]); return; }
   var k=_tvSetGroupKey(L[i]), j;
@@ -4232,8 +4277,8 @@ function _tvMoveSettings(dir){
 function _tvMoveMain(dir){
   // 上段は画面の左→右の順（LIVE表示→設定）。querySelectorAllの文書順だと
   // 歯車が先に来てしまう（ヘッダーが先・タイトル帯が後）ので、別々に取ってつなぐ
-  var top=_tvQ('#live-tap').concat(_tvQ('#h-gear'));
-  var ctrl=_tvQ('#ctrl-play,#ctrl-back30,#ctrl-fwd30,#ctrl-mute,#expand-open-btn');
+  var top=_tvQ('#live-tap').concat(_tvQ('#sponsor-banner'),_tvQ('#h-gear'));
+  var ctrl=_tvQ('#ctrl-play,#ctrl-back30,#ctrl-fwd30,#seek-bar,#ctrl-mute,#vol-slider,#expand-open-btn');
   var guide=_tvQ('#sb-list .prow');
   var news=_tvQ('#sb-news');
   var cur=_tvCur, gi;
@@ -4241,7 +4286,11 @@ function _tvMoveMain(dir){
   if((gi=inn(ctrl))>=0){
     if(dir==='left'&&gi>0) _tvSet(ctrl[gi-1]);
     else if(dir==='right'){ if(gi<ctrl.length-1) _tvSet(ctrl[gi+1]); else if(guide.length) _tvSet(guide[0]); }
-    else if(dir==='up'&&top.length) _tvSet(top[0]);
+    else if(dir==='up'&&top.length){
+      // 上＝バナー広告を選ぶ（2026-08-16指示）。バナーが無い時だけ左端(LIVE)へ
+      var bn=document.getElementById('sponsor-banner');
+      _tvSet(bn&&top.indexOf(bn)>=0?bn:top[0]);
+    }
     else if(dir==='down'){ if(news.length) _tvSet(news[0]); else if(guide.length) _tvSet(guide[0]); }
     return;
   }
@@ -4273,7 +4322,7 @@ function _tvMove(L,dir){
   // 1列だけの層（使い方の次へ/とじる・全画面の操作列など）：←→で移動
   var q=_tvDefFor(L), list;
   if(L==='tour')      list=_tvQ('#tour-next,#tour-skip');
-  else if(L==='fs')   list=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-mute,#fs-close');
+  else if(L==='fs')   list=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-seek-bg,#fs-mute,#fs-vol-slider,#fs-close');
   else if(L==='viewer')list=_tvQ('#sv-back');
   else                list=_tvQ('#ps-btn');
   if(!list.length) return;
@@ -4282,17 +4331,43 @@ function _tvMove(L,dir){
   if((dir==='left'||dir==='up')&&i>0) _tvSet(list[i-1]);
   else if((dir==='right'||dir==='down')&&i<list.length-1) _tvSet(list[i+1]);
 }
-// 窓(iframe)の中身をリモコンで読み進める。同じサイトの中の窓なので中を触れる。
-// 別のサイト（市の新着など）は触れないので、その時は窓の枠ごと動かす
+// 窓(iframe)の中身をリモコンで読み進める。同じサイトの窓は中を直接動かし、
+// 「実際に動いたか」を前後の値で確かめる。別のサイト（市の新着・フォーム等）は
+// 外から触れない(Webの安全規約)ため false を返し、呼び元がテレビ用アプリに
+// 「画面を指でなぞる」動きを頼む（タッチは別サイトの中身にも届く）。
+// ※旧実装は「窓の枠(#site-viewer)ごと動かす」保険を持っていたが、窓は画面と
+//   同じ高さ(height:100%)なので枠には動く余地が無く、何も起きていなかった
+//   （2026-08-16指摘：市のページがスクロールできない、の根本原因）
 function _tvScrollViewer(dy){
   var f=document.getElementById('sv-frame');
-  if(!f) return;
+  if(!f) return true;                       // 窓が無い＝頼む相手もいない
   try{
     var d=f.contentWindow.document;
     var el=d.scrollingElement||d.documentElement;
-    if(el){ el.scrollTop+=dy; return; }
-  }catch(_){}
-  try{ document.getElementById('site-viewer').scrollTop+=dy; }catch(_){}
+    var b=el.scrollTop; el.scrollTop=b+dy;
+    if(el.scrollTop!==b) return true;                                  // 動いた
+    if(dy<0&&b<=0) return true;                                        // もう一番上
+    if(dy>0&&b+el.clientHeight>=el.scrollHeight-1) return true;        // もう一番下
+    return false;                           // 同じサイトだが直接は動かせない作り
+  }catch(_){ return false; }                // 別サイト＝外から触れない
+}
+// ── バーの「掴み」：決定で掴む→左右で動かす→決定/戻るで離す（2026-08-16指示の方式）──
+var _tvGrab=null;
+function _tvGrabKind(el){
+  if(!el||!el.id) return null;
+  if(el.id==='seek-bar'||el.id==='fs-seek-bg') return 'seek';
+  if(el.id==='vol-slider'||el.id==='fs-vol-slider') return 'vol';
+  return null;
+}
+function _tvGrabStep(kind,dir){
+  if(kind==='seek'){ seekRel(dir==='left'?-10:10); return; }    // 1押し＝10秒
+  var v=document.getElementById('vol-slider'); if(!v) return;   // 1押し＝5。マウスと同じ経路(onVolSlider)で反映
+  var val=parseInt(v.value||'0',10)+(dir==='left'?-5:5);
+  if(val<0)val=0; if(val>100)val=100;
+  v.value=val; onVolSlider();
+}
+function _tvGrabRelease(){
+  if(_tvGrab){ try{ _tvGrab.classList.remove('tvgrab'); }catch(_){} _tvGrab=null; }
 }
 
 // 決定＝いま選ばれている物を押す。番組の行は中の番組名(pinfo)を押す
@@ -4319,13 +4394,29 @@ window.__tvKey=function(k){
   try{
     var L=_tvEnsure();
     if(L==='fs'){ try{ showFsUi(); }catch(_){} }   // 全画面の操作列は放っておくと消えるため
+    // バーを掴んでいる間：左右＝動かす／決定・戻る＝離す／上下＝何もしない
+    if(_tvGrab){
+      if(!_tvVis(_tvGrab)){ _tvGrabRelease(); }
+      else if(k==='left'||k==='right'){ _tvGrabStep(_tvGrabKind(_tvGrab),k); return true; }
+      else if(k==='enter'||k==='back'){ _tvGrabRelease(); return true; }
+      else if(k==='up'||k==='down'){ return true; }
+    }
     if(k==='back'){ var r=_tvBackKey(L); setTimeout(_tvEnsure,350); return r; }
     if(k==='playpause'){ var b1=document.getElementById(L==='fs'?'fs-play':'ctrl-play'); if(b1) b1.click(); return true; }
     if(k==='rew'){ var b2=document.getElementById(L==='fs'?'fs-back30':'ctrl-back30'); if(b2) b2.click(); return true; }
     if(k==='ff'){ var b3=document.getElementById(L==='fs'?'fs-fwd30':'ctrl-fwd30'); if(b3) b3.click(); return true; }
-    // 窓を開いている間は、上下＝中身を読み進める（押せる物は「もどる」1つだけ）
-    if(L==='viewer'&&(k==='up'||k==='down')){ _tvScrollViewer(k==='up'?-260:260); return true; }
-    if(k==='enter'){ _tvEnter(); setTimeout(_tvEnsure,350); return true; }
+    // 窓を開いている間は、上下＝中身を読み進める（押せる物は「もどる」1つだけ）。
+    // 別サイトで直接動かせない時は 'nscroll:方向' を返し、アプリが指なぞりに変換する
+    if(L==='viewer'&&(k==='up'||k==='down')){
+      if(_tvScrollViewer(k==='up'?-260:260)) return true;
+      return 'nscroll:'+k;
+    }
+    if(k==='enter'){
+      // シーク/音量バーの上で決定＝掴む（枠が白くなり、左右で動かせる）
+      var gk=_tvGrabKind(_tvCur);
+      if(gk&&_tvVis(_tvCur)){ _tvGrab=_tvCur; try{ _tvGrab.classList.add('tvgrab'); }catch(_){} return true; }
+      _tvEnter(); setTimeout(_tvEnsure,350); return true;
+    }
     if(k==='left'||k==='right'||k==='up'||k==='down'){ _tvMove(L,k); return true; }
   }catch(_){}
   return true;
