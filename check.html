@@ -458,10 +458,13 @@ body.fs-open .header{ background:#000; }
   -webkit-appearance:none;appearance:none;
   background:var(--green4);border-radius:2px;
   outline:none;cursor:pointer;flex-shrink:0;
+  /* ★つまみの大きさはここ1か所だけに書く。使い方の強調枠がこの値を読んで
+     つまみまで囲む（つまみは擬似要素なのでJSからは測れない・2026-08-15） */
+  --thumb:18px;
 }
 .vol-slider::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
-  width:18px;height:18px;border-radius:50%;
+  width:var(--thumb);height:var(--thumb);border-radius:50%;
   background:var(--green2);cursor:pointer;
 }
 
@@ -1671,7 +1674,14 @@ html.tvpc.narrowpc .page{
     "news";
 }
 html.tvpc.narrowpc{height:auto;overflow:auto;}
-html.tvpc.narrowpc body{height:auto;overflow:visible;}
+/* ★縦並びの時は body の position:fixed を必ず解く。fixed のままだと body が
+   ページの流れから外れ、html の高さが0＝スクロールできる対象が消えるため、
+   画面の下にある番組表とお知らせに一生たどり着けない
+   （2026-08-15実測：body箱1599pxに対し html.scrollHeight は900のまま） */
+html.tvpc.narrowpc body{
+  position:static;top:auto;left:auto;width:auto;
+  height:auto;min-height:0;overflow:visible;
+}
 /* 縦並びの時は、動画は幅いっぱい・16:9。番組表は高さを詰めて内側でスクロール */
 html.tvpc.narrowpc .sidebar{height:auto;max-height:56vh;}
 /* 番組表は右カラムいっぱいに伸ばし、内側だけスクロールさせる（外にはみ出さない） */
@@ -1697,6 +1707,10 @@ html.tvpc .news-ttl{
    広い画面ほど間延びし、色見本が縦長(実測136x206)、右列の項目が散らばっていた
    （2026-08-15指摘）。中身に合った高さで止め、幅も広げすぎない形に改めた。
    スマホでの色見本は191x46の横長。PCでもその形を保つ */
+/* ★低い窓では中身がパネルより高くなり、下端（設定を元に戻す・修正を依頼する）に
+   一生届かなかった（2026-08-15実測：窓1600x620で中身649・パネル620・overflow:visible）。
+   v3.38以前から同じ。届かないままにはできないのでスクロールできるようにする */
+html.tvpc #settings-panel{overflow-y:auto;}
 html.tvpc #settings-panel .set-body{
   display:flex;gap:12px;align-items:stretch;
   max-width:1040px;margin:0 auto;width:100%;
@@ -1760,7 +1774,7 @@ html.tvpc #settings-panel .set-link{
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.38-lab（設定画面の左右の高さを揃え窓に合わせて拡大）</div>
+    <div class="ps-version">version 3.39-lab（強調枠のズレと、縦並びのスクロールを修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2167,13 +2181,48 @@ function tourCenter(ttl,lines,nextLabel,skipLabel){
 }
 // 対象を光らせて説明を出す
 //  i … TOUR の番号、または {id,t,d} そのもの（起動画面の説明のような1枚だけの案内用）
+// ★対象の「見えている範囲」を返す。要素の箱だけを見ると、箱からはみ出している
+//   中身を切ってしまう（2026-08-15実測：設定は箱19pxに対し歯車のSVGが53.8px、
+//   音量は箱4pxに対しつまみが18px。どちらも枠が対象を横切っていた）。
+//   ・はみ出しを隠す器（overflowがvisibleでない）は、中身が外へ出られないので箱のまま
+//   ・つまみは擬似要素で測れないため、大きさはCSSの --thumb を読む（数は1か所だけ）
+function tourSeen(el){
+  var r=el.getBoundingClientRect();
+  // ★スマホ・タブレットは今までどおり「要素の箱」のまま。現状うまくいっているので
+  //   一切影響を与えない（2026-08-15指示）。広げるのはTV/パソコンの時だけ
+  if(!document.documentElement.classList.contains('tvpc')) return r;
+  var L=r.left,T=r.top,R=r.right,B=r.bottom;
+  try{
+    var cs=getComputedStyle(el);
+    var 隠す=(cs.overflow!=='visible'||cs.overflowX!=='visible'||cs.overflowY!=='visible');
+    if(!隠す){
+      for(var c=el.firstElementChild;c;c=c.nextElementSibling){
+        var s2=getComputedStyle(c);
+        if(s2.display==='none'||s2.visibility==='hidden') continue;
+        var q=c.getBoundingClientRect();
+        if(q.width<=0||q.height<=0) continue;
+        L=Math.min(L,q.left); T=Math.min(T,q.top);
+        R=Math.max(R,q.right); B=Math.max(B,q.bottom);
+      }
+    }
+    if(el.tagName==='INPUT' && el.type==='range'){
+      var th=parseFloat(cs.getPropertyValue('--thumb'))||0;
+      if(th>0){
+        var cy=(T+B)/2, cx=(L+R)/2;
+        T=Math.min(T,cy-th/2); B=Math.max(B,cy+th/2);
+        L=Math.min(L,cx-th/2); R=Math.max(R,cx+th/2);
+      }
+    }
+  }catch(_){}
+  return {left:L,top:T,right:R,bottom:B,width:R-L,height:B-T};
+}
 function tourPoint(i, counter, noScroll){
   var e=tourEls(); if(!e.w) return;
   var s=(i && typeof i==='object') ? i : TOUR[i];
   if(!s) return;
   var el=document.getElementById(s.id);
   if(!el) return;
-  var r=el.getBoundingClientRect();
+  var r=tourSeen(el);
   // 画面の外にある物（iPhone縦のお知らせなど）は、まず画面の中へスクロールしてから測る。
   // ★描き直しだけの呼び出し(noScroll)ではスクロールしない＝スクロール監視と取り合いにならない
   if(!noScroll && (r.top<0 || r.bottom>innerHeight)){
@@ -2181,12 +2230,18 @@ function tourPoint(i, counter, noScroll){
       var want=scrollY + r.top - Math.max(0,(innerHeight-r.height)/2);
       window.scrollTo(0, Math.max(0, Math.round(want)));
     }catch(_){}
-    r=el.getBoundingClientRect();
+    r=tourSeen(el);
   }
   e.w.classList.add('on'); e.w.classList.remove('dim');
   e.hole.style.display='';
   // 小さいボタンほど枠を広めに取り、丸く囲む
-  var small=(r.width<70 && r.height<70);
+  // ★「小さい物」の上限。スマホ・タブレットは今までどおり70px固定で変えない。
+  //   TV/パソコンだけ画面に合わせる。アイコンが画面幅に比例して大きくなるため
+  //   （歯車は2.8vw＝1920pxで53.8px・2560pxで71.7px）、70px固定だと同じ物が
+  //   広い画面で急に四角い枠になっていた（2026-08-15）
+  var 上限=document.documentElement.classList.contains('tvpc')
+             ? Math.min(innerWidth,innerHeight)/6 : 70;
+  var small=(r.width<上限 && r.height<上限);
   // ★真円にしてよいのは「ほぼ正方形」の物だけ。音量つまみのように細長い物まで
   //   真円にすると、丸が縦に伸びて吹き出しに重なる（2026-08-12実測）。
   //   設定(24x19)や各ボタン(34x34)は真円、LIVE表示(43x15)や音量つまみは小判形のまま。
