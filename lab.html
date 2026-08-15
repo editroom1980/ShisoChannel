@@ -1142,6 +1142,25 @@ html.tvpc .sb-list{
 html.tvpc #player-wrap{overflow:hidden;}
 html.tvpc #site-viewer{overflow-y:scroll;margin-right:-24px;padding-right:24px;}
 
+/* ★CSSの中で「スクロールする」と書いてある所を全部洗い出して塞ぐ（2026-08-15）。
+   .sb-list と .time-bar だけ手当てして、設定画面の中身を見落としていた。
+   設定画面は閉じていても画面の中に居るので、棒が出る作りの端末では
+   常に細い棒が見えてしまう。以下がCSSにある「スクロールする指定」の全部：
+     .sb-list / .time-bar / .set-body / #settings-panel / #site-viewer /
+     body.silk-mode .sidebar（FireTV用・tvpcでは効かない）/
+     html.tvpc.narrowpc（テレビでは縦並びにしないので該当しない） */
+html.tvpc #settings-panel{
+  overflow-y:scroll;
+  margin-right:-24px;padding-right:24px;
+}
+html.tvpc #settings-panel .set-body{
+  overflow-y:scroll;
+  margin-right:-24px;padding-right:24px;
+}
+/* 上の負の余白で棒を追い出すには、外側が必ず切り落とす必要がある */
+html.tvpc{overflow:hidden;}
+html.tvpc body{overflow:hidden;}
+
 /* ══ 使い方の説明ツアー（コーチマーク方式・2026-08-12）══
    実際の画面の上で、押せるボタンを1つずつ光らせて説明する。別ページの説明書を見なくて済む。
    ・対象だけを明るく残し、周りを暗くする（box-shadowの広がりで外側を覆う＝要素を1つ足すだけ）
@@ -1816,7 +1835,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.47-lab（スクロールバーを確実に出さないようにした）</div>
+    <div class="ps-version">version 3.48-lab（設定画面の棒を塞ぎ、棒の出どころを表示できるようにした）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3877,7 +3896,36 @@ function updateDebugBox(){
     '--tvH '+(getComputedStyle(d).getPropertyValue('--tvH').trim()||'なし')+'\n'+
     '--hdr-h '+(getComputedStyle(d).getPropertyValue('--hdr-h').trim()||'なし')+'\n'+
     'はみ出し '+(d.scrollHeight-innerHeight)+'px\n'+
-    'バナー幅 '+Math.round((document.getElementById('sponsor-img')||{getBoundingClientRect:function(){return{width:0};}}).getBoundingClientRect().width)+'px';
+    'バナー幅 '+Math.round((document.getElementById('sponsor-img')||{getBoundingClientRect:function(){return{width:0};}}).getBoundingClientRect().width)+'px\n'+
+    '棒 '+dbgScrollbars();
+}
+// ★どの入れ物がスクロールバーを出しているかを名指しする（2026-08-15）。
+//   作る側の環境（Chrome）では棒が消えるため、実機でしか分からない。
+//   推測で直して2回外したので、端末から事実を取れるようにした。
+//   棒が「場所を取っている」＝offsetWidth と clientWidth の差で分かる
+function dbgScrollbars(){
+  try{
+    var 出=[];
+    var 全=[document.documentElement, document.body].concat([].slice.call(document.querySelectorAll('body *')));
+    for(var i=0;i<全.length;i++){
+      var e=全[i];
+      // ★SVGなどは offsetWidth を持たない＝計算がNaNになり、条件をすり抜けて
+      //   誤検出になる（2026-08-15の自己検査で発覚）。数で来る物だけを見る
+      if(typeof e.offsetWidth!=='number' || typeof e.clientWidth!=='number') continue;
+      var cs=getComputedStyle(e);
+      if(cs.display==='none') continue;
+      var bw=(parseFloat(cs.borderLeftWidth)||0)+(parseFloat(cs.borderRightWidth)||0);
+      var bh=(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0);
+      var v=Math.round(e.offsetWidth-e.clientWidth-bw);
+      var h=Math.round(e.offsetHeight-e.clientHeight-bh);
+      if(!(v>1) && !(h>1)) continue;
+      var 名=e.tagName.toLowerCase()+(e.id?'#'+e.id:'')+
+             (e.className&&typeof e.className==='string'&&e.className?'.'+e.className.split(' ')[0]:'');
+      出.push(名+(v>1?' 縦'+v:'')+(h>1?' 横'+h:''));
+      if(出.length>=4) break;
+    }
+    return 出.length?出.join(' / '):'なし';
+  }catch(_){ return '?'; }
 }
 
 // ページ遷移で離れる時の復帰フラグ（従来のsessionStorageに加え、消える環境に備えて
