@@ -996,6 +996,9 @@ html.tvapp #row-stopnews{display:none;}
 .set-about div:last-child{border-bottom:none;}
 .set-about span{color:rgba(255,255,255,.55);flex-shrink:0;}
 .set-about b{color:#fff;font-weight:600;text-align:right;}
+/* 出典は数が多く折り返す。区切りの「／」の前で折れると次の行が「／」で始まって
+   読みにくいので、1つの出典＋区切りを塊にして、折り返しは区切りの後だけにする */
+.set-src i{font-style:normal;white-space:nowrap;}
 .set-link-reset{border-top:1px solid rgba(255,255,255,.10);margin-top:4px;padding-top:9px;}
 .set-link-reset .set-link-txt b{color:#ffb4b4;}
 /* 文字の大きさ（0=標準 / 1=大 / 2=特大） */
@@ -1916,7 +1919,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.65-lab（イベント情報を追加）</div>
+    <div class="ps-version">version 3.67-lab（起動し直しで固まる不具合を修正）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2155,7 +2158,7 @@ html.tvapp #lnk-reg{display:none;}
       <div class="set-about">
         <div><span>バージョン</span><b id="about-ver">-</b></div>
         <div><span>放送時間</span><b>毎日 6:00 〜 24:00</b></div>
-        <div><span>お知らせの出典</span><b>宍粟市公式サイト／気象庁</b></div>
+        <div><span>お知らせの出典</span><b class="set-src"><i>宍粟市公式サイト／</i><i>気象庁／</i><i>山崎文化会館／</i><i>しそう森林王国観光協会／</i><i>市内の小中学校</i></b></div>
       </div>
       <button class="set-link" id="lnk-terms">
         <span class="set-link-txt"><b>ご利用にあたって</b><i>免責事項・著作権・視聴データの扱い</i></span>
@@ -4178,7 +4181,9 @@ function renderCityNews(){
     +'</div>';
   if(note){
     if(n.warn){ note.textContent = (n.date? n.date+'　':'')+(n.src||'出典：気象庁'); }
-    else if(n.tag){ note.textContent = 'タップして詳細へ（出典：'+(n.src||'宍粟市公式サイト')+'）'; }
+    // 出典はここには出さない。数が増えて長くなるため、設定の「アプリについて」に
+    // 全ての出典をまとめて書いてある（2026-08-16指示）
+    else if(n.tag){ note.textContent = 'タップして詳細へ'; }
     else { note.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示'; }
   }
   box.style.display='';
@@ -6935,11 +6940,16 @@ function init(){
       if(sessionStorage.getItem('shiso_resume')==='1') _resume=true;
       sessionStorage.removeItem('shiso_resume');
     }catch(_){}
-    // sessionStorageが消える環境（TVブラウザ等）向けの控え。30分以内の再訪だけ有効
+    // sessionStorageが消える環境（TVのブラウザ・テレビ用アプリ）向けの控え。30分以内だけ有効。
+    // ★スマホでこの控えを使うと、アプリを終了して起動し直した時まで「戻ってきた」と
+    //   誤認する。スマホは操作なしの再生をiOSが止めるので、放送画面に入ったまま
+    //   読み込みが終わらず固まる（2026-08-16 iOSシミュレータで再現：起動20秒後も
+    //   映像の変化0%）。よってこの控えはテレビだけに限る。
+    //   スマホは戻る操作で読み直されるためsessionStorageの印だけで足りる
     try{
       var _rt=parseInt(localStorage.getItem('shiso_resume_t')||'0',10);
       localStorage.removeItem('shiso_resume_t');
-      if(_rt && (Date.now()-_rt) < 30*60*1000) _resume=true;
+      if(isTvPcMode() && _rt && (Date.now()-_rt) < 30*60*1000) _resume=true;
     }catch(_){}
     if(_resume){
       var _resumeWait=function(){
