@@ -1919,7 +1919,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.69-lab（会館のページと全画面のバナー）</div>
+    <div class="ps-version">version 3.70-lab（つながらない時の立ち直り）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4127,16 +4127,34 @@ function newsDisplayList(){
   if(CIVIC_NEWS.length) return CIVIC_NEWS;
   return CITY_NEWS||[];
 }
+// 取れたお知らせは端末に控える。次に開いた時に回線が不調でも、サンプルではなく
+// 前回の内容を出すため（テレビは1日中つけっぱなしで、開き直しも起こる。2026-08-17）
+function _newsSave(items){
+  try{ localStorage.setItem('shiso_news_cache', JSON.stringify({t:Date.now(), items:items})); }catch(_){}
+}
+function _newsFromCache(){
+  try{
+    var c=JSON.parse(localStorage.getItem('shiso_news_cache')||'null');
+    if(c && c.items && c.items.length && (Date.now()-c.t) < 24*60*60*1000) return c.items;
+  }catch(_){}
+  return null;
+}
 // 市公式の新着を読む（同一オリジンのcity_news.json・番組表と同じSWR方式）
 function loadCivicNews(){
+  // まず控えで埋める＝取得を待つ間もサンプルを見せない（取れたら上書き）
+  if(!CIVIC_NEWS.length){
+    var c=_newsFromCache();
+    if(c){ CIVIC_NEWS=c; _civicSig=JSON.stringify(c); try{ renderCityNews(); }catch(_){} }
+  }
   fetch('city_news.json?v='+Date.now(),{cache:'no-store'})
   .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
   .then(function(j){
     if(j && j.items && j.items.length){
+      _newsSave(j.items);
       var sig=JSON.stringify(j.items);
       if(sig!==_civicSig){ _civicSig=sig; CIVIC_NEWS=j.items; cityNewsIndex=0; renderCityNews(); }
     }
-  }).catch(function(){ /* 取得失敗時は現状維持 */ });
+  }).catch(function(){ /* 取得失敗時は現状維持（控えがあればそれが出ている） */ });
 }
 // 気象庁の警報（兵庫県280000のJSONから宍粟市2822700を抽出。CORS開放済み＝直接取得可・実測確認）
 // コード表: 02暴風雪/03大雨/04洪水/05暴風/06大雪/07波浪/08高潮、32-38は特別警報。10-29は注意報＝対象外
