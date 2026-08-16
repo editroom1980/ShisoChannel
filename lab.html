@@ -1916,7 +1916,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.64-lab（テレビ版の設定を整理）</div>
+    <div class="ps-version">version 3.65-lab（イベント情報を追加）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3844,7 +3844,8 @@ function isTvPcMode(){
 //    中身も一緒に伸びて永遠にスクロールが追いつかない(松本工務店で実機確認)。
 //    → 窓を使わず直接ジャンプ(復帰フラグで戻り時に自動再開)。Instagram・READYFORも同様
 var EMBED_OK=['shisochan.net','city.shiso.lg.jp','docs.google.com','matsukou.hyogo.jp',
-              'kawamoto-sekizai.com','cafesansyo.com','tonkotsuramen-tsubaki-shiso.com'];
+              'kawamoto-sekizai.com','cafesansyo.com','tonkotsuramen-tsubaki-shiso.com',
+              'yamabun.org','shiso.or.jp'];
 function canEmbed(url){
   try{
     var h=new URL(url,location.href).hostname;
@@ -4165,7 +4166,9 @@ function renderCityNews(){
   var n=L[cityNewsIndex];
   // タグ表記: 市新着はtag(くらし/イベント/募集/重要)・警報はtag=警報・旧形式(Firestore/サンプル)はtypeから
   var tag = n.tag || (n.type==='event' ? 'イベント' : 'お知らせ');
-  var tagCls = n.warn ? 'warn' : ((tag==='イベント'||tag==='募集') ? 'event' : (tag==='重要' ? 'warn' : 'notice'));
+  var tagCls = n.warn ? 'warn'
+    : ((tag==='イベント'||tag==='募集'||tag==='催し'||tag==='学校') ? 'event'
+    : (tag==='重要' ? 'warn' : 'notice'));
   var esc=escHtml;   // 共通の無害化（お知らせ・番組表で同じものを使う）
   // 1件ずつ順番に切り替え表示。日付行は廃止(2026-08-09指示=更新日のみで不要・縦幅節約)・タイトルは1行省略。
   // 出典は見出し帯の補足文(.sb-note)へ移動（縦向きのみ表示・警報時は発表時刻も添える）
@@ -4175,7 +4178,7 @@ function renderCityNews(){
     +'</div>';
   if(note){
     if(n.warn){ note.textContent = (n.date? n.date+'　':'')+(n.src||'出典：気象庁'); }
-    else if(n.tag){ note.textContent = 'タップして詳細へ（出典：宍粟市公式サイト）'; }
+    else if(n.tag){ note.textContent = 'タップして詳細へ（出典：'+(n.src||'宍粟市公式サイト')+'）'; }
     else { note.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示'; }
   }
   box.style.display='';
@@ -4200,7 +4203,12 @@ function attachNewsSwipe(el){
     var L=newsDisplayList(); var n=L[cityNewsIndex];
     if(n && n.url){
       // TV/PCはページ内の窓で開く（放送を離れない・動画は一時停止→もどるで再開）
-      if(isTvPcMode() && canEmbed(n.url) && openSiteViewer(n.url)) return;
+      if(isTvPcMode()){
+        // 窓に入れられない相手（学校サイトは埋め込み禁止）はテレビでは開かない。
+        // 画面ごと移ると放送に戻れなくなるため、何もしないのが正しい
+        if(!canEmbed(n.url)) return;
+        if(openSiteViewer(n.url)) return;
+      }
       setResumeFlag();  // 従来経路にも復帰フラグ（今まではお知らせだけ未設定だった＝TVで電源画面に戻る原因）
       location.href=n.url;
     }

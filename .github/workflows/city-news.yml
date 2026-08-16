@@ -1,5 +1,8 @@
-# 宍粟市公式サイトの新着を30分ごとに取得し、変化があれば city_news.json を更新してコミットする。
+# 宍粟市のお知らせ・イベントを30分ごとに取得し、変化があれば city_news.json を更新してコミットする。
+# 出典は 市公式サイト／市のカレンダー／山崎文化会館／観光協会／市内の小中学校（scripts/fetch_city_news.py）。
 # アプリ(lab.html/index.html)は同一オリジンの city_news.json を読むだけ＝CORS問題なし。
+# school_events.json は学校の年間行事の控え。これも一緒にコミットしないと控えが残らず、
+# 30分ごとに14校へ取りに行ってしまう（12時間に1回で足りる情報のため）。
 name: city-news
 
 on:
@@ -19,17 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 市の新着JSONを取得して整形
+      - name: お知らせ・イベントを取得して整形
         run: python3 scripts/fetch_city_news.py
       - name: 変化があればコミット
         run: |
-          if git diff --quiet city_news.json; then
+          if git diff --quiet city_news.json school_events.json; then
             echo "変化なし"
           else
             git config user.name  'github-actions[bot]'
             git config user.email 'github-actions[bot]@users.noreply.github.com'
-            git add city_news.json
-            git commit -m 'data: 市新着を自動更新'
+            git add city_news.json school_events.json
+            git commit -m 'data: お知らせ・イベントを自動更新'
             git pull --rebase origin main
             git push
           fi

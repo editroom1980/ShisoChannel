@@ -1,90 +1,125 @@
 {
- "updated": "2026-08-16T13:48:58+09:00",
- "source": "宍粟市公式サイト",
+ "updated": "2026-08-16T14:07:01+09:00",
+ "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
   {
-   "tag": "募集",
-   "title": "「宍粟市ふるさと納税」PRにご協力ください",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/20800.html",
-   "date": "8月14日",
-   "ts": "2026-08-14T12:00:30+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "市営住宅入居者募集 8月27日まで",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/14622.html",
-   "date": "8月14日",
-   "ts": "2026-08-14T00:00:00+09:00"
-  },
-  {
-   "tag": "募集",
-   "title": "いちのみやふるさとまつり 出店・出展・出演団体募集",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/18866.html",
-   "date": "8月12日",
-   "ts": "2026-08-12T08:30:00+09:00"
+   "tag": "イベント",
+   "title": "8/16 はが祭り 波賀花火大会",
+   "url": "https://shiso.or.jp/recommended_spots/%E5%AE%8D%E7%B2%9F%E5%B8%82%E3%81%AE%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E6%83%85%E5%A0%B1%EF%BC%81%EF%BC%81-2",
+   "date": "8月16日",
+   "ts": "2026-08-16T00:00:00+09:00",
+   "src": "しそう森林王国観光協会",
+   "when": "2026-08-16",
+   "place": "波賀総合スポーツ公園 駐車場"
   },
   {
    "tag": "イベント",
-   "title": "移動図書館ささゆり号が波賀に8月22日",
-   "url": "https://www.city.shiso.lg.jp/event/19589.html",
-   "date": "8月10日",
-   "ts": "2026-08-10T00:00:00+09:00"
+   "title": "8/19 移動図書館「ささゆり号」が千種に",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/ibento/1462514391298.html",
+   "date": "8月19日",
+   "ts": "2026-08-19T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-08-19",
+   "place": "千種町内"
   },
   {
    "tag": "イベント",
-   "title": "いちのぴあで「えほんのじかん」 8月29日開催",
-   "url": "https://www.city.shiso.lg.jp/event/20893.html",
-   "date": "8月1日",
-   "ts": "2026-08-01T09:00:00+09:00"
+   "title": "8/19 女性のためのチャレンジ相談(兵庫県出前チャレンジ相談事業）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/ibent/1476408841439.html",
+   "date": "8月19日",
+   "ts": "2026-08-19T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-08-19",
+   "place": "宍粟防災センター4階会議室2"
   },
   {
    "tag": "イベント",
-   "title": "移動図書館「ささゆり号」が千種に 8月19日",
-   "url": "https://www.city.shiso.lg.jp/event/14634.html",
-   "date": "7月31日",
-   "ts": "2026-07-31T09:00:00+09:00"
+   "title": "8/25 消費生活セミナー「ひょうごのお魚料理教室～タコ編～」開催",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/tantojoho/syouhisyagyousei/shohiseminar/18601.html",
+   "date": "8月25日",
+   "ts": "2026-08-25T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-08-25",
+   "place": "波賀市民協働センター「はがてらす」調理室"
   },
   {
-   "tag": "くらし",
-   "title": "宍粟市地域防災計画を改訂しました（令和8年7月改訂）",
-   "url": "https://www.city.shiso.lg.jp/kurashi/bosaibohankotsu/saigainisonaete/10790.html",
-   "date": "7月31日",
-   "ts": "2026-07-31T09:00:00+09:00"
+   "tag": "イベント",
+   "title": "8/28 福祉施設製品販売会 市役所で",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/oshirase/1461754625544.html",
+   "date": "8月28日",
+   "ts": "2026-08-28T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-08-28",
+   "place": "宍粟市役所1階市民ロビー"
   },
   {
-   "tag": "くらし",
-   "title": "地域公共交通会議",
-   "url": "https://www.city.shiso.lg.jp/kurashi/kotsudoro/kokyokotu/13892.html",
-   "date": "7月21日",
-   "ts": "2026-07-21T16:42:38+09:00"
+   "tag": "イベント",
+   "title": "8/29 いちのぴあで「えほんのじかん」",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyasyogaigakushujimusho/ibento/14037.html",
+   "date": "8月29日",
+   "ts": "2026-08-29T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-08-29",
+   "place": "いちのぴあ 会議室1"
   },
   {
-   "tag": "募集",
-   "title": "男女共同参画セミナー 参加者の募集",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/kouzakyousitu/8357.html",
-   "date": "7月17日",
-   "ts": "2026-07-17T00:00:00+09:00"
+   "tag": "催し",
+   "title": "8/30 第19回桂吉弥独演会",
+   "url": "http://www.yamabun.org/%e7%ac%ac%ef%bc%91%ef%bc%99%e5%9b%9e%e6%a1%82%e5%90%89%e5%bc%a5%e7%8b%ac%e6%bc%94%e4%bc%9a/",
+   "date": "8月30日",
+   "ts": "2026-08-30T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-08-30",
+   "place": "山崎文化会館"
   },
   {
-   "tag": "募集",
-   "title": "宍粟市子ども会 オセロ大会 参加者募集",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/kouzakyousitu/17264.html",
-   "date": "7月16日",
-   "ts": "2026-07-16T17:00:00+09:00"
+   "tag": "催し",
+   "title": "9/6 山崎高等学校吹奏楽部定期演奏会",
+   "url": "http://www.yamabun.org/%e5%b1%b1%e5%b4%8e%e9%ab%98%e7%ad%89%e5%ad%a6%e6%a0%a1%e5%90%b9%e5%a5%8f%e6%a5%bd%e9%83%a8%e5%ae%9a%e6%9c%9f%e6%bc%94%e5%a5%8f%e4%bc%9a-2/",
+   "date": "9月6日",
+   "ts": "2026-09-06T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-09-06",
+   "place": "山崎文化会館"
   },
   {
-   "tag": "募集",
-   "title": "しそう青い鳥・くすの木学級 年間スケジュールのお知らせ",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/kaiinn/15323.html",
-   "date": "7月10日",
-   "ts": "2026-07-10T00:00:00+09:00"
+   "tag": "イベント",
+   "title": "9/9 最新デジタル活用と実践的な事業展開を学ぶ 起業準備セミナー 受講生を募集",
+   "url": "https://www.city.shiso.lg.jp/soshiki/shichokoshitsu/tiikisouseika/ibennto/20261014.html",
+   "date": "9月9日",
+   "ts": "2026-09-09T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-09-09",
+   "place": "宍粟防災センター4階研修室（宍粟市山崎町鹿沢65-3）"
   },
   {
-   "tag": "募集",
-   "title": "中学校卒業程度認定試験 受験者募集",
-   "url": "https://www.city.shiso.lg.jp/boshujoho/sonotabosyu/21791.html",
-   "date": "7月9日",
-   "ts": "2026-07-09T17:10:48+09:00"
+   "tag": "催し",
+   "title": "9/12 山崎地区敬老会",
+   "url": "http://www.yamabun.org/%e5%b1%b1%e5%b4%8e%e5%9c%b0%e5%8c%ba%e6%95%ac%e8%80%81%e4%bc%9a/",
+   "date": "9月12日",
+   "ts": "2026-09-12T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-09-12",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "催し",
+   "title": "9/19 元気をもらおう講座",
+   "url": "http://www.yamabun.org/%e5%85%83%e6%b0%97%e3%82%92%e3%82%82%e3%82%89%e3%81%8a%e3%81%86%e8%ac%9b%e5%ba%a7-3/",
+   "date": "9月19日",
+   "ts": "2026-09-19T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-09-19",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "9/19 男女共同参画セミナー 参加者募集",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/tantojoho/danzyokyoudousankaku/gender-equality-seminar.html",
+   "date": "9月19日",
+   "ts": "2026-09-19T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-09-19"
   }
  ]
 }
