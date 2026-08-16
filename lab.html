@@ -943,6 +943,21 @@ body.iphone-mode #fs-mute{
   padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.10);}
 .set-row:last-child{border-bottom:none;padding-bottom:0;}
 .set-row-col{flex-direction:column;align-items:stretch;gap:7px;}
+/* ポインタの大きさはテレビ用アプリ専用の設定。他の環境では行ごと出さない */
+#row-cursor{display:none;}
+html.tvapp #row-cursor{display:flex;}
+/* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
+html.tvapp #row-cursor .set-seg{flex:0 0 auto;}
+html.tvapp #row-cursor .set-seg button{flex:0 0 auto;padding:7px 16px;}
+/* ★「ポインタの大きさ」の行(46px)を足した分だけ、投稿・お問い合わせの間隔を詰めて
+   右の列全体の高さを変えない（2026-08-16指示）。割り付け＝行の余白30＋見出し下5＋
+   外周8＋行内の文字間3。テレビ用アプリ以外は行が無いので詰めない */
+html.tvapp #lnk-post,html.tvapp #lnk-opinion,html.tvapp #lnk-fix{padding:2px 0;}
+html.tvapp #lnk-fix{padding-bottom:0;}
+html.tvapp #lnk-post .set-link-txt,html.tvapp #lnk-opinion .set-link-txt,
+html.tvapp #lnk-fix .set-link-txt{gap:1px;}
+html.tvapp .set-sec-post{padding-top:6px;padding-bottom:6px;}
+html.tvapp .set-sec-post .set-hd{margin-bottom:3px;}
 .set-line{display:flex;align-items:baseline;gap:8px;min-width:0;}
 .set-line b{font-size:13.5px;font-weight:600;color:#fff;white-space:nowrap;}
 .set-line i{font-size:11px;font-style:normal;color:rgba(255,255,255,0.5);
@@ -1850,6 +1865,10 @@ html.tvapp .tvfoc{outline:4px solid var(--gold2);outline-offset:2px;}
 html.tvapp #live-tap.tvfoc,
 html.tvapp .ctrl-btn.tvfoc,html.tvapp .fs-ctrl-btn.tvfoc,
 html.tvapp .expand-open-btn.tvfoc,html.tvapp .set-link.tvfoc{border-radius:8px;}
+/* ★操作列のボタンの枠は少し小さく内側に描く。外側2pxだと映像との隙間(実測3px)を
+   越えて上端が映像に3px食い込み、枠の上の線が欠けて見えた（2026-08-16指摘）。
+   内側-2pxなら枠の外端はボタンの外2px＝映像まで1px残る */
+html.tvapp .ctrl-btn.tvfoc,html.tvapp .expand-open-btn.tvfoc{outline-offset:-2px;}
 /* バナーの枠は入れ物（横に伸びる箱）ではなく、見えている画像にぴったり合わせる
    （2026-08-16指摘：囲みの横幅が広すぎる）。入れ物の枠は消し、画像側に描く。
    ★さらに：入れ物(.h-banner)は overflow:hidden で上下の余白が3pxしか無いため、
@@ -1902,7 +1921,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.59-lab（シークは押し続けで1→10→20→30秒に速くなる早送りへ）</div>
+    <div class="ps-version">version 3.60-lab（ポインタ設定・シーク滑らか化・全画面の焦点位置ほか）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2109,9 +2128,17 @@ html.tvapp #lnk-reg{display:none;}
         <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
         <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
       </div>
+
+      <!-- テレビ用アプリだけに出る（リモコンのマウス操作の丸の大きさ） -->
+      <div class="set-row" id="row-cursor">
+        <div class="set-line"><b>ポインタの大きさ</b><i>リモコンのマウス操作</i></div>
+        <div class="set-seg" id="seg-cursor">
+          <button data-v="0">小</button><button data-v="1">標準</button><button data-v="2">大</button>
+        </div>
+      </div>
     </div>
 
-    <div class="set-sec">
+    <div class="set-sec set-sec-post">
       <div class="set-hd"><span class="set-sec-ttl">投稿・お問い合わせ</span></div>
       <button class="set-link" id="lnk-post">
         <span class="set-link-txt"><b>動画・写真を投稿する</b><i>しそチャンNETで紹介する動画や写真を募集しています</i></span>
@@ -4230,7 +4257,9 @@ function _tvDefFor(L){
   if(L==='tour')     q=_tvQ('#tour-next,#tour-skip');
   else if(L==='power')   q=_tvQ('#ps-btn');
   else if(L==='viewer')  q=_tvQ('#sv-back');
-  else if(L==='fs')      q=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-seek-bg,#fs-mute,#fs-vol-slider,#fs-close');
+  // ★全画面に入るのは右端の「全画面ボタン」を押した時。焦点が左端の停止に
+  //   飛ぶと押した場所とずれるため、同じ位置＝「全画面解除」から始める（2026-08-16指示）
+  else if(L==='fs'){    q=_tvQ('#fs-close'); if(!q.length) q=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-seek-bg,#fs-mute,#fs-vol-slider,#fs-close'); }
   else if(L==='settings')q=_tvSetList();
   else                   q=_tvQ('#ctrl-play');
   return q.length?q[0]:null;
@@ -4329,7 +4358,8 @@ function _tvMoveMain(dir){
   }
   if(inn(news)>=0){
     if(dir==='up'&&guide.length) _tvSet(guide[guide.length-1]);
-    else if(dir==='left'&&ctrl.length) _tvSet(ctrl[0]);
+    // ★左＝すぐ左隣の全画面ボタン（操作列の右端）へ。左端の停止まで飛ばない（2026-08-16指示）
+    else if(dir==='left'&&ctrl.length) _tvSet(ctrl[ctrl.length-1]);
     return;
   }
   _tvSet(_tvDefFor('main'));
@@ -4386,28 +4416,42 @@ function _tvGrabStep(kind,dir){
 }
 function _tvGrabRelease(){
   if(_tvGrab){ try{ _tvGrab.classList.remove('tvgrab'); }catch(_){} _tvGrab=null; }
-  _ffHold=0; _ffPend=0;                       // 早送りの速さも最初に戻す
-  if(_ffTimer){ clearTimeout(_ffTimer); _ffTimer=null; }
+  _tvSeekCommit();                            // 送りかけの位置があれば実ジャンプして確定
 }
 // ── シークバーの早送り（掴み中に左右を押し続ける）──────────────
-//  押し続けた長さで速さが4段階に増える（1秒→10秒→20秒→30秒ずつ送る）。
-//  リモコンの自動連打（押しっぱなしで何度も届く）を数えて段を上げ、
-//  400ms届かなければ「離した」とみなして1秒に戻す。
-//  実際のジャンプは150msに1回へまとめる＝YouTubeを叩きすぎない（2026-08-16指示）
-var _ffHold=0, _ffLastAt=0, _ffPend=0, _ffTimer=null;
+//  音量バーと同じ「まず見た目、あとから実体」の順序にする（2026-08-16指示）。
+//  押している間はバーの見た目だけを仮の位置で滑らかに動かし、
+//  YouTubeへの実際のジャンプは「指が止まった時(400ms)」と「離した時」に1回だけ行う。
+//  ※以前は1押しごとに実ジャンプ→再生位置の自動更新とバーを取り合い、
+//    「パッパッと行ったり戻ったり」するぎこちない動きになっていた（根治）。
+//  速さは押し続けた長さで4段階（1→10→20→30秒）。離すと1秒に戻る。
+var _ffHold=0, _ffLastAt=0, _ffTimer=null;
+var _ffPos=null;                    // 掴み中の仮の再生位置（秒）。nullなら送っていない
 function _tvSeekDan(n){ return (n<=4)?1:(n<=10)?10:(n<=18)?20:30; }
 function _tvSeekAccel(dir){
+  if(!ytPlayer||!ytReady) return;
+  var dur=0; try{ dur=ytPlayer.getDuration()||0; }catch(_){}
+  if(dur<=0) return;
   var now=Date.now();
-  if(now-_ffLastAt>400) _ffHold=0;            // 離した＝最初の速さから
+  if(now-_ffLastAt>400) _ffHold=0;            // 指が止まっていた＝最初の速さから
   _ffLastAt=now; _ffHold++;
-  var 段=_tvSeekDan(_ffHold);
-  _ffPend += (dir==='left'? -段 : 段);
-  if(!_ffTimer) _ffTimer=setTimeout(_tvSeekFlush,150);
+  if(_ffPos===null){ try{ _ffPos=ytPlayer.getCurrentTime()||0; }catch(_){ _ffPos=0; } }
+  _ffPos += (dir==='left'? -1 : 1) * _tvSeekDan(_ffHold);
+  if(_ffPos<0) _ffPos=0;
+  if(_ffPos>dur-2) _ffPos=dur-2;               // 終端の手前まで（seekRelと同じ理由）
+  _seekVisual(_ffPos/dur);                     // ★見た目だけを即時に動かす
+  if(_ffTimer) clearTimeout(_ffTimer);
+  _ffTimer=setTimeout(_tvSeekCommit,400);      // 指が止まったら実ジャンプ
 }
-function _tvSeekFlush(){
-  _ffTimer=null;
-  var d=_ffPend; _ffPend=0;
-  if(d){ try{ seekRel(d); }catch(_){} }
+// 仮の位置へ実際にジャンプする（1回だけ）。掴みを離した時にも呼ばれる
+function _tvSeekCommit(){
+  if(_ffTimer){ clearTimeout(_ffTimer); _ffTimer=null; }
+  _ffHold=0;
+  if(_ffPos===null) return;
+  var t=_ffPos; _ffPos=null;
+  _lastSeekAt=Date.now();
+  try{ ytPlayer.seekTo(t,true); }catch(_){}
+  setTimeout(function(){ seekInProgress=false; },450);   // seekRelと同じ後始末
 }
 
 // 決定＝いま選ばれている物を押す。番組の行は中の番組名(pinfo)を押す
@@ -4566,7 +4610,8 @@ var OPTS={
   stopnews:false,  // お知らせの自動切り替えを止める
   volsave:true,    // 音量を記憶する（既定=オン＝今までと同じ動作。オフにすると毎回この端末の初期音量に戻る）
   vol:null,        // 前回の音量（null=未保存）
-  muted:false      // 前回の消音状態
+  muted:false,     // 前回の消音状態
+  cursor:1         // ポインタの大きさ 0=小 1=標準 2=大（テレビ用アプリのみ使用）
 };
 var _wakeLock=null;
 function loadOpts(){
@@ -4574,6 +4619,7 @@ function loadOpts(){
     if(v){
       if(typeof v.text==='number')  OPTS.text=Math.max(0,Math.min(2,v.text|0));
       if(v.skip===10||v.skip===15||v.skip===30) OPTS.skip=v.skip;
+      if(v.cursor===0||v.cursor===1||v.cursor===2) OPTS.cursor=v.cursor;
       OPTS.stopnews=!!v.stopnews;
       if(typeof v.volsave==='boolean') OPTS.volsave=v.volsave;   // 未保存の人は既定(オン)のまま
       if(typeof v.vol==='number')   OPTS.vol=Math.max(0,Math.min(100,v.vol));
@@ -4686,6 +4732,7 @@ function renderOpts(){
     };
     seg('seg-text', OPTS.text);
     seg('seg-skip', OPTS.skip);
+    seg('seg-cursor', OPTS.cursor);
     var n=document.getElementById('opt-news'); if(n) n.classList.toggle('on', !!OPTS.stopnews);
     var vs2=document.getElementById('opt-volsave'); if(vs2) vs2.classList.toggle('on', !!OPTS.volsave);
     var v=document.getElementById('about-ver');
@@ -6924,6 +6971,7 @@ function init(){
     };
     bind('seg-text','text',true);
     bind('seg-skip','skip',true);
+    bind('seg-cursor','cursor',true);
     var nb=document.getElementById('opt-news');
     if(nb) nb.addEventListener('click', function(){ OPTS.stopnews=!OPTS.stopnews; saveOpts(); applyOpts(); renderOpts(); });
     var vb=document.getElementById('opt-volsave');
