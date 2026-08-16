@@ -1921,7 +1921,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.61-lab（設定は位置で移動・戻った時は押した場所へ・番組表の左）</div>
+    <div class="ps-version">version 3.62-lab（上下は間を飛ばさない・全画面ボタンの右はお知らせ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4334,7 +4334,13 @@ function _tvMoveSettings(dir){
       var col=null; try{ col=L[m].closest('.set-col'); }catch(_){}
       if(col!==myCol) continue;               // 上下では同じ列の中だけを見る
     }
-    var score=Math.max(0,進み)+ずれ*2.5;
+    // ★上下は「進む距離」を強く優先する（2026-08-16指摘）。
+    //   トグルは右端にしか無いため、左寄りの「10秒」の真下には何も無い。
+    //   横ずれを重く見ると間の3項目を飛び越して投稿へ落ちてしまう。
+    //   まず一番近い段へ移り、順に降りられるようにする（横ずれは同点の時の目安）
+    var score=(dir==='up'||dir==='down')
+      ? Math.max(0,進み)*12 + ずれ*0.05
+      : Math.max(0,進み) + ずれ*2.5;
     if(score<bestScore){ bestScore=score; best=L[m]; }
   }
   // 列の一番上で上＝閉じる（✕）へ。一番下で下＝行き先なし（動かない）
@@ -4356,7 +4362,11 @@ function _tvMoveMain(dir){
   function inn(arr){ return arr.indexOf(cur); }
   if((gi=inn(ctrl))>=0){
     if(dir==='left'&&gi>0) _tvSet(ctrl[gi-1]);
-    else if(dir==='right'){ if(gi<ctrl.length-1) _tvSet(ctrl[gi+1]); else if(guide.length) _tvSet(guide[0]); }
+    // ★操作列の右端（全画面ボタン）から右は、真横にある「お知らせ」へ。
+    //   番組表の一番上は画面のずっと上なので不自然だった（2026-08-16指摘）
+    else if(dir==='right'){ if(gi<ctrl.length-1) _tvSet(ctrl[gi+1]);
+                            else if(news.length) _tvSet(news[0]);
+                            else if(guide.length) _tvSet(guide[0]); }
     else if(dir==='up'&&top.length){
       // 上＝バナー広告を選ぶ（2026-08-16指示）。バナーが無い時だけ左端(LIVE)へ
       var bn=document.getElementById('sponsor-banner');
