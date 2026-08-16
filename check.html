@@ -1919,7 +1919,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.67-lab（起動し直しで固まる不具合を修正）</div>
+    <div class="ps-version">version 3.69-lab（会館のページと全画面のバナー）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3848,7 +3848,17 @@ function isTvPcMode(){
 //    → 窓を使わず直接ジャンプ(復帰フラグで戻り時に自動再開)。Instagram・READYFORも同様
 var EMBED_OK=['shisochan.net','city.shiso.lg.jp','docs.google.com','matsukou.hyogo.jp',
               'kawamoto-sekizai.com','cafesansyo.com','tonkotsuramen-tsubaki-shiso.com',
-              'yamabun.org','shiso.or.jp'];
+              'shiso.or.jp'];
+// ★窓に入れられないが、テレビでは画面ごと移ってよい相手（アプリ側も同じ相手を許可している）。
+//   山崎文化会館は https に対応しておらず(http のみ・2026-08-16実測)、https のこのページからは
+//   窓に入れると混在ブロックで真っ白になる。画面ごと移れば見られる（戻るで放送へ帰る）
+var TVFULL_OK=['readyfor.jp','instagram.com','yamabun.org'];
+function canTvOpen(url){
+  try{
+    var h=new URL(url,location.href).hostname;
+    return TVFULL_OK.some(function(d){ return h===d || h.slice(-(d.length+1))==='.'+d; });
+  }catch(_){ return false; }
+}
 function canEmbed(url){
   try{
     var h=new URL(url,location.href).hostname;
@@ -4209,10 +4219,10 @@ function attachNewsSwipe(el){
     if(n && n.url){
       // TV/PCはページ内の窓で開く（放送を離れない・動画は一時停止→もどるで再開）
       if(isTvPcMode()){
-        // 窓に入れられない相手（学校サイトは埋め込み禁止）はテレビでは開かない。
-        // 画面ごと移ると放送に戻れなくなるため、何もしないのが正しい
-        if(!canEmbed(n.url)) return;
-        if(openSiteViewer(n.url)) return;
+        if(canEmbed(n.url)){ if(openSiteViewer(n.url)) return; }
+        // 窓に入れられない相手は、許可した相手だけ画面ごと移る（戻るで放送へ帰る）。
+        // それ以外（学校サイト等は埋め込み禁止）は開かない＝行き止まりを作らない
+        else if(!canTvOpen(n.url)) return;
       }
       setResumeFlag();  // 従来経路にも復帰フラグ（今まではお知らせだけ未設定だった＝TVで電源画面に戻る原因）
       location.href=n.url;
@@ -4228,6 +4238,7 @@ function attachNewsSwipe(el){
 // ══════════════════════════════════════════════
 var _tvCur=null, _tvLastLayer='', _tvSetIdx=0;   // _tvSetIdx=設定の中で何番目にいたか
 var _tvMainLast=null;   // 本編で最後に選ばれていた場所。窓や設定から戻った時にここへ復帰する
+var _tvFsLast=null;     // 全画面でバナーへ上がる前にいた場所。下で押した場所へ戻す
 function _tvVis(el){
   if(!el||!el.getBoundingClientRect) return false;
   var r; try{ r=el.getBoundingClientRect(); }catch(_){ return false; }
@@ -4417,8 +4428,22 @@ function _tvMove(L,dir){
   if(L==='main'){ _tvMoveMain(dir); return; }
   // 1列だけの層（使い方の次へ/とじる・全画面の操作列など）：←→で移動
   var q=_tvDefFor(L), list;
-  if(L==='tour')      list=_tvQ('#tour-next,#tour-skip');
-  else if(L==='fs')   list=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-seek-bg,#fs-mute,#fs-vol-slider,#fs-close');
+  // ★全画面はバナーが操作列の上にある。上でバナー・下で操作列へ戻る（2026-08-16指示）
+  if(L==='fs'){
+    var 帯=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-seek-bg,#fs-mute,#fs-vol-slider,#fs-close');
+    var 広告=_tvQ('#fs-sponsor')[0];
+    if(広告 && _tvCur===広告){
+      if(dir==='down'){
+        // 上へ来る前にいた場所へ戻す。無ければ操作列の右端（全画面の解除）
+        var 戻り=(_tvFsLast && _tvVis(_tvFsLast)) ? _tvFsLast : 帯[帯.length-1];
+        if(戻り) _tvSet(戻り);
+      }
+      return;                       // バナーの上では左右は動かさない（隣が無い）
+    }
+    if(広告 && dir==='up'){ _tvFsLast=_tvCur; _tvSet(広告); return; }
+    list=帯;
+  }
+  else if(L==='tour') list=_tvQ('#tour-next,#tour-skip');
   else if(L==='viewer')list=_tvQ('#sv-back');
   else                list=_tvQ('#ps-btn');
   if(!list.length) return;
@@ -7170,6 +7195,12 @@ init();
 
   // player-wrap全体のクリックを捕捉
   wrap.addEventListener('click', function(e) {
+    // ★ここは「指で触った時」だけの見張り。リモコンの決定はプログラムからclickを出すが、
+    //   その時の座標は必ず(0,0)になるため、下のチャンネルボタン領域(左上・高さ60px)に
+    //   当たったと誤判定され、押した先に届く前に止められていた
+    //   （2026-08-16 実機のログで確定：全画面のバナーで「届いた=false」）。
+    //   isTrusted は「本物の入力か」を表す。作り物の合図はここでは何もしない
+    if(!e.isTrusted) return;
     // fs-ctrl-bar内のクリックは無視（全画面コントロールバー）
     var fsBar = document.getElementById('fs-ctrl-bar');
     if(fsBar && fsBar.contains(e.target)) return;
