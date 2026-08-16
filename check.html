@@ -1921,7 +1921,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.60-lab（ポインタ設定・シーク滑らか化・全画面の焦点位置ほか）</div>
+    <div class="ps-version">version 3.61-lab（設定は位置で移動・戻った時は押した場所へ・番組表の左）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4214,6 +4214,7 @@ function attachNewsSwipe(el){
 //  アプリがいない（__tvKeyが呼ばれない）ので一切動かない。
 // ══════════════════════════════════════════════
 var _tvCur=null, _tvLastLayer='', _tvSetIdx=0;   // _tvSetIdx=設定の中で何番目にいたか
+var _tvMainLast=null;   // 本編で最後に選ばれていた場所。窓や設定から戻った時にここへ復帰する
 function _tvVis(el){
   if(!el||!el.getBoundingClientRect) return false;
   var r; try{ r=el.getBoundingClientRect(); }catch(_){ return false; }
@@ -4249,6 +4250,8 @@ function _tvSet(el){
     try{ _tvCur.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(_){}
     // 設定の中では「何番目か」を覚える（一覧の作り直しに備える）
     try{ if(_tvLastLayer==='settings'){ var li=_tvSetList().indexOf(_tvCur); if(li>=0) _tvSetIdx=li; } }catch(_){}
+    // 本編の現在地を覚える＝お知らせやバナーから戻った時に同じ場所へ復帰するため（2026-08-16指示）
+    try{ if(_tvLayer()==='main') _tvMainLast=_tvCur; }catch(_){}
   }
 }
 // 各層の「最初に選ばれる場所」
@@ -4289,36 +4292,57 @@ function _tvEnsure(){
       var list=_tvSetList();
       if(list.length){ _tvSet(list[Math.min(_tvSetIdx,list.length-1)]); return L; }
     }
+    // ★本編へ戻る時は「出る前に居た場所」へ（押したお知らせ・バナー・歯車・全画面ボタン等）。
+    //   いきなり再生ボタンへ飛ぶのは不自然（2026-08-16指示）。
+    //   別サイトへ画面ごと移動して戻った時（ページが読み直される）は sessionStorage から復元
+    if(L==='main'){
+      var 戻り=null;
+      try{ var rid=sessionStorage.getItem('_tvRet');
+           if(rid){ sessionStorage.removeItem('_tvRet'); 戻り=document.getElementById(rid); } }catch(_){}
+      if(!戻り||!_tvVis(戻り)) 戻り=(_tvMainLast&&_tvVis(_tvMainLast))?_tvMainLast:null;
+      if(戻り){ _tvSet(戻り); return L; }
+    }
     _tvSet(_tvDefFor(L));
   }
   return L;
 }
-// 設定パネル：←→は1つずつ、↑↓は「まとまり」（色の12個・3択ボタン等）を跳び越す
-function _tvSetGroupKey(el){
-  var g=null; try{ g=el.closest('.set-seg,.set-colors'); }catch(_){}
-  return g||el;
-}
+// 設定パネル：上下左右は「画面上の位置関係」で決める（2026-08-16指示で作り替え）。
+//  ・左のかたまりの右端で右→すぐ右のかたまりへ（DOM順の継ぎ足しでは不自然だった）
+//  ・右のかたまりの一番上で上→閉じる（✕）へ
+//  ・色の格子は上下＝すぐ下/上のマス、左右＝隣のマス（位置で自然にそうなる）
+//  規則：押した向きに実際にある物の中から、
+//        「進む距離＋横（縦）ずれ×2.5」が最小の物を選ぶ。無ければ動かない
 function _tvMoveSettings(dir){
   var L=_tvSetList(); if(!L.length) return;
   var i=L.indexOf(_tvCur); if(i<0){ _tvSet(L[Math.min(_tvSetIdx,L.length-1)]); return; }
-  // ★背景の色（4列×3行の格子）の中では、↑↓は「1行ぶん」だけ動く。
-  //   以前は↑↓が12色全部を跳び越して外に出てしまい、2行目以降の色に
-  //   実質たどり着けなかった（2026-08-16指摘・実測：teal→↓→lnk-reset）。
-  //   列の数は決め打ちせず、その時のCSSの格子から数える
-  var grid=null; try{ grid=L[i].closest('.set-colors'); }catch(_){}
-  if(grid&&(dir==='up'||dir==='down')){
-    var cols=4; try{ cols=getComputedStyle(grid).gridTemplateColumns.split(' ').length||4; }catch(_){}
-    var cells=[], ci=-1, m;
-    for(m=0;m<L.length;m++){ if(L[m].closest&&L[m].closest('.set-colors')===grid){ if(L[m]===L[i]) ci=cells.length; cells.push(L[m]); } }
-    var nj=ci+(dir==='down'?cols:-cols);
-    if(ci>=0&&nj>=0&&nj<cells.length){ _tvSet(cells[nj]); return; }
-    // 端の行まで来たら、従来どおり隣のまとまりへ抜ける
+  var cr=L[i].getBoundingClientRect();
+  var cx=(cr.left+cr.right)/2, cy=(cr.top+cr.bottom)/2;
+  // 上下は「同じ列（かたまり）の中」を優先する。列をまたいで飛ぶのは不自然
+  //（2026-08-16指摘：右の一番上で上を押したら、左の列でなく閉じる✕へ行きたい）
+  var myCol=null; try{ myCol=L[i].closest('.set-col'); }catch(_){}
+  var best=null, bestScore=1e9;
+  for(var m=0;m<L.length;m++){
+    if(m===i) continue;
+    var r=L[m].getBoundingClientRect();
+    var mx=(r.left+r.right)/2, my=(r.top+r.bottom)/2;
+    var 進み, ずれ;
+    if(dir==='right'){ if(r.left < cr.right-4) continue; 進み=r.left-cr.right; ずれ=Math.abs(my-cy); }
+    else if(dir==='left'){ if(r.right > cr.left+4) continue; 進み=cr.left-r.right; ずれ=Math.abs(my-cy); }
+    else if(dir==='down'){ if(r.top < cr.bottom-4) continue; 進み=r.top-cr.bottom; ずれ=Math.abs(mx-cx); }
+    else { if(r.bottom > cr.top+4) continue; 進み=cr.top-r.bottom; ずれ=Math.abs(mx-cx); }
+    if((dir==='up'||dir==='down') && myCol){
+      var col=null; try{ col=L[m].closest('.set-col'); }catch(_){}
+      if(col!==myCol) continue;               // 上下では同じ列の中だけを見る
+    }
+    var score=Math.max(0,進み)+ずれ*2.5;
+    if(score<bestScore){ bestScore=score; best=L[m]; }
   }
-  if(dir==='left'){ if(i>0) _tvSet(L[i-1]); return; }
-  if(dir==='right'){ if(i<L.length-1) _tvSet(L[i+1]); return; }
-  var k=_tvSetGroupKey(L[i]), j;
-  if(dir==='down'){ for(j=i+1;j<L.length;j++){ if(_tvSetGroupKey(L[j])!==k){ _tvSet(L[j]); return; } } }
-  else            { for(j=i-1;j>=0;j--){ if(_tvSetGroupKey(L[j])!==k){ _tvSet(L[j]); return; } } }
+  // 列の一番上で上＝閉じる（✕）へ。一番下で下＝行き先なし（動かない）
+  if(!best && dir==='up'){
+    var xb=document.getElementById('set-close');
+    if(xb && _tvVis(xb) && L[i]!==xb) best=xb;
+  }
+  if(best) _tvSet(best);
 }
 // 本編：上段(LIVE・設定)／操作ボタン列／番組表の行／お知らせ の4つの間を移動する
 function _tvMoveMain(dir){
@@ -4353,7 +4377,8 @@ function _tvMoveMain(dir){
   if((gi=inn(guide))>=0){
     if(dir==='up'){ if(gi>0) _tvSet(guide[gi-1]); else if(top.length) _tvSet(top[top.length-1]); }
     else if(dir==='down'){ if(gi<guide.length-1) _tvSet(guide[gi+1]); else if(news.length) _tvSet(news[0]); }
-    else if(dir==='left'&&ctrl.length) _tvSet(ctrl[0]);
+    // ★左＝すぐ左隣の全画面ボタンへ（お知らせと同じ。左端の停止まで飛ばない・2026-08-16指示）
+    else if(dir==='left'&&ctrl.length) _tvSet(ctrl[ctrl.length-1]);
     return;
   }
   if(inn(news)>=0){
@@ -4930,6 +4955,8 @@ function openSponsorLink(){
   if(s&&s.url){
     try{statsBannerClick(s.name);statsFlush(true);}catch(_){}   // 計測は窓・遷移どちらの経路でも打つ
     if(isTvPcMode() && canEmbed(s.url) && openSiteViewer(s.url)) return;
+    // テレビ用アプリ：戻った時（ページ読み直し後）にバナーへ焦点を戻すための覚え書き
+    if(IS_TVAPP){ try{ sessionStorage.setItem('_tvRet', (_tvCur&&_tvCur.id)||''); }catch(_){} }
     setResumeFlag();
     location.href=s.url;
   }
