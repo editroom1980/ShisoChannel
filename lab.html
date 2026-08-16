@@ -1921,7 +1921,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.62-lab（上下は間を飛ばさない・全画面ボタンの右はお知らせ）</div>
+    <div class="ps-version">version 3.63-lab（ご利用にあたって（免責事項）を追加）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2161,6 +2161,10 @@ html.tvapp #lnk-reg{display:none;}
         <div><span>放送時間</span><b>毎日 6:00 〜 24:00</b></div>
         <div><span>お知らせの出典</span><b>宍粟市公式サイト／気象庁</b></div>
       </div>
+      <button class="set-link" id="lnk-terms">
+        <span class="set-link-txt"><b>ご利用にあたって</b><i>免責事項・著作権・視聴データの扱い</i></span>
+        <span class="set-link-arw">›</span>
+      </button>
       <button class="set-link set-link-reset" id="lnk-reset">
         <span class="set-link-txt"><b>設定をすべて元に戻す</b><i>色や文字の大きさを最初の状態へ</i></span>
       </button>
@@ -3843,7 +3847,7 @@ function isTvPcMode(){
 //  ・スポンサー各社のサイトは「画面の高さ」基準の今風構造のため、窓を縦に伸ばすと
 //    中身も一緒に伸びて永遠にスクロールが追いつかない(松本工務店で実機確認)。
 //    → 窓を使わず直接ジャンプ(復帰フラグで戻り時に自動再開)。Instagram・READYFORも同様
-var EMBED_OK=['city.shiso.lg.jp','docs.google.com','matsukou.hyogo.jp',
+var EMBED_OK=['shisochan.net','city.shiso.lg.jp','docs.google.com','matsukou.hyogo.jp',
               'kawamoto-sekizai.com','cafesansyo.com','tonkotsuramen-tsubaki-shiso.com'];
 function canEmbed(url){
   try{
@@ -7019,6 +7023,19 @@ function init(){
       saveOpts(); applyOpts(); renderOpts();
     });
     try{ applyOpts(); renderOpts(); }catch(_){}
+  })();
+
+  // 設定：ご利用にあたって（免責事項）。ヘルプと同じ作り
+  (function(){
+    var t=document.getElementById('lnk-terms');
+    if(t) t.addEventListener('click', function(){
+      if(isTapBlocked()) return;
+      // テレビ用アプリは窓で開く（ページごと移動すると戻る手段が無い）。
+      // 印を付けて毎回取りに行かせる（テレビには再読み込みの手段が無いため）
+      if(IS_TVAPP && openSiteViewer('terms.html?t='+Date.now())) return;
+      setResumeFlag();
+      location.href='terms.html';
+    });
   })();
 
   // 設定：アプリの使い方（別ページ）
