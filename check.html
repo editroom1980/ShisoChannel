@@ -1922,7 +1922,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.73-lab（どのサイトも同じ操作で開く）</div>
+    <div class="ps-version">version 3.74-lab（会館はスマホ・PCでも開く）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4246,9 +4246,10 @@ function attachNewsSwipe(el){
         if(canEmbed(n.url)){ if(openSiteViewer(n.url)) return; }
         else return;
       }
-      // ★http（暗号化されていない）の行き先は、スマホ・PCでは開かない。
-      //   ブラウザが「この接続は安全ではありません」と警告するため（山崎文化会館・2026-08-18）
-      if(!IS_TVAPP && n.url.indexOf('http://')===0) return;
+      // ※http（暗号化されていない）の行き先も、スマホ・PCではそのまま開く（2026-08-19指示）。
+      //   ブラウザが「この接続は安全ではありません」と出すが、続ければ見られる。
+      //   警告はブラウザ自身が出すものでページ側からは消せない（消せる仕組みは無い）。
+      //   根本の解決は行き先のサイトがhttpsに対応することだけ（山崎文化会館は未対応）
       setResumeFlag();  // 従来経路にも復帰フラグ（今まではお知らせだけ未設定だった＝TVで電源画面に戻る原因）
       location.href=n.url;
     }
