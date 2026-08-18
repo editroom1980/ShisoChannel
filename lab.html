@@ -952,6 +952,10 @@ html.tvapp #row-cursor,html.tvapp #row-scroll{display:flex;}
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
 /* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
    横に並べると幅が足りず「リモコンのマウ…」と切れていた */
+/* スマホの縦向きでは、この行だけ見出しが長く説明が切れる（実測 箱118px/中身154px）。
+   説明を見出しの下に置いて全文見せる（2026-08-19。テレビではこの行は出さない） */
+html.ori-p #row-stopnews .set-line{flex-direction:column;align-items:flex-start;gap:1px;}
+html.ori-p #row-stopnews .set-line i{white-space:normal;overflow:visible;text-overflow:clip;}
 html.tvapp .set-sec .set-line{flex-direction:column;align-items:flex-start;gap:1px;}
 html.tvapp .set-sec .set-line i{white-space:normal;overflow:visible;text-overflow:clip;}
 /* ★説明が入る幅を「文字ぶん」ではなく「空きいっぱい」にする。
@@ -1942,7 +1946,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.80-lab（設定の説明を分かる文に）</div>
+    <div class="ps-version">version 3.81-lab（設定の説明を分かる文に）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
