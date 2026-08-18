@@ -947,11 +947,14 @@ body.iphone-mode #fs-mute{
 .set-row:last-child{border-bottom:none;padding-bottom:0;}
 .set-row-col{flex-direction:column;align-items:stretch;gap:7px;}
 /* ポインタの大きさはテレビ用アプリ専用の設定。他の環境では行ごと出さない */
-#row-cursor{display:none;}
-html.tvapp #row-cursor{display:flex;}
+#row-cursor,#row-scroll{display:none;}
+html.tvapp #row-cursor,html.tvapp #row-scroll{display:flex;}
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
-html.tvapp #row-cursor .set-seg{flex:0 0 auto;}
-html.tvapp #row-cursor .set-seg button{flex:0 0 auto;padding:7px 16px;}
+html.tvapp #row-cursor .set-seg,html.tvapp #row-scroll .set-seg{flex:0 0 auto;}
+/* ★3つのボタンは同じ幅に。2つの行（ポインタの大きさ／スクロールの速さ）も
+   同じ幅で揃える＝並んで出るものは見た目を合わせる（2026-08-19指示） */
+html.tvapp #row-cursor .set-seg button,
+html.tvapp #row-scroll .set-seg button{flex:0 0 84px;width:84px;padding:7px 0;text-align:center;}
 /* 「お知らせを自動で変えない」はテレビ用アプリでは出さない（2026-08-16指示）。
    指でなぞる操作自体が無いため。行が1つ減り、代わりに「ポインタの大きさ」が
    1つ増える＝行数は元どおりなので、以前入れていた投稿欄の詰めは不要になった */
@@ -1922,7 +1925,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.75-lab（外のサイトはすべて同じ開き方）</div>
+    <div class="ps-version">version 3.77-lab（スクロールは押し続け・速さ3段階）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2136,6 +2139,13 @@ html.tvapp #lnk-reg{display:none;}
         <div class="set-line"><b>ポインタの大きさ</b><i>リモコンのマウス操作</i></div>
         <div class="set-seg" id="seg-cursor">
           <button data-v="0">小</button><button data-v="1">標準</button><button data-v="2">大</button>
+        </div>
+      </div>
+      <!-- テレビ用アプリだけに出る（リンク先のページを読む時の送り速さ） -->
+      <div class="set-row" id="row-scroll">
+        <div class="set-line"><b>スクロールの速さ</b><i>リンク先のページ</i></div>
+        <div class="set-seg" id="seg-scroll">
+          <button data-v="0">遅い</button><button data-v="1">標準</button><button data-v="2">速い</button>
         </div>
       </div>
     </div>
@@ -4736,7 +4746,8 @@ var OPTS={
   volsave:true,    // 音量を記憶する（既定=オン＝今までと同じ動作。オフにすると毎回この端末の初期音量に戻る）
   vol:null,        // 前回の音量（null=未保存）
   muted:false,     // 前回の消音状態
-  cursor:1         // ポインタの大きさ 0=小 1=標準 2=大（テレビ用アプリのみ使用）
+  cursor:1,        // ポインタの大きさ 0=小 1=標準 2=大（テレビ用アプリのみ使用）
+  scroll:1         // 外のサイトを読む時のスクロールの速さ 0=ゆっくり 1=標準 2=速い（同上）
 };
 var _wakeLock=null;
 function loadOpts(){
@@ -4745,6 +4756,7 @@ function loadOpts(){
       if(typeof v.text==='number')  OPTS.text=Math.max(0,Math.min(2,v.text|0));
       if(v.skip===10||v.skip===15||v.skip===30) OPTS.skip=v.skip;
       if(v.cursor===0||v.cursor===1||v.cursor===2) OPTS.cursor=v.cursor;
+      if(v.scroll===0||v.scroll===1||v.scroll===2) OPTS.scroll=v.scroll;
       OPTS.stopnews=!!v.stopnews;
       if(typeof v.volsave==='boolean') OPTS.volsave=v.volsave;   // 未保存の人は既定(オン)のまま
       if(typeof v.vol==='number')   OPTS.vol=Math.max(0,Math.min(100,v.vol));
@@ -4858,6 +4870,7 @@ function renderOpts(){
     seg('seg-text', OPTS.text);
     seg('seg-skip', OPTS.skip);
     seg('seg-cursor', OPTS.cursor);
+    seg('seg-scroll', OPTS.scroll);
     var n=document.getElementById('opt-news'); if(n) n.classList.toggle('on', !!OPTS.stopnews);
     var vs2=document.getElementById('opt-volsave'); if(vs2) vs2.classList.toggle('on', !!OPTS.volsave);
     var v=document.getElementById('about-ver');
@@ -7107,6 +7120,7 @@ function init(){
     bind('seg-text','text',true);
     bind('seg-skip','skip',true);
     bind('seg-cursor','cursor',true);
+    bind('seg-scroll','scroll',true);
     var nb=document.getElementById('opt-news');
     if(nb) nb.addEventListener('click', function(){ OPTS.stopnews=!OPTS.stopnews; saveOpts(); applyOpts(); renderOpts(); });
     var vb=document.getElementById('opt-volsave');
