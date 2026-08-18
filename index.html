@@ -946,11 +946,35 @@ body.iphone-mode #fs-mute{
 .set-row:last-child{border-bottom:none;padding-bottom:0;}
 .set-row-col{flex-direction:column;align-items:stretch;gap:7px;}
 /* ポインタの大きさはテレビ用アプリ専用の設定。他の環境では行ごと出さない */
-#row-cursor{display:none;}
-html.tvapp #row-cursor{display:flex;}
+#row-cursor,#row-scroll{display:none;}
+html.tvapp #row-cursor,html.tvapp #row-scroll{display:flex;}
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
-html.tvapp #row-cursor .set-seg{flex:0 0 auto;}
-html.tvapp #row-cursor .set-seg button{flex:0 0 auto;padding:7px 16px;}
+/* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
+   横に並べると幅が足りず「リモコンのマウ…」と切れていた */
+/* スマホの縦向きでは、この行だけ見出しが長く説明が切れる（実測 箱118px/中身154px）。
+   説明を見出しの下に置いて全文見せる（2026-08-19。テレビではこの行は出さない） */
+html.ori-p #row-stopnews .set-line{flex-direction:column;align-items:flex-start;gap:1px;}
+html.ori-p #row-stopnews .set-line i{white-space:normal;overflow:visible;text-overflow:clip;}
+html.tvapp .set-sec .set-line{flex-direction:column;align-items:flex-start;gap:1px;}
+html.tvapp .set-sec .set-line i{white-space:normal;overflow:visible;text-overflow:clip;}
+/* ★説明が入る幅を「文字ぶん」ではなく「空きいっぱい」にする。
+   これが無いと長い説明が切れる（2026-08-19：説明欄が88pxしか無かった） */
+html.tvapp .set-sec .set-row .set-line{flex:1 1 auto;min-width:0;}
+/* ★説明文が下に回った分、投稿・お問い合わせの間隔を詰めて全体の高さを保つ */
+html.tvapp .set-sec-post{padding-top:6px;padding-bottom:6px;}
+html.tvapp .set-sec-post .set-hd{margin-bottom:3px;}
+html.tvapp #lnk-post,html.tvapp #lnk-opinion,html.tvapp #lnk-fix{padding:3px 0;}
+html.tvapp #lnk-fix{padding-bottom:0;}
+html.tvapp #lnk-post .set-link-txt,html.tvapp #lnk-opinion .set-link-txt,
+html.tvapp #lnk-fix .set-link-txt{gap:0;}
+/* ★テレビでは「表示と動作」の4つの行をすべて同じ形にする（2026-08-19指示）。
+   見出しが左・3つのボタンが右。ボタンの幅は4行とも完全に同じ。
+   （スマホ・PCは今までどおり2段組みのまま＝この指定はtvappだけ） */
+html.tvapp .set-sec .set-row-col{flex-direction:row;align-items:center;gap:10px;}
+html.tvapp .set-sec .set-row .set-seg{flex:0 0 auto;gap:6px;}
+/* ボタンは4行とも同じ幅。76pxにして、空いた分を説明の幅に回す
+   （一番長い説明は207px。ボタン76pxなら説明に229px使える・実測） */
+html.tvapp .set-sec .set-row .set-seg button{flex:0 0 76px;width:76px;padding:7px 0;text-align:center;}
 /* 「お知らせを自動で変えない」はテレビ用アプリでは出さない（2026-08-16指示）。
    指でなぞる操作自体が無いため。行が1つ減り、代わりに「ポインタの大きさ」が
    1つ増える＝行数は元どおりなので、以前入れていた投稿欄の詰めは不要になった */
@@ -1921,7 +1945,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.72</div>
+    <div class="ps-version">version 3.81</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2106,14 +2130,14 @@ html.tvapp #lnk-reg{display:none;}
       <div class="set-hd"><span class="set-sec-ttl">表示と動作</span></div>
 
       <div class="set-row set-row-col">
-        <div class="set-line"><b>文字の大きさ</b><i>番組表とお知らせ</i></div>
+        <div class="set-line"><b>文字の大きさ</b><i>番組表などの文字のサイズを変更します</i></div>
         <div class="set-seg" id="seg-text">
           <button data-v="0">標準</button><button data-v="1">大</button><button data-v="2">特大</button>
         </div>
       </div>
 
       <div class="set-row set-row-col">
-        <div class="set-line"><b>送り・戻しの秒数</b><i>映像の下のボタン</i></div>
+        <div class="set-line"><b>送り・戻しの秒数</b><i>ジャンプする秒数を変更します</i></div>
         <div class="set-seg" id="seg-skip">
           <button data-v="10">10秒</button><button data-v="15">15秒</button><button data-v="30">30秒</button>
         </div>
@@ -2121,21 +2145,30 @@ html.tvapp #lnk-reg{display:none;}
 
       <!-- 指でなぞって切り替える機能そのものが無いテレビ用アプリでは出さない -->
       <div class="set-row" id="row-stopnews">
-        <div class="set-line"><b>お知らせを自動で変えない</b><i>指でなぞると切替</i></div>
+        <div class="set-line"><b>お知らせを自動で変えない</b><i>指でなぞると切り替えできます</i></div>
         <button class="set-sw" id="opt-news" aria-label="お知らせを自動で変えない"></button>
-      </div>
-
-      <div class="set-row">
-        <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
-        <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
       </div>
 
       <!-- テレビ用アプリだけに出る（リモコンのマウス操作の丸の大きさ） -->
       <div class="set-row" id="row-cursor">
-        <div class="set-line"><b>ポインタの大きさ</b><i>リモコンのマウス操作</i></div>
+        <div class="set-line"><b>ポインタの大きさ</b><i>ポインタのサイズを変更します</i></div>
         <div class="set-seg" id="seg-cursor">
           <button data-v="0">小</button><button data-v="1">標準</button><button data-v="2">大</button>
         </div>
+      </div>
+      <!-- テレビ用アプリだけに出る（リンク先のページを読む時の送り速さ） -->
+      <div class="set-row" id="row-scroll">
+        <div class="set-line"><b>スクロールの速さ</b><i>ページスクロールの速さを変更します</i></div>
+        <div class="set-seg" id="seg-scroll">
+          <button data-v="0">遅い</button><button data-v="1">標準</button><button data-v="2">速い</button>
+        </div>
+      </div>
+
+      <!-- ★スイッチの行は並びの一番下（2026-08-19指示）。
+           スマホでは上のポインタ・スクロールが出ないので、並びは今までどおり -->
+      <div class="set-row">
+        <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
+        <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
       </div>
     </div>
 
@@ -4236,12 +4269,19 @@ function attachNewsSwipe(el){
     var L=newsDisplayList(); var n=L[cityNewsIndex];
     if(n && n.url){
       // TV/PCはページ内の窓で開く（放送を離れない・動画は一時停止→もどるで再開）
-      if(isTvPcMode()){
+      // ★テレビ用アプリは、外のサイトをアプリが「別の層」で開く（相手を選ばない）。
+      //   ページ側は止めずにそのまま進める＝学校の行事ページ等もどこでも開ける
+      //   （2026-08-18指示）。戻るキー1回で放送へ復帰し、再生も自動で再開する
+      if(isTvPcMode() && !IS_TVAPP){
+        // テレビ用アプリ以外（PC・テレビのブラウザ）は今までどおり窓で開く。
+        // 窓に入れられない相手は開かない＝戻れない袋小路を作らない
         if(canEmbed(n.url)){ if(openSiteViewer(n.url)) return; }
-        // 窓に入れられない相手は、許可した相手だけ画面ごと移る（戻るで放送へ帰る）。
-        // それ以外（学校サイト等は埋め込み禁止）は開かない＝行き止まりを作らない
-        else if(!canTvOpen(n.url)) return;
+        else return;
       }
+      // ※http（暗号化されていない）の行き先も、スマホ・PCではそのまま開く（2026-08-19指示）。
+      //   ブラウザが「この接続は安全ではありません」と出すが、続ければ見られる。
+      //   警告はブラウザ自身が出すものでページ側からは消せない（消せる仕組みは無い）。
+      //   根本の解決は行き先のサイトがhttpsに対応することだけ（山崎文化会館は未対応）
       setResumeFlag();  // 従来経路にも復帰フラグ（今まではお知らせだけ未設定だった＝TVで電源画面に戻る原因）
       location.href=n.url;
     }
@@ -4418,6 +4458,11 @@ function _tvMoveMain(dir){
     return;
   }
   if((gi=inn(top))>=0){
+    // ★バナー広告の上には行き先が無いので、上＝次の広告に切り替える（2026-08-18指示）
+    if(dir==='up'&&cur===document.getElementById('sponsor-banner')){
+      try{ nextSponsor(); }catch(_){}
+      return;
+    }
     if(dir==='left'&&gi>0) _tvSet(top[gi-1]);
     else if(dir==='right'&&gi<top.length-1) _tvSet(top[gi+1]);
     else if(dir==='down'){
@@ -4437,6 +4482,8 @@ function _tvMoveMain(dir){
     if(dir==='up'&&guide.length) _tvSet(guide[guide.length-1]);
     // ★左＝すぐ左隣の全画面ボタン（操作列の右端）へ。左端の停止まで飛ばない（2026-08-16指示）
     else if(dir==='left'&&ctrl.length) _tvSet(ctrl[ctrl.length-1]);
+    // ★右＝次のお知らせを見る（右にはもう行き先が無いので、送りに使う・2026-08-18指示）
+    else if(dir==='right'){ try{ rotateCityNews(); }catch(_){} }
     return;
   }
   _tvSet(_tvDefFor('main'));
@@ -4721,7 +4768,8 @@ var OPTS={
   volsave:true,    // 音量を記憶する（既定=オン＝今までと同じ動作。オフにすると毎回この端末の初期音量に戻る）
   vol:null,        // 前回の音量（null=未保存）
   muted:false,     // 前回の消音状態
-  cursor:1         // ポインタの大きさ 0=小 1=標準 2=大（テレビ用アプリのみ使用）
+  cursor:1,        // ポインタの大きさ 0=小 1=標準 2=大（テレビ用アプリのみ使用）
+  scroll:1         // 外のサイトを読む時のスクロールの速さ 0=ゆっくり 1=標準 2=速い（同上）
 };
 var _wakeLock=null;
 function loadOpts(){
@@ -4730,6 +4778,7 @@ function loadOpts(){
       if(typeof v.text==='number')  OPTS.text=Math.max(0,Math.min(2,v.text|0));
       if(v.skip===10||v.skip===15||v.skip===30) OPTS.skip=v.skip;
       if(v.cursor===0||v.cursor===1||v.cursor===2) OPTS.cursor=v.cursor;
+      if(v.scroll===0||v.scroll===1||v.scroll===2) OPTS.scroll=v.scroll;
       OPTS.stopnews=!!v.stopnews;
       if(typeof v.volsave==='boolean') OPTS.volsave=v.volsave;   // 未保存の人は既定(オン)のまま
       if(typeof v.vol==='number')   OPTS.vol=Math.max(0,Math.min(100,v.vol));
@@ -4843,6 +4892,7 @@ function renderOpts(){
     seg('seg-text', OPTS.text);
     seg('seg-skip', OPTS.skip);
     seg('seg-cursor', OPTS.cursor);
+    seg('seg-scroll', OPTS.scroll);
     var n=document.getElementById('opt-news'); if(n) n.classList.toggle('on', !!OPTS.stopnews);
     var vs2=document.getElementById('opt-volsave'); if(vs2) vs2.classList.toggle('on', !!OPTS.volsave);
     var v=document.getElementById('about-ver');
@@ -5039,7 +5089,10 @@ function openSponsorLink(){
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
     try{statsBannerClick(s.name);statsFlush(true);}catch(_){}   // 計測は窓・遷移どちらの経路でも打つ
-    if(isTvPcMode() && canEmbed(s.url) && openSiteViewer(s.url)) return;
+    // ★テレビ用アプリは、どのサイトもアプリが「別の層」で開く（2026-08-19指示）。
+    //   窓(iframe)で開くと、サイトごとに表示も操作も変わってしまう。
+    //   ここを通さずそのまま進める＝バナーの行き先も他と同じ操作になる
+    if(isTvPcMode() && !IS_TVAPP && canEmbed(s.url) && openSiteViewer(s.url)) return;
     // テレビ用アプリ：戻った時（ページ読み直し後）にバナーへ焦点を戻すための覚え書き
     if(IS_TVAPP){ try{ sessionStorage.setItem('_tvRet', (_tvCur&&_tvCur.id)||''); }catch(_){} }
     setResumeFlag();
@@ -7089,6 +7142,7 @@ function init(){
     bind('seg-text','text',true);
     bind('seg-skip','skip',true);
     bind('seg-cursor','cursor',true);
+    bind('seg-scroll','scroll',true);
     var nb=document.getElementById('opt-news');
     if(nb) nb.addEventListener('click', function(){ OPTS.stopnews=!OPTS.stopnews; saveOpts(); applyOpts(); renderOpts(); });
     var vb=document.getElementById('opt-volsave');
