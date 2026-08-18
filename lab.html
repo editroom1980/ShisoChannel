@@ -950,11 +950,12 @@ body.iphone-mode #fs-mute{
 #row-cursor,#row-scroll{display:none;}
 html.tvapp #row-cursor,html.tvapp #row-scroll{display:flex;}
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
-html.tvapp #row-cursor .set-seg,html.tvapp #row-scroll .set-seg{flex:0 0 auto;}
-/* ★3つのボタンは同じ幅に。2つの行（ポインタの大きさ／スクロールの速さ）も
-   同じ幅で揃える＝並んで出るものは見た目を合わせる（2026-08-19指示） */
-html.tvapp #row-cursor .set-seg button,
-html.tvapp #row-scroll .set-seg button{flex:0 0 84px;width:84px;padding:7px 0;text-align:center;}
+/* ★テレビでは「表示と動作」の4つの行をすべて同じ形にする（2026-08-19指示）。
+   見出しが左・3つのボタンが右。ボタンの幅は4行とも完全に同じ。
+   （スマホ・PCは今までどおり2段組みのまま＝この指定はtvappだけ） */
+html.tvapp .set-sec .set-row-col{flex-direction:row;align-items:center;gap:10px;}
+html.tvapp .set-sec .set-row .set-seg{flex:0 0 auto;gap:6px;}
+html.tvapp .set-sec .set-row .set-seg button{flex:0 0 84px;width:84px;padding:7px 0;text-align:center;}
 /* 「お知らせを自動で変えない」はテレビ用アプリでは出さない（2026-08-16指示）。
    指でなぞる操作自体が無いため。行が1つ減り、代わりに「ポインタの大きさ」が
    1つ増える＝行数は元どおりなので、以前入れていた投稿欄の詰めは不要になった */
@@ -1925,7 +1926,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.77-lab（スクロールは押し続け・速さ3段階）</div>
+    <div class="ps-version">version 3.78-lab（設定の並びと全ページ同じスクロール）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2129,11 +2130,6 @@ html.tvapp #lnk-reg{display:none;}
         <button class="set-sw" id="opt-news" aria-label="お知らせを自動で変えない"></button>
       </div>
 
-      <div class="set-row">
-        <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
-        <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
-      </div>
-
       <!-- テレビ用アプリだけに出る（リモコンのマウス操作の丸の大きさ） -->
       <div class="set-row" id="row-cursor">
         <div class="set-line"><b>ポインタの大きさ</b><i>リモコンのマウス操作</i></div>
@@ -2147,6 +2143,13 @@ html.tvapp #lnk-reg{display:none;}
         <div class="set-seg" id="seg-scroll">
           <button data-v="0">遅い</button><button data-v="1">標準</button><button data-v="2">速い</button>
         </div>
+      </div>
+
+      <!-- ★スイッチの行は並びの一番下（2026-08-19指示）。
+           スマホでは上のポインタ・スクロールが出ないので、並びは今までどおり -->
+      <div class="set-row">
+        <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
+        <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
       </div>
     </div>
 
