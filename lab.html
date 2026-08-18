@@ -950,6 +950,17 @@ body.iphone-mode #fs-mute{
 #row-cursor,#row-scroll{display:none;}
 html.tvapp #row-cursor,html.tvapp #row-scroll{display:flex;}
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
+/* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
+   横に並べると幅が足りず「リモコンのマウ…」と切れていた */
+html.tvapp .set-sec .set-line{flex-direction:column;align-items:flex-start;gap:1px;}
+html.tvapp .set-sec .set-line i{white-space:normal;overflow:visible;text-overflow:clip;}
+/* ★説明文が下に回った分、投稿・お問い合わせの間隔を詰めて全体の高さを保つ */
+html.tvapp .set-sec-post{padding-top:6px;padding-bottom:6px;}
+html.tvapp .set-sec-post .set-hd{margin-bottom:3px;}
+html.tvapp #lnk-post,html.tvapp #lnk-opinion,html.tvapp #lnk-fix{padding:3px 0;}
+html.tvapp #lnk-fix{padding-bottom:0;}
+html.tvapp #lnk-post .set-link-txt,html.tvapp #lnk-opinion .set-link-txt,
+html.tvapp #lnk-fix .set-link-txt{gap:0;}
 /* ★テレビでは「表示と動作」の4つの行をすべて同じ形にする（2026-08-19指示）。
    見出しが左・3つのボタンが右。ボタンの幅は4行とも完全に同じ。
    （スマホ・PCは今までどおり2段組みのまま＝この指定はtvappだけ） */
@@ -1926,7 +1937,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.78-lab（設定の並びと全ページ同じスクロール）</div>
+    <div class="ps-version">version 3.79-lab（説明文を見出しの下に・市のページPC版）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
