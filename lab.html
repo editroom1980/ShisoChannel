@@ -954,6 +954,9 @@ html.tvapp #row-cursor,html.tvapp #row-scroll{display:flex;}
    横に並べると幅が足りず「リモコンのマウ…」と切れていた */
 html.tvapp .set-sec .set-line{flex-direction:column;align-items:flex-start;gap:1px;}
 html.tvapp .set-sec .set-line i{white-space:normal;overflow:visible;text-overflow:clip;}
+/* ★説明が入る幅を「文字ぶん」ではなく「空きいっぱい」にする。
+   これが無いと長い説明が切れる（2026-08-19：説明欄が88pxしか無かった） */
+html.tvapp .set-sec .set-row .set-line{flex:1 1 auto;min-width:0;}
 /* ★説明文が下に回った分、投稿・お問い合わせの間隔を詰めて全体の高さを保つ */
 html.tvapp .set-sec-post{padding-top:6px;padding-bottom:6px;}
 html.tvapp .set-sec-post .set-hd{margin-bottom:3px;}
@@ -966,7 +969,9 @@ html.tvapp #lnk-fix .set-link-txt{gap:0;}
    （スマホ・PCは今までどおり2段組みのまま＝この指定はtvappだけ） */
 html.tvapp .set-sec .set-row-col{flex-direction:row;align-items:center;gap:10px;}
 html.tvapp .set-sec .set-row .set-seg{flex:0 0 auto;gap:6px;}
-html.tvapp .set-sec .set-row .set-seg button{flex:0 0 84px;width:84px;padding:7px 0;text-align:center;}
+/* ボタンは4行とも同じ幅。76pxにして、空いた分を説明の幅に回す
+   （一番長い説明は207px。ボタン76pxなら説明に229px使える・実測） */
+html.tvapp .set-sec .set-row .set-seg button{flex:0 0 76px;width:76px;padding:7px 0;text-align:center;}
 /* 「お知らせを自動で変えない」はテレビ用アプリでは出さない（2026-08-16指示）。
    指でなぞる操作自体が無いため。行が1つ減り、代わりに「ポインタの大きさ」が
    1つ増える＝行数は元どおりなので、以前入れていた投稿欄の詰めは不要になった */
@@ -1937,7 +1942,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.79-lab（説明文を見出しの下に・市のページPC版）</div>
+    <div class="ps-version">version 3.80-lab（設定の説明を分かる文に）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2122,14 +2127,14 @@ html.tvapp #lnk-reg{display:none;}
       <div class="set-hd"><span class="set-sec-ttl">表示と動作</span></div>
 
       <div class="set-row set-row-col">
-        <div class="set-line"><b>文字の大きさ</b><i>番組表とお知らせ</i></div>
+        <div class="set-line"><b>文字の大きさ</b><i>番組表などの文字のサイズを変更します</i></div>
         <div class="set-seg" id="seg-text">
           <button data-v="0">標準</button><button data-v="1">大</button><button data-v="2">特大</button>
         </div>
       </div>
 
       <div class="set-row set-row-col">
-        <div class="set-line"><b>送り・戻しの秒数</b><i>映像の下のボタン</i></div>
+        <div class="set-line"><b>送り・戻しの秒数</b><i>ジャンプする秒数を変更します</i></div>
         <div class="set-seg" id="seg-skip">
           <button data-v="10">10秒</button><button data-v="15">15秒</button><button data-v="30">30秒</button>
         </div>
@@ -2137,20 +2142,20 @@ html.tvapp #lnk-reg{display:none;}
 
       <!-- 指でなぞって切り替える機能そのものが無いテレビ用アプリでは出さない -->
       <div class="set-row" id="row-stopnews">
-        <div class="set-line"><b>お知らせを自動で変えない</b><i>指でなぞると切替</i></div>
+        <div class="set-line"><b>お知らせを自動で変えない</b><i>指でなぞると切り替えできます</i></div>
         <button class="set-sw" id="opt-news" aria-label="お知らせを自動で変えない"></button>
       </div>
 
       <!-- テレビ用アプリだけに出る（リモコンのマウス操作の丸の大きさ） -->
       <div class="set-row" id="row-cursor">
-        <div class="set-line"><b>ポインタの大きさ</b><i>リモコンのマウス操作</i></div>
+        <div class="set-line"><b>ポインタの大きさ</b><i>ポインタのサイズを変更します</i></div>
         <div class="set-seg" id="seg-cursor">
           <button data-v="0">小</button><button data-v="1">標準</button><button data-v="2">大</button>
         </div>
       </div>
       <!-- テレビ用アプリだけに出る（リンク先のページを読む時の送り速さ） -->
       <div class="set-row" id="row-scroll">
-        <div class="set-line"><b>スクロールの速さ</b><i>リンク先のページ</i></div>
+        <div class="set-line"><b>スクロールの速さ</b><i>ページスクロールの速さを変更します</i></div>
         <div class="set-seg" id="seg-scroll">
           <button data-v="0">遅い</button><button data-v="1">標準</button><button data-v="2">速い</button>
         </div>
