@@ -494,6 +494,9 @@ body.fs-open .header{ background:#000; }
 .sb-ttl{font-size:12px;font-weight:700;color:var(--white);letter-spacing:3px;white-space:nowrap;flex-shrink:0;}
 #today-date{font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap;}
 /* 見出し帯の補足文（出典・操作案内）。縦向きで余裕がある時のみ表示（横向きは非表示） */
+/* テレビ用アプリでは幅が足りず「タップして詳...」と切れる（実測 箱75px・中身76px）。
+   指で触る機械でもないので出さない（2026-08-17指示）。スマホ・PCでは全部出るので残す */
+html.tvapp .sb-note{display:none;}
 .sb-note{font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.5px;margin-left:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0;text-align:left;}
 
 /* 番組リスト：スクロール可能 */
@@ -1918,7 +1921,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.70</div>
+    <div class="ps-version">version 3.72</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2056,7 +2059,7 @@ html.tvapp #lnk-reg{display:none;}
     <div class="sidebar" id="sb-panel">
       <div class="sb-head">
         <div class="sb-ttl">番 組 表</div>
-        <span class="sb-note">好きな番組をタップして視聴できます</span>
+        
         <div id="today-date">—</div>
       </div>
       <div class="sb-list" id="sb-list"></div>
@@ -2225,9 +2228,7 @@ html.tvapp #lnk-reg{display:none;}
      窓の枠(iframe)は開くたびにJSで作り直す＝閉じた時に枠ごと削除する。
      （src属性の差し替えは履歴に残り「間に何もないページ」が挟まる原因になるため） -->
 <div id="site-viewer">
-  <button id="sv-back" onclick="closeSiteViewer()" aria-label="もどる">
-    <svg viewBox="0 0 24 24"><path d="M15.4 7.4L14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg>
-  </button>
+  
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -4300,7 +4301,7 @@ function _tvDefFor(L){
   var q;
   if(L==='tour')     q=_tvQ('#tour-next,#tour-skip');
   else if(L==='power')   q=_tvQ('#ps-btn');
-  else if(L==='viewer')  q=_tvQ('#sv-back');
+  else if(L==='viewer')  q=[];      // 窓は焦点を持たない（上下で読み進め、戻るで閉じる）
   // ★全画面に入るのは右端の「全画面ボタン」を押した時。焦点が左端の停止に
   //   飛ぶと押した場所とずれるため、同じ位置＝「全画面解除」から始める（2026-08-16指示）
   else if(L==='fs'){    q=_tvQ('#fs-close'); if(!q.length) q=_tvQ('#fs-play,#fs-back30,#fs-fwd30,#fs-seek-bg,#fs-mute,#fs-vol-slider,#fs-close'); }
@@ -4461,7 +4462,7 @@ function _tvMove(L,dir){
     list=帯;
   }
   else if(L==='tour') list=_tvQ('#tour-next,#tour-skip');
-  else if(L==='viewer')list=_tvQ('#sv-back');
+  else if(L==='viewer') return;     // 窓では左右の移動先が無い（上下は別処理）
   else                list=_tvQ('#ps-btn');
   if(!list.length) return;
   var i=list.indexOf(_tvCur);
@@ -4469,6 +4470,25 @@ function _tvMove(L,dir){
   if((dir==='left'||dir==='up')&&i>0) _tvSet(list[i-1]);
   else if((dir==='right'||dir==='down')&&i<list.length-1) _tvSet(list[i+1]);
 }
+// ★テレビ用アプリが「外のサイトを別の層で開く」時の受け口（2026-08-17）。
+//   放送のページはそのまま生きているので、音だけ止めて、戻った時に再開する。
+//   窓(openSiteViewer)と同じ考え方＝再生していた時だけ再開する
+var _tvExtWasPlaying=false;
+window.__tvExtPause=function(){
+  try{
+    _tvExtWasPlaying=false;
+    if(typeof ytPlayer==='undefined' || !ytPlayer || !ytReady || !ytPlayer.getPlayerState) return;
+    var st=ytPlayer.getPlayerState();
+    // ★1=再生中、3=読み込み中。読み込み中も「見ている最中」なので戻ったら再開する
+    //   （3を数えないと、開いた瞬間が読み込み中だった時に戻っても再生されない。
+    //     2026-08-17 実機で発生：戻った後に映像の変化0%）
+    if(st===1 || st===3){ _tvExtWasPlaying=true; ytPlayer.pauseVideo(); }
+  }catch(_){}
+};
+window.__tvExtResume=function(){
+  try{ if(_tvExtWasPlaying && ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo(); }catch(_){}
+  _tvExtWasPlaying=false;
+};
 // 窓(iframe)の中身をリモコンで読み進める。同じサイトの窓は中を直接動かし、
 // 「実際に動いたか」を前後の値で確かめる。別のサイト（市の新着・フォーム等）は
 // 外から触れない(Webの安全規約)ため false を返し、呼び元がテレビ用アプリに
