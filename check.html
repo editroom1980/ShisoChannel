@@ -1922,7 +1922,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.74-lab（会館はスマホ・PCでも開く）</div>
+    <div class="ps-version">version 3.75-lab（外のサイトはすべて同じ開き方）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -5054,7 +5054,10 @@ function openSponsorLink(){
   var s=SPONSORS[sponsorIndex];
   if(s&&s.url){
     try{statsBannerClick(s.name);statsFlush(true);}catch(_){}   // 計測は窓・遷移どちらの経路でも打つ
-    if(isTvPcMode() && canEmbed(s.url) && openSiteViewer(s.url)) return;
+    // ★テレビ用アプリは、どのサイトもアプリが「別の層」で開く（2026-08-19指示）。
+    //   窓(iframe)で開くと、サイトごとに表示も操作も変わってしまう。
+    //   ここを通さずそのまま進める＝バナーの行き先も他と同じ操作になる
+    if(isTvPcMode() && !IS_TVAPP && canEmbed(s.url) && openSiteViewer(s.url)) return;
     // テレビ用アプリ：戻った時（ページ読み直し後）にバナーへ焦点を戻すための覚え書き
     if(IS_TVAPP){ try{ sessionStorage.setItem('_tvRet', (_tvCur&&_tvCur.id)||''); }catch(_){} }
     setResumeFlag();
