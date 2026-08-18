@@ -1945,7 +1945,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.81</div>
+    <div class="ps-version">version 3.82</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2091,7 +2091,7 @@ html.tvapp #lnk-reg{display:none;}
 
     <!-- 右下：お知らせ・イベント（番組表と同形式の独立ウインドウ・データがある時のみ表示） -->
     <div class="newsbar" id="sb-news" style="display:none">
-      <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div><span class="sb-note" id="sb-news-note"></span></div>
+      <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div></div>
       <div class="news-body" id="sb-news-body"></div>
     </div>
   </div>
@@ -4223,7 +4223,6 @@ function renderCityNews(){
   var box=document.getElementById('sb-news');
   if(!box) return;
   var body=document.getElementById('sb-news-body');
-  var note=document.getElementById('sb-news-note');
   var L=newsDisplayList();
   if(!L.length){ box.style.display='none'; return; }
   if(cityNewsIndex>=L.length) cityNewsIndex=0;
@@ -4235,18 +4234,11 @@ function renderCityNews(){
     : (tag==='重要' ? 'warn' : 'notice'));
   var esc=escHtml;   // 共通の無害化（お知らせ・番組表で同じものを使う）
   // 1件ずつ順番に切り替え表示。日付行は廃止(2026-08-09指示=更新日のみで不要・縦幅節約)・タイトルは1行省略。
-  // 出典は見出し帯の補足文(.sb-note)へ移動（縦向きのみ表示・警報時は発表時刻も添える）
+  // 見出し帯の補足文(.sb-note)は全機種で廃止（番組表側と揃える。2026-08-19指示）
   body.innerHTML='<div class="news-item">'
     +'<span class="news-tag '+tagCls+'">'+esc(tag)+'</span>'
     +'<div class="news-ttl'+(n.warn?' warn':'')+'">'+esc(n.title||'')+'</div>'
     +'</div>';
-  if(note){
-    if(n.warn){ note.textContent = (n.date? n.date+'　':'')+(n.src||'出典：気象庁'); }
-    // 出典はここには出さない。数が増えて長くなるため、設定の「アプリについて」に
-    // 全ての出典をまとめて書いてある（2026-08-16指示）
-    else if(n.tag){ note.textContent = 'タップして詳細へ'; }
-    else { note.textContent = _cityNewsReal ? (_cityNewsSrc||'宍粟市内のイベント情報') : '※サンプル表示'; }
-  }
   box.style.display='';
 }
 function rotateCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex+1)%L.length; renderCityNews(); }
