@@ -494,9 +494,9 @@ body.fs-open .header{ background:#000; }
 }
 .sb-ttl{font-size:12px;font-weight:700;color:var(--white);letter-spacing:3px;white-space:nowrap;flex-shrink:0;}
 #today-date{font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap;}
-/* 見出し帯の補足文（出典・操作案内）。縦向きで余裕がある時のみ表示（横向きは非表示） */
-/* テレビ用アプリでは幅が足りず「タップして詳...」と切れる（実測 箱75px・中身76px）。
-   指で触る機械でもないので出さない（2026-08-17指示）。スマホ・PCでは全部出るので残す */
+/* 見出し帯の補足文。2026-08-19指示で「警報の時の発表時刻＋出典」専用になった
+   （「タップして詳細へ」等の案内は番組表側と揃えて廃止）。縦向きのみ表示・横向きは非表示 */
+/* テレビ用アプリでは幅が足りず切れる（実測 箱75px・中身76px）ので出さない（2026-08-17指示） */
 html.tvapp .sb-note{display:none;}
 .sb-note{font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.5px;margin-left:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0;text-align:left;}
 
@@ -1113,32 +1113,9 @@ body:not(.ori-p):not(.ori-l):not(.ori-tp):not(.ori-tl):not(.silk-mode) .player-w
    ※旧・縦に長い窓を親でスクロールする方式は、画面の高さ基準で作られたサイトで
      追いつかない/途中に飛ぶ問題があったため廃止（2026-08-11） */
 #sv-frame{width:100%;height:100%;border:0;display:block;background:#fff;}
-/* 丸ボタン3つ(⚪︎に＜の意匠)。右下に縦一列で集約し、マウスの居る四隅に移動する(2026-08-11指示)。
-   窓がスクロールしても付いてくるよう固定配置 */
-#sv-back,#sv-up,#sv-down{
-  position:fixed;z-index:2;width:60px;height:60px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(250,250,250,0.95);color:#222;border:0;padding:0;cursor:pointer;
-  box-shadow:0 3px 12px rgba(0,0,0,0.35);
-}
-/* 既定=右下: 上から ▲ ▼ ◀ の縦一列 */
-#sv-up{right:24px;bottom:168px;}
-#sv-down{right:24px;bottom:96px;}
-#sv-back{right:24px;bottom:24px;}
-/* 左下 */
-#site-viewer.sv-bl #sv-up{right:auto;left:24px;}
-#site-viewer.sv-bl #sv-down{right:auto;left:24px;}
-#site-viewer.sv-bl #sv-back{right:auto;left:24px;}
-/* 右上 */
-#site-viewer.sv-tr #sv-up{bottom:auto;top:24px;}
-#site-viewer.sv-tr #sv-down{bottom:auto;top:96px;}
-#site-viewer.sv-tr #sv-back{bottom:auto;top:168px;}
-/* 左上 */
-#site-viewer.sv-tl #sv-up{right:auto;left:24px;bottom:auto;top:24px;}
-#site-viewer.sv-tl #sv-down{right:auto;left:24px;bottom:auto;top:96px;}
-#site-viewer.sv-tl #sv-back{right:auto;left:24px;bottom:auto;top:168px;}
-#sv-back svg,#sv-up svg,#sv-down svg{width:30px;height:30px;fill:#222;display:block;}
-#sv-back:active,#sv-up:active,#sv-down:active{opacity:0.6;}
+/* ★2026-08-19の掃除で削除：窓の中の丸ボタン3つ(◀ ▲ ▼)の指定26行があったが、
+   ボタン本体は2026-08-18に廃止済みでHTMLに存在しない＝一度も効いていなかった。
+   四隅に逃がす #site-viewer.sv-bl/.sv-tr/.sv-tl の指定も、行き先が無いので一緒に削除 */
 
 /* TV/PCモード中はページ自体をスクロール不能にする(2026-08-11指示の「完全固定」)。
    URLバーの出没で縦にはみ出てもスクロールバーが現れない＝バーが画面幅を奪って
@@ -1393,13 +1370,9 @@ html.tvpc body{overflow:hidden;}
   filter:drop-shadow(0 2px 8px rgba(0,0,0,.65));}
 #reg-arw.on{display:block;}
 #reg-arw svg{width:100%;height:100%;display:block;}
-#reg-arw.a-d{animation:raBobD 1.15s ease-in-out infinite;}
-#reg-arw.a-u{animation:raBobU 1.15s ease-in-out infinite;}
-@keyframes raBobD{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
-@keyframes raBobU{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-/* 動きを減らす設定の端末では揺らさない（矢印は出したまま・位置と向きは正しいまま）。
-   2026-08-13実機：この設定でCSSアニメは必ず止まる。止まっても指す役目は果たす */
-@media (prefers-reduced-motion: reduce){#reg-arw.a-d,#reg-arw.a-u{animation:none!important;}}
+/* ★2026-08-19の掃除で削除：矢印を上下に揺らす .a-d/.a-u と @keyframes raBobD/raBobU、
+   および動きを減らす設定用の打ち消し。JSがこの2つのクラスを一度も付けていないため
+   （classList.add も className への代入も無し＝矢印は最初から揺れていなかった） */
 /* ※カードの上端・左右の避けは regStripFit がJSで一元管理する
    （矢印の大きさが画面の高さで変わるため。同じ数を2か所に書くと必ずずれる） */
 #reg-strip{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);
@@ -1946,7 +1919,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.82-lab（お知らせ横の説明を削除）</div>
+    <div class="ps-version">version 3.83-lab（警報の出典を復活・掃除）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2092,7 +2065,7 @@ html.tvapp #lnk-reg{display:none;}
 
     <!-- 右下：お知らせ・イベント（番組表と同形式の独立ウインドウ・データがある時のみ表示） -->
     <div class="newsbar" id="sb-news" style="display:none">
-      <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div></div>
+      <div class="sb-head"><div class="sb-ttl">お知らせ・イベント</div><span class="sb-note" id="sb-news-note" style="display:none"></span></div>
       <div class="news-body" id="sb-news-body"></div>
     </div>
   </div>
@@ -3921,7 +3894,6 @@ function openSiteViewer(url){
   // 読み込めたら窓に焦点を移す＝リモコンの矢印キーが窓の中のページに届き、そのページ自身がスクロールする
   f.addEventListener('load',function(){ _svFocus(); });
   v.insertBefore(f, v.firstChild);
-  ['sv-bl','sv-tr','sv-tl'].forEach(function(c){ v.classList.remove(c); });  // ボタンは毎回右下(既定)から
   v.classList.add('open');
   v.scrollTop=0;
   _svFocus();                       // 読み込み前にも一度（早く操作できるように）
@@ -3952,22 +3924,9 @@ function _svFocus(){
 }
 // ボタンの塊はマウスの居る四隅へ移動する（2026-08-11指示）。
 // 中央線の±80pxは不感帯＝境界をまたぐたびにチラチラ動くのを防ぐ
-(function(){
-  var v=document.getElementById('site-viewer');
-  if(!v) return;
-  var last=0;
-  v.addEventListener('mousemove',function(e){
-    var now=Date.now(); if(now-last<120) return; last=now;
-    var H=80, cx=innerWidth/2, cy=innerHeight/2;
-    var hz=(e.clientX<cx-H)?'l':(e.clientX>cx+H)?'r':'';
-    var vt=(e.clientY<cy-H)?'t':(e.clientY>cy+H)?'b':'';
-    if(!hz||!vt) return;                       // 不感帯内は現状維持
-    var want='sv-'+vt+hz;
-    if(v.classList.contains(want)) return;
-    ['sv-bl','sv-tr','sv-tl','sv-br'].forEach(function(c){ v.classList.remove(c); });
-    if(want!=='sv-br') v.classList.add(want);  // 既定(右下)はクラス無し
-  },{passive:true});
-})();
+// ★2026-08-19の掃除で削除：マウスの居る四隅へ丸ボタンを逃がす mousemove の見張り。
+// ボタン本体が廃止済みで、付けていたクラス(sv-bl等)に対応する指定も無くなったため
+// 「何も起きない処理を毎回走らせるだけ」になっていた
 window.addEventListener('popstate',function(){ closeSiteViewer(true); });
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeSiteViewer(); });
 
@@ -4152,7 +4111,7 @@ var CITY_NEWS=[
   {type:'event',  title:'（サンプル）シソイチライドイベント2026', date:'2026.02.20'},
   {type:'notice', title:'（サンプル）ここに市からのお知らせが表示されます', date:''}
 ];
-var cityNewsIndex=0, _cityNewsReal=false, _cityNewsSrc='';
+var cityNewsIndex=0;   // ※_cityNewsReal/_cityNewsSrc は補足文の廃止で使い道が消えたため削除(2026-08-19)
 var CIVIC_NEWS=[], _civicSig='';   // 市公式サイトの新着（くらし/イベント/募集/重要）
 var JMA_WARN=[], _jmaSig='';       // 発表中の気象警報（宍粟市・優先表示）
 // いま表示すべきリスト（優先順位を一元化）
@@ -4224,6 +4183,7 @@ function renderCityNews(){
   var box=document.getElementById('sb-news');
   if(!box) return;
   var body=document.getElementById('sb-news-body');
+  var note=document.getElementById('sb-news-note');
   var L=newsDisplayList();
   if(!L.length){ box.style.display='none'; return; }
   if(cityNewsIndex>=L.length) cityNewsIndex=0;
@@ -4235,11 +4195,16 @@ function renderCityNews(){
     : (tag==='重要' ? 'warn' : 'notice'));
   var esc=escHtml;   // 共通の無害化（お知らせ・番組表で同じものを使う）
   // 1件ずつ順番に切り替え表示。日付行は廃止(2026-08-09指示=更新日のみで不要・縦幅節約)・タイトルは1行省略。
-  // 見出し帯の補足文(.sb-note)は全機種で廃止（番組表側と揃える。2026-08-19指示）
+  // 見出し帯の補足文(.sb-note)は警報の時だけ出す（発表時刻＋出典）。
+  // 「タップして詳細へ」等の案内は番組表側と揃えて全機種で廃止（2026-08-19指示）
   body.innerHTML='<div class="news-item">'
     +'<span class="news-tag '+tagCls+'">'+esc(tag)+'</span>'
     +'<div class="news-ttl'+(n.warn?' warn':'')+'">'+esc(n.title||'')+'</div>'
     +'</div>';
+  if(note){
+    if(n.warn){ note.textContent=(n.date? n.date+'　':'')+(n.src||'出典：気象庁'); note.style.display=''; }
+    else { note.textContent=''; note.style.display='none'; }
+  }
   box.style.display='';
 }
 function rotateCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex+1)%L.length; renderCityNews(); }
