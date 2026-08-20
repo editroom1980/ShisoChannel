@@ -975,7 +975,10 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   display:none;                                   /* 聞いている時だけ出す赤い丸 */
 }
 #ai-win.listening #ai-head .dot{display:block;}
-#ai-body{padding:24px 30px 28px;overflow-y:auto;color:#fff;}
+/* ★flex:1 1 auto と min-height:0 が要る（2026-08-21）。
+   これが無いと中身の高さが決まらず、箱からはみ出すだけで
+   「スクロールできる状態」にならない＝下が切れて読めなくなる */
+#ai-body{flex:1 1 auto;min-height:0;padding:24px 30px 28px;overflow-y:auto;color:#fff;}
 #ai-q{font-size:21px;line-height:1.6;color:var(--green4);margin:0 0 16px;}
 #ai-title{font-size:31px;font-weight:700;line-height:1.45;margin:0 0 14px;}
 #ai-text{font-size:26px;line-height:1.75;margin:0;}
@@ -1963,7 +1966,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.87-lab（AIの窓を読み進められる）</div>
+    <div class="ps-version">version 3.88-lab（窓の中をスクロール可能に）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
