@@ -1963,7 +1963,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.85-lab（AIの答えを大きな窓で表示）</div>
+    <div class="ps-version">version 3.86-lab（マイクの準備を表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4574,14 +4574,27 @@ window.__aiState=function(kind, 文){
     var w=_aiOpen(); if(!w) return;
     if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
     w.classList.toggle('listening', kind==='listen');
-    _aiEl('ai-head-t').textContent = (kind==='listen') ? 'お話しください' : 'お調べしています';
+    _aiEl('ai-head-t').textContent =
+      (kind==='wait')   ? 'マイクを準備しています' :
+      (kind==='listen') ? 'お話しください' : 'お調べしています';
     _aiEl('ai-q').textContent    = 文 ? '「'+文+'」' : '';
     _aiEl('ai-title').textContent= '';
-    _aiEl('ai-text').textContent = (kind==='listen')
-      ? 'マイクに向かって、ご用件をお話しください。'
-      : '少しお待ちください。';
+    _aiEl('ai-text').textContent =
+      (kind==='wait')   ? 'まだ話さないでください。' :
+      (kind==='listen') ? 'マイクに向かって、ご用件をお話しください。' :
+                          '少しお待ちください。';
     _aiEl('ai-list').innerHTML   = '';
     _aiEl('ai-note').textContent = '';
+  }catch(_){}
+};
+
+/** 聞こえている言葉をその場で映す。話している最中に何度も呼ばれる */
+window.__aiHeard=function(文){
+  try{
+    if(!OPTS.aicap) return;
+    var w=_aiEl('ai-win'); if(!w||!w.classList.contains('on')) return;
+    _aiEl('ai-title').textContent = 文 ? '「'+文+'」' : '';
+    _aiEl('ai-text').textContent  = 文 ? '（聞き取っています）' : 'マイクに向かって、ご用件をお話しください。';
   }catch(_){}
 };
 
