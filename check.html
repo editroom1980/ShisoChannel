@@ -950,21 +950,49 @@ body.iphone-mode #fs-mute{
 #row-cursor,#row-scroll,#row-aicap{display:none;}
 html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex;}
 
-/* ══ AIの答えの字幕（テレビ用アプリのみ・2026-08-21）══
-   声で聞いた答えを、画面の下側にも出す。耳が遠い方のための備え。
-   放送の映像は隠さないよう、下端に寄せて必要な高さだけ使う */
-#ai-cap{
-  position:fixed;left:50%;bottom:4%;transform:translateX(-50%) translateY(8px);
-  max-width:80%;z-index:2147483646;                 /* 誤タップ防止カバーより1つ下 */
-  background:rgba(0,0,0,0.86);border:2px solid var(--gold);border-radius:8px;
-  padding:14px 22px;color:#fff;font-size:28px;line-height:1.55;text-align:center;
-  font-weight:500;letter-spacing:0.5px;
-  opacity:0;pointer-events:none;visibility:hidden;
-  transition:opacity .25s ease, transform .25s ease;
-  text-shadow:0 2px 6px rgba(0,0,0,0.8);
+/* ══ AIの答えのウインドウ（テレビ用アプリのみ・2026-08-21）══
+   画面の中央に大きく出す。声だけでは聞き取りきれない分量や手順も読めるように。
+   色は背景色の設定（applyBgが差し替える --forest / --band / --green4）に連動する */
+#ai-win{
+  position:fixed;inset:0;z-index:2147483646;      /* 誤タップ防止カバーより1つ下 */
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.6);
 }
-#ai-cap.on{opacity:1;transform:translateX(-50%) translateY(0);visibility:visible;}
-@media (prefers-reduced-motion:reduce){ #ai-cap{transition:none;} }
+#ai-win.on{display:flex;}
+#ai-box{
+  width:min(80%,1040px);max-height:80%;
+  background:var(--forest);border:3px solid var(--gold);border-radius:14px;
+  box-shadow:0 14px 52px rgba(0,0,0,0.65);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#ai-head{
+  background:var(--band);padding:14px 26px;flex-shrink:0;
+  display:flex;align-items:center;gap:14px;
+  font-size:20px;font-weight:700;color:var(--white);letter-spacing:3px;
+}
+#ai-head .dot{
+  width:14px;height:14px;border-radius:50%;background:#e04a4a;flex-shrink:0;
+  display:none;                                   /* 聞いている時だけ出す赤い丸 */
+}
+#ai-win.listening #ai-head .dot{display:block;}
+#ai-body{padding:24px 30px 28px;overflow-y:auto;color:#fff;}
+#ai-q{font-size:21px;line-height:1.6;color:var(--green4);margin:0 0 16px;}
+#ai-title{font-size:31px;font-weight:700;line-height:1.45;margin:0 0 14px;}
+#ai-text{font-size:26px;line-height:1.75;margin:0;}
+#ai-list{margin:18px 0 0;padding:0;list-style:none;}
+#ai-list li{
+  font-size:24px;line-height:1.75;padding:8px 0 8px 16px;
+  border-bottom:1px solid rgba(255,255,255,0.14);
+}
+#ai-list li:last-child{border-bottom:none;}
+#ai-note{
+  margin:20px 0 0;padding-top:16px;border-top:2px solid var(--gold);
+  font-size:21px;line-height:1.7;color:var(--gold2);
+}
+#ai-hint{
+  padding:10px 26px 14px;flex-shrink:0;
+  font-size:17px;color:var(--green4);text-align:right;letter-spacing:1px;
+}
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
 /* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
    横に並べると幅が足りず「リモコンのマウ…」と切れていた */
@@ -1935,7 +1963,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.84-lab（AIの答えを字幕で表示）</div>
+    <div class="ps-version">version 3.85-lab（AIの答えを大きな窓で表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2158,8 +2186,8 @@ html.tvapp #lnk-reg{display:none;}
            スマホでは上のポインタ・スクロールが出ないので、並びは今までどおり -->
       <!-- AIの答えの字幕。テレビ用アプリだけに出す（スマホ・PCでは行ごと非表示） -->
       <div class="set-row" id="row-aicap">
-        <div class="set-line"><b>答えを字幕で出す</b><i>聞いた答えを画面にも表示します</i></div>
-        <button class="set-sw" id="opt-aicap" aria-label="答えを字幕で出す"></button>
+        <div class="set-line"><b>答えを画面に出す</b><i>聞いた答えを大きく表示します</i></div>
+        <button class="set-sw" id="opt-aicap" aria-label="答えを画面に出す"></button>
       </div>
 
       <div class="set-row">
@@ -2256,8 +2284,20 @@ html.tvapp #lnk-reg{display:none;}
 <!-- サイト表示の窓（TV・PC）: リンク先をページを離れず開く。
      窓の枠(iframe)は開くたびにJSで作り直す＝閉じた時に枠ごと削除する。
      （src属性の差し替えは履歴に残り「間に何もないページ」が挟まる原因になるため） -->
-<!-- AIの答えの字幕（テレビ用アプリのみ。アプリ側から __aiCaption() で出す） -->
-<div id="ai-cap" aria-live="polite"></div>
+<!-- AIの答えのウインドウ（テレビ用アプリのみ。アプリ側から __aiState/__aiAnswer で操る） -->
+<div id="ai-win" aria-live="polite">
+  <div id="ai-box">
+    <div id="ai-head"><span class="dot"></span><span id="ai-head-t">しそチャンNET</span></div>
+    <div id="ai-body">
+      <p id="ai-q"></p>
+      <h3 id="ai-title"></h3>
+      <p id="ai-text"></p>
+      <ul id="ai-list"></ul>
+      <p id="ai-note"></p>
+    </div>
+    <div id="ai-hint">戻るボタンで閉じます</div>
+  </div>
+</div>
 
 <div id="site-viewer">
   
@@ -4504,23 +4544,79 @@ function _tvMove(L,dir){
 //   放送のページはそのまま生きているので、音だけ止めて、戻った時に再開する。
 //   窓(openSiteViewer)と同じ考え方＝再生していた時だけ再開する
 var _tvExtWasPlaying=false;
-// ══ AIの答えの字幕（テレビ用アプリのアプリ側から呼ばれる・2026-08-21）══
-//   声で聞いた答えを、耳が遠い方のために画面にも出す。
-//   ・設定「答えを字幕で出す」がオフなら何も出さない
-//   ・空文字を渡すと消える（設定をオフにした瞬間の片づけにも使う）
-//   ・読む時間は文の長さから決める（1文字あたり0.18秒＋2.5秒。最短4秒・最長20秒）
-var _aiCapT=null;
-window.__aiCaption=function(文){
+// ══ AIのウインドウ（テレビ用アプリのアプリ側から呼ばれる・2026-08-21）══
+//   声で聞いた答えを、画面中央に大きく出す。声だけでは覚えきれない
+//   分量や手順を読めるようにするのが目的。色は背景色の設定に連動する。
+//   ・設定「答えを画面に出す」がオフなら一切出さない（声だけになる）
+//   ・開いている間は放送を止め、閉じたら元通り再生する
+var _aiWasPlaying=false, _aiCloseT=null;
+
+function _aiEl(id){ return document.getElementById(id); }
+
+/** ウインドウを開く（止めるのは1回だけ。二重に止めない） */
+function _aiOpen(){
+  var w=_aiEl('ai-win'); if(!w) return null;
+  if(!w.classList.contains('on')){
+    try{
+      var st=(ytPlayer&&ytReady)?ytPlayer.getPlayerState():-1;
+      if(st===1||st===3){ _aiWasPlaying=true; ytPlayer.pauseVideo(); }
+      else _aiWasPlaying=false;
+    }catch(_){ _aiWasPlaying=false; }
+    w.classList.add('on');
+  }
+  return w;
+}
+
+/** 聞き取り中・考え中の状態を出す。kind='listen' か 'think' */
+window.__aiState=function(kind, 文){
   try{
-    var box=document.getElementById('ai-cap'); if(!box) return;
-    if(_aiCapT){ clearTimeout(_aiCapT); _aiCapT=null; }
-    if(!文 || !OPTS.aicap){ box.classList.remove('on'); box.textContent=''; return; }
-    box.textContent=String(文);
-    box.classList.add('on');
-    var ms=Math.max(4000, Math.min(20000, String(文).length*180+2500));
-    _aiCapT=setTimeout(function(){ box.classList.remove('on'); _aiCapT=null; }, ms);
+    if(!OPTS.aicap) return;
+    var w=_aiOpen(); if(!w) return;
+    if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
+    w.classList.toggle('listening', kind==='listen');
+    _aiEl('ai-head-t').textContent = (kind==='listen') ? 'お話しください' : 'お調べしています';
+    _aiEl('ai-q').textContent    = 文 ? '「'+文+'」' : '';
+    _aiEl('ai-title').textContent= '';
+    _aiEl('ai-text').textContent = (kind==='listen')
+      ? 'マイクに向かって、ご用件をお話しください。'
+      : '少しお待ちください。';
+    _aiEl('ai-list').innerHTML   = '';
+    _aiEl('ai-note').textContent = '';
   }catch(_){}
 };
+
+/** 答えを出す。obj={q,title,text,lines[],note} */
+window.__aiAnswer=function(obj){
+  try{
+    if(!OPTS.aicap) return;
+    var o = (typeof obj==='string') ? JSON.parse(obj) : (obj||{});
+    var w=_aiOpen(); if(!w) return;
+    if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
+    w.classList.remove('listening');
+    _aiEl('ai-head-t').textContent = 'しそチャンNET';
+    _aiEl('ai-q').textContent      = o.q ? '「'+o.q+'」' : '';
+    _aiEl('ai-title').textContent  = o.title||'';
+    _aiEl('ai-text').textContent   = o.text||'';
+    var ul=_aiEl('ai-list'); ul.innerHTML='';
+    var L=o.lines||[];
+    for(var i=0;i<L.length;i++){ var li=document.createElement('li'); li.textContent=L[i]; ul.appendChild(li); }
+    _aiEl('ai-note').textContent   = o.note||'';
+    // 読み終わるころに自分で閉じる（中身が多いほど長く置く）
+    var 量=(o.text||'').length + (o.title||'').length + L.join('').length;
+    _aiCloseT=setTimeout(window.__aiClose, Math.max(12000, Math.min(90000, 量*220+8000)));
+  }catch(e){ try{ console.log('ai答えの表示に失敗', e); }catch(_){}}
+};
+
+/** 閉じて放送を元に戻す。何度呼んでも安全 */
+window.__aiClose=function(){
+  try{
+    var w=_aiEl('ai-win'); if(!w) return;
+    if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
+    w.classList.remove('on'); w.classList.remove('listening');
+    if(_aiWasPlaying){ _aiWasPlaying=false; try{ ytPlayer.playVideo(); }catch(_){} }
+  }catch(_){}
+};
+window.__aiOpened=function(){ var w=_aiEl('ai-win'); return !!(w&&w.classList.contains('on')); };
 
 window.__tvExtPause=function(){
   try{
@@ -4634,6 +4730,12 @@ function _tvBackKey(L){
 window.__tvKey=function(k){
   if(!IS_TVAPP) return false;
   try{
+    // AIのウインドウが出ている間は、そこだけを相手にする。
+    // 戻る＝閉じる／それ以外は放送側へ渡さない（後ろの画面が勝手に動かないように）
+    if(window.__aiOpened && __aiOpened()){
+      if(k==='back'){ __aiClose(); return true; }
+      return true;
+    }
     var L=_tvEnsure();
     if(L==='fs'){ try{ showFsUi(); }catch(_){} }   // 全画面の操作列は放っておくと消えるため
     // バーを掴んでいる間：左右＝動かす／決定・戻る＝離す／上下＝何もしない
@@ -4771,7 +4873,7 @@ var OPTS={
   muted:false,     // 前回の消音状態
   cursor:1,        // ポインタの大きさ 0=小 1=標準 2=大（テレビ用アプリのみ使用）
   scroll:1,        // 外のサイトを読む時のスクロールの速さ 0=ゆっくり 1=標準 2=速い（同上）
-  aicap:true       // AIの答えを字幕でも出す（テレビ用アプリのみ。既定=オン）
+  aicap:true       // AIの答えを画面にも出す（テレビ用アプリのみ。既定=オン）
 };
 var _wakeLock=null;
 function loadOpts(){
@@ -7152,7 +7254,7 @@ function init(){
     var ab=document.getElementById('opt-aicap');
     if(ab) ab.addEventListener('click', function(){
       OPTS.aicap=!OPTS.aicap;
-      if(!OPTS.aicap) try{ __aiCaption(''); }catch(_){}   // 消した瞬間に出ていた字幕も片づける
+      if(!OPTS.aicap) try{ __aiClose(); }catch(_){}   // 消した瞬間に出ていたウインドウも片づける
       saveOpts(); applyOpts(); renderOpts();
     });
     var vb=document.getElementById('opt-volsave');
