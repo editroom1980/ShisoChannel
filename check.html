@@ -960,41 +960,40 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
 }
 #ai-win.on{display:flex;}
 #ai-box{
-  width:min(80%,1040px);max-height:80%;
-  background:var(--forest);border:3px solid var(--gold);border-radius:14px;
+  width:min(88%,1180px);max-height:88%;
+  background:var(--forest);border:3px solid var(--gold);border-radius:12px;
   box-shadow:0 14px 52px rgba(0,0,0,0.65);
   display:flex;flex-direction:column;overflow:hidden;
 }
 #ai-head{
-  background:var(--band);padding:14px 26px;flex-shrink:0;
-  display:flex;align-items:center;gap:14px;
-  font-size:20px;font-weight:700;color:var(--white);letter-spacing:3px;
+  background:var(--band);padding:9px 22px;flex-shrink:0;
+  display:flex;align-items:center;gap:12px;
+  font-size:16px;font-weight:700;color:var(--white);letter-spacing:3px;
 }
 #ai-head .dot{
-  width:14px;height:14px;border-radius:50%;background:#e04a4a;flex-shrink:0;
+  width:12px;height:12px;border-radius:50%;background:#e04a4a;flex-shrink:0;
   display:none;                                   /* 聞いている時だけ出す赤い丸 */
 }
 #ai-win.listening #ai-head .dot{display:block;}
-/* ★flex:1 1 auto と min-height:0 が要る（2026-08-21）。
-   これが無いと中身の高さが決まらず、箱からはみ出すだけで
-   「スクロールできる状態」にならない＝下が切れて読めなくなる */
-#ai-body{flex:1 1 auto;min-height:0;padding:24px 30px 28px;overflow-y:auto;color:#fff;}
-#ai-q{font-size:21px;line-height:1.6;color:var(--green4);margin:0 0 16px;}
-#ai-title{font-size:31px;font-weight:700;line-height:1.45;margin:0 0 14px;}
-#ai-text{font-size:26px;line-height:1.75;margin:0;}
-#ai-list{margin:18px 0 0;padding:0;list-style:none;}
+/* ★テレビ(1280x720相当)で1画面に収まるよう、字は欲張らない（2026-08-21指摘）。
+   離れて見るテレビでも19px前後あれば読める。省略するより全部見える方が大事 */
+#ai-body{flex:1 1 auto;min-height:0;padding:14px 24px 16px;overflow-y:auto;color:#fff;}
+#ai-q{font-size:15px;line-height:1.5;color:var(--green4);margin:0 0 8px;}
+#ai-title{font-size:23px;font-weight:700;line-height:1.4;margin:0 0 8px;}
+#ai-text{font-size:19px;line-height:1.6;margin:0;}
+#ai-list{margin:10px 0 0;padding:0;list-style:none;}
 #ai-list li{
-  font-size:24px;line-height:1.75;padding:8px 0 8px 16px;
+  font-size:18px;line-height:1.6;padding:5px 0 5px 12px;
   border-bottom:1px solid rgba(255,255,255,0.14);
 }
 #ai-list li:last-child{border-bottom:none;}
 #ai-note{
-  margin:20px 0 0;padding-top:16px;border-top:2px solid var(--gold);
-  font-size:21px;line-height:1.7;color:var(--gold2);
+  margin:12px 0 0;padding-top:9px;border-top:2px solid var(--gold);
+  font-size:16px;line-height:1.6;color:var(--gold2);
 }
 #ai-hint{
-  padding:10px 26px 14px;flex-shrink:0;
-  font-size:17px;color:var(--green4);text-align:right;letter-spacing:1px;
+  padding:5px 22px 9px;flex-shrink:0;
+  font-size:13px;color:var(--green4);text-align:right;letter-spacing:1px;
 }
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
 /* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
@@ -1966,7 +1965,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.88-lab（窓の中をスクロール可能に）</div>
+    <div class="ps-version">version 3.89-lab（AIの窓の字を詰めて全文表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
