@@ -947,8 +947,24 @@ body.iphone-mode #fs-mute{
 .set-row:last-child{border-bottom:none;padding-bottom:0;}
 .set-row-col{flex-direction:column;align-items:stretch;gap:7px;}
 /* ポインタの大きさはテレビ用アプリ専用の設定。他の環境では行ごと出さない */
-#row-cursor,#row-scroll{display:none;}
-html.tvapp #row-cursor,html.tvapp #row-scroll{display:flex;}
+#row-cursor,#row-scroll,#row-aicap{display:none;}
+html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex;}
+
+/* ══ AIの答えの字幕（テレビ用アプリのみ・2026-08-21）══
+   声で聞いた答えを、画面の下側にも出す。耳が遠い方のための備え。
+   放送の映像は隠さないよう、下端に寄せて必要な高さだけ使う */
+#ai-cap{
+  position:fixed;left:50%;bottom:4%;transform:translateX(-50%) translateY(8px);
+  max-width:80%;z-index:2147483646;                 /* 誤タップ防止カバーより1つ下 */
+  background:rgba(0,0,0,0.86);border:2px solid var(--gold);border-radius:8px;
+  padding:14px 22px;color:#fff;font-size:28px;line-height:1.55;text-align:center;
+  font-weight:500;letter-spacing:0.5px;
+  opacity:0;pointer-events:none;visibility:hidden;
+  transition:opacity .25s ease, transform .25s ease;
+  text-shadow:0 2px 6px rgba(0,0,0,0.8);
+}
+#ai-cap.on{opacity:1;transform:translateX(-50%) translateY(0);visibility:visible;}
+@media (prefers-reduced-motion:reduce){ #ai-cap{transition:none;} }
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
 /* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
    横に並べると幅が足りず「リモコンのマウ…」と切れていた */
@@ -1919,7 +1935,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.83-lab（警報の出典を復活・掃除）</div>
+    <div class="ps-version">version 3.84-lab（AIの答えを字幕で表示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2140,6 +2156,12 @@ html.tvapp #lnk-reg{display:none;}
 
       <!-- ★スイッチの行は並びの一番下（2026-08-19指示）。
            スマホでは上のポインタ・スクロールが出ないので、並びは今までどおり -->
+      <!-- AIの答えの字幕。テレビ用アプリだけに出す（スマホ・PCでは行ごと非表示） -->
+      <div class="set-row" id="row-aicap">
+        <div class="set-line"><b>答えを字幕で出す</b><i>聞いた答えを画面にも表示します</i></div>
+        <button class="set-sw" id="opt-aicap" aria-label="答えを字幕で出す"></button>
+      </div>
+
       <div class="set-row">
         <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
         <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
@@ -2234,6 +2256,9 @@ html.tvapp #lnk-reg{display:none;}
 <!-- サイト表示の窓（TV・PC）: リンク先をページを離れず開く。
      窓の枠(iframe)は開くたびにJSで作り直す＝閉じた時に枠ごと削除する。
      （src属性の差し替えは履歴に残り「間に何もないページ」が挟まる原因になるため） -->
+<!-- AIの答えの字幕（テレビ用アプリのみ。アプリ側から __aiCaption() で出す） -->
+<div id="ai-cap" aria-live="polite"></div>
+
 <div id="site-viewer">
   
 </div>
@@ -4479,6 +4504,24 @@ function _tvMove(L,dir){
 //   放送のページはそのまま生きているので、音だけ止めて、戻った時に再開する。
 //   窓(openSiteViewer)と同じ考え方＝再生していた時だけ再開する
 var _tvExtWasPlaying=false;
+// ══ AIの答えの字幕（テレビ用アプリのアプリ側から呼ばれる・2026-08-21）══
+//   声で聞いた答えを、耳が遠い方のために画面にも出す。
+//   ・設定「答えを字幕で出す」がオフなら何も出さない
+//   ・空文字を渡すと消える（設定をオフにした瞬間の片づけにも使う）
+//   ・読む時間は文の長さから決める（1文字あたり0.18秒＋2.5秒。最短4秒・最長20秒）
+var _aiCapT=null;
+window.__aiCaption=function(文){
+  try{
+    var box=document.getElementById('ai-cap'); if(!box) return;
+    if(_aiCapT){ clearTimeout(_aiCapT); _aiCapT=null; }
+    if(!文 || !OPTS.aicap){ box.classList.remove('on'); box.textContent=''; return; }
+    box.textContent=String(文);
+    box.classList.add('on');
+    var ms=Math.max(4000, Math.min(20000, String(文).length*180+2500));
+    _aiCapT=setTimeout(function(){ box.classList.remove('on'); _aiCapT=null; }, ms);
+  }catch(_){}
+};
+
 window.__tvExtPause=function(){
   try{
     _tvExtWasPlaying=false;
@@ -4727,7 +4770,8 @@ var OPTS={
   vol:null,        // 前回の音量（null=未保存）
   muted:false,     // 前回の消音状態
   cursor:1,        // ポインタの大きさ 0=小 1=標準 2=大（テレビ用アプリのみ使用）
-  scroll:1         // 外のサイトを読む時のスクロールの速さ 0=ゆっくり 1=標準 2=速い（同上）
+  scroll:1,        // 外のサイトを読む時のスクロールの速さ 0=ゆっくり 1=標準 2=速い（同上）
+  aicap:true       // AIの答えを字幕でも出す（テレビ用アプリのみ。既定=オン）
 };
 var _wakeLock=null;
 function loadOpts(){
@@ -4739,6 +4783,7 @@ function loadOpts(){
       if(v.scroll===0||v.scroll===1||v.scroll===2) OPTS.scroll=v.scroll;
       OPTS.stopnews=!!v.stopnews;
       if(typeof v.volsave==='boolean') OPTS.volsave=v.volsave;   // 未保存の人は既定(オン)のまま
+      if(typeof v.aicap==='boolean')   OPTS.aicap=v.aicap;       // 同上
       if(typeof v.vol==='number')   OPTS.vol=Math.max(0,Math.min(100,v.vol));
       OPTS.muted=!!v.muted;
     } }catch(_){}
@@ -4853,6 +4898,7 @@ function renderOpts(){
     seg('seg-scroll', OPTS.scroll);
     var n=document.getElementById('opt-news'); if(n) n.classList.toggle('on', !!OPTS.stopnews);
     var vs2=document.getElementById('opt-volsave'); if(vs2) vs2.classList.toggle('on', !!OPTS.volsave);
+    var ac=document.getElementById('opt-aicap');   if(ac)  ac.classList.toggle('on', !!OPTS.aicap);
     var v=document.getElementById('about-ver');
     if(v){ var m=(document.querySelector('.ps-version')||{}).textContent||''; v.textContent=(m.match(/version\s*([0-9.]+[^（(]*)/)||[])[1]||'-'; }
   }catch(_){}
@@ -4863,7 +4909,7 @@ function resetAllSettings(){
     localStorage.removeItem(OPT_KEY);
     localStorage.removeItem(BG_KEY);
   }catch(_){}
-  OPTS={text:0,skip:30,stopnews:false,vol:null,muted:false};
+  OPTS={text:0,skip:30,stopnews:false,volsave:true,vol:null,muted:false,cursor:1,scroll:1,aicap:true};
   applyBg('forest');
   applyOpts(); renderOpts();
 }
@@ -7103,6 +7149,12 @@ function init(){
     bind('seg-scroll','scroll',true);
     var nb=document.getElementById('opt-news');
     if(nb) nb.addEventListener('click', function(){ OPTS.stopnews=!OPTS.stopnews; saveOpts(); applyOpts(); renderOpts(); });
+    var ab=document.getElementById('opt-aicap');
+    if(ab) ab.addEventListener('click', function(){
+      OPTS.aicap=!OPTS.aicap;
+      if(!OPTS.aicap) try{ __aiCaption(''); }catch(_){}   // 消した瞬間に出ていた字幕も片づける
+      saveOpts(); applyOpts(); renderOpts();
+    });
     var vb=document.getElementById('opt-volsave');
     if(vb) vb.addEventListener('click', function(){
       OPTS.volsave=!OPTS.volsave;
