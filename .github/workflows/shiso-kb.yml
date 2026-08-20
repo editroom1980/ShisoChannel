@@ -1,0 +1,41 @@
+# 宍粟市の行政案内データベース(shiso_kb.json)と観光スポット(shiso_kanko.json)を
+# 週1回まとめて取り直す。テレビ用アプリのAIが「担当課と直通電話つきの正確な案内」を
+# するための資料（scripts/build_shiso_kb.py ／ scripts/build_shiso_kanko.py）。
+# 市のページは頻繁には変わらないので週1回で足りる。1ページごとに間をあけて集めるため
+# 30分ほどかかる＝お知らせ(city-news)とは別の流れにしてある。
+name: shiso-kb
+
+on:
+  schedule:
+    - cron: '0 18 * * 0'      # 毎週月曜 3:00 JST（日曜18:00 UTC）
+  workflow_dispatch:           # 手動実行も可能（Actionsタブから）
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shiso-kb
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: 行政案内を集める（市公式サイト）
+        run: python3 scripts/build_shiso_kb.py 2000
+      - name: 観光スポットを集める（観光協会公式ガイド）
+        run: python3 scripts/build_shiso_kanko.py
+      - name: 変化があればコミット
+        run: |
+          if git diff --quiet shiso_kb.json shiso_kanko.json; then
+            echo "変化なし"
+          else
+            git config user.name  'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git add shiso_kb.json shiso_kanko.json
+            git commit -m 'data: 行政案内・観光データベースを自動更新'
+            git pull --rebase origin main
+            git push
+          fi

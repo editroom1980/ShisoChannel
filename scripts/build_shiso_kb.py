@@ -29,6 +29,17 @@ from collections import deque
     "/kosodadekyoiku/index.html",
     "/kenkofukushi/index.html",
     "/bosai/index.html",
+    # ★組織（課）から辿る入口。2026-08-21に「介護保険」の記事が1件も
+    #   集まっていないことが分かったため追加した。暮らしの分類だけでは
+    #   拾いきれない担当課のページがある
+    "/soshiki/index.html",
+    "/kurashi/fukushi/index.html",
+    "/kurashi/kaigo/index.html",
+    "/kurashi/kenkoiryo/index.html",
+    "/kurashi/nenkinhoken/index.html",
+    "/kurashi/zeikin/index.html",
+    "/kurashi/gomishinyokankyo/index.html",
+    "/kurashi/kosekijumintoroku/index.html",
 ]
 
 # 拾わないもの（量が多い・案内に使わない）
@@ -151,6 +162,14 @@ def 走る():
 
 if __name__ == "__main__":
     集めた, 秒 = 走る()
+    # 同じ記事が別の道から二重三重に入ることがある。題と課で1つにまとめる
+    _見た = set(); _残す = []
+    for _o in 集めた:
+        _k = (_o.get("題", ""), _o.get("課", ""))
+        if _k in _見た:
+            continue
+        _見た.add(_k); _残す.append(_o)
+    集めた = _残す
     # 課ごとの電話帳も作っておく（「◯◯課の電話は」に即答できる）
     電話帳 = {}
     for it in 集めた:
