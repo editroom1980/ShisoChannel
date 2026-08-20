@@ -1963,7 +1963,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.86-lab（マイクの準備を表示）</div>
+    <div class="ps-version">version 3.87-lab（AIの窓を読み進められる）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4614,10 +4614,27 @@ window.__aiAnswer=function(obj){
     var L=o.lines||[];
     for(var i=0;i<L.length;i++){ var li=document.createElement('li'); li.textContent=L[i]; ul.appendChild(li); }
     _aiEl('ai-note').textContent   = o.note||'';
+    var body=_aiEl('ai-body'); body.scrollTop=0;
+    // 収まりきらない時だけ「↑↓で読む」と案内する（収まっていれば余計なことを言わない）
+    setTimeout(function(){
+      var はみ出す = body.scrollHeight > body.clientHeight + 4;
+      _aiEl('ai-hint').textContent = はみ出す
+        ? '↑↓ で読み進める　／　戻るで閉じます'
+        : 'どれかのボタンで閉じます';
+    }, 30);
     // 読み終わるころに自分で閉じる（中身が多いほど長く置く）
     var 量=(o.text||'').length + (o.title||'').length + L.join('').length;
     _aiCloseT=setTimeout(window.__aiClose, Math.max(12000, Math.min(90000, 量*220+8000)));
   }catch(e){ try{ console.log('ai答えの表示に失敗', e); }catch(_){}}
+};
+
+/** 中身を読み進める。読んでいる間は自動で閉じない */
+window.__aiScroll=function(向き){
+  try{
+    var b=_aiEl('ai-body'); if(!b) return;
+    b.scrollTop += 向き * Math.max(90, Math.round(b.clientHeight*0.55));
+    if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=setTimeout(window.__aiClose, 40000); }
+  }catch(_){}
 };
 
 /** 閉じて放送を元に戻す。何度呼んでも安全 */
@@ -4627,6 +4644,8 @@ window.__aiClose=function(){
     if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
     w.classList.remove('on'); w.classList.remove('listening');
     if(_aiWasPlaying){ _aiWasPlaying=false; try{ ytPlayer.playVideo(); }catch(_){} }
+    // ★閉じたら金枠の現在地を必ず作り直す。これが無いと次のキーが行き場を失う
+    try{ if(IS_TVAPP) _tvEnsure(); }catch(_){}
   }catch(_){}
 };
 window.__aiOpened=function(){ var w=_aiEl('ai-win'); return !!(w&&w.classList.contains('on')); };
@@ -4746,8 +4765,10 @@ window.__tvKey=function(k){
     // AIのウインドウが出ている間は、そこだけを相手にする。
     // 戻る＝閉じる／それ以外は放送側へ渡さない（後ろの画面が勝手に動かないように）
     if(window.__aiOpened && __aiOpened()){
-      if(k==='back'){ __aiClose(); return true; }
-      return true;
+      // ★上下＝中を読み進める。それ以外のキーはすべて「閉じる」に使う。
+      //   以前は全部のキーを飲み込んでいたため、閉じるまで操作不能に見えた（2026-08-21指摘）
+      if(k==='up'||k==='down'){ __aiScroll(k==='down'?1:-1); return true; }
+      __aiClose(); return true;
     }
     var L=_tvEnsure();
     if(L==='fs'){ try{ showFsUi(); }catch(_){} }   // 全画面の操作列は放っておくと消えるため
