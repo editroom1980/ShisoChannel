@@ -106,6 +106,113 @@ def 整える(t):
     return t.strip()[:4000]
 
 
+# ══ 時刻の格子の復元（2026-08-23）══════════════════════════
+#  「どこからどこまで」に**乗れる時刻**で答えるため、ページ画像だけでなく
+#  停留所×便の表そのものを持つ。文字の並びでは表が崩れるので、
+#  紙の上の座標（scripts/pdfwords.swift / pdftotext -bbox）から組み直す。
+#  検算：バスは先へ進むほど時刻が遅い。**各便の列が上から下へ増えていること**を
+#  確かめ、崩れた列は捨てる（並び順の取り違えを機械が自分で見つける）。
+
+時刻型 = re.compile(r"^(\d{1,2}):(\d{2})$")
+
+
+def 語々を取る(pdf, n):
+    """1ページの語を (語, x, y) で返す"""
+    out = []
+    if shutil.which("pdftotext"):
+        r = subprocess.run(["pdftotext", "-bbox", "-f", str(n), "-l", str(n), str(pdf), "-"],
+                           capture_output=True, timeout=60)
+        for m in re.finditer(
+                r'<word xMin="([\d.]+)" yMin="([\d.]+)"[^>]*>([^<]+)</word>',
+                r.stdout.decode("utf-8", "replace")):
+            out.append((m.group(3), float(m.group(1)), float(m.group(2))))
+        return out
+    道具 = pathlib.Path("/tmp/shiso_pdfwords")
+    src = 根 / "scripts" / "pdfwords.swift"
+    if (not 道具.exists()) or 道具.stat().st_mtime < src.stat().st_mtime:
+        subprocess.run(["swiftc", "-O", str(src), "-o", str(道具)], check=True)
+    r = subprocess.run([str(道具), str(pdf), str(n)], capture_output=True, timeout=60)
+    for 行 in r.stdout.decode("utf-8", "replace").splitlines():
+        p = 行.split("\t")
+        if len(p) >= 3:
+            try:
+                out.append((p[0], float(p[1]), float(p[2])))
+            except ValueError:
+                pass
+    return out
+
+
+def 分(t):
+    m = 時刻型.match(t)
+    return int(m.group(1)) * 60 + int(m.group(2))
+
+
+def 格子を組む(語々):
+    """語の座標から「停留所×便」の表を組む。1ページに複数の表（往路/復路）があってよい"""
+    # 行にまとめる（yが近い語は同じ行）
+    行たち = []
+    for 語, x, y in sorted(語々, key=lambda w: (w[2], w[1])):
+        for r in 行たち:
+            if abs(r["y"] - y) <= 3:
+                r["語"].append((語, x)); break
+        else:
+            行たち.append({"y": y, "語": [(語, x)]})
+    表たち = []
+    # 各行で「時刻セル」と「その左隣の名前セル」を対にする
+    対たち = []   # (名前, 名x, 時刻, 時x, y)
+    for r in 行たち:
+        名前セル = [(w, x) for w, x in r["語"] if not 時刻型.match(w) and re.search(r"[぀-ゟ゠-ヿ一-鿿]", w)]
+        for w, x in r["語"]:
+            if not 時刻型.match(w):
+                continue
+            左 = [(nw, nx) for nw, nx in 名前セル if nx < x]
+            if not 左:
+                continue
+            nw, nx = max(左, key=lambda p: p[1])
+            対たち.append((nw, nx, w, x, r["y"]))
+    if not 対たち:
+        return []
+    # 名前の列（x）ごとに1つの表とみなす
+    名列たち = []
+    for _, nx, _, _, _ in 対たち:
+        for c in 名列たち:
+            if abs(c - nx) <= 12: break
+        else:
+            名列たち.append(nx)
+    for 名x in 名列たち:
+        こ = [p for p in 対たち if abs(p[1] - 名x) <= 12]
+        # 停留所（行）を上から順に。
+        # ★名前でなく「行の位置」で束ねる（2026-08-23実測：水谷線は同じ停留所を
+        #   2回通るため、名前で束ねると時刻の並びが壊れて表ごと捨てられていた）
+        停順, 見た = [], {}
+        for nw, _, _, _, y in sorted(こ, key=lambda p: p[4]):
+            鍵 = round(y / 3)
+            if 鍵 not in 見た:
+                見た[鍵] = len(停順); 停順.append(nw)
+        # 便（時刻のx）ごとに列を作る
+        列xたち = []
+        for _, _, _, tx, _ in こ:
+            for c in 列xたち:
+                if abs(c - tx) <= 8: break
+            else:
+                列xたち.append(tx)
+        列xたち.sort()
+        便たち = []
+        for cx in 列xたち:
+            列 = [""] * len(停順)
+            for nw, _, tw, tx, y in こ:
+                if abs(tx - cx) <= 8:
+                    列[見た[round(y / 3)]] = tw
+            # ★検算：上から下へ時刻が増えているか（バスは先へ進むほど遅い）。
+            #   崩れている列は座標の取り違え＝載せない
+            並び = [分(t) for t in 列 if t]
+            if len(並び) >= 2 and all(並び[i] <= 並び[i+1] for i in range(len(並び)-1)):
+                便たち.append(列)
+        if len(停順) >= 3 and 便たち:
+            表たち.append({"停": 停順, "便": 便たち})
+    return 表たち
+
+
 if __name__ == "__main__":
     kb = json.loads(kb路.read_text(encoding="utf-8"))
     url, 親 = 時刻表のPDFを探す(kb)
@@ -132,9 +239,20 @@ if __name__ == "__main__":
     print(f"{頁数}ページを描いた", file=sys.stderr)
 
     頁たち = []
+    格子あり = 0
     for n in range(1, 頁数 + 1):
         文 = 整える(頁文(一時, n))
-        頁たち.append({"n": n, "画像": f"bus_cal/bus_{n}.png", "文": 文})
+        頁 = {"n": n, "画像": f"bus_cal/bus_{n}.png", "文": 文}
+        try:
+            表 = 格子を組む(語々を取る(一時, n))
+        except Exception as e:
+            print(f"  p{n} 格子が組めない {e}", file=sys.stderr)
+            表 = []
+        if 表:
+            頁["表"] = 表
+            格子あり += 1
+        頁たち.append(頁)
+    print(f"時刻の格子を組めたページ: {格子あり}/{頁数}", file=sys.stderr)
 
     # 保存量の検算（絶対ルール30：取り込んだら量を検算する）
     総 = sum(len(p["文"]) for p in 頁たち)
@@ -146,6 +264,10 @@ if __name__ == "__main__":
         "問い合わせ": "ウイング神姫 山崎営業所 0790-62-1720",
         "頁": 頁たち,
     }, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"{頁数}ページ・文章合計{総}字（文の無い頁 {空}）→ {出力}（{出力.stat().st_size//1024}KB）")
+    格子頁 = sum(1 for p in 頁たち if p.get("表"))
+    停総 = sum(len(t["停"]) for p in 頁たち for t in p.get("表", []))
+    便総 = sum(len(t["便"]) for p in 頁たち for t in p.get("表", []))
+    print(f"{頁数}ページ・文章合計{総}字（文の無い頁 {空}）／格子 {格子頁}頁・停留所のべ{停総}・便{便総}"
+          f" → {出力}（{出力.stat().st_size//1024}KB）")
     if 頁数 < 20:
         print("★注意: ページ数が例年（32）より大幅に少ない。PDFの作りが変わった疑い", file=sys.stderr)
