@@ -35,9 +35,13 @@ jobs:
         run: python3 scripts/build_shiso_reiki.py
       - name: 主要PDFの中身を文章にする（手引き・しおり・時刻表）
         run: python3 scripts/build_shiso_pdf.py
+      - name: 施設の一覧を作る（学校・こども園・避難所）
+        run: python3 scripts/build_shiso_shisetsu.py
+      - name: バス時刻表を作る（地区表→ページ画像）
+        run: python3 scripts/build_shiso_bus.py
       - name: 変化があればコミット
         run: |
-          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json gomi_cal
+          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json gomi_cal bus_cal
           if git diff --cached --quiet; then
             echo "変化なし"
           else
