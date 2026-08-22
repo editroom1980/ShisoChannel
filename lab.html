@@ -987,6 +987,26 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   border-bottom:1px solid rgba(255,255,255,0.14);
 }
 #ai-list li:last-child{border-bottom:none;}
+/* 経路案内の行：区切りと道のりの字下げ（2026-08-23。バスの乗り換え案内で使う） */
+#ai-list li.ai-sep{
+  border-bottom:none;padding-top:12px;color:var(--green4);
+  font-size:15px;letter-spacing:2px;
+}
+#ai-list li.ai-step{
+  padding-left:30px;color:var(--green5);font-size:17px;
+  border-bottom:1px dashed rgba(255,255,255,0.10);
+}
+/* おすすめの1本（バスの経路案内の見出し行） */
+#ai-list li.ai-best{
+  background:rgba(200,153,42,0.16);border-left:5px solid var(--gold);
+  border-bottom:none;padding:9px 0 9px 14px;
+  font-size:20px;font-weight:700;color:#fff;border-radius:4px;margin:2px 0 4px;
+}
+/* 乗り換えの待ち時間 */
+#ai-list li.ai-wait{
+  padding-left:44px;border-bottom:none;
+  font-size:16px;color:var(--gold2);
+}
 #ai-note{
   margin:12px 0 0;padding-top:9px;border-top:2px solid var(--gold);
   font-size:16px;line-height:1.6;color:var(--gold2);
@@ -1971,7 +1991,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.91-lab（案内中は番組を確実に停止・バス時刻表）</div>
+    <div class="ps-version">version 3.93-lab（バスの経路案内・待ち時間と運賃を明示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4639,7 +4659,15 @@ window.__aiAnswer=function(obj){
     _aiEl('ai-text').textContent   = o.text||'';
     var ul=_aiEl('ai-list'); ul.innerHTML='';
     var L=o.lines||[];
-    for(var i=0;i<L.length;i++){ var li=document.createElement('li'); li.textContent=L[i]; ul.appendChild(li); }
+    for(var i=0;i<L.length;i++){
+      var li=document.createElement('li'); li.textContent=L[i];
+      // 「― …―」は区切り、先頭が全角空白の行は道のりの内訳
+      if(/^―.*―$/.test(L[i])) li.className='ai-sep';
+      else if(L[i].charAt(0)==='◎') li.className='ai-best';
+      else if(/^\u3000\u3000↓/.test(L[i])) li.className='ai-wait';
+      else if(L[i].charAt(0)==='\u3000') li.className='ai-step';
+      ul.appendChild(li);
+    }
     _aiEl('ai-note').textContent   = o.note||'';
     // ごみカレンダー等の画像。アプリが答えのJSONに 画像:[URL,…] を載せてくる
     var box=_aiEl('ai-imgs'); box.innerHTML='';
