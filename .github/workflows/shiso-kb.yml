@@ -33,9 +33,11 @@ jobs:
         run: python3 scripts/build_shiso_gomi.py
       - name: 条例・規則の索引を集める（例規集）
         run: python3 scripts/build_shiso_reiki.py
+      - name: 主要PDFの中身を文章にする（手引き・しおり・時刻表）
+        run: python3 scripts/build_shiso_pdf.py
       - name: 変化があればコミット
         run: |
-          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json gomi_cal
+          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json gomi_cal
           if git diff --cached --quiet; then
             echo "変化なし"
           else
