@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-宍粟市公式サイトから「暮らしの案内」を集めて、AIが答えるための資料を作る。
+宍粟市公式サイトを網羅的に集めて、AIが答えるための資料を作る。
 出力: shiso_kb.json
 
 なぜ作るか（2026-08-21）：
@@ -10,28 +10,38 @@
   「介護保険の申請は」に対して正確な課名と番号を答えられる。
   Googleの検索連携は無料枠で使えなかったため、自前で持つ形にした。
 
+v2で直したこと（2026-08-22。「制度について細かく答えられるようにしろ」指示）：
+  ・本文の700字打ち切りを廃止 → 全文を保存する。
+    切っていたせいで、制度の説明・申請の持ち物・料金がデータに残っていなかった
+  ・表(<table>)を構造のまま保存する（学校一覧・料金表・ごみの地区表はみんな表）
+  ・添付(PDF等)への繋がりを保存する（ごみカレンダー・申請書・しおりはみんなPDF）
+  ・入口をサイト全体に広げた（市政・観光・事業者。従来は暮らしの周辺だけ）
+  ・課が無くても、表か添付を持つページは残す（一覧ページに実データがある）
+
 行儀よく集めること：
   ・1ページごとに間をあける（市のサーバーに負担をかけない）
   ・名乗る（User-Agent）
-  ・議事録やPDFなど、量が多く案内に使わないものは拾わない
+  ・議事録・入札など、量が多く案内に使わないものは拾わない
 """
 import json, re, time, sys, html, urllib.request, urllib.parse, pathlib
 from collections import deque
 
 元 = "https://www.city.shiso.lg.jp"
 # ★HTTPヘッダーは英数字しか送れない（日本語を入れると latin-1 のエラーで全滅する）
-名乗り = "ShisochanNET-KB/1.0 (+https://shisochan.net/; citizen broadcast app; contact via site)"
+名乗り = "ShisochanNET-KB/2.0 (+https://shisochan.net/; citizen broadcast app; contact via site)"
 出力 = pathlib.Path(__file__).resolve().parent.parent / "shiso_kb.json"
 
-# 集める入口（暮らしに関わる案内が並んでいるところ）
+# 集める入口。トップから全部辿るのが基本。個別の入口は「トップから深くて
+# 辿り着きにくい所」を確実に拾うための保険
 入口 = [
+    "/",
     "/kurashi/index.html",
     "/kosodadekyoiku/index.html",
     "/kenkofukushi/index.html",
     "/bosai/index.html",
-    # ★組織（課）から辿る入口。2026-08-21に「介護保険」の記事が1件も
-    #   集まっていないことが分かったため追加した。暮らしの分類だけでは
-    #   拾いきれない担当課のページがある
+    "/shisei/index.html",
+    "/kanko/index.html",
+    "/jigyosha/index.html",
     "/soshiki/index.html",
     "/kurashi/fukushi/index.html",
     "/kurashi/kaigo/index.html",
@@ -42,13 +52,16 @@ from collections import deque
     "/kurashi/kosekijumintoroku/index.html",
 ]
 
-# 拾わないもの（量が多い・案内に使わない）
+# 辿らないもの（量が多い・案内に使わない）。
+# ※.pdf は「辿らない」だけで、ページからの繋がり（添付）としては保存する
 除外 = re.compile(
     r"(\.pdf|\.doc|\.xls|\.zip|\.jpg|\.png|/gikai/|/nyusatsu/|/kouhou/|"
     r"/photo|/movie|/koho|/shingikai|/pubcome|/jinji/|/kekka|/nyusatu)", re.I)
 
-上限 = int(sys.argv[1]) if len(sys.argv) > 1 else 700   # 集めるページ数の上限
-間 = 0.4                                                 # 1ページごとの待ち（秒）
+集め上限 = int(sys.argv[1]) if len(sys.argv) > 1 else 3000  # 残すページ数の上限
+見上限 = 集め上限 * 3                                        # 訪ねるページ数の上限（暴走止め）
+間 = 0.4                                                     # 1ページごとの待ち（秒）
+本文上限 = 20000                                             # 1ページの本文の上限（異常に長い頁の保険）
 
 
 # ★手元のMacのPythonは証明書の一覧を持っておらずSSLで落ちる（2026-08-21）。
@@ -102,7 +115,7 @@ def 問い合わせ先(生html):
 
 
 def 本文(生html):
-    """記事の中身。長すぎると資料が膨らむので頭のほうだけ"""
+    """記事の中身。v2: 打ち切らない（700字で切ると制度の中身が消える）"""
     t = 文字だけ(生html)
     # 共通のヘッダ・メニューを落とす（本文は「現在の位置」より後ろに来る）
     for 目印 in ["現在の位置", "ホーム >", "トップページ"]:
@@ -115,7 +128,47 @@ def 本文(生html):
         t = t[:j]
     t = re.sub(r"(PC版を表示|スマートフォン版を表示|メニュー|検索|文字サイズ|背景色|"
                r"発酵のふるさと宍粟|Tweet|新着情報 NEW!|現在、新着情報はございません。)", " ", t)
-    return re.sub(r"\s+", " ", t).strip()[:700]
+    return re.sub(r"\s+", " ", t).strip()[:本文上限]
+
+
+def 表を取る(生html):
+    """<table> を行×マスの構造のまま取り出す。
+       学校一覧・料金表・ごみの収集地区は全部これに入っている"""
+    表たち = []
+    for tb in re.findall(r"(?is)<table[^>]*>.*?</table>", 生html)[:30]:
+        行たち = []
+        for tr in re.findall(r"(?is)<tr[^>]*>.*?</tr>", tb)[:80]:
+            マス = [文字だけ(c)[:200]
+                    for c in re.findall(r"(?is)<t[hd][^>]*>.*?</t[hd]>", tr)]
+            if any(マス):
+                行たち.append(マス)
+        # 1行だけの表はレイアウト用の枠。データではないので拾わない
+        if len(行たち) >= 2:
+            表たち.append(行たち)
+    return 表たち
+
+
+def 添付を取る(生html, 基url):
+    """ページから繋がるPDF等（カレンダー・申請書・しおり）。名前と場所を保存"""
+    out, 済 = [], set()
+    for m in re.finditer(r'(?is)<a[^>]+href=["\']([^"\']+\.(?:pdf|xlsx?|docx?))["\'][^>]*>(.*?)</a>',
+                         生html):
+        u = urllib.parse.urljoin(基url, m.group(1)).split("#")[0]
+        if u in 済:
+            continue
+        済.add(u)
+        名 = 文字だけ(m.group(2))[:80]
+        out.append({"名": 名 or u.rsplit("/", 1)[-1], "url": u})
+        if len(out) >= 40:
+            break
+    return out
+
+
+def 更新日を取る(生html):
+    m = re.search(r"更新日[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日", 生html)
+    if not m:
+        return ""
+    return "%04d-%02d-%02d" % (int(m.group(1)), int(m.group(2)), int(m.group(3)))
 
 
 def 走る():
@@ -123,7 +176,7 @@ def 走る():
     for p in 入口:
         待ち.append(元 + p)
     始め = time.time()
-    while 待ち and len(集めた) < 上限:
+    while 待ち and len(集めた) < 集め上限 and len(見た) < 見上限:
         u = 待ち.popleft()
         u = u.split("#")[0]
         if u in 見た or 除外.search(u):
@@ -140,12 +193,20 @@ def 走る():
         題 = html.unescape(題.group(1)).replace("／宍粟市", "").strip() if 題 else ""
         本 = 本文(h)
         先 = 問い合わせ先(h)
-        # ★担当課が載っているページだけ残す（2026-08-21）。
-        #   一覧・メニューのページには問い合わせ先が無い＝案内の中身も無い。
-        #   これで絞ると「行政の案内として使えるページ」だけが残る
-        if 題 and len(本) >= 60 and 先.get("課"):
-            集めた.append({"題": 題, "url": u, "文": 本, **先})
-            if len(集めた) % 25 == 0:
+        表 = 表を取る(h)
+        添 = 添付を取る(h, u)
+        日 = 更新日を取る(h)
+        # 残す基準（v2）：
+        #  ・担当課が載っている記事は全部（行政案内の本体）
+        #  ・課が無くても、表か添付を持つページは残す（一覧に実データがある）
+        #  ・どちらも無いページは案内でなくメニューなので残さない
+        if 題 and ((len(本) >= 60 and 先.get("課")) or 表 or 添):
+            o = {"題": 題, "url": u, "文": 本, **先}
+            if 表: o["表"] = 表
+            if 添: o["添付"] = 添
+            if 日: o["日"] = 日
+            集めた.append(o)
+            if len(集めた) % 50 == 0:
                 print(f"  {len(集めた)}件 … {題[:24]}", file=sys.stderr)
 
         # 同じサイトの .html だけ辿る
@@ -153,15 +214,15 @@ def 走る():
             v = urllib.parse.urljoin(u, m).split("#")[0]
             if not v.startswith(元):
                 continue
-            if not v.endswith(".html") or 除外.search(v) or v in 見た:
+            if not (v.endswith(".html") or v.rstrip("/") == 元) or 除外.search(v) or v in 見た:
                 continue
             待ち.append(v)
 
-    return 集めた, time.time() - 始め
+    return 集めた, len(見た), time.time() - 始め
 
 
 if __name__ == "__main__":
-    集めた, 秒 = 走る()
+    集めた, 見た数, 秒 = 走る()
     # 同じ記事が別の道から二重三重に入ることがある。題と課で1つにまとめる
     _見た = set(); _残す = []
     for _o in 集めた:
@@ -175,12 +236,19 @@ if __name__ == "__main__":
     for it in 集めた:
         if it.get("課") and it.get("電話"):
             電話帳.setdefault(it["課"], it["電話"][0])
+    本文字数 = sorted(len(x.get("文", "")) for x in 集めた)
     出力.write_text(json.dumps({
+        "版": "2",
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "出典": "宍粟市公式サイト https://www.city.shiso.lg.jp/",
         "件数": len(集めた),
         "電話帳": 電話帳,
         "項目": 集めた,
     }, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"{len(集めた)}件を集めました（{秒:.0f}秒）／課の電話帳 {len(電話帳)}件")
+    表数 = sum(1 for x in 集めた if x.get("表"))
+    添数 = sum(1 for x in 集めた if x.get("添付"))
+    print(f"{len(集めた)}件を残した（訪ねた{見た数}頁・{秒:.0f}秒）／課の電話帳 {len(電話帳)}件")
+    print(f"表を持つ頁 {表数}件／添付を持つ頁 {添数}件")
+    if 本文字数:
+        print(f"本文の長さ: 最小{本文字数[0]} 中央{本文字数[len(本文字数)//2]} 最大{本文字数[-1]}")
     print(f"→ {出力}（{出力.stat().st_size//1024}KB）")

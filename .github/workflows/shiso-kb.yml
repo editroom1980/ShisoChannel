@@ -20,22 +20,28 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90     # v2で全文・全ページ収集になり長くなった（実測40分＋余裕）
     steps:
       - uses: actions/checkout@v4
-      - name: 行政案内を集める（市公式サイト）
-        run: python3 scripts/build_shiso_kb.py 2000
+      - name: PDFを画像にする道具（ごみカレンダー用）
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+      - name: 行政案内を集める（市公式サイト・全文＋表＋添付）
+        run: python3 scripts/build_shiso_kb.py 3000
       - name: 観光スポットを集める（観光協会公式ガイド）
         run: python3 scripts/build_shiso_kanko.py
+      - name: ごみカレンダーを集める（地区表＋PDF→画像）
+        run: python3 scripts/build_shiso_gomi.py
+      - name: 条例・規則の索引を集める（例規集）
+        run: python3 scripts/build_shiso_reiki.py
       - name: 変化があればコミット
         run: |
-          if git diff --quiet shiso_kb.json shiso_kanko.json; then
+          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json gomi_cal
+          if git diff --cached --quiet; then
             echo "変化なし"
           else
             git config user.name  'github-actions[bot]'
             git config user.email 'github-actions[bot]@users.noreply.github.com'
-            git add shiso_kb.json shiso_kanko.json
-            git commit -m 'data: 行政案内・観光データベースを自動更新'
+            git commit -m 'data: 行政案内・観光・ごみカレンダー・例規を自動更新'
             git pull --rebase origin main
             git push
           fi

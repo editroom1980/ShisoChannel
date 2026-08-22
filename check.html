@@ -991,6 +991,12 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   margin:12px 0 0;padding-top:9px;border-top:2px solid var(--gold);
   font-size:16px;line-height:1.6;color:var(--gold2);
 }
+/* ごみカレンダー等の画像（アプリが答えに載せてくる。↑↓でめくって読む） */
+#ai-imgs{margin:12px 0 0;}
+#ai-imgs img{
+  display:block;width:100%;margin:0 0 14px;
+  border-radius:6px;background:#fff;   /* 下地を白に（読み込み中も枠が見える） */
+}
 #ai-hint{
   padding:5px 22px 9px;flex-shrink:0;
   font-size:13px;color:var(--green4);text-align:right;letter-spacing:1px;
@@ -1965,7 +1971,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.89-lab（AIの窓の字を詰めて全文表示）</div>
+    <div class="ps-version">version 3.90-lab（ごみカレンダー表示・聞き間違いの直し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2296,6 +2302,7 @@ html.tvapp #lnk-reg{display:none;}
       <p id="ai-text"></p>
       <ul id="ai-list"></ul>
       <p id="ai-note"></p>
+      <div id="ai-imgs"></div>
     </div>
     <div id="ai-hint">戻るボタンで閉じます</div>
   </div>
@@ -4616,6 +4623,14 @@ window.__aiAnswer=function(obj){
     var L=o.lines||[];
     for(var i=0;i<L.length;i++){ var li=document.createElement('li'); li.textContent=L[i]; ul.appendChild(li); }
     _aiEl('ai-note').textContent   = o.note||'';
+    // ごみカレンダー等の画像。アプリが答えのJSONに 画像:[URL,…] を載せてくる
+    var box=_aiEl('ai-imgs'); box.innerHTML='';
+    var IM=o['画像']||[];
+    for(var j=0;j<IM.length;j++){
+      var im=document.createElement('img');
+      im.src=IM[j]; im.alt='カレンダー '+(j+1)+'枚目';
+      box.appendChild(im);
+    }
     var body=_aiEl('ai-body'); body.scrollTop=0;
     // 収まりきらない時だけ「↑↓で読む」と案内する（収まっていれば余計なことを言わない）
     setTimeout(function(){
@@ -4624,9 +4639,12 @@ window.__aiAnswer=function(obj){
         ? '↑↓ で読み進める　／　戻るで閉じます'
         : 'どれかのボタンで閉じます';
     }, 30);
-    // 読み終わるころに自分で閉じる（中身が多いほど長く置く）
+    // 読み終わるころに自分で閉じる（中身が多いほど長く置く）。
+    // カレンダーの画像がある時は、めくって読む時間ぶん長く置く（最低2分）
     var 量=(o.text||'').length + (o.title||'').length + L.join('').length;
-    _aiCloseT=setTimeout(window.__aiClose, Math.max(12000, Math.min(90000, 量*220+8000)));
+    var 猶予=Math.max(12000, Math.min(90000, 量*220+8000));
+    if(IM.length>0) 猶予=Math.max(猶予, 120000);
+    _aiCloseT=setTimeout(window.__aiClose, 猶予);
   }catch(e){ try{ console.log('ai答えの表示に失敗', e); }catch(_){}}
 };
 
