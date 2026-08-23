@@ -1991,7 +1991,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.97-lab（決定ボタンの案内を大きく・遠回りの根治）</div>
+    <div class="ps-version">version 3.98-lab（質問したら必ずマイクを開き、問いを画面に残す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4621,15 +4621,20 @@ window.__aiState=function(kind, 文){
     var w=_aiOpen(); if(!w) return;
     if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
     w.classList.toggle('listening', kind==='listen');
+    // ★こちらから尋ねた時（文に問いが入る）は、その問いを消さずに出したまま
+    //   「マイクは開いています」と示す（2026-08-23指示）。
+    //   問いが消えると、何を答えればよいのか分からなくなる
+    var 問い = 文 || '';
     _aiEl('ai-head-t').textContent =
       (kind==='wait')   ? '★まだ話さないでください（マイクを準備しています）' :
-      (kind==='listen') ? '● どうぞ、お話しください' : 'お調べしています';
-    // ★話し終わりの操作は、いちばん目立つ場所に大きく出す（2026-08-23指示）
-    _aiEl('ai-q').textContent    = 文 ? '「'+文+'」' : '';
-    _aiEl('ai-title').textContent= '';
+      (kind==='listen') ? (問い ? 'お答えください　マイクは開いています'
+                                : 'どうぞ、お話しください') : 'お調べしています';
+    _aiEl('ai-q').textContent    = '';
+    _aiEl('ai-title').textContent= 問い;
     _aiEl('ai-text').textContent =
       (kind==='wait')   ? 'マイクの準備をしています。合図が出るまで、まだ話さないでください。' :
-      (kind==='listen') ? '話し終わったら【決定ボタン】を押すと、すぐお調べします。' :
+      (kind==='listen') ? (問い ? 'そのままお話しください。話し終わったら【決定ボタン】を押します。'
+                                : '話し終わったら【決定ボタン】を押すと、すぐお調べします。') :
                           '少しお待ちください。';
     _aiEl('ai-list').innerHTML   = '';
     _aiEl('ai-note').textContent = '';
