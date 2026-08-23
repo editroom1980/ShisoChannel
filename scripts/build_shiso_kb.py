@@ -23,6 +23,7 @@ v2で直したこと（2026-08-22。「制度について細かく答えられ�
   ・名乗る（User-Agent）
   ・議事録・入札など、量が多く案内に使わないものは拾わない
 """
+import time
 import json, re, time, sys, html, urllib.request, urllib.parse, pathlib
 from collections import deque
 
@@ -81,6 +82,21 @@ _文脈 = _ssl文脈()
 
 
 def 取る(url):
+    # ★通信は1回で諦めない（2026-08-23）。GitHub Actionsの週1更新が
+    #   1回のタイムアウトで丸ごと落ち、79分かけた他の収集まで捨てられた。
+    #   相手のサイトに迷惑をかけないよう、間をあけて3回まで試す
+    最後 = None
+    for 再試行 in range(3):
+        try:
+            return 取る一回(url)
+        except Exception as e:
+            最後 = e
+            if 再試行 < 2:
+                time.sleep(3 * (再試行 + 1))
+    raise 最後
+
+
+def 取る一回(url):
     req = urllib.request.Request(url, headers={"User-Agent": 名乗り})
     with urllib.request.urlopen(req, timeout=20, context=_文脈) as r:
         b = r.read()

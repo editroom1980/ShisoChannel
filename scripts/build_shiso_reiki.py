@@ -16,6 +16,7 @@
   reiki_taikei/r_taikei_XX_YY.html … 章ごとの条例一覧
   reiki_honbun/rXXXRGXXXXXXXX.html … 条例の本文
 """
+import time
 import json, re, time, sys, html, urllib.request, urllib.parse, pathlib
 
 元 = "https://www1.g-reiki.net/city.shiso/"
@@ -39,6 +40,21 @@ _文脈 = _ssl文脈()
 
 
 def 取る(url):
+    # ★通信は1回で諦めない（2026-08-23）。GitHub Actionsの週1更新が
+    #   1回のタイムアウトで丸ごと落ち、79分かけた他の収集まで捨てられた。
+    #   相手のサイトに迷惑をかけないよう、間をあけて3回まで試す
+    最後 = None
+    for 再試行 in range(3):
+        try:
+            return 取る一回(url)
+        except Exception as e:
+            最後 = e
+            if 再試行 < 2:
+                time.sleep(3 * (再試行 + 1))
+    raise 最後
+
+
+def 取る一回(url):
     req = urllib.request.Request(url, headers={"User-Agent": 名乗り})
     with urllib.request.urlopen(req, timeout=25, context=_文脈) as r:
         return r.read().decode("utf-8", "replace")
@@ -92,7 +108,13 @@ if __name__ == "__main__":
 
     if len(索引) < 200:
         raise SystemExit(f"条例が{len(索引)}件しか取れない（作りが変わった疑い）")
-    現在 = re.search(r"内容現在\s*([^<）)]+)", 取る(元 + "reiki_menu.html"))
+    # ★ここで落ちると、1126件を集めきった苦労が全部無駄になる（2026-08-23）。
+    #   「内容現在」は添え書きなので、取れなくても索引は保存する
+    現在 = None
+    try:
+        現在 = re.search(r"内容現在\s*([^<）)]+)", 取る(元 + "reiki_menu.html"))
+    except Exception as e:
+        print(f"  内容現在が取れない（索引はそのまま保存する）: {e}", file=sys.stderr)
     出力.write_text(json.dumps({
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "出典": 元 + "reiki_menu.html",

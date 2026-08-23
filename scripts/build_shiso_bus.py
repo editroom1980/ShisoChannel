@@ -15,6 +15,7 @@
   ・画像は幅1600px（テレビで数字が読める精細さ。ごみカレンダーで実証済み）
   ・ページ文はそのまま保存（1ページ2千〜3千字。検索に使う）
 """
+import time
 import json, re, time, sys, hashlib, subprocess, shutil, pathlib, urllib.request
 
 根 = pathlib.Path(__file__).resolve().parent.parent
@@ -40,6 +41,21 @@ _文脈 = _ssl文脈()
 
 
 def 取る(url):
+    # ★通信は1回で諦めない（2026-08-23）。GitHub Actionsの週1更新が
+    #   1回のタイムアウトで丸ごと落ち、79分かけた他の収集まで捨てられた。
+    #   相手のサイトに迷惑をかけないよう、間をあけて3回まで試す
+    最後 = None
+    for 再試行 in range(3):
+        try:
+            return 取る一回(url)
+        except Exception as e:
+            最後 = e
+            if 再試行 < 2:
+                time.sleep(3 * (再試行 + 1))
+    raise 最後
+
+
+def 取る一回(url):
     req = urllib.request.Request(url, headers={"User-Agent": 名乗り})
     with urllib.request.urlopen(req, timeout=90, context=_文脈) as r:
         return r.read()

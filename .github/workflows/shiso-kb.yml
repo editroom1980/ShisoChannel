@@ -26,20 +26,35 @@ jobs:
       - name: PDFを画像にする道具（ごみカレンダー用）
         run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
       - name: 行政案内を集める（市公式サイト・全文＋表＋添付）
+        id: kb
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_kb.py 3000
       - name: 観光スポットを集める（観光協会公式ガイド）
+        id: kanko
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_kanko.py
       - name: ごみカレンダーを集める（地区表＋PDF→画像）
+        id: gomi
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_gomi.py
       - name: 条例・規則の索引を集める（例規集）
+        id: reiki
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_reiki.py
       - name: 主要PDFの中身を文章にする（手引き・しおり・時刻表）
+        id: pdf
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_pdf.py
       - name: 施設の一覧を作る（学校・こども園・避難所）
+        id: shisetsu
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_shisetsu.py
       - name: バス時刻表を作る（地区表→ページ画像）
+        id: bus
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_bus.py
       - name: 変化があればコミット
+        if: always()    # ★どれかが失敗しても、取れた分は必ず保存する
         run: |
           git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json gomi_cal bus_cal
           if git diff --cached --quiet; then
@@ -51,3 +66,23 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+      - name: 取り込めなかったものがあれば知らせる
+        if: always()
+        run: |
+          # ★1つでも取り込めなかったら、この実行は失敗にする（2026-08-23）。
+          #   黙って古い資料のまま緑になると、更新が止まっていることに気づけない。
+          #   ただし取れた分はすでにコミット済みなので、79分の作業は無駄にならない。
+          #   ※シェルの変数名に日本語は使えないので英字にしてある
+          missing=""
+          if [ "${{ steps.kb.outcome }}"       = "failure" ]; then missing="$missing 行政案内"; fi
+          if [ "${{ steps.kanko.outcome }}"    = "failure" ]; then missing="$missing 観光"; fi
+          if [ "${{ steps.gomi.outcome }}"     = "failure" ]; then missing="$missing ごみ"; fi
+          if [ "${{ steps.reiki.outcome }}"    = "failure" ]; then missing="$missing 例規"; fi
+          if [ "${{ steps.pdf.outcome }}"      = "failure" ]; then missing="$missing PDF"; fi
+          if [ "${{ steps.shisetsu.outcome }}" = "failure" ]; then missing="$missing 施設"; fi
+          if [ "${{ steps.bus.outcome }}"      = "failure" ]; then missing="$missing バス"; fi
+          if [ -n "$missing" ]; then
+            echo "::error::取り込めなかった資料:$missing（ほかの資料は保存済み）"
+            exit 1
+          fi
+          echo "すべての資料を取り込めました"
