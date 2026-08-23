@@ -1991,7 +1991,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.95-lab（話し始めの合図をはっきり・応答を速く）</div>
+    <div class="ps-version">version 3.96-lab（決定ボタンで確定・話し始めの合図）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4628,13 +4628,13 @@ window.__aiState=function(kind, 文){
     _aiEl('ai-title').textContent= '';
     _aiEl('ai-text').textContent =
       (kind==='wait')   ? 'マイクの準備をしています。合図が出るまで、まだ話さないでください。' :
-      (kind==='listen') ? 'ご用件をお話しください。話し終わったら、もう一度マイクのボタンを押してください。' :
+      (kind==='listen') ? 'ご用件をお話しください。話し終わったら、まん中の決定ボタンを押してください。' :
                           '少しお待ちください。';
     _aiEl('ai-list').innerHTML   = '';
     _aiEl('ai-note').textContent = '';
     // ★聞き取り中は閉じ方でなく「終わり方」を示す（2026-08-23の押して押す方式）
     _aiEl('ai-hint').textContent = (kind==='listen')
-      ? 'もう一度マイクのボタンを押すと検索します'
+      ? '決定ボタン（まん中）を押すと、すぐ検索します'
       : (kind==='wait') ? 'マイクの用意をしています' : 'お調べしています';
   }catch(_){}
 };
@@ -4645,9 +4645,9 @@ window.__aiHeard=function(文){
     if(!OPTS.aicap) return;
     var w=_aiEl('ai-win'); if(!w||!w.classList.contains('on')) return;
     _aiEl('ai-title').textContent = 文 ? '「'+文+'」' : '';
-    _aiEl('ai-text').textContent  = 文 ? '聞き取っています。終わったら、もう一度マイクのボタンを押してください。'
-                                       : 'ご用件をお話しください。話し終わったら、もう一度マイクのボタンを押してください。';
-    _aiEl('ai-hint').textContent  = 'もう一度マイクのボタンを押すと検索します';
+    _aiEl('ai-text').textContent  = 文 ? '聞き取っています。終わったら、まん中の決定ボタンを押してください。'
+                                       : 'ご用件をお話しください。話し終わったら、まん中の決定ボタンを押してください。';
+    _aiEl('ai-hint').textContent  = '決定ボタン（まん中）を押すと、すぐ検索します';
   }catch(_){}
 };
 
