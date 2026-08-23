@@ -1991,7 +1991,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.94-lab（マイクは押して押す方式・バス経路の根治）</div>
+    <div class="ps-version">version 3.95-lab（話し始めの合図をはっきり・応答を速く）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4622,12 +4622,12 @@ window.__aiState=function(kind, 文){
     if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
     w.classList.toggle('listening', kind==='listen');
     _aiEl('ai-head-t').textContent =
-      (kind==='wait')   ? 'マイクを準備しています' :
-      (kind==='listen') ? 'お話しください' : 'お調べしています';
+      (kind==='wait')   ? '★まだ話さないでください（マイクを準備しています）' :
+      (kind==='listen') ? '● どうぞ、お話しください' : 'お調べしています';
     _aiEl('ai-q').textContent    = 文 ? '「'+文+'」' : '';
     _aiEl('ai-title').textContent= '';
     _aiEl('ai-text').textContent =
-      (kind==='wait')   ? 'まだ話さないでください。' :
+      (kind==='wait')   ? 'マイクの準備をしています。合図が出るまで、まだ話さないでください。' :
       (kind==='listen') ? 'ご用件をお話しください。話し終わったら、もう一度マイクのボタンを押してください。' :
                           '少しお待ちください。';
     _aiEl('ai-list').innerHTML   = '';
