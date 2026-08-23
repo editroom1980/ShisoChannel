@@ -130,6 +130,12 @@ def 分ける(t):
             if len(out) >= 最大片: break
         今.append(行); 長さ += len(行) + 1
     if 今 and len(out) < 最大片: out.append("\n".join(今))
+    # ★中身のほとんど無い断片は前の塊へ併合する（2026-08-23の点検で発覚：
+    #   大型バス時刻表の(2/2)が「18:25\n11 12」の11字だけで保存されていた。
+    #   ゴミ資料は検索の点数を薄めるだけで益が無い）
+    while len(out) >= 2 and len(out[-1].strip()) < 200:
+        末 = out.pop()
+        out[-1] = out[-1] + "\n" + 末
     return out
 
 
