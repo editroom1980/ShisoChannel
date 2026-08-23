@@ -393,6 +393,117 @@ def 表を組む(こ, 名x, 文脈):
     return None
 
 
+
+# ══ 停留所の座標（宍粟市が公開している公式GTFSから）════════════
+#  ★なぜ要るか（2026-08-23の実測）：
+#   「山崎町山田から波賀町飯見まで」で、山田→山崎のバスに乗せていた。
+#   ところが山田と山崎のバス停は **442メートル＝徒歩5分** しか離れていない。
+#   Googleは徒歩で山崎まで出て「山崎〜皆木」の1本で行く案内を出す（1時間2分・200円）。
+#   座標が無いと「歩けば済む区間」が分からず、乗り換えだらけの遠回りになる。
+#  出典: 宍粟市 しーたんバス GTFS-JP（api.gtfs-data.jp / organization=shisocity）
+GTFS一覧 = ("shitanbus-wingshinki", "shitanbus")
+
+
+def 停の座標を取る():
+    """公式GTFSから 停留所名→(緯度, 経度) を作る。取れなければ空"""
+    import io, zipfile, csv as _csv
+    out = {}
+    for f in GTFS一覧:
+        try:
+            b = 取る("https://api.gtfs-data.jp/v2/organizations/shisocity/feeds/"
+                     + f + "/files/feed.zip")
+            z = zipfile.ZipFile(io.BytesIO(b))
+            with z.open("stops.txt") as fp:
+                r = _csv.DictReader(io.TextIOWrapper(fp, encoding="utf-8-sig"))
+                for s in r:
+                    n = (s.get("stop_name") or "").strip()
+                    if not n:
+                        continue
+                    try:
+                        out.setdefault(n, []).append(
+                            (float(s["stop_lat"]), float(s["stop_lon"])))
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"GTFSが取れない({f}): {e}", file=sys.stderr)
+    # 同じ名前で複数の乗り場がある（上り・下り）ので真ん中を代表にする
+    return {n: [round(sum(a for a, _ in v) / len(v), 6),
+                round(sum(b for _, b in v) / len(v), 6)] for n, v in out.items()}
+
+
+def GTFSの表を作る():
+    """公式GTFSから「停留所×便」の表を作る。しーたんバスの地域路線17系統ぶん。
+
+    ★なぜPDFでなくGTFSか（2026-08-23の突き合わせで判明）：
+      PDFの座標から組んだ格子は、公式GTFSと比べて **1本で行ける組を738通り取りこぼし**
+      ていた。紙の表は行がずれたり注記が混ざったりするので、どうしても穴が出る。
+      市が機械可読の形（GTFS-JP）で出しているのだから、そちらを正とする。
+      GTFSは運行日も正確で、夏季・冬季の別や**運休日2152件**まで持っている。
+    ★大型バス（山崎⇔一宮・波賀・千種）と高速バスはGTFSに無い（神姫バスの一般路線で、
+      しーたんバスではない）。そこだけはPDFの格子を使い続ける。
+    返り値: {路線名: [表, ...]}, {service_id: 運休日の集合}
+    """
+    import io, zipfile, csv as _csv
+    表たち = {}
+    運休 = {}
+    for f in GTFS一覧:
+        try:
+            b = 取る("https://api.gtfs-data.jp/v2/organizations/shisocity/feeds/"
+                     + f + "/files/feed.zip")
+            z = zipfile.ZipFile(io.BytesIO(b))
+        except Exception as e:
+            print(f"GTFSが取れない({f}): {e}", file=sys.stderr)
+            continue
+
+        def 読む(名):
+            with z.open(名) as fp:
+                return list(_csv.DictReader(io.TextIOWrapper(fp, encoding="utf-8-sig")))
+
+        停名 = {r["stop_id"]: r["stop_name"].strip() for r in 読む("stops.txt")}
+        路線 = {r["route_id"]: (r.get("route_long_name") or r.get("route_short_name") or "").strip()
+                for r in 読む("routes.txt")}
+        暦 = {c["service_id"]: c for c in 読む("calendar.txt")}
+        for c in 読む("calendar_dates.txt"):
+            if c.get("exception_type") == "2":
+                運休.setdefault(c["service_id"], set()).add(c["date"])
+        便 = {}
+        for r in 読む("trips.txt"):
+            便[r["trip_id"]] = r
+        時 = {}
+        for r in 読む("stop_times.txt"):
+            時.setdefault(r["trip_id"], []).append(r)
+
+        # 「路線 × 運行日 × 停留所の並び」が同じものを1つの表にまとめる
+        束 = {}
+        for tid, 列 in 時.items():
+            t = 便.get(tid)
+            if not t:
+                continue
+            列.sort(key=lambda x: int(x["stop_sequence"]))
+            並 = tuple(停名.get(x["stop_id"], "") for x in 列)
+            if len(並) < 2 or "" in 並:
+                continue
+            刻 = tuple((x.get("departure_time") or x.get("arrival_time") or "")[:5].lstrip("0") or "0:00"
+                       for x in 列)
+            鍵 = (路線.get(t["route_id"], ""), t["service_id"], 並)
+            束.setdefault(鍵, []).append(刻)
+        for (路, sid, 並), 便ら in 束.items():
+            c = 暦.get(sid, {})
+            曜 = [i + 1 for i, k in enumerate(
+                ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"])
+                if c.get(k) == "1"]
+            便ら.sort(key=lambda v: 分(v[0]) if 時刻型.match(v[0]) else 0)
+            表 = {"停": list(並), "便": [list(v) for v in 便ら],
+                  "運行日": sid, "走る曜日": 曜, "運休の鍵": sid, "路線": 路}
+            表たち.setdefault(路, []).append(表)
+    return 表たち, {k: sorted(v) for k, v in 運休.items()}
+
+
+def 路線の芯(名):
+    """「しーたんバス　蔦沢線（三谷経由）」→「蔦沢線」。頁とGTFSを結ぶための形"""
+    t = re.sub(r"^しーたんバス[\s　]*", "", 名 or "")
+    return re.sub(r"[（(][^（()）]*[)）]", "", t).strip()
+
 if __name__ == "__main__":
     kb = json.loads(kb路.read_text(encoding="utf-8"))
     url, 親 = 時刻表のPDFを探す(kb)
@@ -482,6 +593,53 @@ if __name__ == "__main__":
         except Exception:
             祝日たち = []
 
+    # ★しーたんバスの地域路線は、公式GTFSの表で置き換える（2026-08-23）。
+    #   PDFの格子は1本で行ける組を738通り取りこぼしていた。
+    #   大型バス・高速バスはGTFSに無いのでPDFのまま残す。
+    #   頁の画像は時刻表を見せるために使うので、路線名で頁に結びつける
+    try:
+        G表, G運休 = GTFSの表を作る()
+    except Exception as e:
+        print(f"GTFSの表が作れない（PDFのまま進む）: {e}", file=sys.stderr)
+        G表, G運休 = {}, {}
+    置換, 残し = 0, 0
+    if G表:
+        芯ごと = {}
+        for 路, ts in G表.items():
+            芯ごと.setdefault(路線の芯(路), []).append((路, ts))
+        使った = set()
+        for p in 頁たち:
+            表 = p.get("表")
+            if not 表:
+                continue
+            芯 = 路線の芯(表[0].get("路線", ""))
+            if 芯 in 芯ごと and 芯 not in ("大型バス", "高速バス"):
+                新表 = []
+                for 路, ts in 芯ごと[芯]:
+                    # 同じ芯でも「三谷経由」等で頁が分かれるので、頁の路線名と
+                    # 完全に合うものを優先し、無ければ芯が同じもの全部を載せる
+                    if 路線の芯(路) == 芯:
+                        新表.extend(ts)
+                p["表"] = [dict(t) for t in 新表]
+                for t in p["表"]:
+                    t["出典"] = "GTFS"
+                使った.add(芯)
+                置換 += 1
+            else:
+                残し += 1
+        print(f"表の出どころ: GTFSで置き換えた頁 {置換} ／ PDFのまま {残し}", file=sys.stderr)
+
+    # 停留所の座標（歩ける距離を測るため。GTFSが取れない日は前回の分を残す）
+    座標 = 停の座標を取る()
+    if not 座標 and 出力.exists():
+        try:
+            座標 = json.loads(出力.read_text(encoding="utf-8")).get("停の座標", {})
+        except Exception:
+            座標 = {}
+    停名すべて = {t for p in 頁たち for tb in p.get("表", []) for t in tb["停"]}
+    付いた = sum(1 for t in 停名すべて if t in 座標)
+    print(f"停留所の座標: {付いた}/{len(停名すべて)}件（GTFS {len(座標)}件）", file=sys.stderr)
+
     # 保存量の検算（絶対ルール30：取り込んだら量を検算する）
     総 = sum(len(p["文"]) for p in 頁たち)
     空 = sum(1 for p in 頁たち if len(p["文"]) < 50)
@@ -496,6 +654,9 @@ if __name__ == "__main__":
         # 検収（daikensa）が保存量を独立に検算するための欄（検収三原則②）
         "便数": 便総, "表数": 表総, "停のべ数": 停総,
         "祝日": 祝日たち,
+        "停の座標": 座標,
+        "運休日": G運休,
+        "座標の出典": "宍粟市 しーたんバス GTFS-JP（api.gtfs-data.jp/v2/organizations/shisocity）",
         "問い合わせ": "ウイング神姫 山崎営業所 0790-62-1720",
         "頁": 頁たち,
     }, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
