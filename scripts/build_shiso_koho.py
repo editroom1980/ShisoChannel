@@ -161,15 +161,21 @@ def 号を集める():
     """今月号＋年度別のバックナンバーからPDFのURLを集める"""
     出 = []
     見 = set()
-    頁ら = [一覧]
-    try:
-        h = 取る(一覧)
+    # ★バックナンバーの一覧ページも必ず見る（2026-08-28の実測で判明）。
+    #   広報のトップには**直近5年度分しかリンクが無く**、
+    #   令和3年度（12冊）を丸ごと取り逃していた。
+    #   「全ての項目を見る」の先が本当の一覧
+    頁ら = [一覧, 年度一覧 + "index.html"]
+    for 元頁 in list(頁ら):
+        try:
+            h = 取る(元頁)
+        except Exception as e:
+            print(f"  一覧が読めない {元頁} {e}", file=sys.stderr); continue
+        time.sleep(間)
         for m in re.finditer(r'href="([^"]*backnumber/\d+\.html)"', h):
             u = URLを直す(m.group(1))
             if u not in 頁ら:
                 頁ら.append(u)
-    except Exception as e:
-        print(f"  一覧が読めない {e}", file=sys.stderr)
     for p in 頁ら:
         try:
             h = 取る(p)
@@ -266,8 +272,20 @@ if __name__ == "__main__":
             continue
         if len(文) < 500:
             continue
+        # ★号の名前はURLの年月から。無ければ**題名の元号**から西暦に直す
+        #   （2026-08-28の実測：0214kohoshiso.pdf のようにURLに年月が無い号が2冊あり、
+        #     「広報しそう令和7年2月号」がそのまま号名になって年で並ばなかった）
         m = re.search(r"(20\d{2})(\d{2})", r["url"])
-        号 = f"{m.group(1)}年{int(m.group(2))}月号" if m else r["名"]
+        if m:
+            号 = f"{m.group(1)}年{int(m.group(2))}月号"
+        else:
+            g = re.search(r"(平成|令和)\s*(\d+|元)\s*年\s*(\d+)\s*月", r["名"])
+            if g:
+                元 = 1 if g.group(2) == "元" else int(g.group(2))
+                西 = (1988 + 元) if g.group(1) == "平成" else (2018 + 元)
+                号 = f"{西}年{int(g.group(3))}月号"
+            else:
+                号 = r["名"]
         片ら = 分ける(文)
         保存 = sum(len(x) for x in 片ら)
         if 保存 < len(文) * 0.98:

@@ -42,6 +42,15 @@ from collections import deque
     "/bosai/index.html",
     "/shisei/index.html",
     "/kanko/index.html",
+    # ★「宍粟市はこんなとこ」の下（2026-08-28に漏れが判明）。
+    #   名水・道の駅・文化財・自然などがここにぶら下がっている。
+    #   トップから深く、7ページ中1ページ（宍粟市名水）が入っていなかった
+    "/kanko/konnatoko/index.html",
+    # ★広報しそうの連載（宍粟 歴史 再発見 48回）。2026-08-28にご指摘で発覚
+    "/soshiki/shichokoshitsu/hishokoho/tantojoho/kohoshiso/index.html",
+    "/soshiki/shichokoshitsu/hishokoho/tantojoho/kohoshiso/backnumber/index.html",
+    "/mokuteki/index.html",      # 目的から探す（ごみのガイドブック等がここ）
+    "/mokuteki/gomi/index.html",
     "/jigyosha/index.html",
     "/soshiki/index.html",
     "/kurashi/fukushi/index.html",
@@ -73,9 +82,14 @@ from collections import deque
 
 # 辿らないもの（量が多い・案内に使わない）。
 # ※.pdf は「辿らない」だけで、ページからの繋がり（添付）としては保存する
+# ★「/koho」で切っていたため、広報しそうのページを丸ごと捨てていた（2026-08-28に発覚）。
+#   URLの途中の /kohoshiso/ にも当たり、
+#   市が現役で公開している連載「宍粟 歴史 再発見」48回分が1件も入っていなかった。
+#   除外の意図は「量が多く案内に使わないもの」であって、広報の中身ではない。
+#   ★フォルダの区切りまで込みで書く（/koho/ のように）。部分一致で巻き添えにしない
 除外 = re.compile(
-    r"(\.pdf|\.doc|\.xls|\.zip|\.jpg|\.png|/gikai/|/nyusatsu/|/kouhou/|"
-    r"/photo|/movie|/koho|/shingikai|/pubcome|/jinji/|/kekka|/nyusatu)", re.I)
+    r"(\.pdf|\.doc|\.xls|\.zip|\.jpg|\.png|/gikai/|/nyusatsu/|"
+    r"/photo|/movie|/shingikai/|/pubcome/|/jinji/|/kekka/|/nyusatu/)", re.I)
 
 集め上限 = int(sys.argv[1]) if len(sys.argv) > 1 else 3000  # 残すページ数の上限
 見上限 = 集め上限 * 3                                        # 訪ねるページ数の上限（暴走止め）
