@@ -1,5 +1,5 @@
 {
- "updated": "2026-08-26T20:43:34+09:00",
+ "updated": "2026-08-27T12:34:09+09:00",
  "items": [
   {
    "tag": "学校",
@@ -10,6 +10,66 @@
    "when": "2026-10-31",
    "place": "山崎小学校",
    "no": "syamasaki-es1031"
+  },
+  {
+   "tag": "学校",
+   "title": "宍粟市中学校新人大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "src": "山崎西中学校",
+   "ts": null,
+   "when": "2026-09-19",
+   "place": "",
+   "no": "t919宍粟市中学校新人大会"
+  },
+  {
+   "tag": "学校",
+   "title": "西播中学校新人大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "src": "山崎西中学校",
+   "ts": null,
+   "when": "2026-10-10",
+   "place": "",
+   "no": "t1010西播中学校新人大会"
+  },
+  {
+   "tag": "学校",
+   "title": "宍粟市中学校駅伝競走大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "src": "山崎西中学校",
+   "ts": null,
+   "when": "2026-10-15",
+   "place": "",
+   "no": "t1015宍粟市中学校駅伝競走大会"
+  },
+  {
+   "tag": "学校",
+   "title": "西播中学校駅伝競走大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "src": "山崎西中学校",
+   "ts": null,
+   "when": "2026-10-31",
+   "place": "",
+   "no": "t1031西播中学校駅伝競走大会"
+  },
+  {
+   "tag": "学校",
+   "title": "山崎西中学校 オープンスクール",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "src": "山崎西中学校",
+   "ts": null,
+   "when": "2026-11-09",
+   "place": "山崎西中学校",
+   "no": "syamasakinishi-jhs119"
+  },
+  {
+   "tag": "学校",
+   "title": "山崎西中学校 文化祭リハーサル",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "src": "山崎西中学校",
+   "ts": null,
+   "when": "2026-11-13",
+   "place": "山崎西中学校",
+   "no": "syamasakinishi-jhs1113"
   },
   {
    "tag": "学校",
