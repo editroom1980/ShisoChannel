@@ -53,10 +53,18 @@ jobs:
         id: bus
         continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_bus.py
+      - name: 逸話・民話を集める（山崎文化協会「しそうの逸話」）
+        id: bunka
+        continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
+        run: python3 scripts/build_shiso_bunka.py
+      - name: 休日当番医と医療機関を集める（宍粟市医師会）
+        id: iryo
+        continue-on-error: true    # ★当番医は毎月変わる。ここが止まると命に関わる案内が古びる
+        run: python3 scripts/build_shiso_iryo.py
       - name: 変化があればコミット
         if: always()    # ★どれかが失敗しても、取れた分は必ず保存する
         run: |
-          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json gomi_cal bus_cal
+          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json shiso_bunka.json shiso_iryo.json gomi_cal bus_cal
           if git diff --cached --quiet; then
             echo "変化なし"
           else
@@ -78,6 +86,8 @@ jobs:
           if [ "${{ steps.kanko.outcome }}"    = "failure" ]; then missing="$missing 観光"; fi
           if [ "${{ steps.gomi.outcome }}"     = "failure" ]; then missing="$missing ごみ"; fi
           if [ "${{ steps.reiki.outcome }}"    = "failure" ]; then missing="$missing 例規"; fi
+          if [ "${{ steps.bunka.outcome }}"    = "failure" ]; then missing="$missing 逸話"; fi
+          if [ "${{ steps.iryo.outcome }}"     = "failure" ]; then missing="$missing 当番医"; fi
           if [ "${{ steps.pdf.outcome }}"      = "failure" ]; then missing="$missing PDF"; fi
           if [ "${{ steps.shisetsu.outcome }}" = "failure" ]; then missing="$missing 施設"; fi
           if [ "${{ steps.bus.outcome }}"      = "failure" ]; then missing="$missing バス"; fi
