@@ -680,3 +680,20 @@ if __name__ == "__main__":
           f" → {出力}（{出力.stat().st_size//1024}KB）")
     if 頁数 < 20:
         print("★注意: ページ数が例年（32）より大幅に少ない。PDFの作りが変わった疑い", file=sys.stderr)
+
+    # ★地区（町）の玄関口を実データから決めて書き足す（2026-08-27）。
+    #   ここで呼ばないと、時刻表を取り直すたびに「地区の玄関」が消え、
+    #   「波賀まで」と言われた時に寄せ先が分からなくなる。
+    #   ★人が決めた表を持たないための仕掛け。詳しくは build_bus_genkan.py
+    import importlib.util as _iu
+    _g = _iu.spec_from_file_location("genkan",
+                                     pathlib.Path(__file__).resolve().parent / "build_bus_genkan.py")
+    _m = _iu.module_from_spec(_g); _g.loader.exec_module(_m)
+    _bus, _表, _中心 = _m.決める()
+    _欠 = [t for t, v in _表.items() if not v.get("停")]
+    if _欠:
+        print(f"★玄関口が決まらない町がある: {_欠}", file=sys.stderr)
+    _bus["地区の玄関"] = {"中心の停": _中心, "町": _表}
+    出力.write_text(json.dumps(_bus, ensure_ascii=False, separators=(",", ":")),
+                    encoding="utf-8")
+    print("  地区の玄関: " + " / ".join(f"{t}→{v['停']}" for t, v in _表.items()))
