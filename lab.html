@@ -1991,7 +1991,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.99-lab（質問したら必ずマイクを開き、問いを画面に残す）</div>
+    <div class="ps-version">version 4.00-lab（バスは出発地→行き先を順に尋ね、道のりと時間を必ず出す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4647,10 +4647,15 @@ window.__aiState=function(kind, 文){
                 '「宍粟市の民話を教えて」','「住民票はどこで取れますか」'];
       _aiEl('ai-list').innerHTML = 例.map(function(t){
         return '<li>'+t+'</li>'; }).join('');
+      _aiEl('ai-note').textContent = '';
+    } else if(問い && (kind==='listen' || kind==='wait')){
+      // ★こちらから尋ねている時は、選んでもらう中身を**消さない**（2026-08-27のご指示）。
+      //   「はい／いいえ」や、波賀町のバス停39か所を画面に出しておきながら、
+      //   マイクが開いた瞬間に消えていた。何を答えればよいのか分からなくなる
     } else {
       _aiEl('ai-list').innerHTML = '';
+      _aiEl('ai-note').textContent = '';
     }
-    _aiEl('ai-note').textContent = '';
     // ★聞き取り中は閉じ方でなく「終わり方」を示す（2026-08-23の押して押す方式）
     _aiEl('ai-hint').textContent = (kind==='listen')
       ? '決定ボタン（まん中）を押すと、すぐ検索します'
@@ -4715,6 +4720,13 @@ window.__aiAnswer=function(obj){
     var 量=(o.text||'').length + (o.title||'').length + L.join('').length;
     var 猶予=Math.max(12000, Math.min(90000, 量*220+8000));
     if(IM.length>0) 猶予=Math.max(猶予, 120000);
+    // ★お尋ねしている最中（続きがある）は、答えを考える時間を長くとる。
+    //   バス停を39か所ならべて「どれから乗りますか」と聞いておきながら、
+    //   21秒で消えてしまっては、お年寄りには考える間もない（2026-08-27のご指示）
+    if(o['続き']){
+      var 選ばせている = L.length >= 5;
+      猶予 = Math.max(猶予, 選ばせている ? 180000 : 90000);
+    }
     _aiCloseT=setTimeout(window.__aiClose, 猶予);
   }catch(e){ try{ console.log('ai答えの表示に失敗', e); }catch(_){}}
 };

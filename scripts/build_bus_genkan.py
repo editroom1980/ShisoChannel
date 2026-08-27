@@ -79,6 +79,56 @@ def 大字の町(goi):
     return 出
 
 
+def 町ごとの停(表ら, 全停, 大字, 座):
+    """停留所を町に割り当てる。
+    ★①大字で種をまき、②路線上で隣り合う停へ広げる（2026-08-27）。
+      大字だけでは92停が決まらず、千種町は1停しか拾えなかった。
+      隣り合わせは**実際の路線の並び順**なので、推測ではない。
+    ★東河内は一宮町、西河内は千種町（郵便番号の地名で確認済み）。
+      名前が似ていても町が違うので、大字の一致を先に効かせる"""
+    町ら = ["山崎町", "一宮町", "波賀町", "千種町"]
+    def 素(s):
+        return re.sub(r"[（(].*?[）)]", "", s).strip()
+    割 = {}
+    for s in 全停:                                  # ① 種まき
+        e = 素(s)
+        当 = None
+        for k in sorted(大字, key=len, reverse=True):
+            if e.startswith(k):
+                当 = 大字[k]; break
+        if 当 is None:
+            for t in 町ら:
+                if t.replace("町", "") in s:
+                    当 = t; break
+        if 当:
+            割[s] = 当
+    種数 = len(割)
+    隣 = collections.defaultdict(collections.Counter)
+    for t in 表ら:
+        停 = t["停"]
+        for i, s in enumerate(停):
+            for j in (i - 1, i + 1):
+                if 0 <= j < len(停) and 停[j] != s:
+                    隣[s][停[j]] += 1
+    周 = 0
+    for 周 in range(1, 21):                          # ② 隣へ広げる
+        変 = 0
+        for s in 全停:
+            if s in 割:
+                continue
+            票 = collections.Counter()
+            for n, w in 隣[s].items():
+                if n in 割:
+                    票[割[n]] += w
+            if 票:
+                割[s] = 票.most_common(1)[0][0]; 変 += 1
+        if not 変:
+            break
+    残 = [s for s in 全停 if s not in 割]
+    出 = {t: sorted(s for s in 全停 if 割.get(s) == t) for t in 町ら}
+    return 出, 種数, 周, 残
+
+
 def 決める():
     bus, goi = 読む()
     表ら = [t for p in bus["頁"] for t in p.get("表", [])]
@@ -144,11 +194,12 @@ def 決める():
                  "中心の停": 中心, "中心からの距離km": km,
                  "次点": [f"{x[2]}（{x[0]}km・{-x[1]}便）" for x in 候[1:4]],
                  "座標が無くて比べられなかった停": 座標なし}
-    return bus, 出, 中心停
+    町の停, 種数, 周, 残 = 町ごとの停(表ら, 全停, 大字, 座)
+    return bus, 出, 中心停, 町の停, 便, {"種まき": 種数, "広げた周": 周, "残り": 残}
 
 
 if __name__ == "__main__":
-    bus, 表, 中心停 = 決める()
+    bus, 表, 中心停, 町の停, 便, 経過 = 決める()
     欠 = [t for t, v in 表.items() if not v.get("停")]
     print(f"乗り継ぎの中心（便が最多の停）: {中心停}")
     for t, v in 表.items():
@@ -164,8 +215,16 @@ if __name__ == "__main__":
     if 欠:
         print(f"！ 玄関口が決まらない町がある: {欠}"); sys.exit(1)
 
+    print()
+    print(f"町ごとの停留所（種まき{経過['種まき']}停 → {経過['広げた周']}周で全部）")
+    for t, v in 町の停.items():
+        print(f"  {t}: {len(v)}停" + ("" if len(v) > 30 else "  " + " / ".join(v)))
+    if 経過["残り"]:
+        print(f"！ 町が決まらない停: {経過['残り']}")
     bus["地区の玄関"] = {"中心の停": 中心停, "決め方": __doc__.split("決め方（")[1].strip(),
                         "町": 表}
+    bus["町の停"] = 町の停
+    bus["停の便数"] = dict(便)
     BUS.write_text(json.dumps(bus, ensure_ascii=False, separators=(",", ":")),
                    encoding="utf-8")
     print(f"\n○ shiso_bus.json に「地区の玄関」を書いた（{BUS.stat().st_size//1024}KB）")
