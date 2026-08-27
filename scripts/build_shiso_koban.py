@@ -69,11 +69,13 @@ if __name__ == "__main__":
     署電話 = ""
     for i, x in enumerate(行):
         if "宍粟警察署" in x:
-            m = re.search(r"[(（]?0\d{3}[)）]?\s*[-－]?\s*\d{2}[-－]\d{4}", "".join(行[i:i+3]))
+            # ★括弧を外すと市外局番と市内局番がくっつく（2026-08-27の失敗：
+            #   「(0790) 62-0110」→「079062-0110」になった）。
+            #   数字だけを取り出して、0790-62-0110 の形に組み直す
+            m = re.search(r"[(（]?(0\d{2,3})[)）]?\s*[-－]?\s*(\d{2,4})[-－](\d{4})",
+                          "".join(行[i:i+3]))
             if m:
-                署電話 = re.sub(r"[()（）\s]", "", m.group(0)).replace("－", "-")
-                if not 署電話.startswith("0"):
-                    署電話 = "0" + 署電話.lstrip("0")
+                署電話 = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
         if not x.startswith("宍粟市"):
             continue
         名 = 行[i - 1].strip() if i > 0 else ""
