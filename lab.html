@@ -987,6 +987,29 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   border-bottom:1px solid rgba(255,255,255,0.14);
 }
 #ai-list li:last-child{border-bottom:none;}
+/* ★バス停を選んでもらう一覧は2列で詰める（2026-08-28のご指示
+   「1ページの案内する数を可能な限り増やせ」）。
+   実測：1列だと16行のうち10.6行しか見えず、はみ出し280pxだった */
+/* ★2列は「段組み」ではなく「格子」で組む（2026-08-28の実測）。
+   段組み(column-count)は左右の高さが揃わず、33行で682pxになった
+   （左に24行・右に9行）。格子なら高さが「行数×1行」で正確に読める＝
+   1ページに入る数を数で決められる */
+#ai-list.ai-pick{
+  display:grid;grid-template-columns:1fr 1fr;column-gap:24px;align-content:start;
+}
+#ai-list.ai-pick li{
+  font-size:17px;line-height:1.3;padding:3px 0 3px 10px;
+  min-height:0;border-bottom:1px solid rgba(255,255,255,0.10);
+}
+#ai-list.ai-pick li.ai-best{
+  /* 「よく使われます」の行だけ背が高いと計算が狂う。ほかと同じ高さにする */
+  font-size:17px;line-height:1.3;padding:3px 0 3px 10px;
+}
+/* ★見出しも列の中に流す（2026-08-28の実測）。
+   column-span:all にすると列の流れが分断され、1ページに入る数が
+   16行までに落ちた（実測548px）。列に流せば全部29pxの行になり、
+   高さが「行数の半分×29px」で正確に読める＝多く載せられる */
+#ai-list.ai-pick li.ai-sep{grid-column:1/-1;padding-top:3px;font-size:15px;}
 /* 経路案内の行：区切りと道のりの字下げ（2026-08-23。バスの乗り換え案内で使う） */
 #ai-list li.ai-sep{
   border-bottom:none;padding-top:12px;color:var(--green4);
@@ -1991,7 +2014,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.00-lab（バスは出発地→行き先を順に尋ね、道のりと時間を必ず出す）</div>
+    <div class="ps-version">version 4.02-lab（マイクは押した瞬間に受付。バス停の一覧は2列で多く出す）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4626,13 +4649,15 @@ window.__aiState=function(kind, 文){
     //   問いが消えると、何を答えればよいのか分からなくなる
     var 問い = 文 || '';
     _aiEl('ai-head-t').textContent =
-      (kind==='wait')   ? '★まだ話さないでください（マイクを準備しています）' :
+      (kind==='wait')   ? 'マイクの用意をしています　もう少しお待ちください' :
       (kind==='listen') ? (問い ? 'お答えください　マイクは開いています'
                                 : 'どうぞ、お話しください') : 'お調べしています';
     _aiEl('ai-q').textContent    = '';
     _aiEl('ai-title').textContent= 問い;
     _aiEl('ai-text').textContent =
-      (kind==='wait')   ? 'マイクの準備をしています。合図が出るまで、まだ話さないでください。' :
+      // ★ふだんは押した瞬間に「どうぞ」を出す（実測：マイクが開くまで0.15秒）。
+      //   この画面は、通信が悪くて0.7秒を超えた時だけ出る保険（2026-08-28）
+      (kind==='wait')   ? 'マイクの用意に少し時間がかかっています。もう少しお待ちください。' :
       (kind==='listen') ? (問い ? 'そのままお話しください。話し終わったら【決定ボタン】を押します。'
                                 : '話し終わったら【決定ボタン】を押すと、すぐお調べします。') :
                           '少しお待ちください。';
@@ -4688,6 +4713,8 @@ window.__aiAnswer=function(obj){
     _aiEl('ai-title').textContent  = o.title||'';
     _aiEl('ai-text').textContent   = o.text||'';
     var ul=_aiEl('ai-list'); ul.innerHTML='';
+    // ★選んでもらう一覧は2列で詰めて、1画面に入る数を増やす
+    ul.className = o['選択'] ? 'ai-pick' : '';
     var L=o.lines||[];
     for(var i=0;i<L.length;i++){
       var li=document.createElement('li'); li.textContent=L[i];
