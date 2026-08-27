@@ -103,8 +103,23 @@ def 抜き出す(中身, 手がかり, 上限=420, 後ろだけ=False):
     #   「申告期間中（2月16日～3月16日）は、次のページもご覧ください」が
     #   『ご覧ください』を理由に捨てられ、肝心の申告期間が落ちていた
     大事 = re.compile(r"\d{1,2}月\d{1,2}日|申告期間|受付期間|開館時間|営業時間")
-    文ら = [x.strip() for x in re.split(r"(?<=。)", 中身)
-            if x.strip() and (大事.search(x) or not 捨てる.search(x))]
+    出来 = []
+    for x in re.split(r"(?<=。)", 中身):
+        x = x.strip()
+        if not x:
+            continue
+        if 捨てる.search(x):
+            if not 大事.search(x):
+                continue
+            # ★大事な日付を含むが案内も混じっている文は、案内の部分だけ落とす
+            #   （2026-08-27：市歌の「制定日 令和7年4月1日 歌詞と楽譜は次のPDF
+            #     ファイルをしてください。」が丸ごと残っていた）
+            x = re.sub(r"[^。]*?(PDF|ダウンロード|申込フォーム|ご覧ください|クリック)[^。]*", "", x)
+            x = x.strip()
+            if len(x) < 8:
+                continue
+        出来.append(x)
+    文ら = 出来
     出, 使 = [], 0
     for i, 文 in enumerate(文ら):
         if not re.search(手がかり, 文):

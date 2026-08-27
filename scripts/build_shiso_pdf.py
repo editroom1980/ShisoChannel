@@ -27,7 +27,9 @@ import json, re, time, sys, hashlib, subprocess, shutil, pathlib, urllib.request
 出力 = 根 / "shiso_pdf.json"
 名乗り = "ShisochanNET-KB/2.0 (+https://shisochan.net/; citizen broadcast app; contact via site)"
 間 = 0.6
-上限本数 = 200
+上限本数 = 320      # ★「予定表」を拾うようにしたら候補が増え、200本の枠から
+                   #   バス時刻表が押し出された（2026-08-27の実測：236→184件で
+                   #   時刻表6分割が全部消えた）。枠を広げる
 上限バイト = 12 * 1024 * 1024      # 12MBを超えるPDFは扱わない
 一片 = 8000                        # 1つの塊に入れる文字数
 最大片 = 12                        # 1本のPDFを分ける上限（時刻表は約10片になる）
