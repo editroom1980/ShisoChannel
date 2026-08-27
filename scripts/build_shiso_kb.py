@@ -51,6 +51,18 @@ from collections import deque
     "/kurashi/zeikin/index.html",
     "/kurashi/gomishinyokankyo/index.html",
     "/kurashi/kosekijumintoroku/index.html",
+    # ★施設のページ（2026-08-27追加）。トップからは深くて届かず、
+    #   「宍粟市立図書館」「体育館」「公民館」が1件も入っていなかった。
+    #   実害：「図書館は何時まで」に答えられない（本文に36回出てくるのにページが無い）
+    "/shisetsu/index.html",
+    "/shisetsu/bunkarekishi/index.html",
+    "/shisetsu/supotsureja/index.html",
+    "/shisetsu/gyoseishisetsu/index.html",
+    "/shisetsu/fukushi/index.html",
+    "/shisetsu/hokeniryo/index.html",
+    "/shisetsu/bosai/index.html",
+    "/shisetsu/kanko/index.html",
+    "/shisetsu/kyoiku/index.html",
 ]
 
 # 辿らないもの（量が多い・案内に使わない）。
