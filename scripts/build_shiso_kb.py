@@ -62,7 +62,13 @@ from collections import deque
     "/shisetsu/hokeniryo/index.html",
     "/shisetsu/bosai/index.html",
     "/shisetsu/kanko/index.html",
-    "/shisetsu/kyoiku/index.html",
+    # ★施設のカテゴリは実際には11ある（2026-08-27に一覧ページから確認）。
+    #   推測で書いた /shisetsu/kyoiku/ は存在せず、
+    #   保育所・認定こども園・小中学校・幼稚園が漏れていた
+    "/shisetsu/hoikusyo/index.html",
+    "/shisetsu/ninteikodomoen/index.html",
+    "/shisetsu/syoutyuugakkou/index.html",
+    "/shisetsu/youtien/index.html",
 ]
 
 # 辿らないもの（量が多い・案内に使わない）。
