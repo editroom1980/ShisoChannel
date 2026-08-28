@@ -103,6 +103,17 @@ def スポット(h, url):
         if len(t) >= 40 and "Copyright" not in t and "クッキー" not in t:
             it["説明"] = t[:300]
             break
+    # ★説明の段落が無いページがある（2026-08-28の実測：ちくさ高原スキー場・
+    #   スポニックパーク一宮など32件は<p>に文章が1つも無く、施設の情報だけが
+    #   表で載っている）。営業時間・定休日・施設の中身は市民が知りたいことなので、
+    #   説明が取れないときは、その表を「案内」として拾う
+    if "説明" not in it:
+        塊 = [文字だけ(x) for x in re.findall(r"<div[^>]*>(.*?)</div>", body, re.S)]
+        for t in 塊:
+            if 40 <= len(t) <= 600 and "Copyright" not in t and "メニュー" not in t[:20]:
+                if any(k in t for k in ("営業時間", "定休日", "電話番号", "所在地", "料金")):
+                    it["案内"] = t[:400]
+                    break
 
     # ※分類はページ側から確実に取れない（サイドメニューを拾って全件同じになった）ので出さない
     return it
