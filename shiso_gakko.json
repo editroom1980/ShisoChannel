@@ -1,0 +1,423 @@
+{
+ "作成": "市公式『心のふるさと校歌保存事業（校歌・園歌）』と施設一覧より",
+ "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/gakkou/6751.html",
+ "注意": "閉校・閉園の年は市の資料に書かれていないため持っていない",
+ "今ある学校": [
+  {
+   "名": "くりのみこども園",
+   "種類": "こども園",
+   "地区": "山崎町",
+   "電話": "0790-62-7540",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "ちくさ杉の子こども園",
+   "種類": "こども園",
+   "地区": "千種町",
+   "電話": "0790-76-3777",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "はりま一宮こども園",
+   "種類": "こども園",
+   "地区": "一宮町",
+   "電話": "0790-72-1987",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "まあるこども園",
+   "種類": "こども園",
+   "地区": "山崎町",
+   "電話": "0790-62-6382",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "みのりこども園",
+   "種類": "こども園",
+   "地区": "山崎町",
+   "電話": "0790-62-7739",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "一宮北こども園",
+   "種類": "こども園",
+   "地区": "一宮町",
+   "電話": "0790-74-1628",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "宍粟わかば",
+   "種類": "こども園",
+   "地区": "山崎町",
+   "電話": "0790-62-3913",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "戸原こども園",
+   "種類": "こども園",
+   "地区": "山崎町",
+   "電話": "0790-62-1576",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "誠心学園",
+   "種類": "こども園",
+   "地区": "山崎町",
+   "電話": "0790-63-1389",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/ninteikodomoen/1508981567315.html"
+  },
+  {
+   "名": "一宮北中学校",
+   "種類": "中学校",
+   "地区": "一宮町",
+   "電話": "0790-74-0019",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/ichinomiyakita/1386566086241.html"
+  },
+  {
+   "名": "一宮南中学校",
+   "種類": "中学校",
+   "地区": "一宮町",
+   "電話": "0790-72-0607",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/ichinomiyaminami/1386568561023.html"
+  },
+  {
+   "名": "千種中学校",
+   "種類": "中学校",
+   "地区": "千種町",
+   "電話": "0790-76-2003",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/chikusa/1386568583628.html"
+  },
+  {
+   "名": "山崎南中学校",
+   "種類": "中学校",
+   "地区": "山崎町",
+   "電話": "0790-62-0461",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakiminami/1386568641692.html"
+  },
+  {
+   "名": "山崎東中学校",
+   "種類": "中学校",
+   "地区": "山崎町",
+   "電話": "0790-62-8616",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakihigashi/1386563263341.html"
+  },
+  {
+   "名": "山崎西中学校",
+   "種類": "中学校",
+   "地区": "山崎町",
+   "電話": "0790-62-8206",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakinishi/1386568675772.html"
+  },
+  {
+   "名": "波賀中学校",
+   "種類": "中学校",
+   "地区": "波賀町",
+   "電話": "0790-75-2015",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/haga/1386566062887.html"
+  },
+  {
+   "名": "一宮ひかり保育所",
+   "種類": "保育所",
+   "地区": "一宮町",
+   "電話": "0790-72-1998",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/minkanhoikusho/1508977495374.html"
+  },
+  {
+   "名": "山崎聖旨保育園",
+   "種類": "保育所",
+   "地区": "山崎町",
+   "電話": "0790-62-1137",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/minkanhoikusho/1508977495374.html"
+  },
+  {
+   "名": "波賀みどり保育園",
+   "種類": "保育所",
+   "地区": "波賀町",
+   "電話": "0790-75-3641",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/minkanhoikusho/1508977495374.html"
+  },
+  {
+   "名": "誠心学園保育園",
+   "種類": "保育所",
+   "地区": "山崎町",
+   "電話": "0790-63-1389",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/minkanhoikusho/1508977495374.html"
+  },
+  {
+   "名": "はりま一宮小学校",
+   "種類": "小学校",
+   "地区": "一宮町",
+   "電話": "0790-72-0012",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/ichinomiyaminami/1386566172929.html"
+  },
+  {
+   "名": "千種小学校",
+   "種類": "小学校",
+   "地区": "千種町",
+   "電話": "0790-76-2012",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/chikusa/1386568619613.html"
+  },
+  {
+   "名": "山崎南小学校",
+   "種類": "小学校",
+   "地区": "山崎町",
+   "電話": "0790-62-0881",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakiminami/1386568668817.html"
+  },
+  {
+   "名": "山崎小学校",
+   "種類": "小学校",
+   "地区": "山崎町",
+   "電話": "0790-62-1131",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakinishi/1386563319631.html"
+  },
+  {
+   "名": "山崎西小学校",
+   "種類": "小学校",
+   "地区": "山崎町",
+   "電話": "0790-62-0624",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakinishi/1386568626795.html"
+  },
+  {
+   "名": "河東小学校",
+   "種類": "小学校",
+   "地区": "山崎町",
+   "電話": "0790-62-0450",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakihigashi/1386566125296.html"
+  },
+  {
+   "名": "波賀小学校",
+   "種類": "小学校",
+   "地区": "波賀町",
+   "電話": "0790-75-2354",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/haga/1386563194391.html"
+  },
+  {
+   "名": "神野小学校",
+   "種類": "小学校",
+   "地区": "山崎町",
+   "電話": "0790-62-0649",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakihigashi/1386566092481.html"
+  },
+  {
+   "名": "蔦沢小学校",
+   "種類": "小学校",
+   "地区": "山崎町",
+   "電話": "0790-65-0006",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/yamasakihigashi/1386563268647.html"
+  },
+  {
+   "名": "河東幼稚園",
+   "種類": "幼稚園",
+   "地区": "山崎町",
+   "電話": "0790-62-1563",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/yochien/1386649287943.html"
+  },
+  {
+   "名": "波賀幼稚園",
+   "種類": "幼稚園",
+   "地区": "波賀町",
+   "電話": "0790-75-2094",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/kodomomiraika/tantojoho/yochien/1386641467786.html"
+  },
+  {
+   "名": "伊和高等学校",
+   "種類": "高校",
+   "地区": "一宮町",
+   "電話": "0790-72-0240",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/ichinomiyaminami/1386566163751.html"
+  },
+  {
+   "名": "千種高等学校",
+   "種類": "高校",
+   "地区": "千種町",
+   "電話": "0790-76-2033",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/shiteihinanjo/chikusa/1386563131001.html"
+  },
+  {
+   "名": "山崎高等学校",
+   "種類": "高校",
+   "地区": "山崎町",
+   "電話": "0790-62-1730",
+   "url": "https://www.city.shiso.lg.jp/soshiki/shichokoshitsu/shobobosai/tantojoho/shiteihinanjo/yamasakinishi/19420.html"
+  }
+ ],
+ "閉校・閉園した学校園": [
+  {
+   "名": "三土中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "三方中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "下三方中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "城原中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "山崎中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "染河内中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "神戸中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "神河中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "繁盛中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "菅野中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "蔦澤中学校",
+   "種類": "中学校"
+  },
+  {
+   "名": "一宮北小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "三方小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "下三方小学校",
+   "種類": "小学校",
+   "いま": "旧市立下三方小学校",
+   "住所": "兵庫県宍粟市一宮町生栖851-1",
+   "指定避難所": true,
+   "収容人員": 100
+  },
+  {
+   "名": "伊水小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "千種北小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "千種南小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "千種東小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "土万小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "城下小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "引原小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "戸原小学校",
+   "種類": "小学校",
+   "いま": "旧市立戸原小学校",
+   "住所": "兵庫県宍粟市山崎町宇原337",
+   "指定避難所": true,
+   "収容人員": 100
+  },
+  {
+   "名": "染河内小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "神戸小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "繁盛小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "菅野小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "道谷小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "都多小学校",
+   "種類": "小学校",
+   "いま": "旧市立都多小学校",
+   "住所": "兵庫県宍粟市山崎町中野1110",
+   "指定避難所": true,
+   "収容人員": 100
+  },
+  {
+   "名": "野原小学校",
+   "種類": "小学校",
+   "いま": "旧市立野原小学校",
+   "住所": "兵庫県宍粟市波賀町野尻119-2",
+   "指定避難所": true,
+   "収容人員": 100
+  },
+  {
+   "名": "野尻小学校",
+   "種類": "小学校"
+  },
+  {
+   "名": "三方幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "下三方幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "千種幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "土万幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "城下幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "山崎幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "染河内幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "神戸幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "繁盛幼稚園",
+   "種類": "幼稚園"
+  },
+  {
+   "名": "菅野幼稚園",
+   "種類": "幼稚園"
+  }
+ ]
+}
