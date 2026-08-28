@@ -1,0 +1,381 @@
+{
+ "作成": "市公式『公共施設のバリアフリー情報』より",
+ "注意": "施設情報は調査時点のもの。利用の前に各施設へお確かめください（市の但し書き）",
+ "件数": 21,
+ "項目": [
+  {
+   "名": "かみかわ緑地公園トイレ",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/sototooire/16220.html",
+   "課": "健康福祉部 障がい福祉課",
+   "住所": "宍粟市山崎町岸田521",
+   "電話": "0790-63-3106",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": false
+   },
+   "種類": "公園等外トイレ"
+  },
+  {
+   "名": "せせらぎ公園トイレ",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/sototooire/16219.html",
+   "課": "健康福祉部 障がい福祉課",
+   "住所": "宍粟市山崎町今宿125-1",
+   "電話": "0790-63-3000",
+   "設備": {
+    "車いす用の駐車区画": false,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "公園等外トイレ"
+  },
+  {
+   "名": "スポニックパーク一宮プール",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/bunkaundousisethu/16199.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "9時～20時、日曜日のみ9時～18時",
+   "休館日": "火曜日",
+   "住所": "宍粟市一宮町東市場1090-3",
+   "電話": "0790-72-1331",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": false,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": false
+   },
+   "種類": "文化・運動施設"
+  },
+  {
+   "名": "パークアンドライドトイレ",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/sototooire/16213.html",
+   "課": "健康福祉部 障がい福祉課",
+   "住所": "宍粟市山崎町船元322",
+   "電話": "0790-63-3106",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "公園等外トイレ"
+  },
+  {
+   "名": "一宮市民協働センター（いちのぴあ）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/barrierfree_chosha/16185.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "8時30分～22時",
+   "休館日": "祝日、年末年始（12月29日～1月3日）",
+   "住所": "宍粟市一宮町安積1347番地3",
+   "電話": "0790-72-1000",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true,
+    "授乳室": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "庁舎"
+  },
+  {
+   "名": "一宮市民協働センター（第2庁舎）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/barrierfree_chosha/16178.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "8時30分～17時15分",
+   "休館日": "土曜日、日曜日、祝日、年末年始",
+   "住所": "宍粟市一宮町安積1347番地3",
+   "電話": "0790-72-1000",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": false,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "庁舎"
+  },
+  {
+   "名": "三方町出張所・宍粟市歴史資料館",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/barrierfree_chosha/16207.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "8時30分～17時15分",
+   "休館日": "土曜日・日曜日・祝日・年末年始",
+   "住所": "宍粟市一宮町三方町633番地",
+   "電話": "0790-74-0001",
+   "設備": {
+    "車いす用の駐車区画": false,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": false,
+    "授乳室": false
+   },
+   "種類": "庁舎"
+  },
+  {
+   "名": "千種B＆G海洋センタープール",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/bunkaundousisethu/16202.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "4月～10月は9時～21時で日曜日・祝日は9時～18時、11月～3月は10時～21時で日曜日・祝日は10時～18時",
+   "休館日": "月曜日（祝日の場合は翌日）、年末年始（12月29日～1月3日）、その他施設メンテナンス及び管理上休館",
+   "住所": "宍粟市千種町千草7-4",
+   "電話": "0790-76-3610",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": true,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "文化・運動施設"
+  },
+  {
+   "名": "千種保健福祉センター（エーガイヤちくさ）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/barrierfree_chosha/16184.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "8時30分～17時15分",
+   "休館日": "土曜日、日曜日、祝日、年末年始",
+   "住所": "宍粟市千種町室1060-1",
+   "電話": "0790-76-8600",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": true,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": false
+   },
+   "種類": "庁舎"
+  },
+  {
+   "名": "千種市民協働センター（ライブリーちくさ）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/barrierfree_chosha/16183.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "8時30分～22時",
+   "休館日": "祝日、年末年始",
+   "住所": "宍粟市千種町千草168番地",
+   "電話": "0790-76-2210",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true,
+    "授乳室": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "庁舎"
+  },
+  {
+   "名": "城の子公園トイレ",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/sototooire/16332.html",
+   "課": "健康福祉部 障がい福祉課",
+   "住所": "宍粟市山崎町千本屋474-1",
+   "電話": "0790-63-3106",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": false
+   },
+   "種類": "公園等外トイレ"
+  },
+  {
+   "名": "夢公園トイレ",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/sototooire/16209.html",
+   "課": "健康福祉部 障がい福祉課",
+   "住所": "宍粟市山崎町中広瀬125-7",
+   "電話": "0790-63-3106",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true
+   },
+   "種類": "公園等外トイレ"
+  },
+  {
+   "名": "宍粟市役所（北庁舎）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/barrierfree_chosha/16322.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "8時30分～17時15分",
+   "休館日": "土曜日、日曜日、祝日、年末年始",
+   "住所": "宍粟市山崎町今宿5-15",
+   "電話": "0790-63-3000",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true,
+    "授乳室": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "庁舎"
+  },
+  {
+   "名": "宍粟市役所（本庁舎）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/barrierfree_chosha/16320.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "8時30分～17時15分",
+   "休館日": "土曜日、日曜日、祝日、年末年始（12月29日～1月3日）",
+   "住所": "宍粟市山崎町中広瀬133-6",
+   "電話": "0790-63-3000",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true,
+    "授乳室": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "庁舎"
+  },
+  {
+   "名": "宍粟市立図書館・山崎歴史郷土館",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/bunkaundousisethu/16204.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "9時30分～17時30分、金曜日のみ9時30分～18時30分",
+   "休館日": "月曜日、祝日、年末年始",
+   "住所": "宍粟市山崎町鹿沢81番地",
+   "電話": "0790-62-4620",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": false,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "文化・運動施設"
+  },
+  {
+   "名": "宍粟防災センター",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/bunkaundousisethu/16206.html",
+   "課": "健康福祉部 障がい福祉課",
+   "休館日": "年末年始（12月29日～1月3日）",
+   "住所": "宍粟市山崎町鹿沢65-3",
+   "電話": "0790-63-2000",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "文化・運動施設"
+  },
+  {
+   "名": "山崎スポーツセンター体育館",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/bunkaundousisethu/16203.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "月曜日～土曜日は9時～22時、日曜日・祝日は9時～17時",
+   "休館日": "水曜日（祝日の場合は翌日）、年末年始（12月29日～1月3日）",
+   "住所": "宍粟市山崎町下町1",
+   "電話": "0790-62-1880",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": false,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": false
+   },
+   "種類": "文化・運動施設"
+  },
+  {
+   "名": "山崎文化会館",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/bunkaundousisethu/16205.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "9時～22時",
+   "休館日": "月曜日 年末年始",
+   "住所": "宍粟市山崎町鹿沢88-1",
+   "電話": "0790-62-5300",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": true,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": true,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "文化・運動施設"
+  },
+  {
+   "名": "最上山公園頂上（東）トイレ",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/sototooire/16307.html",
+   "課": "健康福祉部 障がい福祉課",
+   "住所": "宍粟市山崎町元山崎20",
+   "電話": "0790-63-3106",
+   "設備": {
+    "車いす用の駐車区画": false,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "公園等外トイレ"
+  },
+  {
+   "名": "本多公園トイレ",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/sototooire/16212.html",
+   "課": "健康福祉部 障がい福祉課",
+   "住所": "宍粟市山崎町鹿沢82-1",
+   "電話": "0790-63-3106",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": true,
+    "おむつ交換台": true,
+    "視覚障害者用誘導ブロック（点字ブロック）": true
+   },
+   "種類": "公園等外トイレ"
+  },
+  {
+   "名": "波賀B＆G海洋センター体育館・プール",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/barrierfree/shisetu/bunkaundousisethu/16201.html",
+   "課": "健康福祉部 障がい福祉課",
+   "開館時間": "9時～22時",
+   "休館日": "月曜日（祝日の場合翌日）、年末年始（12月29日～1月3日）、その他施設メンテナンス及び管理上休館と",
+   "住所": "宍粟市波賀町有賀29-1",
+   "電話": "0790-75-3811",
+   "設備": {
+    "車いす用の駐車区画": true,
+    "自動ドア": false,
+    "車いす対応トイレ": true,
+    "オストメイト対応トイレ": false,
+    "おむつ交換台": false,
+    "授乳室": false,
+    "視覚障害者用誘導ブロック（点字ブロック）": false
+   },
+   "種類": "文化・運動施設"
+  }
+ ]
+}

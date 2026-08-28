@@ -119,10 +119,14 @@ jobs:
         id: soudan
         continue-on-error: true
         run: python3 scripts/build_shiso_soudan.py
+      - name: 公共施設の一覧を作る（開館時間・電話・バリアフリー）
+        id: kokyo
+        continue-on-error: true
+        run: python3 scripts/build_shiso_kokyo.py
       - name: 変化があればコミット
         if: always()    # ★どれかが失敗しても、取れた分は必ず保存する
         run: |
-          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json shiso_bunka.json shiso_iryo.json shiso_jinko.json shiso_koho.json shiso_yosan.json shiso_matsuri.json shiso_faq.json shiso_gikai.json shiso_bunkazai.json shiso_gakko.json shiso_gyousei.json shiso_kihon.json shiso_gikaidayori.json shiso_shinbyoin.json shiso_josei.json shiso_soudan.json gomi_cal bus_cal
+          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json shiso_bunka.json shiso_iryo.json shiso_jinko.json shiso_koho.json shiso_yosan.json shiso_matsuri.json shiso_faq.json shiso_gikai.json shiso_bunkazai.json shiso_gakko.json shiso_gyousei.json shiso_kihon.json shiso_gikaidayori.json shiso_shinbyoin.json shiso_josei.json shiso_soudan.json shiso_kokyo.json gomi_cal bus_cal
           if git diff --cached --quiet; then
             echo "変化なし"
           else
