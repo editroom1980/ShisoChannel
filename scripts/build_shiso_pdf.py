@@ -177,6 +177,19 @@ if __name__ == "__main__":
 
     取り出す, 道具名 = 取り出し係を用意()
     print(f"取り出しの道具: {道具名}", file=sys.stderr)
+    # ★画像から文字を読む道具（macOSだけ。Linuxには無いので None）
+    読み取りの道具 = None
+    元ocr = 根 / "scripts" / "pdfocr.swift"
+    if shutil.which("swiftc") and 元ocr.exists():
+        道 = pathlib.Path("/tmp/shiso_pdfocr")
+        try:
+            if (not 道.exists()) or 道.stat().st_mtime < 元ocr.stat().st_mtime:
+                subprocess.run(["swiftc", "-O", str(元ocr), "-o", str(道)], check=True)
+            読み取りの道具 = 道
+            print("  画像から文字を読む道具を用意した", file=sys.stderr)
+        except Exception as e:
+            print(f"  読み取りの道具を作れない: {e}", file=sys.stderr)
+
     項目, 文字なし = [], 0
     for i, r in enumerate(候補):
         try:
@@ -199,7 +212,20 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"  取り出せない {r['名'][:30]} {e}", file=sys.stderr)
             continue
-        if len(文) < 120:                        # 画像だけのPDF（文章が無い）
+        # ★画像だけのPDFは、macOSの文字読み取りにかける（2026-08-28）。
+        #   実測：『宍粟市子育てガイドブック』（5.6MB）は文字情報が1字も無く、
+        #   子育ての制度・相談窓口・遊び場が丸ごと届いていなかった。
+        #   ★Linux（GitHub Actions）にはこの道具が無いので、あるときだけ使う
+        読み取った = False
+        if len(文) < 120 and 読み取りの道具:
+            try:
+                o = subprocess.run([str(読み取りの道具), str(一時)],
+                                   capture_output=True, timeout=900)
+                文2 = 整える(o.stdout.decode("utf-8", "replace"))
+                if len(文2) > len(文): 文, 読み取った = 文2, True
+            except Exception as e:
+                print(f"  読み取れない {r['名'][:30]} {e}", file=sys.stderr)
+        if len(文) < 120:                        # それでも文章が無い
             文字なし += 1
             continue
         # ★題に親記事の名前も含める（2026-08-22実測：題が「時刻表（…）」だけだと
@@ -208,8 +234,10 @@ if __name__ == "__main__":
         片たち = 分ける(文)
         for k, 片 in enumerate(片たち, 1):
             付 = "" if len(片たち) == 1 else f"（{k}/{len(片たち)}）"
-            項目.append({"題": "資料 " + 題 + 付, "url": r["url"], "文": 片,
-                         "親": r["親"], "課": r["課"], "電話": r["電話"], "指紋": 指紋})
+            一 = {"題": "資料 " + 題 + 付, "url": r["url"], "文": 片,
+                  "親": r["親"], "課": r["課"], "電話": r["電話"], "指紋": 指紋}
+            if 読み取った: 一["読み取り"] = True
+            項目.append(一)
         if (i + 1) % 20 == 0:
             print(f"  {i+1}/{len(候補)} … {r['名'][:26]}", file=sys.stderr)
 
