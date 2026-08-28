@@ -32,6 +32,33 @@ def 悩み(題, 文):
     出 = [名 for 名, 型 in 分け if re.search(型, t)]
     return 出 or ["そのほか"]
 
+def 社協の窓口(出):
+    """社会福祉協議会の支部（2026-08-28）。
+       ★ひとり暮らしの高齢者を支える配食・見守り・ボランティアは、
+         市ではなく社協がやっている。市の記事だけでは永久に届かない"""
+    f = 根 / "shiso_syakyo.json"
+    if not f.exists(): return
+    d = json.loads(f.read_text(encoding="utf-8"))
+    文 = " ".join(x.get("文", "") for x in d.get("項目", d))
+    支 = {}
+    for m in re.finditer(r"(本部[一-鿿ぁ-ん]{0,4}|山崎支部|一宮支部|波賀支部|千種支部)"
+                         r"[：: ]?\s*(0790-\d{2}-\d{4})", 文):
+        名 = m.group(1).replace("本部一宮", "一宮支部")
+        # ★同じ番号が「本部一宮」と「一宮支部」の2通りで書かれている（実測）。
+        #   番号で見て、同じものを二重に持たない
+        if m.group(2) in 支.values(): continue
+        支.setdefault(名, m.group(2))
+    if not 支: return
+    出.append({
+        "題": "宍粟市社会福祉協議会（配食・見守り・ボランティア）",
+        "url": "https://www.shiso-wel.or.jp/",
+        "課": "宍粟市社会福祉協議会",
+        "悩み": ["福祉・障がい", "高齢・介護"],
+        "電話": list(支.values())[:4],
+        "支部": 支,
+        "時間の記述": "支部ごとに受付。まずはお近くの支部へお電話ください",
+    })
+
 def 主():
     kb = json.loads((根 / "shiso_kb.json").read_text(encoding="utf-8"))["項目"]
     出 = []
@@ -57,6 +84,7 @@ def 主():
         m = re.search(r"[^。\n]{0,20}(?:受付|受け付け|時間|開設)[^。\n]{0,50}", 文)
         if m: 一["時間の記述"] = re.sub(r"\s+", "", m.group(0))[:90]
         出.append(一)
+    社協の窓口(出)
     if not 出:
         print("！ 相談の記事が1件も無い"); return 1
     c = Counter(s for x in 出 for s in x["悩み"])
