@@ -1,17 +1,7 @@
 {
- "updated": "2026-08-28T20:20:56+09:00",
+ "updated": "2026-08-29T06:31:00+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "8/28 福祉施設製品販売会 市役所で",
-   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/oshirase/1461754625544.html",
-   "date": "8月28日",
-   "ts": "2026-08-28T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-08-28",
-   "place": "宍粟市役所1階市民ロビー"
-  },
   {
    "tag": "イベント",
    "title": "8/29 いちのぴあで「えほんのじかん」",
@@ -99,6 +89,16 @@
    "src": "山崎文化会館",
    "when": "2026-09-20",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "9/25 福祉施設製品販売会 市役所で",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/oshirase/1461754625544.html",
+   "date": "9月25日",
+   "ts": "2026-09-25T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-09-25",
+   "place": "宍粟市役所1階市民ロビー"
   },
   {
    "tag": "催し",
