@@ -61,10 +61,36 @@ jobs:
         id: iryo
         continue-on-error: true    # ★当番医は毎月変わる。ここが止まると命に関わる案内が古びる
         run: python3 scripts/build_shiso_iryo.py
+      - name: 表計算を読む道具（人口の統計はExcelで出ている）
+        run: python3 -m pip install --quiet xlrd openpyxl
+      - name: 人口の移り変わりを作る（市公式「年度別人口統計」）
+        id: jinko
+        continue-on-error: true    # ★毎月更新される。止まると人口の答えが古びる
+        run: python3 scripts/build_shiso_jinko.py
+      - name: 広報しそうを集める（毎月の号）
+        id: koho
+        continue-on-error: true    # ★新しい号が出るたびに増える。市の話題の一次資料
+        run: python3 scripts/build_shiso_koho.py
+      - name: 市の予算・決算を拾う（広報しそうから）
+        id: yosan
+        continue-on-error: true    # ★広報を取り直した後に走らせる（広報が元なので順番が要る）
+        run: python3 scripts/build_shiso_yosan.py
+      - name: お祭りを拾う（広報しそうから）
+        id: matsuri
+        continue-on-error: true    # ★同上。広報の後
+        run: python3 scripts/build_shiso_matsuri.py
+      - name: よくある質問を集める（市公式FAQ）
+        id: faq
+        continue-on-error: true
+        run: python3 scripts/build_shiso_faq.py
+      - name: 市議会の議員名簿を集める
+        id: gikai
+        continue-on-error: true
+        run: python3 scripts/build_shiso_gikai.py
       - name: 変化があればコミット
         if: always()    # ★どれかが失敗しても、取れた分は必ず保存する
         run: |
-          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json shiso_bunka.json shiso_iryo.json gomi_cal bus_cal
+          git add -A shiso_kb.json shiso_kanko.json shiso_gomi.json shiso_reiki.json shiso_pdf.json shiso_shisetsu.json shiso_bus.json shiso_bunka.json shiso_iryo.json shiso_jinko.json shiso_koho.json shiso_yosan.json shiso_matsuri.json shiso_faq.json shiso_gikai.json gomi_cal bus_cal
           if git diff --cached --quiet; then
             echo "変化なし"
           else
