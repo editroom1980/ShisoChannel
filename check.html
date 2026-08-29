@@ -2095,7 +2095,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.15-lab（声と画面の文を分けた。案内は1か所）</div>
+    <div class="ps-version">version 4.17-lab（閉じた窓をリモコンが操作し続けない）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4817,6 +4817,21 @@ window.__aiMicWait=function(){
   }catch(_){}
 };
 
+/** ★マイクが閉じた（もう録れない）。2026-08-29に新設。
+ *  なぜ要るか：一覧を見ながら考えている間に録音の枠が切れると、
+ *  マイクは死んでいるのに画面は「どうぞ、お話しください」＋緑の点のまま残っていた。
+ *  **画面が嘘をつくのがいちばん困る**（話しても何も録れていない）。
+ *  一覧はそのまま残し、印と見出しだけを正直な状態に戻す。 */
+window.__aiMicOff=function(){
+  try{
+    var w=_aiEl('ai-win'); if(!w) return;
+    w.classList.remove('mic-open');
+    w.classList.remove('listening');
+    var h=_aiEl('ai-head-t'); if(h) h.textContent='マイクを押すと、また声で選べます';
+    window.__aiNobasu();          // 読んでいる間に閉じない
+  }catch(_){}
+};
+
 window.__aiMicOpen=function(){
   try{
     var w=_aiEl('ai-win'); if(!w) return;
@@ -5074,6 +5089,13 @@ window.__aiClose=function(){
     if(_aiWasPlaying){ _aiWasPlaying=false; try{ ytPlayer.playVideo(); }catch(_){} }
     // ★閉じたら金枠の現在地を必ず作り直す。これが無いと次のキーが行き場を失う
     try{ if(IS_TVAPP) _tvEnsure(); }catch(_){}
+    // ★★ 窓が閉じたことをアプリへ伝える（2026-08-29）。
+    //   伝えないと、アプリは「まだ一覧を出している」と思い込み、
+    //   **見えていない一覧をリモコンの上下が操作し続ける**（実機で確認：
+    //   閉じたあとも __aiPick(0)(1)(2) が飛んでいた）。その状態で決定を押すと、
+    //   頼んでもいないバスの答えが突然出る。この窓は60秒で自分からも閉じるので、
+    //   アプリ側だけでは知りようがない
+    try{ if(window.ShisoMeasure && ShisoMeasure.windowClosed) ShisoMeasure.windowClosed(); }catch(_){}
   }catch(_){}
 };
 window.__aiOpened=function(){ var w=_aiEl('ai-win'); return !!(w&&w.classList.contains('on')); };
