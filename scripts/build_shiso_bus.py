@@ -419,6 +419,10 @@ def 表を組む(こ, 名x, 文脈):
 #  出典: 宍粟市 しーたんバス GTFS-JP（api.gtfs-data.jp / organization=shisocity）
 GTFS一覧 = ("shitanbus-wingshinki", "shitanbus")
 
+# ★この道具の作りの版（2026-08-29）。中身の作り方を変えたら必ず上げる。
+#   PDFが同じでも作り直させるための札
+作りの版 = "2026-08-29-yomi"
+
 
 def 停の座標を取る():
     """公式GTFSから 停留所名→(緯度, 経度) を作る。取れなければ空"""
@@ -445,6 +449,51 @@ def 停の座標を取る():
     # 同じ名前で複数の乗り場がある（上り・下り）ので真ん中を代表にする
     return {n: [round(sum(a for a, _ in v) / len(v), 6),
                 round(sum(b for _, b in v) / len(v), 6)] for n, v in out.items()}
+
+
+def 停のふりがなを取る():
+    """公式GTFSの translations.txt から 停留所名→ふりがな を作る。
+
+    ★なぜ要るか（2026-08-29の実測）：
+      バス停302種のうち **275種（91%）** が読みに直せていなかった。
+      「引原（ひきばら）」「土万（ひじま）」「音水（おんずい）」のような
+      難読地名は、読みが無いと音声認識の結果と突き合わせられない。
+      日本語の認識器は「ひきばら」と聞こえた音を漢字に直して返すので、
+      こちらも読みを持っていないと同じ土俵に乗らない。
+    ★読みは**推測しない**。市が公式GTFSで出している ja-Hrkt（日本語ふりがな）を使う。
+      実測：302種のうち283種（94%）に公式のふりがながあった。
+    出典: 宍粟市 しーたんバス GTFS-JP（api.gtfs-data.jp / organization=shisocity）
+          translations.txt の language=ja-Hrkt
+    """
+    import io as _io, zipfile, csv as _csv
+    out = {}
+    for f in GTFS一覧:
+        try:
+            b = 取る("https://api.gtfs-data.jp/v2/organizations/shisocity/feeds/"
+                     + f + "/files/feed.zip")
+            z = zipfile.ZipFile(_io.BytesIO(b))
+            名 = {}
+            with z.open("stops.txt") as fp:
+                for x in _csv.DictReader(_io.TextIOWrapper(fp, encoding="utf-8-sig")):
+                    sid = (x.get("stop_id") or "").strip()
+                    nm = (x.get("stop_name") or "").strip()
+                    if sid and nm:
+                        名[sid] = nm
+            if "translations.txt" not in z.namelist():
+                print(f"ふりがなが無い({f})", file=sys.stderr)
+                continue
+            with z.open("translations.txt") as fp:
+                for x in _csv.DictReader(_io.TextIOWrapper(fp, encoding="utf-8-sig")):
+                    if (x.get("table_name") or "") != "stops":      continue
+                    if (x.get("field_name") or "") != "stop_name":  continue
+                    if (x.get("language") or "") != "ja-Hrkt":      continue
+                    rid = (x.get("record_id") or "").strip()
+                    よみ = (x.get("translation") or "").strip()
+                    if rid in 名 and よみ:
+                        out.setdefault(名[rid], よみ)
+        except Exception as e:
+            print(f"ふりがなが取れない({f}): {e}", file=sys.stderr)
+    return out
 
 
 def GTFSの表を作る():
@@ -531,9 +580,24 @@ if __name__ == "__main__":
     if 出力.exists():
         try:
             旧 = json.loads(出力.read_text(encoding="utf-8"))
-            if 旧.get("指紋") == 指紋 and all((根 / p["画像"]).exists() for p in 旧.get("頁", [])):
+            # ★PDFが同じでも「この道具の作り」が変わったら作り直す（2026-08-29）。
+            #   指紋だけを見ていたため、ふりがなを足す改修をしても
+            #   「変化なし」で素通りし、いつまでも古い中身のままだった
+            同じ作り = 旧.get("作りの版") == 作りの版
+            # ★中身が揃っているかも見る（2026-08-29）。
+            #   前回が途中で落ちて「地区の玄関」「町の停」が欠けたまま保存されても、
+            #   指紋と版が同じなら素通りしてしまい、欠けたまま何日も気づけなかった
+            要る = ("地区の玄関", "町の停", "町の停の組", "停の座標", "停の読み", "予約制の交通", "頁")
+            欠け = [k for k in 要る if not 旧.get(k)]
+            if 欠け:
+                print(f"前回の資料に {欠け} が欠けている → 作り直す", file=sys.stderr)
+            if (旧.get("指紋") == 指紋 and 同じ作り and not 欠け
+                    and all((根 / p["画像"]).exists() for p in 旧.get("頁", []))):
                 print("変化なし（前回のまま）")
                 sys.exit(0)
+            if not 同じ作り:
+                print(f"作りの版が変わった（{旧.get('作りの版')} → {作りの版}）ので作り直す",
+                      file=sys.stderr)
         except Exception:
             pass
 
@@ -656,6 +720,16 @@ if __name__ == "__main__":
     付いた = sum(1 for t in 停名すべて if t in 座標)
     print(f"停留所の座標: {付いた}/{len(停名すべて)}件（GTFS {len(座標)}件）", file=sys.stderr)
 
+    # 停留所のふりがな（音声で聞き取った音と突き合わせるため。2026-08-29）
+    ふりがな = 停のふりがなを取る()
+    if not ふりがな and 出力.exists():
+        try:
+            ふりがな = json.loads(出力.read_text(encoding="utf-8")).get("停の読み", {})
+        except Exception:
+            ふりがな = {}
+    読み付いた = sum(1 for t in 停名すべて if t in ふりがな)
+    print(f"停留所のふりがな: {読み付いた}/{len(停名すべて)}件（GTFS {len(ふりがな)}件）", file=sys.stderr)
+
     # 保存量の検算（絶対ルール30：取り込んだら量を検算する）
     総 = sum(len(p["文"]) for p in 頁たち)
     空 = sum(1 for p in 頁たち if len(p["文"]) < 50)
@@ -666,11 +740,15 @@ if __name__ == "__main__":
     出力.write_text(json.dumps({
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "出典": "宍粟市公式サイト " + 親,
-        "url": url, "指紋": 指紋, "頁数": 頁数,
+        "url": url, "指紋": 指紋, "頁数": 頁数, "作りの版": 作りの版,
         # 検収（daikensa）が保存量を独立に検算するための欄（検収三原則②）
         "便数": 便総, "表数": 表総, "停のべ数": 停総,
         "祝日": 祝日たち,
         "停の座標": 座標,
+        # ★停留所のふりがな（2026-08-29）。音声で聞き取った音と突き合わせるのに要る。
+        #   推測ではなく、市が公式GTFSで出している ja-Hrkt をそのまま使う
+        "停の読み": ふりがな,
+        "読みの出典": "宍粟市 しーたんバス GTFS-JP translations.txt（language=ja-Hrkt）",
         "運休日": G運休,
         "座標の出典": "宍粟市 しーたんバス GTFS-JP（api.gtfs-data.jp/v2/organizations/shisocity）",
         "問い合わせ": "ウイング神姫 山崎営業所 0790-62-1720",
@@ -689,11 +767,35 @@ if __name__ == "__main__":
     _g = _iu.spec_from_file_location("genkan",
                                      pathlib.Path(__file__).resolve().parent / "build_bus_genkan.py")
     _m = _iu.module_from_spec(_g); _g.loader.exec_module(_m)
-    _bus, _表, _中心 = _m.決める()
+    # ★戻り値は7つ（2026-08-29に食い違いを発見）。3つで受けていたため
+    #   ValueError で落ち、**「地区の玄関」「町の停」「町の停の組」が
+    #   まるごと書かれないまま資料が保存されていた**。
+    #   バスの案内（地区ごとの一覧・玄関口）が丸ごと死ぬ重い不具合
+    _bus, _表, _中心, _町の停, _町の組, _便, _経過 = _m.決める()
     _欠 = [t for t, v in _表.items() if not v.get("停")]
     if _欠:
         print(f"★玄関口が決まらない町がある: {_欠}", file=sys.stderr)
     _bus["地区の玄関"] = {"中心の停": _中心, "町": _表}
+    _bus["町の停"] = _町の停
+    _bus["町の停の組"] = _町の組
     出力.write_text(json.dumps(_bus, ensure_ascii=False, separators=(",", ":")),
                     encoding="utf-8")
     print("  地区の玄関: " + " / ".join(f"{t}→{v['停']}" for t, v in _表.items()))
+    print("  町の停: " + " / ".join(f"{t}{len(v)}停" for t, v in _町の停.items()))
+    # ★予約制の交通（ちくさええとこバス等）も、ここで書き足す（2026-08-29）。
+    #   別の道具を手で走らせる作りだったため、時刻表を作り直すたびに
+    #   **まるごと消えていた**。玄関口と同じく本体から呼ぶ
+    import subprocess as _sp
+    _y = pathlib.Path(__file__).resolve().parent / "build_bus_yoyaku.py"
+    if _y.exists():
+        _r = _sp.run([sys.executable, str(_y)], capture_output=True, text=True)
+        if _r.returncode != 0:
+            print("★予約制の交通を作れない:\n" + (_r.stderr or "")[-500:], file=sys.stderr)
+        else:
+            print("  " + (_r.stdout or "").strip().split("\n")[-1])
+
+    # ★書けたことを必ず数で確かめる（絶対ルール：取り込んだら検算する）
+    _確 = json.loads(出力.read_text(encoding="utf-8"))
+    for _k in ("地区の玄関", "町の停", "町の停の組", "停の座標", "停の読み", "予約制の交通"):
+        if not _確.get(_k):
+            print(f"★{_k} が資料に書けていない", file=sys.stderr); sys.exit(1)
