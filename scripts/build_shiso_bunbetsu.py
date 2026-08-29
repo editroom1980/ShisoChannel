@@ -167,10 +167,41 @@ if __name__ == "__main__":
 
     import collections
     数 = collections.Counter(x["種類"] for x in 項目)
+
+    # ★ごみ袋とシールの値段（2026-08-28）。市民がいちばん多く聞く値段なのに
+    #   「ごみ袋はいくらですか」に答えられなかった。
+    #   市の『市指定ごみ袋等と取扱店』に書いてある値段だけを写す
+    袋 = []
+    try:
+        kb = json.loads((根 / "shiso_kb.json").read_text(encoding="utf-8"))["項目"]
+        for x in kb:
+            if "市指定ごみ袋" not in x.get("題", ""): continue
+            f = re.sub(r"\s+", " ", x.get("文", ""))
+            # ★実データで確かめた形（2026-08-28）：
+            #   「もやすごみ専用袋（大） 45リットル 506円 （460円+46円） 20枚入」
+            #   最初に書いた形（[^\s]で名前を取る）では1件も取れなかった
+            for m in re.finditer(
+                    r"((?:もやす|もやさない|粗大)[^\s]{0,14}(?:専用袋|専用シール)"
+                    r"(?:（[^）]*）)?)\s*(?:(\d+)リットル\s*)?([\d,]+)円"
+                    r"\s*（[^）]*）\s*(\d+)枚", f):
+                袋.append({"名": m.group(1).strip(),
+                           "リットル": int(m.group(2)) if m.group(2) else None,
+                           "1セットの値段": int(m.group(3).replace(",", "")),
+                           "枚数": int(m.group(4)),
+                           "url": x.get("url", "")})
+            break
+    except Exception as e:
+        print(f"  ！ ごみ袋の値段が読めない: {e}", file=sys.stderr)
+    if 袋:
+        print("  ごみ袋の値段:", [(b["名"], b["1セットの値段"], b["枚数"]) for b in 袋])
+    else:
+        print("  ！ ごみ袋の値段が1件も取れなかった", file=sys.stderr)
+
     出力.write_text(json.dumps({
         "説明": "ごみの50音順分別早見表。品名からごみの種類と出し方が分かる",
         "出典": "宍粟市「家庭ごみの分け方と出し方ガイドブック」50音順早見表",
         "url": 親, "件数": len(項目), "項目": 項目,
+        "ごみ袋の値段": 袋,
     }, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"○ {len(項目)}品目 → shiso_bunbetsu.json（{出力.stat().st_size//1024}KB）")
     print(f"  検算: PDF合計 {字数:,}字 → 拾った {len(全)}行 → 重複を除いて {len(項目)}品目")

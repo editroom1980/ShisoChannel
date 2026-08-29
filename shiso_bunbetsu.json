@@ -4911,5 +4911,35 @@
    "出し方": "シール",
    "行": "か行"
   }
+ ],
+ "ごみ袋の値段": [
+  {
+   "名": "もやすごみ専用袋（大）",
+   "リットル": 45,
+   "1セットの値段": 506,
+   "枚数": 20,
+   "url": "https://www.city.shiso.lg.jp/kurashi/gomishinyokankyo/gomi/1434350118036.html"
+  },
+  {
+   "名": "もやすごみ専用袋（小）",
+   "リットル": 30,
+   "1セットの値段": 522,
+   "枚数": 25,
+   "url": "https://www.city.shiso.lg.jp/kurashi/gomishinyokankyo/gomi/1434350118036.html"
+  },
+  {
+   "名": "もやさないごみ専用袋",
+   "リットル": 30,
+   "1セットの値段": 522,
+   "枚数": 25,
+   "url": "https://www.city.shiso.lg.jp/kurashi/gomishinyokankyo/gomi/1434350118036.html"
+  },
+  {
+   "名": "粗大ごみ専用シール",
+   "リットル": null,
+   "1セットの値段": 418,
+   "枚数": 20,
+   "url": "https://www.city.shiso.lg.jp/kurashi/gomishinyokankyo/gomi/1434350118036.html"
+  }
  ]
 }
