@@ -41,6 +41,8 @@ jobs:
         id: reiki
         continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
         run: python3 scripts/build_shiso_reiki.py
+      - name: PDFの表を読む道具を入れる
+        run: python3 -m pip install --quiet pdfplumber
       - name: 主要PDFの中身を文章にする（手引き・しおり・時刻表）
         id: pdf
         continue-on-error: true    # ★1つの取り込みが失敗しても、他の収集結果は捨てない
