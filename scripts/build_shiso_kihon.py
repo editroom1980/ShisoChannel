@@ -9,6 +9,9 @@
 ★数値も言葉も、市のページに書いてある通りに写す。こちらで足さない。
 """
 import json, pathlib, re, sys
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 
 根 = pathlib.Path(__file__).resolve().parent.parent
 
@@ -101,6 +104,7 @@ def 主():
 
     出["出典"] = 元
     先 = 根 / "shiso_kihon.json"
+    件数を守る("市の基本", len(出.get("項目", [])))
     先.write_text(json.dumps(出, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"○ 基本の情報 {len(出['項目'])}項目 → {先}（{先.stat().st_size//1024}KB）")
     for k, v in 出["項目"].items():

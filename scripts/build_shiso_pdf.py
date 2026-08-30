@@ -20,6 +20,9 @@
   macOS: scripts/pdf2txt.swift（PDFKit） ／ Linux(Actions): pdftotext（poppler）
 """
 import time
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 import json, re, time, sys, hashlib, subprocess, shutil, pathlib, urllib.request
 
 根 = pathlib.Path(__file__).resolve().parent.parent
@@ -266,6 +269,8 @@ if __name__ == "__main__":
             項目.append(一)
         if (i + 1) % 20 == 0:
             print(f"  {i+1}/{len(候補)} … {r['名'][:26]}", file=sys.stderr)
+
+    件数を守る("PDF資料", len(項目))
 
     出力.write_text(json.dumps({
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),

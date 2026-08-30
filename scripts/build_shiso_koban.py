@@ -76,8 +76,14 @@ if __name__ == "__main__":
                           "".join(行[i:i+3]))
             if m:
                 署電話 = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
-        if not x.startswith("宍粟市"):
+        # ★★ 2026-08-30：区画の最後の1件は、案内の文字が住所の頭にくっつく。
+        #   実データ：「↑トップへ宍粟市波賀町引原３２８－５１」
+        #   行頭が「宍粟市」かどうかで見ていたため、**引原駐在所が毎回落ちていた**
+        #   （16件しか取れず、実際は17件）。行の中から住所を取り出す
+        m住 = re.search(r"宍粟市[^\s]+", x)
+        if not m住:
             continue
+        x = m住.group(0)
         名 = 行[i - 1].strip() if i > 0 else ""
         if not re.search(r"(交番|駐在所)$", 名):
             continue
@@ -97,6 +103,16 @@ if __name__ == "__main__":
             continue
         見.add(x["名"]); 一覧.append(x)
     一覧.sort(key=lambda x: (x["種類"] != "交番", x["地区"], x["名"]))
+
+    # ★★ 検算（2026-08-30に追加）：宍粟市の住所を持つ行の数と、
+    #   名前と組にできた数が合っているか。合わなければ**取りこぼしている**
+    住所の数 = sum(1 for x in 行 if re.search(r"宍粟市[^\s]+", x)
+                  and re.search(r"(交番|駐在所)$", (行[行.index(x)-1] or "").strip()))
+    if len(一覧) < 住所の数:
+        print(f"★宍粟市の住所が {住所の数}件あるのに、名前と組にできたのは {len(一覧)}件。"
+              "取りこぼしている", file=sys.stderr)
+        sys.exit(1)
+    print(f"検算: 宍粟市の住所 {住所の数}件 ＝ 組にできた {len(一覧)}件", file=sys.stderr)
 
     if len(一覧) < 5:
         print(f"★{len(一覧)}件しか取れていない。一覧の作りが変わった可能性", file=sys.stderr)

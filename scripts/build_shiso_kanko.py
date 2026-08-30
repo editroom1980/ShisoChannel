@@ -14,6 +14,9 @@
 行儀よく集めること：1ページごとに間をあけ、名乗る。
 """
 import time
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 import json, re, time, sys, html, urllib.request, urllib.parse, pathlib
 
 元 = "https://shiso.or.jp"
@@ -146,6 +149,7 @@ def 走る():
 
 if __name__ == "__main__":
     集めた = 走る()
+    件数を守る("観光", len(集めた))
     出力.write_text(json.dumps({
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "出典": "しそうツーリズムガイド（宍粟市観光協会） https://shiso.or.jp/",

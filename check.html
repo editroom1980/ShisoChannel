@@ -1024,6 +1024,15 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   font-size:20px;line-height:1.6;padding:5px 0 5px 12px;
   border-bottom:1px solid rgba(255,255,255,0.14);
 }
+/* ★ふつうの一覧（学校・施設・相談窓口など）も、選んでいる行が分かるようにする
+   （2026-08-30のご指示「他の案内も同じようにストレスなく応えに辿り着けるように」）。
+   バスの一覧と同じ見た目にそろえる。点滅はさせない（絶対ルール11） */
+#ai-list li.ai-cur{
+  background:rgba(212,175,55,.22);
+  box-shadow:inset 0 0 0 2px #d4af37;
+  border-radius:6px;
+  color:#fff;
+}
 #ai-list li:last-child{border-bottom:none;}
 /* ★バス停を選んでもらう一覧は2列で詰める（2026-08-28のご指示
    「1ページの案内する数を可能な限り増やせ」）。
@@ -1032,22 +1041,39 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
    段組み(column-count)は左右の高さが揃わず、33行で682pxになった
    （左に24行・右に9行）。格子なら高さが「行数×1行」で正確に読める＝
    1ページに入る数を数で決められる */
+/* ★★ 2026-08-30に作り直し（ご指摘「数字が縦に順番に並んでなくて…16項目くらいだったら
+   １画面に収めろ。テレビなんだから文字の割合が多少小さくなろうが十分見えるだろ」）。
+   ① 番号を**縦**に流す（grid-auto-flow:column）。左の列に1〜8、右の列に9〜16。
+      W3CはWCAG 1.3.2の解説で、段組みの読み順を「段の先頭から最後へ、次に隣の段の先頭へ」
+      と定めている。これで「読む順＝番号順＝下キーで進む順」が一致する
+   ② 1画面16件。実測：見出し無し・22px で264px（一覧に使える274pxに収まる）。
+      1画面8件だったのは文字の大きさではなく、2列ぶち抜きの地区見出しが原因だった
+      （16件＋見出し4本＝411.94px＝137.9pxのはみ出し）
+   ③ 字は**小さくせず19px→22pxに大きくした**。Fire TVの本文最小18.7px、
+      tvOSの本文29pt(19.3px)、Android TVの既定18sp(24px)の帯の中で、いちばん大きい側に寄せた */
 #ai-list.ai-pick{
-  display:grid;grid-template-columns:1fr 1fr;column-gap:24px;align-content:start;
+  display:grid;
+  grid-auto-flow:column;
+  grid-template-rows:repeat(8, 33px);
+  grid-template-columns:1fr 1fr;
+  column-gap:24px;align-content:start;
 }
 #ai-list.ai-pick li{
-  font-size:19px;line-height:1.3;padding:3px 0 3px 10px;
+  font-size:22px;line-height:28px;padding:2px 0 2px 10px;
   min-height:0;border-bottom:1px solid rgba(255,255,255,0.10);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 #ai-list.ai-pick li.ai-best{
   /* 「よく使われます」の行だけ背が高いと計算が狂う。ほかと同じ高さにする */
-  font-size:19px;line-height:1.3;padding:3px 0 3px 10px;
+  font-size:22px;line-height:28px;padding:2px 0 2px 10px;
 }
 /* ★見出しも列の中に流す（2026-08-28の実測）。
    column-span:all にすると列の流れが分断され、1ページに入る数が
    16行までに落ちた（実測548px）。列に流せば全部29pxの行になり、
    高さが「行数の半分×29px」で正確に読める＝多く載せられる */
-#ai-list.ai-pick li.ai-sep{grid-column:1/-1;padding-top:3px;font-size:19px;}
+/* ★地区の見出しは一覧から外した（2026-08-30）。1画面に8件しか入らない原因だった。
+   万一まだ来ても格子を壊さないよう、1マスとして流す */
+#ai-list.ai-pick li.ai-sep{padding-top:2px;font-size:19px;}
 /* ★リモコンの上下で選んでいる項目（2026-08-28のご指摘「キー操作でも選べるようにしろ」）。
    声だけだと1つ選ぶのに36秒かかっていた。キーなら押した瞬間に決まる。
    ★点滅させない。色と枠が一度だけ変わる（絶対ルール11） */
@@ -2095,7 +2121,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.17-lab（閉じた窓をリモコンが操作し続けない）</div>
+    <div class="ps-version">version 4.19-lab（どの一覧も先頭が選ばれた状態で出る）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>

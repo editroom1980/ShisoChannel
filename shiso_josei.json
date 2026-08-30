@@ -1,8 +1,18 @@
 {
  "作成": "市公式サイトの記事から、助成・補助・給付の案内だけを集めた",
- "件数": 128,
- "いま受け付けている数": 122,
+ "件数": 129,
+ "いま受け付けている数": 123,
  "項目": [
+  {
+   "題": "JSPO公認指導者資格取得経費補助事業（兵庫県スポーツ協会）",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shiminnkyoudou/tantojoho/chiikikurabu/tiikidanntaisidousyamukejouhou/21736.html",
+   "課": "まちづくり部 まちづくり推進課",
+   "場面": [
+    "そのほか"
+   ],
+   "電話": "0790-63-3123",
+   "対象の記述": "集）事業名：JSPO公認指導者資格取得経費補助事業主催：兵庫県教育委員会主管：公益財団法人兵庫県スポーツ協会対象者：県内の地域クラブ活動指導者（予定を含む）1クラブ1名まで（これまで補助決定したクラブからも別の指導者を申"
+  },
   {
    "題": "NHK受信料の減免",
    "url": "https://www.city.shiso.lg.jp/kurashi/fukushi/shogaisha/kokyoryokin_waribiki/1461752179521.html",
@@ -36,7 +46,7 @@
   },
   {
    "題": "オンライン婚活を応援 はばタン会員登録手数料を助成",
-   "url": "https://www.city.shiso.lg.jp/kurashi/denshisabisu/18433.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/14826.html",
    "課": "健康福祉部 子育て支援課",
    "場面": [
     "そのほか"
@@ -56,7 +66,7 @@
   },
   {
    "題": "シェルター型工事費を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/dobokubu/toshiseibika/tantojoho/shisosumainotaisinnkasokusin/9553.html",
+   "url": "https://www.city.shiso.lg.jp/mokuteki/hikkoshi/sumai/21320.html",
    "課": "建設部 住宅土地政策課",
    "場面": [
     "住まい"
@@ -76,7 +86,7 @@
   },
   {
    "題": "スポーツ大会出場奨励金",
-   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shiminnkyoudou/tantojoho/supotu/shinsei/1386659465791.html",
+   "url": "https://www.city.shiso.lg.jp/kanko/rekisibunnka/supotu/oshirase/12667.html",
    "課": "まちづくり部 まちづくり推進課",
    "場面": [
     "子育て"
@@ -137,7 +147,7 @@
   },
   {
    "題": "不妊治療ペア検査費の助成",
-   "url": "https://www.city.shiso.lg.jp/mokuteki/ninshin/tetsuzuki/17098.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/17099.html",
    "課": "健康福祉部 保健福祉課",
    "場面": [
     "健康・医療"
@@ -147,7 +157,7 @@
   },
   {
    "題": "不育症治療費の助成",
-   "url": "https://www.city.shiso.lg.jp/kurashi/kenkoiryo/ninshinshussanboshinokenko/1386743838606.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/1386743809558.html",
    "課": "健康福祉部 保健福祉課",
    "場面": [
     "健康・医療"
@@ -188,7 +198,7 @@
   },
   {
    "題": "介護給付費及び介護予防・日常生活支援総合事業費過誤申立",
-   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/konenfukushi/tantojoho/kaigohokenzigyousyamukezyouhou/1386641686782.html",
+   "url": "https://www.city.shiso.lg.jp/shinseisho/kurashi/fukushi/1386642029851.html",
    "課": "",
    "場面": [
     "高齢者"
@@ -207,7 +217,7 @@
   },
   {
    "題": "令和6年10月から児童手当制度が一部変更に",
-   "url": "https://www.city.shiso.lg.jp/mokuteki/kosodate/josei/20045.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/18835.html",
    "課": "健康福祉部 子育て支援課",
    "場面": [
     "子育て"
@@ -302,7 +312,7 @@
   },
   {
    "題": "住民参画型の森林整備 費用を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528961636084.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13288.html",
    "課": "産業部 森林環境課",
    "場面": [
     "暮らし・安全"
@@ -387,7 +397,7 @@
   },
   {
    "題": "国民健康保険(給付)葬祭費",
-   "url": "https://www.city.shiso.lg.jp/mokuteki/okuyami/tetsuzuki/20053.html",
+   "url": "https://www.city.shiso.lg.jp/kurashi/hokennenkin/kokuminkenkohoken/1389678732739.html",
    "課": "市民生活部 市民課",
    "場面": [
     "そのほか"
@@ -408,7 +418,7 @@
   },
   {
    "題": "国民健康保険に加入しています。病院で出産予定です。費用が高額になるかもしれないのですが、何か助成はありますか",
-   "url": "https://www.city.shiso.lg.jp/soshiki/shiminseikatsu/shimin/faq/kenkohoken/1391514413802.html",
+   "url": "https://www.city.shiso.lg.jp/faq/kurashi/hoken/kokuho/1391514457824.html",
    "課": "市民生活部 市民課",
    "場面": [
     "子育て"
@@ -417,7 +427,7 @@
   },
   {
    "題": "国民健康保険に加入していますが、歯医者さんで入れ歯を作ります。保険給付の対象になりますか",
-   "url": "https://www.city.shiso.lg.jp/soshiki/shiminseikatsu/shimin/faq/kenkohoken/1391082930727.html",
+   "url": "https://www.city.shiso.lg.jp/faq/kurashi/hoken/kokuho/1391082971853.html",
    "課": "市民生活部 市民課",
    "場面": [
     "健康・医療"
@@ -458,7 +468,7 @@
   },
   {
    "題": "地域の森林整備 活動費用を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528966371950.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13286.html",
    "課": "産業部 森林環境課",
    "場面": [
     "そのほか"
@@ -480,7 +490,7 @@
   },
   {
    "題": "妊婦健康診査費を助成",
-   "url": "https://www.city.shiso.lg.jp/kurashi/kenkoiryo/ninshinshussanboshinokenko/1386745416593.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/1386745446766.html",
    "課": "健康福祉部 保健福祉課",
    "場面": [
     "子育て"
@@ -491,7 +501,7 @@
   },
   {
    "題": "妊活カップル応援金を給付",
-   "url": "https://www.city.shiso.lg.jp/kurashi/kenkoiryo/ninshinshussanboshinokenko/15910.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/15908.html",
    "課": "健康福祉部 保健福祉課",
    "場面": [
     "健康・医療"
@@ -511,7 +521,7 @@
   },
   {
    "題": "子育てのための施設等利用費用を給付",
-   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/kosodateshien/16820.html",
+   "url": "https://www.city.shiso.lg.jp/faq/kurashi/kosodate/18372.html",
    "課": "こども未来課",
    "場面": [
     "子育て"
@@ -532,7 +542,7 @@
   },
   {
    "題": "宍粟材をPRする経費を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528970092047.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13298.html",
    "課": "産業部 森林環境課",
    "場面": [
     "住まい"
@@ -585,7 +595,7 @@
   },
   {
    "題": "広葉樹を植栽して災害に強い森林を 費用を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528970457793.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13305.html",
    "課": "象など詳しくは、光都農林振興事務所",
    "場面": [
     "高齢者"
@@ -635,7 +645,7 @@
   },
   {
    "題": "新婚カップルの新生活を応援 最大60万円を助成",
-   "url": "https://www.city.shiso.lg.jp/kurashi/sumai/sonota/16902.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/16903.html",
    "課": "健康福祉部 子育て支援課",
    "場面": [
     "そのほか"
@@ -645,7 +655,7 @@
   },
   {
    "題": "新規事業体の林業機械 購入経費等を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528968454617.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13300.html",
    "課": "産業部 森林環境課",
    "場面": [
     "しごと"
@@ -665,12 +675,12 @@
   },
   {
    "題": "施設使用料の減免",
-   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shiminnkyoudou/tantojoho/gakuyukan/kaikanzikanshinseisho/6670.html",
-   "課": "生涯学習センター",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/c_infomation/1461196763562.html",
+   "課": "千種生涯学習事務所",
    "場面": [
     "そのほか"
    ],
-   "電話": "0790-64-7700"
+   "電話": "0790-76-2210"
   },
   {
    "題": "施設使用料の減免",
@@ -683,12 +693,12 @@
   },
   {
    "題": "施設使用料の減免",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/c_infomation/1461196763562.html",
-   "課": "千種生涯学習事務所",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shiminnkyoudou/tantojoho/gakuyukan/kaikanzikanshinseisho/6670.html",
+   "課": "生涯学習センター",
    "場面": [
     "そのほか"
    ],
-   "電話": "0790-76-2210"
+   "電話": "0790-64-7700"
   },
   {
    "題": "施設使用料の減免について",
@@ -755,7 +765,7 @@
   },
   {
    "題": "林業事業体の従業員雇用経費を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528968039192.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13303.html",
    "課": "産業部 森林環境課",
    "場面": [
     "しごと"
@@ -775,7 +785,7 @@
   },
   {
    "題": "林道などの整備 資材を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528973719235.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13301.html",
    "課": "産業部 森林環境課",
    "場面": [
     "住まい"
@@ -796,7 +806,7 @@
   },
   {
    "題": "母子家庭等医療費助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/shiminseikatsu/shimin/tantojoho/hukushiiryo/1506476716626.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/8553.html",
    "課": "市民生活部 市民課",
    "場面": [
     "健康・医療"
@@ -826,7 +836,7 @@
   },
   {
    "題": "消防団の施設や資機材等の整備費を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/syouboutaiseinozyuuzitsukyouka/11007.html",
+   "url": "https://www.city.shiso.lg.jp/kurashi/bosaibohankotsu/sonota/12750.html",
    "課": "まちづくり部 危機管理課",
    "場面": [
     "暮らし・安全"
@@ -836,12 +846,12 @@
   },
   {
    "題": "漏水減免申請書",
-   "url": "https://www.city.shiso.lg.jp/soshiki/dobokubu/kanrika/shinseisho/1396244805689.html",
+   "url": "https://www.city.shiso.lg.jp/shinseisho/kurashi/jogesuido/1396244848996.html",
    "課": "",
    "場面": [
     "しごと"
    ],
-   "対象の記述": "請書漏水減免申請書広報ID2254更新日：2021年04月22日提出が必要な場面下記の例により漏水減免制度の対象となる漏水箇所を宍粟市指定給水装置工事業者へ依頼し修繕したとき地中埋設管壁の中床下配管窓口で手続きをする場合"
+   "対象の記述": "請書漏水減免申請書広報ID4974更新日：2021年04月22日提出が必要な場面下記の例により漏水減免制度の対象となる漏水箇所を宍粟市指定給水装置工事業者へ依頼し修繕したとき地中埋設管壁の中床下配管窓口で手続きをする場合"
   },
   {
    "題": "無料経営相談「兵庫県よろず支援拠点」",
@@ -906,7 +916,7 @@
   },
   {
    "題": "生産森林組合の経営費用を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528969601659.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13285.html",
    "課": "産業部 森林環境課",
    "場面": [
     "しごと"
@@ -927,7 +937,7 @@
   },
   {
    "題": "福祉世帯の水道料金・下水道使用料等助成認定申請書",
-   "url": "https://www.city.shiso.lg.jp/soshiki/dobokubu/kanrika/shinseisho/1396245075025.html",
+   "url": "https://www.city.shiso.lg.jp/shinseisho/kurashi/jogesuido/1396245119345.html",
    "課": "",
    "場面": [
     "暮らし・安全"
@@ -1075,14 +1085,14 @@
   },
   {
    "題": "自立支援医療等の医療費助成",
-   "url": "https://www.city.shiso.lg.jp/mokuteki/kosodate/kenko/19251.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/8555.html",
    "課": "市民生活部 市民課",
    "場面": [
     "障がい",
     "健康・医療"
    ],
    "電話": "0790-63-3108",
-   "対象の記述": "広報ID19251更新日：2024年12月11日乳幼児等医療費受給者（高校生以下の子ども）が、乳幼児等医療費助成対象外の公費負担医療の給付を受けて受診された場合の自己負担額（保険診療分）を助成します"
+   "対象の記述": "成広報ID8555更新日：2024年12月11日乳幼児等医療費受給者（高校生以下の子ども）が、乳幼児等医療費助成対象外の公費負担医療の給付を受けて受診された場合の自己負担額（保険診療分）を助成します"
   },
   {
    "題": "自立支援教育訓練給付金",
@@ -1097,7 +1107,7 @@
   },
   {
    "題": "若年がん患者妊孕性温存治療費の助成",
-   "url": "https://www.city.shiso.lg.jp/mokuteki/ninshin/tetsuzuki/17106.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/17107.html",
    "課": "健康福祉部 保健福祉課",
    "場面": [
     "健康・医療"
@@ -1138,7 +1148,7 @@
   },
   {
    "題": "重度障がい者医療費助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/shiminseikatsu/shimin/tantojoho/hukushiiryo/1503559262498.html",
+   "url": "https://www.city.shiso.lg.jp/kosodadekyoiku/joseiteate/8556.html",
    "課": "市民生活部 市民課",
    "場面": [
     "障がい",
@@ -1150,7 +1160,7 @@
   },
   {
    "題": "間伐など森林整備費用を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/sangyo/rinngyousinnkou/tanntoujyouhou/sesakukeikauku/1528965610206.html",
+   "url": "https://www.city.shiso.lg.jp/shiseijoho/shisakukeikaku/nougyo_ringyo/13287.html",
    "課": "産業部 森林環境課",
    "場面": [
     "しごと"
@@ -1171,7 +1181,7 @@
   },
   {
    "題": "防犯カメラ設置費用を助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shobobosai/tantojoho/bohannsisetsuseibi/10080.html",
+   "url": "https://www.city.shiso.lg.jp/kurashi/bosaibohankotsu/sonota/12440.html",
    "課": "まちづくり部 危機管理課",
    "場面": [
     "暮らし・安全"
@@ -1213,7 +1223,7 @@
   },
   {
    "題": "障がい者自立支援給付費等過誤申し立て",
-   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/tantojyoho/shogaijigyosha/shogaikago.html",
+   "url": "https://www.city.shiso.lg.jp/kurashi/fukushi/shogaisha/shogaifukushijigyosha/1481681796005.html",
    "課": "健康福祉部 障がい福祉課",
    "場面": [
     "障がい"
@@ -1264,7 +1274,7 @@
   },
   {
    "題": "高齢期移行医療費助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/shiminseikatsu/shimin/tantojoho/hukushiiryo/1503538876364.html",
+   "url": "https://www.city.shiso.lg.jp/kurashi/fukushi/koreishakaigo/9709.html",
    "課": "市民生活部 市民課",
    "場面": [
     "高齢者",
@@ -1298,7 +1308,7 @@
   },
   {
    "題": "高齢重度障がい者医療費助成",
-   "url": "https://www.city.shiso.lg.jp/soshiki/shiminseikatsu/shimin/tantojoho/hukushiiryo/1503560334152.html",
+   "url": "https://www.city.shiso.lg.jp/kurashi/fukushi/shogaisha/sonota/8496.html",
    "課": "市民生活部 市民課",
    "場面": [
     "高齢者",

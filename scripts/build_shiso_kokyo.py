@@ -14,6 +14,9 @@
 ★車いす対応やおむつ交換台の有無は、必要な人には決定的な情報。書いてある通りに写す。
 """
 import json, pathlib, re, sys
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 
 根 = pathlib.Path(__file__).resolve().parent.parent
 
@@ -65,6 +68,7 @@ def 主():
         "件数": len(出), "項目": sorted(出, key=lambda x: x["名"])},
         ensure_ascii=False, indent=1), encoding="utf-8")
     from collections import Counter
+    件数を守る("公共施設", len(出))
     print(f"○ 公共施設 {len(出)}件 → {先}（{先.stat().st_size//1024}KB）")
     print("  種類:", dict(Counter(x.get("種類", "（不明）") for x in 出)))
     for 鍵 in ("開館時間", "休館日", "住所", "電話", "設備"):

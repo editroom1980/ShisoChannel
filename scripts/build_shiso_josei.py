@@ -10,6 +10,9 @@
   書いていないものは「記事を見てください」とだけ言えるようにする。
 """
 import json, pathlib, re, sys
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 from collections import Counter
 
 根 = pathlib.Path(__file__).resolve().parent.parent
@@ -98,6 +101,7 @@ def 主():
         "件数": len(出), "いま受け付けている数": len(生),
         "項目": sorted(出, key=lambda x: x["題"])},
         ensure_ascii=False, indent=1), encoding="utf-8")
+    件数を守る("助成・補助", len(出))
     print(f"○ 助成・補助 {len(出)}件（うち受付終了 {len(出)-len(生)}件）"
           f" → {先}（{先.stat().st_size//1024}KB）")
     print("  場面ごと:", dict(c.most_common()))

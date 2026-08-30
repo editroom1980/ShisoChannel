@@ -18,6 +18,9 @@
   避難所ページは収容人員・土砂災害警戒区域も持っているので、防災の質問にも使える。
 """
 import json, re, time, pathlib, sys
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 
 根 = pathlib.Path(__file__).resolve().parent.parent
 入力 = 根 / "shiso_kb.json"
@@ -180,6 +183,7 @@ if __name__ == "__main__":
     出た.sort(key=lambda r: (r["種類"], r.get("地区", ""), r["名"]))
     from collections import Counter
     数 = Counter(r["種類"] for r in 出た)
+    件数を守る("市の施設", len(出た))
     出力.write_text(json.dumps({
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "出典": "宍粟市公式サイト（各施設・指定避難所のページ本文より機械抽出）",

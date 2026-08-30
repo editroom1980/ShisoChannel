@@ -22,6 +22,9 @@
   Linux(GitHub Actions): pdftoppm（poppler-utils）
 """
 import time
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 import json, re, time, sys, html, hashlib, subprocess, shutil
 import urllib.request, urllib.parse, pathlib
 
@@ -176,4 +179,5 @@ if __name__ == "__main__":
         "地区表": 行たち,
     }, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     総画像 = sum(len(r.get("画像", [])) for r in 行たち)
+    件数を守る("ごみの地区表", len(行たち))
     print(f"{len(行たち)}地区・画像{総画像}枚 → {出力}（{出力.stat().st_size//1024}KB）")

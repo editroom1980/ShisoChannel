@@ -16,7 +16,7 @@
   ・ページ文はそのまま保存（1ページ2千〜3千字。検索に使う）
 """
 import time
-import json, re, time, sys, hashlib, subprocess, shutil, pathlib, urllib.request
+import json, math, re, time, sys, hashlib, subprocess, shutil, pathlib, urllib.request
 
 根 = pathlib.Path(__file__).resolve().parent.parent
 kb路 = 根 / "shiso_kb.json"
@@ -421,7 +421,7 @@ GTFS一覧 = ("shitanbus-wingshinki", "shitanbus")
 
 # ★この道具の作りの版（2026-08-29）。中身の作り方を変えたら必ず上げる。
 #   PDFが同じでも作り直させるための札
-作りの版 = "2026-08-29-yomi"
+作りの版 = "2026-08-30-zahyo"
 
 
 def 停の座標を取る():
@@ -446,10 +446,186 @@ def 停の座標を取る():
                         pass
         except Exception as e:
             print(f"GTFSが取れない({f}): {e}", file=sys.stderr)
-    # 同じ名前で複数の乗り場がある（上り・下り）ので真ん中を代表にする
-    return {n: [round(sum(a for a, _ in v) / len(v), 6),
-                round(sum(b for _, b in v) / len(v), 6)] for n, v in out.items()}
+    # 同じ名前で複数の乗り場がある（上り・下り）ので真ん中を代表にする。
+    # ★★ ただし「同じ名前で遠く離れた別のバス停」を平均してはいけない（2026-08-30に発覚）。
+    #   宍粟市には「上垣内」が2つある：
+    #     一宮町西安積（35.1095, 134.5701）＝ **うえがいち**
+    #     波賀町谷　　（35.1395, 134.5645）＝ **かみがいち**
+    #   3.4km離れた別の停なのに、平均して (35.1245, 134.5673) という
+    #   **実在しない地点**を代表にしていた（本物から1686mずれ）。
+    #   読みも「うえがいち」だけを採っており、「かみがいち」は永久に当たらなかった。
+    #   ★200mより離れた組は平均せず、**いちばん本数の多い側**でもなく
+    #     「別の停として残す」。名前が同じでは区別できないので、
+    #     ここでは代表として1つ目を返し、離れている事実を 別地点 に記録して外へ出す
+    代表, 別地点 = {}, {}
+    for n, v in out.items():
+        遠い = False
+        for i in range(len(v)):
+            for j in range(i + 1, len(v)):
+                dy = (v[i][0] - v[j][0]) * 111000.0
+                dx = (v[i][1] - v[j][1]) * 111000.0 * math.cos(math.radians(v[i][0]))
+                if math.hypot(dx, dy) > 200:
+                    遠い = True
+        if 遠い:
+            # ★平均しない。全部の地点をそのまま残し、代表は1つ目
+            別地点[n] = [[round(a, 6), round(b, 6)] for a, b in v]
+            代表[n] = [round(v[0][0], 6), round(v[0][1], 6)]
+            print(f"    ★『{n}』は同じ名前で離れた地点が{len(v)}か所ある。平均しない",
+                  file=sys.stderr)
+        else:
+            代表[n] = [round(sum(a for a, _ in v) / len(v), 6),
+                       round(sum(b for _, b in v) / len(v), 6)]
+    return 代表, 別地点
 
+
+
+
+# ══ 数字の読み方（2026-08-30。NAVITIMEの実データから確定）════════
+#  ★なぜ要るか（この日に見つけた、120停に効く不具合）
+#    公式GTFSのふりがなは「下宇原４」を「しもうはら４」と、**数字のまま**返す。
+#    ところが人は「しもうはら**よん**」と言う。数字のままでは音が一生一致しない。
+#    NAVITIMEの読み（569停）と突き合わせたところ、
+#    **数字以外の食い違いは0件**で、違いは全部この数字の扱いだった。
+#    NAVITIMEが実際に使っている読み方をそのまま採る（4はし ではなく よん、
+#    7は しち ではなく なな。JIS S 0015 5.2b の作法とも一致する）。
+数字の読み = {"0": "ゼロ", "1": "イチ", "2": "ニ", "3": "サン", "4": "ヨン",
+              "5": "ゴ", "6": "ロク", "7": "ナナ", "8": "ハチ", "9": "キュウ"}
+
+
+def 読みの数字を開く(読み):
+    """読みの中に残っている数字を、実際に言う形へ開く。
+    ★2桁（10）は「イチゼロ」ではなく「ジュウ」。実データにある10だけを見る"""
+    if not 読み:
+        return 読み
+    t = 読み.translate(str.maketrans("０１２３４５６７８９", "0123456789"))
+    t = t.replace("10", "ジュウ")
+    出 = []
+    for c in t:
+        出.append(数字の読み.get(c, c))
+    return "".join(出)
+
+def 読みの穴を埋める(ふりがな, 停名すべて):
+    """公式GTFSに読みが無い停を、**手元の検証済みデータから導いて**埋める（2026-08-30）。
+
+    ★なぜ要るか（実機の失敗）
+      「みかた」と話した人に「そのバス停が見つかりませんでした」と答えた。
+      正解の「三方」は一宮町の実在の停なのに、**読みが無かった**ため
+      音での突き合わせが1度も動かなかった。
+      公式GTFS（api.gtfs-data.jp）を取り直して確かめたところ、
+      stops.txt 233件＋53件のどちらにも三方は無い＝市が出していない。
+
+    ★絶対に推測で埋めない（既存方針「読みは推測しない」を守る）。
+      使ってよいのは
+        ① shiso_goi.json の 地名読み（出典＝MapFan＋日本郵便ken_all・2026-08-23検証）から
+           町名の接頭辞を機械的に剥がして導けるもの
+        ② 全部かなの停名（そのままカタカナに直すだけ。判断が入らない）
+      それ以外は**空のまま残し、根拠が要ることを表に出す**。
+    """
+    import unicodedata
+    goi = 根 / "shiso_goi.json"
+    if not goi.exists():
+        return ふりがな, [], list(t for t in 停名すべて if t not in ふりがな)
+    G = json.loads(goi.read_text(encoding="utf-8"))
+    地名 = {a: b for a, b in G.get("地名読み", [])}
+    町 = {k: v for k, v in 地名.items() if k.endswith("町") and len(k) <= 4}
+    # 町名を剥がした「大字→読み」の索引
+    大字 = {}
+    for addr, rd in 地名.items():
+        for m, mr in 町.items():
+            if addr.startswith(m) and rd.startswith(mr) and len(addr) > len(m):
+                大字.setdefault(addr[len(m):], set()).add(rd[len(mr):])
+    for m, mr in 町.items():                       # 千種町=チクサチョウ ⇒ 千種=チクサ
+        if mr.endswith("チョウ"):
+            大字.setdefault(m[:-1], set()).add(mr[:-3])
+
+    def かなだけか(t):
+        return all(unicodedata.name(c, "").startswith(("HIRAGANA", "KATAKANA"))
+                   or c in "ー・" for c in t)
+
+    足した, 残り = {}, []
+    for t in sorted(set(停名すべて)):
+        if ふりがな.get(t):
+            continue
+        # ② 全部かな → そのままカタカナへ
+        if かなだけか(t):
+            足した[t] = ("".join(chr(ord(c) + 0x60) if "ぁ" <= c <= "ゖ" else c for c in t),
+                        "停名が全部かな（そのままカタカナに直しただけ）")
+            continue
+        # ① 大字にそのまま当たる
+        当 = None
+        for cand in (t, t + "町", t + "村"):
+            if cand in 大字 and len(大字[cand]) == 1:
+                r = list(大字[cand])[0]
+                if cand == t + "町":
+                    r = r[:-2] if r.endswith("マチ") else (r[:-3] if r.endswith("チョウ") else r)
+                if cand == t + "村" and r.endswith("ムラ"):
+                    r = r[:-2]
+                当 = (r, f"地名読み『{cand}』（MapFan＋日本郵便ken_all）から町名を外した")
+                break
+        if 当:
+            足した[t] = 当
+            continue
+        # ③ 「確かめた大字 ＋ 迷いの無い接尾」で組み立てる（2026-08-30）
+        #    ★接尾はここに書いた分だけ。読み方が1つに決まる語しか置かない。
+        #      「東門」のように ひがしもん/とうもん の両方あり得る語は**入れない**
+        接尾 = {"北": "キタ", "南": "ミナミ", "東": "ヒガシ", "西": "ニシ",
+                "口": "グチ", "橋": "バシ", "上": "カミ", "下": "シモ"}
+        組んだ = None
+        for suf in sorted(接尾, key=len, reverse=True):
+            if not t.endswith(suf) or len(t) <= len(suf):
+                continue
+            頭 = t[:-len(suf)]
+            for cand in (頭, 頭 + "町"):
+                if cand in 大字 and len(大字[cand]) == 1:
+                    r = list(大字[cand])[0]
+                    if cand == 頭 + "町":
+                        r = r[:-2] if r.endswith("マチ") else (r[:-3] if r.endswith("チョウ") else r)
+                    組んだ = (r + 接尾[suf],
+                              f"地名読み『{cand}』({r})に、読みが1つに決まる接尾『{suf}』"
+                              f"({接尾[suf]})を足した")
+                    break
+            if 組んだ: break
+        if 組んだ:
+            足した[t] = 組んだ
+            continue
+        # ③-2 「確かめた大字 ＋ 後ろは全部かな」（山崎インター など）。
+        #      後ろがかなだけなら読み方に迷いが無いので、そのまま足せる
+        for k in range(len(t) - 1, 0, -1):
+            頭, 尾 = t[:k], t[k:]
+            if not かなだけか(尾):
+                continue
+            for cand in (頭, 頭 + "町"):
+                if cand in 大字 and len(大字[cand]) == 1:
+                    r = list(大字[cand])[0]
+                    if cand == 頭 + "町":
+                        r = r[:-2] if r.endswith("マチ") else (r[:-3] if r.endswith("チョウ") else r)
+                    尾カナ = "".join(chr(ord(c) + 0x60) if "ぁ" <= c <= "ゖ" else c for c in 尾)
+                    組んだ = (r + 尾カナ,
+                              f"地名読み『{cand}』({r})に、かなだけの『{尾}』をそのまま足した")
+                    break
+            if 組んだ: break
+        if 組んだ:
+            足した[t] = 組んだ
+            continue
+        # ④ 地名ではない一般の語だけでできている停（判断が入らないものに限る）
+        #    ★出所を1件ずつ書く。地名は1つも入れない
+        一般 = {
+            "車庫前":     ("シャコマエ", "『車庫』『前』とも一般の語（地名ではない）"),
+            "まほろばの湯": ("マホロバノユ",
+                          "『まほろばの』は元からかな、『湯』は一般の語（一宮温泉まほろばの湯）"),
+            # ★地元の方（利用者）に直接うかがって確認した読み（2026-08-30）。
+            #   NAVITIMEにも郵便番号データにも無く、機械では取れなかった分。
+            #   同時にうかがった 上三河/宮の元/船越/千種高校東門前 の4件は、
+            #   あとからNAVITIMEの読みと突き合わせて**全部一致**した
+            "神戸三宮":   ("コウベサンノミヤ", "地元の方に確認（2026-08-30）。高速便の行き先"),
+        }
+        if t in 一般:
+            足した[t] = 一般[t]
+            continue
+        残り.append(t)
+    for k, (r, _) in 足した.items():
+        ふりがな[k] = r
+    return ふりがな, sorted(足した.items()), 残り
 
 def 停のふりがなを取る():
     """公式GTFSの translations.txt から 停留所名→ふりがな を作る。
@@ -710,7 +886,7 @@ if __name__ == "__main__":
         print(f"表の出どころ: GTFSで置き換えた頁 {置換} ／ PDFのまま {残し}", file=sys.stderr)
 
     # 停留所の座標（歩ける距離を測るため。GTFSが取れない日は前回の分を残す）
-    座標 = 停の座標を取る()
+    座標, 離れた同名 = 停の座標を取る()
     if not 座標 and 出力.exists():
         try:
             座標 = json.loads(出力.read_text(encoding="utf-8")).get("停の座標", {})
@@ -727,8 +903,84 @@ if __name__ == "__main__":
             ふりがな = json.loads(出力.read_text(encoding="utf-8")).get("停の読み", {})
         except Exception:
             ふりがな = {}
+    GTFS件数 = len(ふりがな)
+    ふりがな, 補った, 読み無し = 読みの穴を埋める(ふりがな, 停名すべて)
+    # ★★ 座標の穴もNAVITIMEで埋める（2026-08-30）。
+    #   市の公式GTFSに無い19停（三方・千種・エーガイヤちくさ等）は座標も無く、
+    #   **千種町に基準点が1つも無い**状態だった。そのため
+    #   「近い停の町に入れる」処理が、千種町の停を全部山崎町に寄せていた
+    navi0 = 根 / "data_src" / "bus_navitime.json"
+    if navi0.exists():
+        import re as _re0
+        N0 = json.loads(navi0.read_text(encoding="utf-8"))
+        座0 = {}
+        for r0 in (N0.get("路線") or {}).values():
+            for t0 in r0.get("停", []):
+                if t0.get("緯度") is None: continue
+                n0 = _re0.sub(r"[（(][^）)]*[）)]$", "", t0["名"]).strip()
+                n0 = _re0.sub(r"[［\[][^］\]]*[］\]]$", "", n0).strip()
+                座0.setdefault(n0, [round(t0["緯度"], 6), round(t0["経度"], 6)])
+        足0 = 0
+        for t0 in 停名すべて:
+            if t0 not in 座標 and t0 in 座0:
+                座標[t0] = 座0[t0]; 足0 += 1
+        if 足0: print(f"    NAVITIMEの座標で {足0}件を補った", file=sys.stderr)
+
+    # ★NAVITIMEで集めた読みで穴を埋める（2026-08-30）。
+    #   市の公式GTFSに無い停（神姫バスの路線の停）の読みはここから来る
+    navi = 根 / "data_src" / "bus_navitime.json"
+    足したnavi = 0
+    if navi.exists():
+        N = json.loads(navi.read_text(encoding="utf-8"))
+        NY = N.get("停の読み") or {}
+        for t in 停名すべて:
+            if not ふりがな.get(t) and NY.get(t):
+                ふりがな[t] = NY[t]; 足したnavi += 1
+        if 足したnavi:
+            print(f"    NAVITIMEの読みで {足したnavi}件を補った", file=sys.stderr)
+        読み無し = [t for t in 読み無し if not ふりがな.get(t)]
+    # ★★ 同じ名前で読みが2通りある停（2026-08-30に上垣内で発覚）。
+    #   公式GTFSは 上垣内＝うえがいち（一宮町西安積）と
+    #   上垣内＝かみがいち（波賀町谷）の**2つ**を持っているのに、
+    #   名前で1つに潰していたため「かみがいち」は永久に当たらなかった。
+    #   ★どちらの読みでも当たるように、別の読みも残す
+    別の読み = {}
+    try:
+        import zipfile as _zp, io as _io2, csv as _cv2
+        for _f in GTFS一覧:
+            _b = 取る("https://api.gtfs-data.jp/v2/organizations/shisocity/feeds/"
+                      + _f + "/files/feed.zip")
+            _z = _zp.ZipFile(_io2.BytesIO(_b))
+            _名 = {r["stop_id"]: r["stop_name"].strip() for r in
+                   _cv2.DictReader(_io2.TextIOWrapper(_z.open("stops.txt"), encoding="utf-8-sig"))}
+            for r in _cv2.DictReader(_io2.TextIOWrapper(_z.open("translations.txt"),
+                                                        encoding="utf-8-sig")):
+                if r.get("language") != "ja-Hrkt" or r.get("table_name") != "stops":
+                    continue
+                n = _名.get((r.get("record_id") or "").strip())
+                t = (r.get("translation") or "").strip()
+                if n and t: 別の読み.setdefault(n, set()).add(t)
+        別の読み = {n: sorted(v) for n, v in 別の読み.items() if len(v) >= 2}
+        for n, v in 別の読み.items():
+            print(f"    ★『{n}』は読みが{len(v)}通りある: {' / '.join(v)}", file=sys.stderr)
+    except Exception as e:
+        print(f"別の読みが取れない: {e}", file=sys.stderr)
+
+    # ★読みに残っている数字を、実際に言う形へ開く（120停に効く）
+    開いた = 0
+    for t, r in list(ふりがな.items()):
+        新 = 読みの数字を開く(r)
+        if 新 != r:
+            ふりがな[t] = 新; 開いた += 1
+    print(f"    読みの数字を開いた: {開いた}件（例 しもうはら４→しもうはらヨン）", file=sys.stderr)
     読み付いた = sum(1 for t in 停名すべて if t in ふりがな)
-    print(f"停留所のふりがな: {読み付いた}/{len(停名すべて)}件（GTFS {len(ふりがな)}件）", file=sys.stderr)
+    print(f"停留所のふりがな: {読み付いた}/{len(停名すべて)}件"
+          f"（GTFS {GTFS件数}件＋手元の検証済みデータから {len(補った)}件）", file=sys.stderr)
+    for k, (r, なぜ) in 補った:
+        print(f"    補った: {k} → {r}　（{なぜ}）", file=sys.stderr)
+    if 読み無し:
+        print(f"  ★読みが無いまま残った {len(読み無し)}件（推測で埋めない）: "
+              + "、".join(読み無し), file=sys.stderr)
 
     # 保存量の検算（絶対ルール30：取り込んだら量を検算する）
     総 = sum(len(p["文"]) for p in 頁たち)
@@ -745,10 +997,18 @@ if __name__ == "__main__":
         "便数": 便総, "表数": 表総, "停のべ数": 停総,
         "祝日": 祝日たち,
         "停の座標": 座標,
+        # ★同じ名前で200m以上離れた「別のバス停」。平均すると実在しない地点になる
+        #   （2026-08-30に上垣内で発覚。1686mずれた地点を指していた）
+        "離れた同名": 離れた同名,
         # ★停留所のふりがな（2026-08-29）。音声で聞き取った音と突き合わせるのに要る。
         #   推測ではなく、市が公式GTFSで出している ja-Hrkt をそのまま使う
         "停の読み": ふりがな,
-        "読みの出典": "宍粟市 しーたんバス GTFS-JP translations.txt（language=ja-Hrkt）",
+        # ★同じ名前で読みが2通りある停（どちらで言われても当たるように）
+        "別の読み": {n: [読みの数字を開く(x) for x in v] for n, v in 別の読み.items()},
+        "読みの出典": "宍粟市 しーたんバス GTFS-JP translations.txt（language=ja-Hrkt）"
+                      "＋不足分は shiso_goi.json の地名読み（MapFan＋日本郵便ken_all）から"
+                      "町名の接頭辞を機械的に外して導出。推測では埋めていない",
+        "読みが無い停": 読み無し,
         "運休日": G運休,
         "座標の出典": "宍粟市 しーたんバス GTFS-JP（api.gtfs-data.jp/v2/organizations/shisocity）",
         "問い合わせ": "ウイング神姫 山崎営業所 0790-62-1720",

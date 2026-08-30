@@ -17,6 +17,9 @@
   reiki_honbun/rXXXRGXXXXXXXX.html … 条例の本文
 """
 import time
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 import json, re, time, sys, html, urllib.request, urllib.parse, pathlib
 
 元 = "https://www1.g-reiki.net/city.shiso/"
@@ -115,6 +118,7 @@ if __name__ == "__main__":
         現在 = re.search(r"内容現在\s*([^<）)]+)", 取る(元 + "reiki_menu.html"))
     except Exception as e:
         print(f"  内容現在が取れない（索引はそのまま保存する）: {e}", file=sys.stderr)
+    件数を守る("例規", len(索引))
     出力.write_text(json.dumps({
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "出典": 元 + "reiki_menu.html",

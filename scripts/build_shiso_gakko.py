@@ -13,9 +13,38 @@
 
 ★閉校の年は書かれていないので、こちらで作らない。「閉校・閉園した」とだけ言う。
 """
-import json, pathlib, re, sys
+import json, pathlib, re, subprocess, sys
 
 根 = pathlib.Path(__file__).resolve().parent.parent
+
+def 市の学校一覧():
+    """市の『小・中学校』一覧ページから、いま実在する学校を取る（2026-08-30に新設）。
+
+    ★施設一覧（shiso_shisetsu.json）だけを「いま実在する学校」の根拠にしていたため、
+      そこから漏れた学校が閉校に化けていた。**独立した2つ目の情報源**を持つ。
+    """
+    出 = {}
+    for u, 種 in [("https://www.city.shiso.lg.jp/shisetsu/syoutyuugakkou/index.html", None),
+                  ("https://www.city.shiso.lg.jp/shisetsu/hoikusyo/index.html", "保育所"),
+                  ("https://www.city.shiso.lg.jp/shisetsu/ninteikodomoen/index.html", "こども園"),
+                  ("https://www.city.shiso.lg.jp/shisetsu/youtien/index.html", "幼稚園")]:
+        try:
+            r = subprocess.run(["curl", "-sL", "--max-time", "40", "-A",
+                                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", u],
+                               capture_output=True)
+            h = r.stdout.decode("utf-8", "replace")
+        except Exception as e:
+            print(f"！ 市の学校一覧が取れない {u}: {e}", file=sys.stderr); continue
+        for m in re.finditer(r'<a[^>]+href="[^"]*"[^>]*>([^<]*(?:小学校|中学校|こども園|幼稚園|保育[所園])[^<]*)</a>', h):
+            名 = m.group(1).strip().replace("市立", "").replace("県立", "")
+            if not 名 or "ホームページ" in 名: continue
+            t = 種 or ("中学校" if "中学校" in 名 else "小学校" if "小学校" in 名 else
+                       "こども園" if "こども園" in 名 else "幼稚園" if "幼稚園" in 名 else "保育所")
+            出[名] = t
+    if not 出:
+        print("！ 市の学校一覧ページから1件も取れなかった。作りが変わった疑い", file=sys.stderr)
+    return 出
+
 
 def 主():
     kb = json.loads((根 / "shiso_kb.json").read_text(encoding="utf-8"))["項目"]
@@ -44,11 +73,30 @@ def 主():
             今[名] = {"名": 名, "種類": 種, "地区": x.get("地区", ""),
                       "電話": x.get("電話", ""), "url": x.get("url", "")}
 
+    # ★★ 2026-08-30に作り直し。ここが「開校している学校を閉校と答える」の正体だった。
+    #
+    #   旧：校歌の記事に出てくる学校 − 施設一覧にある学校 ＝ 閉校
+    #   ＝**施設一覧に載っていないだけの学校が、自動的に閉校にされる**。
+    #   実際、一宮北小学校は指定避難所ではないため知識ベースに1ページも無く、
+    #   施設一覧にも載らず、開校しているのに「閉校」に化けていた。
+    #   （市の公式ページにも学校のサイトにも閉校の記載は無い。2026-08-30に確認）
+    #
+    #   ★「無いこと」を「存在しない証拠」に使わない。
+    #     いま実在する学校は**2つの独立した情報源**から取り、
+    #     どちらにも無い時だけ閉校とみなす。さらに
+    #     「市立◯◯」のページが生きているのに閉校に入る物が出たら**止める**。
+    今の別口 = 市の学校一覧()
+    for 名, 種 in 今の別口.items():
+        if 名 not in 今 and not any(名 in k or k in 名 for k in 今):
+            今[名] = {"名": 名, "種類": 種, "地区": "", "電話": "", "url": ""}
+            print(f"  ★施設一覧に無いが市の学校一覧にはある: {名}（{種}）", file=sys.stderr)
+
     閉 = []
     for 名 in 名ら:
         if 名 in 今: continue
         # 「はりま一宮小学校」のように今の名前に含まれる場合も実在とみなす
         if any(名 in k or k in 名 for k in 今): continue
+        if 名 in 今の別口: continue
         種 = ("中学校" if "中学" in 名 else
               "幼稚園" if "幼稚園" in 名 else
               "こども園" if "こども園" in 名 else "小学校")
@@ -78,6 +126,16 @@ def 主():
         "今ある学校": sorted(今.values(), key=lambda x: (x["種類"], x["名"])),
         "閉校・閉園した学校園": sorted(閉, key=lambda x: (x["種類"], x["名"])),
     }
+    # ★★ 検算：閉校としたものに、いま生きている「市立◯◯」のページが無いか。
+    #   あれば開校している疑いが濃いので、**黙って出さずに止める**
+    kb題 = {y.get("題", "") for y in kb}
+    怪しい = [x["名"] for x in 閉 if ("市立" + x["名"]) in kb題]
+    if 怪しい:
+        print("！ 閉校としたが、市の『市立◯◯』のページが生きている: "
+              + "、".join(怪しい), file=sys.stderr)
+        print("  → 開校している疑いが濃い。資料を書かずに止める", file=sys.stderr)
+        return 1
+
     先 = 根 / "shiso_gakko.json"
     先.write_text(json.dumps(出, ensure_ascii=False, indent=1), encoding="utf-8")
     from collections import Counter

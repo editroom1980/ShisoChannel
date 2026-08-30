@@ -19,6 +19,9 @@
 行儀よく集めること：1ページごとに間をあけ、名乗る。
 """
 import json, re, time, sys, html, urllib.request, pathlib
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 
 元 = "https://www.yamasaki-bunka.org"
 名乗り = "ShisochanNET-KB/1.0 (+https://shisochan.net/; citizen broadcast app)"
@@ -201,6 +204,7 @@ def 走る():
 
 if __name__ == "__main__":
     集めた = 走る()
+    件数を守る("逸話・文化", len(集めた))
     出力.write_text(json.dumps({
         "更新": time.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "出典": "宍粟市山崎文化協会「しそうの逸話」 https://www.yamasaki-bunka.org/?cat=89"

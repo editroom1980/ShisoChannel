@@ -20,6 +20,9 @@
     そのまま繋ぐとファイル扱いで全滅するので直す
 """
 import json, re, sys, time, pathlib, urllib.parse, importlib.util
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 
 根 = pathlib.Path(__file__).resolve().parent.parent
 # 本体の収集器を読み込む（フォルダ名に空白があるので importlib で）
@@ -130,6 +133,7 @@ if __name__ == "__main__":
     出力.write_text(json.dumps(出, ensure_ascii=False, indent=1), encoding="utf-8")
 
     字 = sum(len(x["文"]) for x in 項目)
+    件数を守る("よくある質問", len(項目))
     print(f"\n○ {len(項目)}件（重複を除く前 {len(集め)}件）/ 一覧ページ {索引数} / 見たURL {見た数}")
     print(f"  本文 合計 {字:,}字 / 1件あたり平均 {字//max(len(項目),1)}字")
     print(f"  電話つき {sum(1 for x in 項目 if x['問い合わせ'].get('電話'))}件")

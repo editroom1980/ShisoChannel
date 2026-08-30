@@ -92,7 +92,7 @@ def 停の注記(bus, 停名):
     return ""
 
 
-def 町ごとの停(表ら, 全停, 大字, 座):
+def 町ごとの停(表ら, 全停, 大字, 座, bus=None):
     """停留所を町に割り当て、案内に出す順に並べる。
     ★①大字で種をまき、②路線上で隣り合う停へ広げる（2026-08-27）。
       大字だけでは92停が決まらず、千種町は1停しか拾えなかった。
@@ -103,6 +103,77 @@ def 町ごとの停(表ら, 全停, 大字, 座):
       便数は「そこを通る本数」であって「行き先としての大切さ」ではない。
       名前に入っている施設で分けて、行き先になりやすい順に並べる"""
     町ら = ["山崎町", "一宮町", "波賀町", "千種町"]
+
+    # ★★ 2026-08-30：神姫バスの時刻表を取り込んだので、表には**市外の停も出る**
+    #   （姫路・新宮・龍野・神戸・鳥取へ行く路線）。
+    #   ここで市外の停まで町に入れると、602停に膨らみ、
+    #   「ダイセル前」「大阪駅」「鳥取駅前」が山崎町の一覧に並ぶ。
+    #   出典：国土交通省 国土数値情報 行政区域データ N03-20240101_28（兵庫県）
+    境界 = 根 / "data_src" / "shiso_kyoukai.json"
+    多角形 = json.loads(境界.read_text(encoding="utf-8")) if 境界.exists() else None
+
+    def 市内か(緯度, 経度):
+        if 多角形 is None: return True
+        中 = False
+        for 環ら in 多角形:
+            for i, 環 in enumerate(環ら):
+                内 = False; j = len(環) - 1
+                for k in range(len(環)):
+                    x1, y1 = 環[k][0], 環[k][1]
+                    x2, y2 = 環[j][0], 環[j][1]
+                    if (y1 > 緯度) != (y2 > 緯度):
+                        if 経度 < (x2 - x1) * (緯度 - y1) / (y2 - y1) + x1: 内 = not 内
+                    j = k
+                if i == 0: 中 = 中 or 内
+                elif 内: 中 = False
+        return 中
+
+    if 多角形 is not None:
+        # ★座標は「市の資料」＋「NAVITIMEで集めた分」の両方を見る。
+        #   市の資料にしか座標が無いと、市外の停は座標が付かず素通りしてしまう
+        座全 = dict(座)
+        navi = 根 / "data_src" / "bus_navitime.json"
+        if navi.exists():
+            N = json.loads(navi.read_text(encoding="utf-8"))
+            for r in (N.get("路線") or {}).values():
+                for t in r.get("停", []):
+                    if t.get("緯度") is None: continue
+                    n = re.sub(r"[（(][^）)]*[）)]$", "", t["名"]).strip()
+                    n = re.sub(r"[〔［\[][^〕］\]]*[〕］\]]$", "", n).strip()
+                    座全.setdefault(n, [t["緯度"], t["経度"]])
+        前 = len(全停)
+        外れ = []
+        新全 = []
+        for s2 in 全停:
+            v = 座全.get(s2)
+            if v is None:
+                新全.append(s2); continue      # どこにも座標が無い＝判断できないので残す
+            if 市内か(v[0], v[1]): 新全.append(s2)
+            else: 外れ.append(s2)
+        全停 = 新全
+        if 外れ:
+            print(f"  市の外の停 {len(外れ)}件を町の一覧から外した"
+                  f"（例 {'、'.join(外れ[:6])}）", file=sys.stderr)
+        # ★★ 座標がどこにも無い停は「市内かどうか確認できない」。
+        #   市のPDF時刻表に元から載っている停なら市内で確実なので残し、
+        #   神姫バスの表からしか出てこない停は**確認できないので入れない**。
+        #   （「中ノ宮神社前」がこれに当たる。NAVITIMEの路線図にも停の検索にも無く、
+        #     読みも座標も取れなかった。確認できないものを入れて案内するのは危ない）
+        市のPDFの停 = set()
+        for p2 in ((bus or {}).get("頁") or []):
+            if str(p2.get("n", "")).startswith("神姫"): continue
+            for t2 in (p2.get("表") or []): 市のPDFの停 |= set(t2.get("停", []))
+        無座 = [s2 for s2 in 全停 if s2 not in 座全]
+        捨 = [s2 for s2 in 無座 if s2 not in 市のPDFの停]
+        if 捨:
+            全停 = [s2 for s2 in 全停 if s2 not in set(捨)]
+            print(f"  ★座標も読みも取れず、市の時刻表にも無い停 {len(捨)}件は入れない: "
+                  + "、".join(捨[:6]), file=sys.stderr)
+        残無座 = [s2 for s2 in 全停 if s2 not in 座全]
+        if 残無座:
+            print(f"  座標は無いが市の時刻表に載っている停 {len(残無座)}件は残す: "
+                  + "、".join(残無座[:6]), file=sys.stderr)
+
     def 素(s):
         return re.sub(r"[（(].*?[）)]", "", s).strip()
     割, 地区 = {}, {}
@@ -268,7 +339,7 @@ def 決める():
                  "中心の停": 中心, "中心からの距離km": km,
                  "次点": [f"{x[2]}（{x[0]}km・{-x[1]}便）" for x in 候[1:4]],
                  "座標が無くて比べられなかった停": 座標なし}
-    町の停, 地区, 種数, 周, 残 = 町ごとの停(表ら, 全停, 大字, 座)
+    町の停, 地区, 種数, 周, 残 = 町ごとの停(表ら, 全停, 大字, 座, bus)
     # ★案内に出す順に並べ替える（主な施設 → 地区ごと）
     並, 組 = {}, {}
     for t, v in 町の停.items():

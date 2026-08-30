@@ -9,6 +9,9 @@
 ★電話番号は記事に書いてある番号だけを使う。書いていなければ載せない。
 """
 import json, pathlib, re, sys
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from kensan import 件数を守る
 from collections import Counter
 
 根 = pathlib.Path(__file__).resolve().parent.parent
@@ -94,6 +97,7 @@ def 主():
     c = Counter(s for x in 出 for s in x["悩み"])
     電あり = [x for x in 出 if x.get("電話")]
     先 = 根 / "shiso_soudan.json"
+    件数を守る("相談窓口", len(出))
     先.write_text(json.dumps({
         "作成": "市公式サイトの記事から、相談窓口の案内だけを集めた",
         "件数": len(出), "項目": sorted(出, key=lambda x: x["題"])},
