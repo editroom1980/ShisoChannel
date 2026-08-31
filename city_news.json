@@ -1,7 +1,17 @@
 {
- "updated": "2026-08-31T16:01:33+09:00",
+ "updated": "2026-09-01T00:04:27+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
+  {
+   "tag": "イベント",
+   "title": "9/5 はがてらすでお母さん文庫「いろいろなお話を楽しもう」",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/hagashiminkyoku/hagashogaigakushujimusho/ibento/1461719689708.html",
+   "date": "9月5日",
+   "ts": "2026-09-05T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-09-05",
+   "place": "はがてらす図書室"
+  },
   {
    "tag": "催し",
    "title": "9/6 山崎高等学校吹奏楽部定期演奏会",
@@ -108,15 +118,6 @@
    "ts": "2026-10-10T00:00:00+09:00",
    "src": "山崎西中学校",
    "when": "2026-10-10"
-  },
-  {
-   "tag": "学校",
-   "title": "10/15 宍粟市中学校駅伝競走大会",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "10月15日",
-   "ts": "2026-10-15T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-10-15"
   }
  ]
 }
