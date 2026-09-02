@@ -42,8 +42,9 @@
      実測：桜鼠のとき 一覧の見出し2.43／注記2.56／枠1.81（基準4.5・非文字3.0）。
      ★選んだ色の**色みは残したまま**、窓の中だけ明るさを下げて読めるようにする。
      値は applyBg() が計算して差し替える。ここは既定（深緑）の値 */
-  --ai-bg:#1e3a28;--ai-band:#2f5f42;--ai-sub:#a8d5b5;
-  --ai-step:#e4f2e8;--ai-note:#eabd57;--ai-gold:#c8992a;--ai-listen:#1b5e20;
+  /* ★AIの窓は白ベース（2026-09-01のご指示）。帯だけ背景色から計算する */
+  --ai-bg:#fbfaf7;--ai-band:#2f5f42;--ai-ink:#1d2126;--ai-sub:#4c545c;
+  --ai-step:#2b3138;--ai-note:#6e4704;--ai-gold:#b8860b;--ai-listen:#1b5e20;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 /* テキスト選択・長押しメニューを無効化 */
@@ -144,6 +145,18 @@ body.onair-mode .h-right .onair-badge{display:flex;}
 .h-datetime{display:none;}
 .h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
 .h-time{font-size:22px;font-weight:300;color:rgba(255,255,255,0.85);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1.1;}
+/* ★探すアイコン（2026-09-01・Google TVアプリのみ）。
+   ★歯車と同じ作りにする：高さ19pxを超えるとヘッダーが厚くなり、
+     バナーが下へ押し出される（実測15px・5pxのズレが記録に残っている） */
+.h-find{ display:none; }
+html.tvapp .h-find{
+  height:19px;line-height:0;position:relative;
+  display:flex;align-items:center;justify-content:flex-end;
+  background:none;border:none;padding:0;margin:0 10px 0 0;
+  color:rgba(255,255,255,0.85);cursor:pointer;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;font-family:inherit;
+}
+html.tvapp .h-find svg{ display:block; }
 .h-gear{
   /* ★高さは持たせない。ここで高さを作るとヘッダー1段目が厚くなり、
      縦向きで2段目のバナーが下へ押し出されてしまう（実測で15pxズレた）。
@@ -967,21 +980,31 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
 }
 #ai-win.on{display:flex;}
 #ai-box{
-  width:min(88%,1180px);max-height:88%;
-  background:var(--ai-bg);border:3px solid var(--ai-gold);border-radius:12px;
+  /* ★中身の高さに合わせる（2026-09-01のご指摘「無駄な余白も多い」）。
+     max-height だけ決めていたため、9件の一覧でも窓は同じ高さのまま開き、
+     下に125pxの空白が残っていた（実機の写真で実測） */
+  width:min(88%,1180px);max-height:88%;height:auto;
+  background:var(--ai-bg);border:3px solid var(--ai-band);border-radius:12px;
   box-shadow:0 14px 52px rgba(0,0,0,0.65);
   display:flex;flex-direction:column;overflow:hidden;
 }
 #ai-head{
   background:var(--ai-band);padding:9px 22px;flex-shrink:0;
   display:flex;align-items:center;gap:12px;
-  font-size:20px;font-weight:700;color:var(--white);letter-spacing:3px;
+  font-size:26px;font-weight:700;color:var(--white);letter-spacing:2px;
 }
 /* ★マイクの合図（2026-08-28のご指示「リモコンの演出も足していい」）。
    実測：押してから認識器がマイクを開くまで140〜181ms。
    その間は**黄色**、本当に録れ始めたら**緑**に変わる。
    ★点滅させない（絶対ルール11：映像の上でチカチカさせない）。
      色が一度だけ静かに変わるだけ。大きさも変えない */
+/* ★いま何番目を見ているか（2026-09-01）。見出しの右端に置く。
+   一覧が1画面に収まらない時、下にまだ在ることが分かる唯一の手がかりになる。
+   Google TV の指針「焦点がどこから来てどこへ行くか常に分かること」に対応 */
+#ai-pos{
+  margin-left:auto;font-size:22px;font-weight:700;letter-spacing:1px;
+  color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums;display:none;
+}
 #ai-head .dot{
   width:14px;height:14px;border-radius:50%;background:#e04a4a;flex-shrink:0;
   display:none;                                   /* 聞いている時だけ出す */
@@ -1015,10 +1038,11 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
 }
 /* ★テレビ(1280x720相当)で1画面に収まるよう、字は欲張らない（2026-08-21指摘）。
    離れて見るテレビでも19px前後あれば読める。省略するより全部見える方が大事 */
-#ai-body{flex:1 1 auto;min-height:0;padding:14px 24px 16px;overflow-y:auto;color:#fff;}
-#ai-q{font-size:19px;line-height:1.5;color:var(--ai-sub);margin:0 0 8px;}
-#ai-title{font-size:23px;font-weight:700;line-height:1.4;margin:0 0 8px;}
-#ai-text{font-size:19px;line-height:1.6;margin:0;}
+/* ★白ベースに変えたので、字は濃い色に（2026-09-01）。白地に白文字だと消える */
+#ai-body{flex:0 1 auto;min-height:0;padding:12px 24px 10px;overflow-y:auto;color:var(--ai-ink);}
+#ai-q{font-size:22px;line-height:1.5;color:var(--ai-sub);margin:0 0 8px;}
+#ai-title{font-size:28px;font-weight:700;line-height:1.4;margin:0 0 8px;}
+#ai-text{font-size:25px;line-height:1.6;margin:0;}
 #ai-list{margin:10px 0 0;padding:0;list-style:none;}
 #ai-list li{
   font-size:20px;line-height:1.6;padding:5px 0 5px 12px;
@@ -1051,6 +1075,39 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
       （16件＋見出し4本＝411.94px＝137.9pxのはみ出し）
    ③ 字は**小さくせず19px→22pxに大きくした**。Fire TVの本文最小18.7px、
       tvOSの本文29pt(19.3px)、Android TVの既定18sp(24px)の帯の中で、いちばん大きい側に寄せた */
+/* ★件数が少ない一覧は1列でゆったり出す（2026-09-01）。
+   9件のジャンルを2列で出すと、右half が空いたまま左に8件・右に1件という
+   間の抜けた見え方になっていた。10件までは1列・行も字も大きく */
+/* ★操作の案内は左下に、読める大きさで（2026-09-01）。
+   右下に小さく置くと、3m離れたテレビでは誰も読まない */
+#ai-win.on #ai-note{
+  /* ★大きさはここで決めない（下の #ai-note 1か所に集約。2026-09-01：
+     ここが後から21pxで上書きして、基準に上げたはずの24pxが効いていなかった） */
+  text-align:left;letter-spacing:.02em;
+}
+/* ★番号は○の中に入れる（2026-09-01のご指示）。
+   ①②の文字は書体によって出ないことがあるので、丸はCSSで描く＝どの端末でも同じ */
+#ai-list.ai-pick.ai-few li.ai-row{
+  display:flex;align-items:center;gap:16px;padding:0 0 0 12px;
+}
+.ai-num{
+  flex:0 0 auto;width:34px;height:34px;border-radius:50%;
+  border:2px solid currentColor;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums;opacity:.85;
+}
+.ai-ico{ flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center; }
+.ai-ico svg{ width:32px;height:32px;display:block; }
+.ai-lbl{ flex:1 1 auto;overflow:hidden;text-overflow:ellipsis; }
+/* 選んでいる行は、丸も絵柄も同じ黒字になる（currentColorで追従） */
+#ai-list.ai-pick.ai-few{
+  display:grid;grid-auto-flow:row;grid-template-columns:1fr;
+  grid-template-rows:none;row-gap:2px;align-content:start;
+}
+#ai-list.ai-pick.ai-few li{
+  font-size:27px;line-height:40px;padding:0 0 0 14px;
+}
 #ai-list.ai-pick{
   display:grid;
   grid-auto-flow:column;
@@ -1059,9 +1116,18 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   column-gap:24px;align-content:start;
 }
 #ai-list.ai-pick li{
-  font-size:22px;line-height:28px;padding:2px 0 2px 10px;
-  min-height:0;border-bottom:1px solid rgba(255,255,255,0.10);
+  font-size:24px;line-height:30px;padding:2px 0 2px 10px;
+  min-height:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  /* ★行ごとの点線をやめた（2026-09-01のご指摘「デザインが最悪」）。
+     16本の点線が画面を横切って、名前より線のほうが目立っていた。
+     区切りは1行おきの薄い地色でつける＝線を引かずに行がたどれる */
+  border-bottom:none;
+  border-radius:4px;
+}
+#ai-list.ai-pick li:nth-child(odd){ background:rgba(0,0,0,0.045); }
+#ai-list.ai-pick li, #ai-list.ai-pick li.ai-best, #ai-list.ai-pick li.ai-sep{
+  border-bottom:0 !important;   /* ★点線を完全に消す（別の指定が残っていた） */
 }
 #ai-list.ai-pick li.ai-best{
   /* 「よく使われます」の行だけ背が高いと計算が狂う。ほかと同じ高さにする */
@@ -1077,12 +1143,15 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
 /* ★リモコンの上下で選んでいる項目（2026-08-28のご指摘「キー操作でも選べるようにしろ」）。
    声だけだと1つ選ぶのに36秒かかっていた。キーなら押した瞬間に決まる。
    ★点滅させない。色と枠が一度だけ変わる（絶対ルール11） */
-#ai-list.ai-pick li.ai-cur{
-  background:rgba(212,175,55,.22);
-  box-shadow:inset 0 0 0 2px #d4af37;
-  border-radius:6px;
-  color:#fff;
-}
+/* ★選んでいる行（2026-09-01に作り直し）。
+   これまでは 22%の薄い塗り＋2pxの枠。3m離れたテレビでは
+   「どれが選ばれているか」がひと目で分からなかった。
+   ★同じ画面の右側に出ている**番組表**と同じ言葉づかいにする＝
+     いま選んでいる物は「塗りつぶした帯」。放送の選局と同じ見え方 */
+/* ★選んでいる行の色は、下の「#ai-list li.ai-cur」1か所だけで決める。
+   ここでは形（太字・角丸）だけを足す（2026-09-01：色を2か所に書いて食い違った） */
+#ai-list.ai-pick li.ai-cur{ font-weight:700; box-shadow:none; }
+#ai-list.ai-pick li.ai-cur:nth-child(odd){ background:#1f3a5f; }
 /* ══ バス停の地図（2026-08-28のご指示「地図入りでもっと見やすい図で」）══
    ★出典は実座標（宍粟市 しーたんバス GTFS-JP 283停）。位置は推測ではない。
    ★市内すべての停を薄い点で描いて市の形を見せ、その上に候補を番号付きで置く。
@@ -1092,7 +1161,9 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
 #ai-map.on{
   display:block;float:left;width:38%;max-width:330px;
   margin:10px 20px 6px 0;
-  background:rgba(0,0,0,.30);border:1px solid rgba(212,175,55,.35);border-radius:10px;
+  /* ★白ベースに合わせる（2026-09-01）。黒い箱のままだと、白い窓の中で
+     ここだけ暗く沈み、いよいよ「何の図か分からないもの」に見えていた */
+  background:#f0eee9;border:1px solid rgba(31,58,95,.28);border-radius:10px;
   padding:8px;
 }
 #ai-map svg{display:block;width:100%;height:auto;}
@@ -1112,11 +1183,20 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
      ★「◎よく使われます」の行も薄い金地なので、うすい金どうしだと
        どちらを選んでいるのか分からなかった（2026-08-28の実機写真で確認）。
        選んでいる方だけ塗りつぶすことで、一目で見分けられる */
-  background:#d4af37;
-  color:#1a1204;
+  /* ★白ベースに変えたので、選んでいる行は「濃紺地に白字」（2026-09-01）。
+     金地に濃い字は、白い窓の上では**選択の帯が浮いて見えず**、
+     さらに前方の指定と食い違って**文字が黒のまま**になっていた
+     （実機の写真で確認：濃紺の帯に黒い字で読めなかった）。
+     ★選択の色はここ1か所だけで決める。2か所に書くと必ず食い違う */
+  background:#1f3a5f;
+  color:#ffffff;
   border-radius:6px;
-  border-left-color:#d4af37;
+  border-left-color:#1f3a5f;
 }
+/* 中の部品（丸の番号・絵柄・名前）も一緒に白へ */
+#ai-list li.ai-cur .ai-num,
+#ai-list li.ai-cur .ai-ico,
+#ai-list li.ai-cur .ai-lbl{ color:#ffffff; }
 /* 経路案内の行：区切りと道のりの字下げ（2026-08-23。バスの乗り換え案内で使う） */
 #ai-list li.ai-sep{
   border-bottom:none;padding-top:12px;color:var(--ai-sub);
@@ -1138,8 +1218,10 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   font-size:19px;color:var(--ai-note);
 }
 #ai-note{
-  margin:12px 0 0;padding-top:9px;border-top:2px solid var(--ai-gold);
-  font-size:19px;line-height:1.6;color:var(--ai-note);
+  margin:10px 0 0;padding-top:8px;border-top:2px solid var(--ai-gold);
+  /* ★Google TV の本文基準（24sp＝実画面36px）に合わせる。
+     CSS 24px×1.5＝36px（2026-09-01に公式指針を取り寄せて採点し直した） */
+  font-size:24px;line-height:1.4;color:var(--ai-note);
 }
 /* ごみカレンダー等の画像（アプリが答えに載せてくる。↑↓でめくって読む） */
 #ai-imgs{margin:12px 0 0;}
@@ -1148,9 +1230,17 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   border-radius:6px;background:#fff;   /* 下地を白に（読み込み中も枠が見える） */
 }
 #ai-hint{
-  padding:5px 22px 9px;flex-shrink:0;
-  font-size:19px;color:var(--ai-sub);text-align:right;letter-spacing:1px;
+  /* ★注記のすぐ右に置く（2026-09-01のご指摘「無駄な余白も多い」）。
+     実測：「上下で選ぶ」の行と「戻るで閉じます」の間に90pxの空きがあった。
+     別々の帯にせず、同じ行の右端へ寄せる＝1行ぶん詰まる */
+  position:absolute;right:26px;bottom:14px;
+  padding:0;flex-shrink:0;
+  /* ★17px（実画面26px）は基準の36pxを大きく下回っていた（2026-09-01の採点） */
+  font-size:22px;color:var(--ai-sub);text-align:right;letter-spacing:1px;
 }
+#ai-box{ position:relative; }
+/* 注記の行は、右端の「戻るで閉じます」と重ならない幅で止める */
+#ai-note{ padding-right:210px; }
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
 /* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
    横に並べると幅が足りず「リモコンのマウ…」と切れていた */
@@ -1909,6 +1999,12 @@ html.tvpc .h-right .onair-badge .bdot{
 html.tvpc .h-gear svg{
   width:2.8vw;height:2.8vw;
 }
+/* ★探すアイコンも歯車と同じ大きさにする（2026-09-01の実測）。
+   22px固定のままでは、テレビの実機で 30px しか無く、歯車の 41px より
+   12px小さかった。テレビは 2.8vw で拡大しているので、同じ指定を当てる */
+html.tvpc .h-find svg{
+  width:2.8vw;height:2.8vw;
+}
 /* ★動画エリア(player)は grid-template-areas で上下2行にまたがるため、
    お知らせ枠のぶんを引いてはいけない（引くと動画の下に余白が残る）。
    動画の高さ = 使える高さ - 上下padding32 - タイトルバー44 - 操作バー44 = -120px
@@ -2121,7 +2217,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.19-lab（どの一覧も先頭が選ばれた状態で出る）</div>
+    <div class="ps-version">version 4.20-lab（探すボタン・白い窓・9ジャンル）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2154,6 +2250,19 @@ html.tvapp #lnk-reg{display:none;}
         <div class="bdot" id="bdot"></div>
         <span>ON AIR</span>
       </div>
+      <!-- ★アイコンの案（2026-09-01・一時的に並べて実機で見比べるため）。
+           テレビ用アプリだけに出す。決まったら1つだけ残す。
+           ★歯車は「塗りつぶしで24の枠をほぼ埋める」形。線画で同じ大きさに見せるには
+             ①枠いっぱいまで広げる ②線を太くする の両方が要る（画素で測って合わせる） -->
+      <!-- ★「探す」ボタン（2026-09-01・Google TVアプリのみ）。
+           耳の聞こえない人が、音を使わず画面だけで情報に辿り着くための入口。
+           絵柄は虫めがねの中に一覧の線＝「一覧から探す」。
+           ★大きさは歯車に合わせてある（実機の画素で 41x41／歯車 41x42・差1px）。
+             歯車は 2.8vw で拡大され、絵柄は24の枠のうち 2.7〜21.3 を使う。
+             ここを外すと並んだ時に小さく見える（2026-09-01にユーザー指摘） -->
+      <button class="h-find" id="h-find" onclick="openSagasu()" title="探す" aria-label="探す">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11.1" cy="11.1" r="7.2"/><path d="M7.6 9.2h7M7.6 13h4.4"/><path d="M16.2 16.2L20.1 20.1"/></svg>
+      </button>
       <!-- 設定ボタン（歯車）。左右の幅は fixHeaderBalance が現行値に合わせるのでバナー位置は動かない -->
       <button class="h-gear" id="h-gear" onclick="openSettings()" title="設定" aria-label="設定">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -2445,7 +2554,7 @@ html.tvapp #lnk-reg{display:none;}
 <!-- AIの答えのウインドウ（テレビ用アプリのみ。アプリ側から __aiState/__aiAnswer で操る） -->
 <div id="ai-win" aria-live="polite">
   <div id="ai-box">
-    <div id="ai-head"><span class="dot"></span><span id="ai-head-t">しそチャンNET</span></div>
+    <div id="ai-head"><span class="dot"></span><span id="ai-head-t">しそチャンNET</span><span id="ai-pos"></span></div>
     <div id="ai-body">
       <p id="ai-q"></p>
       <h3 id="ai-title"></h3>
@@ -4062,6 +4171,47 @@ function regOfferBig(){
 //   バナーが大きくロゴが小さくなっていた（実測：高さ590pxでバナー422→578px・ロゴ32→20px）。
 //   入る条件は従来どおり600px以上。維持は400px以上＝URLバーの出没では絶対に外れない。
 var _tvMode=false;
+// ★「探す」ボタン（2026-09-01・Google TVアプリのみ）。
+//   耳の聞こえない人が、音を使わず画面だけで情報に辿り着くための入口。
+//   ページ側は何も判断せず、アプリへ知らせるだけ（判断はJava1か所に置く）
+// ★ジャンルの絵柄（2026-09-01のご指示「9個の大ジャンルにアイコンを用意しろ」）。
+//   ★飾りではなく、そのジャンルの中身そのものを描く。
+//     ごみ＝ごみ箱／バス＝バス／子育て＝親子／健康＝聴診器の心音…
+//   ★線の太さ・大きさ・余白を9つで揃える（24の枠のうち 3〜21 を使う）。
+//     揃っていないと、並んだ時に大小がちぐはぐに見える（絶対ルール25）
+function _aiIcon(k){
+  var P = {
+    // ごみ箱
+    gomi:'<path d="M4.5 7h15M9.5 7V4.6h5V7M6.5 7l1 13.4h9L17.5 7M10.2 10.6v6.6M13.8 10.6v6.6"/>',
+    // バス（前面）
+    bus:'<path d="M5 5.4h14v10.8H5zM5 9.6h14M8.2 13h1.2M14.6 13h1.2M7 16.2v2.4M17 16.2v2.4M4.2 5.4h15.6"/>',
+    // 親と子
+    kosodate:'<path d="M8.4 6.6a2.1 2.1 0 1 0 0-.02M16.2 9.4a1.6 1.6 0 1 0 0-.02M5.2 20.4v-4.6a3.2 3.2 0 0 1 6.4 0v4.6M13.6 20.4v-3.4a2.6 2.6 0 0 1 5.2 0v3.4"/>',
+    // 心音（健康・福祉）
+    kenko:'<path d="M4 12h3.4l1.8-4.4 2.6 9L14 12h6"/><circle cx="20" cy="12" r="1.6"/>',
+    // 書類とはんこ（手続き・税金）
+    tetsuzuki:'<path d="M6.4 3.6h8.2l4 4v12.8H6.4zM14.6 3.6v4h4M9.2 12.4h6M9.2 16h4"/>',
+    // 避難（防災・安全）
+    bosai:'<path d="M12 3.4l8 4v5.4c0 4.6-3.3 7.4-8 8.8-4.7-1.4-8-4.2-8-8.8V7.4z"/><path d="M12 8.6v4.4M12 16.2v.1"/>',
+    // 家と道具（住まい・仕事）
+    sumai:'<path d="M3.6 11.4L12 4.4l8.4 7M6 10.2v9.6h12v-9.6M10 19.8v-5.2h4v5.2"/>',
+    // 場所の印（施設をさがす）
+    shisetsu:'<path d="M12 21.2s7-6.3 7-11.2a7 7 0 1 0-14 0c0 4.9 7 11.2 7 11.2z"/><circle cx="12" cy="10" r="2.6"/>',
+    // 本（宍粟を知る）
+    shiru:'<path d="M12 6.6C10.2 5 7.6 4.4 4.2 4.4v13.4c3.4 0 6 .6 7.8 2.2 1.8-1.6 4.4-2.2 7.8-2.2V4.4c-3.4 0-6 .6-7.8 2.2zM12 6.6v13.4"/>'
+  };
+  var d = P[k]; if(!d) return '';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
+       + 'stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+}
+
+function openSagasu(){
+  try{
+    if(window.ShisoMeasure && typeof window.ShisoMeasure.sagasu==='function'){
+      window.ShisoMeasure.sagasu();
+    }
+  }catch(_){}
+}
 function isTvPcMode(){
   // ★テレビ用アプリは常にTV/PC扱い。WebViewの見かけの寸法（960x540等）に
   //   左右されない＝アプリがテレビだと知っているので推測しない
@@ -4754,6 +4904,15 @@ window.__aiPick=function(n){
     var 実=[];                      // 見出し（ai-sep）は数えない
     for(var i=0;i<ら.length;i++){ if(!ら[i].classList.contains('ai-sep')) 実.push(ら[i]); }
     for(var j=0;j<実.length;j++) 実[j].classList.toggle('ai-cur', j===n);
+    // ★いま何番目を見ているかを見出しの右端に出す（2026-09-01）。
+    //   14件や16件の一覧では、下にまだ在るのかが画面から読み取れなかった
+    try{
+      var 位=document.getElementById('ai-pos');
+      if(位){
+        if(実.length>1 && n>=0){ 位.textContent=(n+1)+' / '+実.length; 位.style.display='block'; }
+        else { 位.style.display='none'; }
+      }
+    }catch(_){}
     var 当=実[n];
     if(当 && 当.scrollIntoView) 当.scrollIntoView({block:'nearest'});
     _aiMapPick(n);                 // 地図の上でも同じ所を示す
@@ -4787,12 +4946,22 @@ window.__aiState=function(kind, 文){
     //   問いが消えると、何を答えればよいのか分からなくなる
     var 問い = 文 || '';
     // ★短く・大きく（2026-08-28のご指摘）。長い文は読む前に消える
-    _aiEl('ai-head-t').textContent =
+    // ★問いかけ（「何をお探しですか」等）が出ている間は、それを消さない
+    //   （2026-09-01：ジャンルを選んでいる最中に見出しが
+    //     「どうぞ、お話しください」に置き換わり、**何を聞かれているのか
+    //     画面から消えた**。耳の聞こえない人はこれで行き先を見失う）
+    var _いま = _aiEl('ai-head-t').textContent || '';
+    var _問い中 = /ですか/.test(_いま);
+    _aiEl('ai-head-t').textContent = _問い中 ? _いま :
       (kind==='wait')   ? 'マイクの用意中です' :
       (kind==='listen') ? 'どうぞ、お話しください' : 'お調べしています';
     // ★押した直後は黄、録れ始めたら緑。文は変えない（言い直させないため）
     _aiEl('ai-q').textContent    = '';
-    _aiEl('ai-title').textContent= 問い;
+    // ★一覧を出している最中は、本文を書き換えない（2026-09-01）。
+    //   「そのままお話しください。」が一覧の上に割り込み、
+    //   耳の聞こえない人には**できないこと**を指示していた
+    var _一覧中 = (_aiEl('ai-list')||{}).children && _aiEl('ai-list').children.length>0;
+    if(!_一覧中) _aiEl('ai-title').textContent = 問い;
     // ★選んでいる最中は、操作の案内を書き足さない（2026-08-29）。
     //   同じ「決定」の説明が、題・本文・右下に**別々の意味で3つ同時に**出ていた
     //   （決める／話し終わる／すぐ検索）。3m離れた高齢者には判断できない。
@@ -4853,7 +5022,11 @@ window.__aiMicOff=function(){
     var w=_aiEl('ai-win'); if(!w) return;
     w.classList.remove('mic-open');
     w.classList.remove('listening');
-    var h=_aiEl('ai-head-t'); if(h) h.textContent='マイクを押すと、また声で選べます';
+    // ★問いかけ（「何をお探しですか」等）が出ている時は、その文言を消さない
+    //   （2026-09-01：ジャンルを選んでいる最中に見出しが
+    //     「マイクを押すと、また声で選べます」に化けて、何を聞かれているか分からなくなった）
+    var h=_aiEl('ai-head-t');
+    if(h && !/ですか/.test(h.textContent||'')) h.textContent='マイクを押すと、また声で選べます';
     window.__aiNobasu();          // 読んでいる間に閉じない
   }catch(_){}
 };
@@ -4890,32 +5063,41 @@ function _aiMap(図){
   var box=_aiEl('ai-map'); if(!box) return;
   _aiMapPts=[];
   if(!図 || !図['点'] || !図['点'].length){ box.className=''; box.innerHTML=''; return; }
-  var 点=図['点'], 下地=図['下地']||[], 目印=図['目印']||[];
-  var t=['<svg viewBox="0 0 1000 1000" role="img" aria-label="バス停の位置">'];
+  var 点=図['点'], 下地=図['下地']||[], 目印=図['目印']||[], 輪郭=図['輪郭']||[];
+  var t=['<svg viewBox="0 0 1000 1000" role="img" aria-label="宍粟市の地図とバス停の位置">'];
+  // ★いちばん下に市の形を敷く（2026-09-01のご指摘
+  //   「左の図は地図に見えない。何かよくわからないものの上に乱雑に番号が出ているだけ」）。
+  //   宍粟市の実際の境界線（国土数値情報 N03・166点）。これが無いと、
+  //   点の散らばりが何の図なのか読み取れなかった
+  if(輪郭.length>2){
+    var d='M'+輪郭.map(function(q){return q[0]+' '+q[1];}).join('L')+'Z';
+    t.push('<path d="'+d+'" fill="rgba(31,58,95,.07)" stroke="rgba(31,58,95,.55)" '
+      +'stroke-width="4" stroke-linejoin="round"/>');
+  }
   // 下地：この枠に入る市内の停（薄い点）。道すじの形が見えて位置の見当がつく
   for(var i=0;i<下地.length;i++){
-    t.push('<circle cx="'+下地[i][0]+'" cy="'+下地[i][1]+'" r="9" fill="rgba(255,255,255,.22)"/>');
+    t.push('<circle cx="'+下地[i][0]+'" cy="'+下地[i][1]+'" r="8" fill="rgba(31,58,95,.30)"/>');
   }
   // 目印：山崎・一宮・波賀・千種など、知っている地名を薄く添える
   for(var k=0;k<目印.length;k++){
     var m2=目印[k];
     t.push('<text x="'+m2.x+'" y="'+(m2.y-26)+'" text-anchor="middle" font-size="30" '
-      +'fill="rgba(255,255,255,.45)">'+m2['名']+'</text>');
+      +'fill="rgba(31,58,95,.75)" font-weight="700">'+m2['名']+'</text>');
   }
   // ほどいて動かした丸は、元の場所へ細い線で結ぶ（どこの停か見失わないため）
   for(var L=0;L<点.length;L++){
     var q=点[L];
     if(q['元x']!==undefined){
       t.push('<line x1="'+q['元x']+'" y1="'+q['元y']+'" x2="'+q.x+'" y2="'+q.y+'" '
-        +'stroke="rgba(255,255,255,.35)" stroke-width="3"/>'
-        +'<circle cx="'+q['元x']+'" cy="'+q['元y']+'" r="6" fill="rgba(255,255,255,.5)"/>');
+        +'stroke="rgba(31,58,95,.45)" stroke-width="3"/>'
+        +'<circle cx="'+q['元x']+'" cy="'+q['元y']+'" r="6" fill="rgba(31,58,95,.6)"/>');
     }
   }
   // 候補：大きな丸に番号。選んでいるものは金色（__aiPickで塗り替える）
   for(var j=0;j<点.length;j++){
     var p=点[j];
     t.push('<g class="mm-p" data-i="'+j+'">'
-      +'<circle cx="'+p.x+'" cy="'+p.y+'" r="34" fill="#0f3d1e" stroke="#7fbf8f" stroke-width="5"/>'
+      +'<circle cx="'+p.x+'" cy="'+p.y+'" r="34" fill="#1f3a5f" stroke="#ffffff" stroke-width="5"/>'
       +'<text x="'+p.x+'" y="'+(p.y+13)+'" text-anchor="middle" '
       +'font-size="38" font-weight="700" fill="#fff">'+p['番']+'</text></g>');
     _aiMapPts.push(p);
@@ -4940,8 +5122,8 @@ function _aiMapPick(n){
   for(var i=0;i<ら.length;i++){
     var 丸=ら[i].querySelector('circle'), 字=ら[i].querySelector('text');
     var 今=(i===当り);
-    丸.setAttribute('fill', 今 ? '#d4af37' : '#0f3d1e');
-    丸.setAttribute('stroke', 今 ? '#fff' : '#7fbf8f');
+    丸.setAttribute('fill', 今 ? '#c8901a' : '#1f3a5f');
+    丸.setAttribute('stroke', 今 ? '#1a1204' : '#ffffff');
     丸.setAttribute('r', 今 ? '46' : '34');
     字.setAttribute('fill', 今 ? '#1a1204' : '#fff');
     字.setAttribute('font-size', 今 ? '48' : '38');
@@ -5030,19 +5212,60 @@ window.__aiAnswer=function(obj){
     var w=_aiOpen(); if(!w) return;
     if(_aiCloseT){ clearTimeout(_aiCloseT); _aiCloseT=null; }
     w.classList.remove('listening');
-    _aiEl('ai-head-t').textContent = 'しそチャンNET';
-    _aiEl('ai-q').textContent      = o.q ? '「'+o.q+'」' : '';
-    _aiEl('ai-title').textContent  = o.title||'';
+    // ★問いかけ（「何をお探しですか」等）を出している時は、それを見出しにする
+    //   （2026-09-01：ジャンルを選んでいる最中の見出しが「しそチャンNET」になり、
+    //     耳の聞こえない人には**何を聞かれているのか分からなかった**）
+    _aiEl('ai-head-t').textContent =
+      (o['続き'] && /ですか/.test(o['続き'])) ? o['続き'] : 'しそチャンNET';
+    // ★内部用の言葉を画面に出さない（2026-09-01）。「さがす」という
+    //   問い合わせ名がそのまま出て、1行ぶんの無駄になっていた
+    var _q = o.q || '';
+    if(_q==='さがす' || _q==='（キーで選んだ）') _q='';
+    _aiEl('ai-q').textContent      = _q ? '「'+_q+'」' : '';
+    // ★同じ言葉を2度出さない（2026-09-01のご指摘）。
+    //   見出しの帯に「手続き・税金の何が知りたいですか」を出しているのに、
+    //   すぐ下でもう一度「手続き・税金」と出ていた。3m離れると
+    //   **どちらが問いなのか分からない**。帯に出ているなら本文側は空ける
+    var _頭 = _aiEl('ai-head-t').textContent || '';
+    var _題 = o.title || '';
+    _aiEl('ai-title').textContent  = (_題 && _頭.indexOf(_題) >= 0) ? '' : _題;
     _aiEl('ai-text').textContent   = o.text||'';
     _aiErandeiru = false;          // ★新しい答え＝選び直し
+    // ★位置表示を新しい一覧に合わせて出し直す（2026-09-01）。
+    //   前の画面の「5 / 9」が残ったまま、14件の一覧に出ていた（実機で確認）
+    try{
+      var _位=document.getElementById('ai-pos');
+      if(_位){ _位.textContent=''; _位.style.display='none'; }
+    }catch(_){}
     // ★バス停の地図（2026-08-28のご指示）。候補の位置を実座標で描く
     _aiMap(o['地図']);
     var ul=_aiEl('ai-list'); ul.innerHTML='';
     // ★選んでもらう一覧は2列で詰めて、1画面に入る数を増やす
-    ul.className = o['選択'] ? 'ai-pick' : '';
+    // ★件数が少なければ1列でゆったり（2026-09-01）。バス停16件は今までどおり2列
+    ul.className = o['選択'] ? ('ai-pick' + ((o.lines||[]).length<=10 ? ' ai-few' : '')) : '';
     var L=o.lines||[];
+    // ★ジャンルの一覧は、番号を○で囲み、絵柄を添える（2026-09-01のご指示）。
+    //   ①②の文字は書体によって出ないことがあるので、**丸はCSSで描く**
+    var _絵 = {
+      'ごみ・リサイクル':'gomi', 'バス・交通':'bus', '子育て・学校':'kosodate',
+      '健康・福祉':'kenko', '手続き・税金':'tetsuzuki', '防災・安全':'bosai',
+      '住まい・仕事':'sumai', '施設をさがす':'shisetsu', '宍粟を知る':'shiru'
+    };
     for(var i=0;i<L.length;i++){
-      var li=document.createElement('li'); li.textContent=L[i];
+      var li=document.createElement('li');
+      var m = /^\u3000(\d+)\u3000(.+)$/.exec(L[i]);
+      if(m && ul.className.indexOf('ai-few')>=0){
+        var 名 = m[2];
+        li.className = 'ai-row';
+        var b=document.createElement('span'); b.className='ai-num'; b.textContent=m[1];
+        var ic=document.createElement('span'); ic.className='ai-ico';
+        if(_絵[名]) ic.innerHTML = _aiIcon(_絵[名]);
+        var t=document.createElement('span'); t.className='ai-lbl'; t.textContent=名;
+        li.appendChild(b); li.appendChild(ic); li.appendChild(t);
+        ul.appendChild(li);
+        continue;
+      }
+      li.textContent=L[i];
       // 「― …―」は区切り、先頭が全角空白の行は道のりの内訳
       if(/^―.*―$/.test(L[i])) li.className='ai-sep';
       else if(L[i].charAt(0)==='◎') li.className='ai-best';
@@ -5067,7 +5290,7 @@ window.__aiAnswer=function(obj){
       var はみ出す = body.scrollHeight > body.clientHeight + 4;
       _aiEl('ai-hint').textContent = はみ出す
         ? '↑↓ で読み進める　／　戻るで閉じます'
-        : 'どれかのボタンで閉じます';
+        : '戻るで閉じます';
     }, 30);
     // 読み終わるころに自分で閉じる（中身が多いほど長く置く）。
     // カレンダーの画像がある時は、めくって読む時間ぶん長く置く（最低2分）
@@ -5081,7 +5304,11 @@ window.__aiAnswer=function(obj){
       var 選ばせている = L.length >= 5;
       猶予 = Math.max(猶予, 選ばせている ? 180000 : 90000);
     }
-    _aiCloseT=setTimeout(window.__aiClose, 猶予);
+    // ★選んでもらっている最中は、時間で消さない（2026-09-01）。
+    //   一覧を見比べている人を、時間切れで放り出さない（WCAG 2.2.1）。
+    //   閉じるのは「戻る」を押した時だけ
+    if(o['選択']){ _aiCloseT=null; }
+    else { _aiCloseT=setTimeout(window.__aiClose, 猶予); }
   }catch(e){ try{ console.log('ai答えの表示に失敗', e); }catch(_){}}
 };
 
@@ -5241,10 +5468,14 @@ window.__tvKey=function(k){
     // AIのウインドウが出ている間は、そこだけを相手にする。
     // 戻る＝閉じる／それ以外は放送側へ渡さない（後ろの画面が勝手に動かないように）
     if(window.__aiOpened && __aiOpened()){
-      // ★上下＝中を読み進める。それ以外のキーはすべて「閉じる」に使う。
-      //   以前は全部のキーを飲み込んでいたため、閉じるまで操作不能に見えた（2026-08-21指摘）
+      // ★閉じるのは「戻る」だけにする（2026-09-01のご指摘
+      //   「何かのはずみでボタンを押してしまったら、ウインドウが閉じてしまって、
+      //     それまでの検索結果も見れなくなるのが問題」）。
+      //   調べ物の結果が、押し間違い1回で消えてしまうのは作りとして誤り。
+      //   上下＝読み進める／左右＝ページ送り／決定＝そのまま／戻る＝閉じる
       if(k==='up'||k==='down'){ __aiScroll(k==='down'?1:-1); return true; }
-      __aiClose(); return true;
+      if(k==='back'){ __aiClose(); return true; }
+      return true;                 // ほかのキーは飲み込むだけ＝勝手に消さない
     }
     var L=_tvEnsure();
     if(L==='fs'){ try{ showFsUi(); }catch(_){} }   // 全画面の操作列は放っておくと消えるため
@@ -5389,12 +5620,19 @@ function applyAiColors(c){
     if(_c比(t2,bg)>=1.7 && _c比('#ffffff',t2)>=4.5){ band=t2; break; }
   }
   if(!band) band=_c明(bg,0.75);
-  de.style.setProperty('--ai-bg',   bg);
-  de.style.setProperty('--ai-band', band);
-  de.style.setProperty('--ai-sub',  _c字(c.g4, bg, 7.0));
-  de.style.setProperty('--ai-step', _c字(c.g5, bg, 7.0));
-  de.style.setProperty('--ai-note', _c字('#e8b84a', bg, 7.0));
-  de.style.setProperty('--ai-gold', _c字('#c8992a', bg, 3.0));
+  // ★窓の中は白ベースにする（2026-09-01のご指示
+  //   「今の感じだとものすごく暗くて見づらい。一番上のタブだけ背景と同じ色にして、
+  //     あとは白ベースでもっと明るく見やすくしろ」）。
+  //   ★帯だけは背景から計算した色を使う＝放送画面と地続きに見える。
+  //   ★白の上の文字は #1d2126（本文で 14.6:1）。どの背景色でも常に読める。
+  //     以前は背景色から窓の地色まで作っていたため、暗い背景では窓ごと暗くなった
+  de.style.setProperty('--ai-bg',   '#fbfaf7');   // 窓の地＝ほぼ白
+  de.style.setProperty('--ai-band', band);        // 帯だけ背景から計算
+  de.style.setProperty('--ai-ink',  '#1d2126');   // 本文の字
+  de.style.setProperty('--ai-sub',  '#4c545c');   // 添えの字
+  de.style.setProperty('--ai-step', '#2b3138');
+  de.style.setProperty('--ai-note', '#6e4704');   // 注記（白地で 7.8:1＝基準の7を満たす）
+  de.style.setProperty('--ai-gold', '#b8860b');
   // ★聞き取り中の帯。ふだんの帯より **はっきり明るく** して、
   //   「いま聞いています」が離れて見ても分かるようにする。
   //   条件：白い字が3.0:1以上／ふだんの帯との差が1.25以上／地との差が2.0以上
