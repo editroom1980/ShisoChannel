@@ -1230,17 +1230,21 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   border-radius:6px;background:#fff;   /* 下地を白に（読み込み中も枠が見える） */
 }
 #ai-hint{
-  /* ★注記のすぐ右に置く（2026-09-01のご指摘「無駄な余白も多い」）。
-     実測：「上下で選ぶ」の行と「戻るで閉じます」の間に90pxの空きがあった。
-     別々の帯にせず、同じ行の右端へ寄せる＝1行ぶん詰まる */
-  position:absolute;right:26px;bottom:14px;
-  padding:0;flex-shrink:0;
+  /* ★絶対配置をやめた（2026-09-02・実機の写真から画素で実測）。
+     これまでは絶対配置にしたうえ、注記側に「210px空けておく」と
+     **当て推量の数字**を書いて避けていた。避けるべき幅は文の長さで
+     変わるので、数字で押さえた時点で必ず破綻する。
+     実測（1920x1080の実機）：注記 x158〜1143／この行 x1004〜1756＝
+     139画面px（CSS 93px）重なっていた。要る幅501pxに対し210pxしか
+     空けていなかったのが原因。
+     → 並べ方（#ai-box の縦のflex）に任せる。どんな長さでも重ならないし、
+       同じ数を2か所に書かなくて済む */
+  flex-shrink:0;
+  padding:2px 26px 14px;
   /* ★17px（実画面26px）は基準の36pxを大きく下回っていた（2026-09-01の採点） */
   font-size:22px;color:var(--ai-sub);text-align:right;letter-spacing:1px;
 }
 #ai-box{ position:relative; }
-/* 注記の行は、右端の「戻るで閉じます」と重ならない幅で止める */
-#ai-note{ padding-right:210px; }
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
 /* ★テレビでは説明文を見出しの下に置き、省略せず全部見せる（2026-08-19指示）。
    横に並べると幅が足りず「リモコンのマウ…」と切れていた */
@@ -2217,7 +2221,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.20-lab（探すボタン・白い窓・9ジャンル）</div>
+    <div class="ps-version">version 4.22-lab（先頭が光る・案内が重ならない・決定の説明が正しい）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4895,9 +4899,19 @@ function _aiOpen(){
   return w;
 }
 
+/** いま「選んでもらう一覧」が出ているか。
+    ★出ている間、決定キーは **選ぶ** 働きになる（MainActivityが選べる状態を先に見る）。
+      それなのに画面は「決定を押すと、すぐ検索します」と出していた＝画面が嘘をついていた。
+      実機で確認（2026-09-02）：ジャンルの一覧で決定を押すと、①ごみ・リサイクルが
+      決まって細目の一覧へ進んだ。検索は始まらない */
+function _ai選ぶ一覧が出ている(){
+  try{ var ul=_aiEl('ai-list'); return !!(ul && ul.className.indexOf('ai-pick')>=0); }
+  catch(_){ return false; }
+}
+
 /** リモコンの上下で選んでいる位置を光らせる（アプリ側から呼ばれる）。
     ★n は「いま見せている頁の中の何番目か」（0から）。選び直すたびに呼ばれる */
-window.__aiPick=function(n){
+window.__aiPick=function(n, 初回){
   try{
     var ul=_aiEl('ai-list'); if(!ul) return;
     var ら=ul.querySelectorAll('li');
@@ -4921,14 +4935,20 @@ window.__aiPick=function(n){
     //   別々の意味で同時に出ていた（決める／話し終わる／すぐ検索）。
     //   3m離れた高齢者には、どれを押せば何が起きるのか判断できない。
     //   ★選んでいる間は「決定＝決まる」だけを、注記の1か所に出す
-    var note=_aiEl('ai-note');
-    if(note) note.textContent = (ul.className==='ai-pick')
-      ? '上下で選ぶ　／　決定で決まる'
-      : '上下で選ぶ　／　決定でくわしく';
-    _aiErandeiru = (n>=0);         // ★選んでいる最中だと覚えておく
-    var tx=_aiEl('ai-text');   if(tx) tx.textContent='';
-    var hi=_aiEl('ai-hint');   if(hi) hi.textContent='戻るで閉じます';
-    window.__aiNobasu();           // ★選んでいる間は閉じない
+    // ★案内文を書き換えるのは、人が実際に上下を押した時だけ（初回＝false の時）。
+    //   一覧を出した瞬間の光らせ直し（初回＝true）でここまで走らせると、
+    //   アプリが用意した注記（「声でも『ごみ』『バス』と言えます」）が
+    //   消えてしまう。光らせるのと、案内を書き換えるのは別のこと
+    if(!初回){
+      var note=_aiEl('ai-note');
+      if(note) note.textContent = (ul.className==='ai-pick')
+        ? '上下で選ぶ　／　決定で決まる'
+        : '上下で選ぶ　／　決定でくわしく';
+      _aiErandeiru = (n>=0);       // ★選んでいる最中だと覚えておく
+      var tx=_aiEl('ai-text');   if(tx) tx.textContent='';
+      var hi=_aiEl('ai-hint');   if(hi) hi.textContent='戻るで閉じます';
+      window.__aiNobasu();         // ★選んでいる間は閉じない
+    }
   }catch(e){}
 };
 
@@ -4994,7 +5014,7 @@ window.__aiState=function(kind, 文){
       _aiEl('ai-note').textContent = '';
     }
     // ★聞き取り中は閉じ方でなく「終わり方」を示す（2026-08-23の押して押す方式）
-    _aiEl('ai-hint').textContent = _aiErandeiru ? '戻るで閉じます'
+    _aiEl('ai-hint').textContent = (_aiErandeiru || _ai選ぶ一覧が出ている()) ? '戻るで閉じます'
       : (kind==='listen') ? '決定ボタン（まん中）を押すと、すぐ検索します'
       : (kind==='wait') ? 'マイクの用意をしています' : 'お調べしています';
   }catch(_){}
@@ -5047,9 +5067,11 @@ window.__aiHeard=function(文){
     if(!OPTS.aicap) return;
     var w=_aiEl('ai-win'); if(!w||!w.classList.contains('on')) return;
     _aiEl('ai-title').textContent = 文 ? '「'+文+'」' : '';
-    _aiEl('ai-text').textContent  = 文 ? '話し終わったら【決定ボタン】を押すと、すぐお調べします。'
-                                       : '話し終わったら【決定ボタン】を押すと、すぐお調べします。';
-    _aiEl('ai-hint').textContent  = '決定ボタン（まん中）を押すと、すぐ検索します';
+    // ★一覧が出ている間は、決定キーは「選ぶ」なので、この案内は出さない（嘘になる）
+    if(!_ai選ぶ一覧が出ている()){
+      _aiEl('ai-text').textContent  = '話し終わったら【決定ボタン】を押すと、すぐお調べします。';
+      _aiEl('ai-hint').textContent  = '決定ボタン（まん中）を押すと、すぐ検索します';
+    }
   }catch(_){}
 };
 
@@ -5274,6 +5296,15 @@ window.__aiAnswer=function(obj){
       ul.appendChild(li);
     }
     _aiEl('ai-note').textContent   = o.note||'';
+    // ★出した瞬間から、アプリが選んでいる行を光らせる（2026-09-02の実機実測）。
+    //   これまではアプリ側が「先頭(0番)を選んだ状態」で持っているのに、
+    //   画面へは一度も伝えていなかった。＝同じ値をアプリと画面の2か所が
+    //   別々に持ち、食い違っていた。実機の写真では9件のどれも光っておらず、
+    //   最初に下を押した人は②へ飛ぶ（①は一度も光らない）。
+    //   → 位置はアプリだけが持ち、画面はそれを映すだけにする
+    if(o['選択'] && typeof o['選び']==='number' && o['選び']>=0){
+      window.__aiPick(o['選び'], true);
+    }
     // ごみカレンダー等の画像。アプリが答えのJSONに 画像:[URL,…] を載せてくる
     var box=_aiEl('ai-imgs'); box.innerHTML='';
     var IM=o['画像']||[];
