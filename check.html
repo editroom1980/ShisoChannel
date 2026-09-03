@@ -983,7 +983,10 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   /* ★中身の高さに合わせる（2026-09-01のご指摘「無駄な余白も多い」）。
      max-height だけ決めていたため、9件の一覧でも窓は同じ高さのまま開き、
      下に125pxの空白が残っていた（実機の写真で実測） */
-  width:min(88%,1180px);max-height:88%;height:auto;
+  /* ★安全域いっぱいまで広げる（2026-09-03のご指示「ウインドウ自体を大きくするなど」）。
+     Android TVの安全域は上下左右5%＝中央90%。88%→90%で外形は 1689→1728 × 950→972px。
+     ★外側で増えるのは+39×+22pxだけ。効くのは下の「戻るで閉じます」を帯へ移すほう */
+  width:min(90%,1180px);max-height:90%;height:auto;
   background:var(--ai-bg);border:3px solid var(--ai-band);border-radius:12px;
   box-shadow:0 14px 52px rgba(0,0,0,0.65);
   display:flex;flex-direction:column;overflow:hidden;
@@ -1002,7 +1005,9 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
    一覧が1画面に収まらない時、下にまだ在ることが分かる唯一の手がかりになる。
    Google TV の指針「焦点がどこから来てどこへ行くか常に分かること」に対応 */
 #ai-pos{
-  margin-left:auto;font-size:22px;font-weight:700;letter-spacing:1px;
+  /* ★右寄せは親（#ai-right）が持つ。ここに margin-left:auto を残すと、
+     案内との間に余分な空きができる（2026-09-03） */
+  font-size:22px;font-weight:700;letter-spacing:1px;
   color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums;display:none;
 }
 #ai-head .dot{
@@ -1045,7 +1050,9 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
 #ai-text{font-size:25px;line-height:1.6;margin:0;}
 #ai-list{margin:10px 0 0;padding:0;list-style:none;}
 #ai-list li{
-  font-size:20px;line-height:1.6;padding:5px 0 5px 12px;
+  /* ★20px（実機30px）はGoogle TVの本文基準36pxの83%だった（2026-09-03に実測）。
+     答えの中身がいちばん多く入る場所なので、24px（実機36px）に上げる */
+  font-size:24px;line-height:1.6;padding:5px 0 5px 12px;
   border-bottom:1px solid rgba(255,255,255,0.14);
 }
 /* ★ふつうの一覧（学校・施設・相談窓口など）も、選んでいる行が分かるようにする
@@ -1217,6 +1224,52 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   padding-left:44px;border-bottom:none;
   font-size:19px;color:var(--ai-note);
 }
+/* ★答え（2026-09-03のご指示「大見出しで改行するな・1行で表示できるだろ」）。
+   聞かれたことへの直答を、いちばん大きな字で**1行**に。
+   実測：窓の本文の幅は 1104px（実機1656px）。37pxなら1行29字まで入る。
+   長い答えは __aiAnswer が実測して 37→31→27px と落とす（2行まで）。
+   ★「詳しい内容を画面に出しました。」のような、何も言っていない文はここに置かない */
+#ai-answer{
+  margin:0 0 20px;
+  font-size:37px;font-weight:700;line-height:1.3;color:var(--ai-ink);
+}
+#ai-answer:empty{display:none;margin:0;}
+#ai-answer em{font-style:normal;color:var(--ai-listen);}
+
+/* ★ラベル→値の一覧を2列に組む（2026-09-03）。
+   画面用の行111か所のうち38%が、本当は「ラベル＋全角空白＋値」の組だった。
+   1本の文字列で並べると、ほかの文と見分けがつかず、金額の列を目で追えない。
+   ★2列にすると同じ高さに2倍入る（実測：777px÷74px＝10件 → 20件） */
+#ai-kumi{
+  display:grid;grid-template-columns:1fr 1fr;gap:0 34px;margin:0 0 10px;
+}
+#ai-kumi:empty{display:none;margin:0;}
+#ai-kumi .col{
+  /* ★ラベル側は minmax(0,auto)。auto のままだと縮まないので、
+     長い名前（「受理証明（婚姻・離婚・縁組等）」など）で列があふれる */
+  display:grid;grid-template-columns:minmax(0,auto) 1fr auto;
+  gap:7px 11px;align-items:baseline;align-content:start;
+}
+#ai-kumi .k{
+  font-size:27px;color:var(--ai-ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#ai-kumi .d{border-bottom:1px dotted #b9b3a4;transform:translateY(-6px);}
+#ai-kumi .v{
+  font-size:29px;font-weight:600;text-align:right;white-space:nowrap;
+  font-variant-numeric:tabular-nums;color:var(--ai-ink);
+}
+/* 1列に収まらない件数のときは1列で（幅の狭い端末・件数が少ない時） */
+#ai-kumi.one{grid-template-columns:1fr;}
+
+/* ★電話番号は注記の中で大きく（2026-09-03）。
+   テレビの前でメモを取る人のため。いまは注記と同じ36pxで文章に埋もれている */
+#ai-tel{
+  font-size:29px;font-weight:600;letter-spacing:1px;
+  font-variant-numeric:tabular-nums;color:var(--ai-ink);
+  margin-left:14px;
+}
+
 #ai-note{
   margin:10px 0 0;padding-top:8px;border-top:2px solid var(--ai-gold);
   /* ★Google TV の本文基準（24sp＝実画面36px）に合わせる。
@@ -1229,20 +1282,20 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   display:block;width:100%;margin:0 0 14px;
   border-radius:6px;background:#fff;   /* 下地を白に（読み込み中も枠が見える） */
 }
+/* ★位置表示と案内は、帯の右端のひとまとまりにする（2026-09-03）。
+   #ai-pos は空のとき display:none になるので、そこに margin-left:auto を
+   持たせても右端へ寄らない。実測：案内が x312 とロゴの真横に出ていた */
+#ai-right{margin-left:auto;display:flex;align-items:baseline;gap:16px;flex-shrink:0;}
 #ai-hint{
-  /* ★絶対配置をやめた（2026-09-02・実機の写真から画素で実測）。
-     これまでは絶対配置にしたうえ、注記側に「210px空けておく」と
-     **当て推量の数字**を書いて避けていた。避けるべき幅は文の長さで
-     変わるので、数字で押さえた時点で必ず破綻する。
-     実測（1920x1080の実機）：注記 x158〜1143／この行 x1004〜1756＝
-     139画面px（CSS 93px）重なっていた。要る幅501pxに対し210pxしか
-     空けていなかったのが原因。
-     → 並べ方（#ai-box の縦のflex）に任せる。どんな長さでも重ならないし、
-       同じ数を2か所に書かなくて済む */
+  /* ★上の帯の右端へ移した（2026-09-03のご指示「なるべく1画面で収めろ」）。
+     下の段が1行ぶん減り、本文に使える高さが 684→777px（+14%）になる。
+     実測：下の段 150px → 79px。外形を88%→90%に広げても+22pxしか増えないので、
+     1画面に収めるのに効くのはこちら。
+     ★2026-09-02の経緯：絶対配置＋「210px空けておく」という当て推量の数字で
+       注記と重なっていた。並べ方に任せる方針はそのまま、置き場所を帯へ移す */
   flex-shrink:0;
-  padding:2px 26px 14px;
-  /* ★17px（実画面26px）は基準の36pxを大きく下回っていた（2026-09-01の採点） */
-  font-size:22px;color:var(--ai-sub);text-align:right;letter-spacing:1px;
+  font-size:21px;font-weight:400;color:var(--white);opacity:.8;
+  letter-spacing:0;white-space:nowrap;
 }
 #ai-box{ position:relative; }
 /* 1行型：ボタンは右側に必要な幅だけ（縦に積まない＝行を低く保つ） */
@@ -2221,7 +2274,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.22-lab（先頭が光る・案内が重ならない・決定の説明が正しい）</div>
+    <div class="ps-version">version 4.24-lab（画面の重複表示を削除）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2558,17 +2611,18 @@ html.tvapp #lnk-reg{display:none;}
 <!-- AIの答えのウインドウ（テレビ用アプリのみ。アプリ側から __aiState/__aiAnswer で操る） -->
 <div id="ai-win" aria-live="polite">
   <div id="ai-box">
-    <div id="ai-head"><span class="dot"></span><span id="ai-head-t">しそチャンNET</span><span id="ai-pos"></span></div>
+    <div id="ai-head"><span class="dot"></span><span id="ai-head-t">しそチャンNET</span><span id="ai-right"><span id="ai-pos"></span><span id="ai-hint">戻るで閉じます</span></span></div>
     <div id="ai-body">
       <p id="ai-q"></p>
       <h3 id="ai-title"></h3>
+      <p id="ai-answer"></p>
       <p id="ai-text"></p>
       <div id="ai-map"></div>
+      <div id="ai-kumi"></div>
       <ul id="ai-list"></ul>
       <p id="ai-note"></p>
       <div id="ai-imgs"></div>
     </div>
-    <div id="ai-hint">戻るボタンで閉じます</div>
   </div>
 </div>
 
@@ -4899,6 +4953,29 @@ function _aiOpen(){
   return w;
 }
 
+/** 右上の案内を出す。ただし**帯に出ている言葉と同じなら出さない**
+    （2026-09-03のご指示「画面内の重複や無駄な表示は削除しろ」）。
+    実機で確認：調べている間、帯と右の両方に「お調べしています」が出ていた。
+    ★出す・出さないの判断はここ1か所だけ（2か所に書くと必ず食い違う） */
+function _ai案内(文){
+  try{
+    var 帯=(_aiEl('ai-head-t').textContent||'').trim();
+    var t=(文||'').trim();
+    var 同じ = t && 帯 && (帯===t || 帯.indexOf(t)>=0 || t.indexOf(帯)>=0);
+    _aiEl('ai-hint').textContent = 同じ ? '' : t;
+  }catch(_){}
+}
+
+/** 前の答えの「答え」と「ラベル→値の組」を消す（2026-09-03）。
+    なぜ：この2つは新しく足した入れ物なので、消し忘れると
+      次の答えの上に前の値が居座る。消す場所は**ここ1か所だけ**にする */
+function _ai前の答えを消す(){
+  try{
+    var a=_aiEl('ai-answer'); if(a){ a.textContent=''; a.style.fontSize=''; }
+    var k=_aiEl('ai-kumi');   if(k){ k.innerHTML=''; k.className=''; }
+  }catch(_){}
+}
+
 /** いま「選んでもらう一覧」が出ているか。
     ★出ている間、決定キーは **選ぶ** 働きになる（MainActivityが選べる状態を先に見る）。
       それなのに画面は「決定を押すと、すぐ検索します」と出していた＝画面が嘘をついていた。
@@ -4923,7 +5000,13 @@ window.__aiPick=function(n, 初回){
     try{
       var 位=document.getElementById('ai-pos');
       if(位){
-        if(実.length>1 && n>=0){ 位.textContent=(n+1)+' / '+実.length; 位.style.display='block'; }
+        // ★題がすでに「1／16ページ」を出している時は、右上に出さない（2026-09-03）。
+        //   実機で確認：同じ画面に「1／16ページ」と「1 / 16」が、
+        //   **ページ数と項目番号という別の意味で**並んでいた
+        var _題文 = (_aiEl('ai-head-t').textContent||'') + (_aiEl('ai-title').textContent||'');
+        var _頁が出ている = /／\s*\d+\s*ページ/.test(_題文) || /\/\s*\d+\s*ページ/.test(_題文);
+        if(実.length>1 && n>=0 && !_頁が出ている){
+          位.textContent=(n+1)+' / '+実.length; 位.style.display='block'; }
         else { 位.style.display='none'; }
       }
     }catch(_){}
@@ -4986,13 +5069,15 @@ window.__aiState=function(kind, 文){
     //   同じ「決定」の説明が、題・本文・右下に**別々の意味で3つ同時に**出ていた
     //   （決める／話し終わる／すぐ検索）。3m離れた高齢者には判断できない。
     //   ★選んでいる時は「決定＝決まる」だけを、注記の1か所に出す
+    // ★帯がすでに言っていることを、本文で繰り返さない（2026-09-03のご指示
+    //   「画面内の重複や無駄な表示は削除しろ」）。実機で確認した重複：
+    //     帯「マイクの用意中です」＋本文「マイクの用意に少し時間が…」
+    //     帯「どうぞ、お話しください」＋本文「そのままお話しください。」
+    //     帯「お調べしています」＋本文「少しお待ちください。」
+    //   ★残すのは、帯に出ていない情報だけ
     _aiEl('ai-text').textContent = _aiErandeiru ? '' :
-      // ★ふだんは押した瞬間に「どうぞ」を出す（実測：マイクが開くまで0.15秒）。
-      //   この画面は、通信が悪くて0.7秒を超えた時だけ出る保険（2026-08-28）
-      ((kind==='wait')   ? 'マイクの用意に少し時間がかかっています。もう少しお待ちください。' :
-       (kind==='listen') ? (問い ? 'そのままお話しください。'
-                                 : '話し終わったら【決定ボタン】を押すと、すぐお調べします。') :
-                           '少しお待ちください。');
+      ((kind==='listen' && !問い)
+         ? '話し終わったら【決定ボタン】を押すと、すぐお調べします。' : '');
     // ★何を聞けるのかを、聞き取り中の画面に出す（2026-08-27）。
     //   高齢者の音声アシスタント研究（ASSETS'21）が挙げる障壁B-D3
     //   「できることと、使われている機能の隔たり」への対応。
@@ -5005,6 +5090,7 @@ window.__aiState=function(kind, 文){
       _aiEl('ai-list').innerHTML = 例.map(function(t){
         return '<li>'+t+'</li>'; }).join('');
       _aiEl('ai-note').textContent = '';
+      _ai前の答えを消す();
     } else if(問い && (kind==='listen' || kind==='wait')){
       // ★こちらから尋ねている時は、選んでもらう中身を**消さない**（2026-08-27のご指示）。
       //   「はい／いいえ」や、波賀町のバス停39か所を画面に出しておきながら、
@@ -5012,11 +5098,12 @@ window.__aiState=function(kind, 文){
     } else {
       _aiEl('ai-list').innerHTML = '';
       _aiEl('ai-note').textContent = '';
+      _ai前の答えを消す();
     }
     // ★聞き取り中は閉じ方でなく「終わり方」を示す（2026-08-23の押して押す方式）
-    _aiEl('ai-hint').textContent = (_aiErandeiru || _ai選ぶ一覧が出ている()) ? '戻るで閉じます'
+    _ai案内((_aiErandeiru || _ai選ぶ一覧が出ている()) ? '戻るで閉じます'
       : (kind==='listen') ? '決定ボタン（まん中）を押すと、すぐ検索します'
-      : (kind==='wait') ? 'マイクの用意をしています' : 'お調べしています';
+      : (kind==='wait') ? 'マイクの用意をしています' : 'お調べしています');
   }catch(_){}
 };
 
@@ -5070,7 +5157,7 @@ window.__aiHeard=function(文){
     // ★一覧が出ている間は、決定キーは「選ぶ」なので、この案内は出さない（嘘になる）
     if(!_ai選ぶ一覧が出ている()){
       _aiEl('ai-text').textContent  = '話し終わったら【決定ボタン】を押すと、すぐお調べします。';
-      _aiEl('ai-hint').textContent  = '決定ボタン（まん中）を押すと、すぐ検索します';
+      _ai案内('決定ボタン（まん中）を押すと、すぐ検索します');
     }
   }catch(_){}
 };
@@ -5250,7 +5337,24 @@ window.__aiAnswer=function(obj){
     //   **どちらが問いなのか分からない**。帯に出ているなら本文側は空ける
     var _頭 = _aiEl('ai-head-t').textContent || '';
     var _題 = o.title || '';
-    _aiEl('ai-title').textContent  = (_題 && _頭.indexOf(_題) >= 0) ? '' : _題;
+    // ★題が「帯」か「聞かれた言葉」の中にそのまま入っているなら出さない（2026-09-03）。
+    //   実機で確認：問い「証明書の手数料はいくら」の下に題「証明書の手数料」が並んでいた
+    var _問文 = _aiEl('ai-q').textContent || '';
+    _aiEl('ai-title').textContent  =
+      (_題 && (_頭.indexOf(_題) >= 0 || _問文.indexOf(_題) >= 0)) ? '' : _題;
+    // ★答え（2026-09-03）。聞かれたことへの直答を、いちばん大きな字で1行に。
+    //   ★大きさは実測で決める。決め打ちの字数で判断すると、
+    //     数字（半角）と漢字（全角）で幅が倍ちがうので必ず外れる
+    var _ans=_aiEl('ai-answer');
+    _ans.textContent = o['答え']||'';
+    if(o['答え']){
+      var 段=[37,31,27];
+      for(var _i=0;_i<段.length;_i++){
+        _ans.style.fontSize = 段[_i]+'px';
+        // 2行（行の高さ1.3）に収まったらそこで止める
+        if(_ans.scrollHeight <= Math.round(段[_i]*1.3*2)+2) break;
+      }
+    }
     _aiEl('ai-text').textContent   = o.text||'';
     _aiErandeiru = false;          // ★新しい答え＝選び直し
     // ★位置表示を新しい一覧に合わせて出し直す（2026-09-01）。
@@ -5295,7 +5399,35 @@ window.__aiAnswer=function(obj){
       else if(L[i].charAt(0)==='\u3000') li.className='ai-step';
       ul.appendChild(li);
     }
-    _aiEl('ai-note').textContent   = o.note||'';
+    // ★ラベル→値の組を2列で出す（2026-09-03）。
+    //   アプリが 組:[["住民票 謄本・抄本","300円"],…] で渡してくる。
+    //   渡ってこなければ何も出さない＝これまでの答えは今までどおり lines で出る
+    var _kumi=_aiEl('ai-kumi'); _kumi.innerHTML=''; _kumi.className='';
+    var _K=o['組']||[];
+    if(_K.length){
+      // 4件までは1列のほうが読みやすい（2列にすると右が寂しくなる）
+      var _2列 = _K.length>4;
+      if(!_2列) _kumi.className='one';
+      var _半 = _2列 ? Math.ceil(_K.length/2) : _K.length;
+      for(var _c=0;_c<(_2列?2:1);_c++){
+        var col=document.createElement('div'); col.className='col';
+        for(var _j=_c*_半; _j<Math.min((_c+1)*_半,_K.length); _j++){
+          var 組=_K[_j]; if(!組||組.length<2) continue;
+          var kk=document.createElement('span'); kk.className='k'; kk.textContent=組[0];
+          var dd=document.createElement('span'); dd.className='d';
+          var vv=document.createElement('span'); vv.className='v'; vv.textContent=組[1];
+          col.appendChild(kk); col.appendChild(dd); col.appendChild(vv);
+        }
+        _kumi.appendChild(col);
+      }
+    }
+    // ★注記と電話番号。電話は大きく出す（テレビの前でメモを取るため）
+    var _note=_aiEl('ai-note'); _note.textContent = o.note||'';
+    if(o['電話']){
+      var _tel=document.createElement('span');
+      _tel.id='ai-tel'; _tel.textContent=o['電話'];
+      _note.appendChild(_tel);
+    }
     // ★出した瞬間から、アプリが選んでいる行を光らせる（2026-09-02の実機実測）。
     //   これまではアプリ側が「先頭(0番)を選んだ状態」で持っているのに、
     //   画面へは一度も伝えていなかった。＝同じ値をアプリと画面の2か所が
@@ -5319,9 +5451,9 @@ window.__aiAnswer=function(obj){
     // 収まりきらない時だけ「↑↓で読む」と案内する（収まっていれば余計なことを言わない）
     setTimeout(function(){
       var はみ出す = body.scrollHeight > body.clientHeight + 4;
-      _aiEl('ai-hint').textContent = はみ出す
+      _ai案内(はみ出す
         ? '↑↓ で読み進める　／　戻るで閉じます'
-        : '戻るで閉じます';
+        : '戻るで閉じます');
     }, 30);
     // 読み終わるころに自分で閉じる（中身が多いほど長く置く）。
     // カレンダーの画像がある時は、めくって読む時間ぶん長く置く（最低2分）
