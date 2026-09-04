@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-04T09:24:28+09:00",
+ "updated": "2026-09-04T14:06:02+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
   {
@@ -43,6 +43,16 @@
    "place": "山崎文化会館"
   },
   {
+   "tag": "イベント",
+   "title": "9/16 移動図書館「ささゆり号」が千種に",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/ibento/1462514391298.html",
+   "date": "9月16日",
+   "ts": "2026-09-16T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-09-16",
+   "place": "千種町内"
+  },
+  {
    "tag": "催し",
    "title": "9/19 元気をもらおう講座",
    "url": "http://www.yamabun.org/%e5%85%83%e6%b0%97%e3%82%92%e3%82%82%e3%82%89%e3%81%8a%e3%81%86%e8%ac%9b%e5%ba%a7-3/",
@@ -82,6 +92,16 @@
   },
   {
    "tag": "イベント",
+   "title": "9/20 ちくさ図書館「こどものじかん」 9月20日開催",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/ibento/1462515406500.html",
+   "date": "9月20日",
+   "ts": "2026-09-20T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-09-20",
+   "place": "ちくさ図書館"
+  },
+  {
+   "tag": "イベント",
    "title": "9/25 福祉施設製品販売会 市役所で",
    "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/oshirase/1461754625544.html",
    "date": "9月25日",
@@ -99,26 +119,6 @@
    "src": "宍粟市公式サイト",
    "when": "2026-09-26",
    "place": "波賀公園"
-  },
-  {
-   "tag": "催し",
-   "title": "9/27 宍粟労音定例会第8回第九公演",
-   "url": "http://www.yamabun.org/%e5%ae%8d%e7%b2%9f%e5%8a%b4%e9%9f%b3%e5%ae%9a%e4%be%8b%e4%bc%9a%e7%ac%ac%ef%bc%98%e5%9b%9e%e7%ac%ac%e4%b9%9d%e5%85%ac%e6%bc%94/",
-   "date": "9月27日",
-   "ts": "2026-09-27T00:00:00+09:00",
-   "src": "山崎文化会館",
-   "when": "2026-09-27",
-   "place": "山崎文化会館"
-  },
-  {
-   "tag": "催し",
-   "title": "10/4 邦寿一人ライブ宍粟編",
-   "url": "http://www.yamabun.org/%e9%82%a6%e5%af%bf%e4%b8%80%e4%ba%ba%e3%83%a9%e3%82%a4%e3%83%96%e5%ae%8d%e7%b2%9f%e7%b7%a8/",
-   "date": "10月4日",
-   "ts": "2026-10-04T00:00:00+09:00",
-   "src": "山崎文化会館",
-   "when": "2026-10-04",
-   "place": "山崎文化会館"
   }
  ]
 }
