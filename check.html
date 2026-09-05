@@ -2299,7 +2299,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.28-lab（番組表の文字の大きさを設定で）</div>
+    <div class="ps-version">version 4.29-lab（番組表の文字の大きさを設定で）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -5891,7 +5891,10 @@ var _wakeLock=null;
 function loadOpts(){
   try{ var v=JSON.parse(localStorage.getItem(OPT_KEY)||'null');
     if(v){
-      if(typeof v.text==='number'){ OPTS.text=Math.max(0,Math.min(2,v.text|0)); OPTS.textSet=true; }
+      if(typeof v.text==='number')  OPTS.text=Math.max(0,Math.min(2,v.text|0));
+      // ★「選んだ印」は、文字の段のボタンを押した時だけ付く。音量などの保存で text:0 が入っていても
+      //   選んだことにはならない（2026-09-06実機：テレビに text:0 が残っていて既定の「大」が効かなかった）
+      OPTS.textSet=(v.textSet===true);
       if(v.skip===10||v.skip===15||v.skip===30) OPTS.skip=v.skip;
       if(v.cursor===0||v.cursor===1||v.cursor===2) OPTS.cursor=v.cursor;
       if(v.scroll===0||v.scroll===1||v.scroll===2) OPTS.scroll=v.scroll;
