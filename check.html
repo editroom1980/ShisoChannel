@@ -2274,7 +2274,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.25-lab（バナー：鉄板居酒屋のりすけ）</div>
+    <div class="ps-version">version 4.26-lab（スポンサー一覧をFirestoreから）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -6154,6 +6154,64 @@ var SPONSORS=[
 ];
 var sponsorIndex=0;
 var _sponsorTimer=null;
+
+// ── スポンサー一覧を Firestore（broadcast/sponsors）から読む（2026-09-06・管理アプリ kanri.html と対）──
+//   ・管理アプリで並び順・行き先・表示ON/OFF・期間を変えると、アプリを更新せずに当日中に反映される
+//   ・読めない時（まだ無い・通信不良・形が不正）は上の内蔵一覧のまま動く＝壊れない
+//   ・name は視聴計測（Firestore の banners.<name>）の鍵。表記は管理アプリの一覧をそのまま使う
+//   ・形の規則と「いま出す物」の規則は kanri.html と同じ（validSponsorList / activeSponsorList）
+var _spKEY='shisochan_sponsors_cache_v1';
+function validSponsorList(list){
+  if(!Array.isArray(list)||list.length<1)return '一覧が空';
+  var names={};
+  for(var i=0;i<list.length;i++){
+    var s=list[i];
+    if(!s||typeof s.name!=='string'||!s.name.trim())return (i+1)+'番目：名前が空';
+    if(names[s.name])return (i+1)+'番目：名前が重複';names[s.name]=1;
+    if(typeof s.img!=='string'||!/^[A-Za-z0-9_.-]+\.(jpg|jpeg|png)$/i.test(s.img))return (i+1)+'番目：画像名が不正';
+    if(s.url&&!/^https?:\/\//.test(s.url))return (i+1)+'番目：行き先が不正';
+    if(s.from&&!/^\d{4}-\d{2}-\d{2}$/.test(s.from))return (i+1)+'番目：開始日が不正';
+    if(s.to&&!/^\d{4}-\d{2}-\d{2}$/.test(s.to))return (i+1)+'番目：終了日が不正';
+    if(s.from&&s.to&&s.from>s.to)return (i+1)+'番目：期間が逆';
+  }
+  return '';
+}
+function activeSponsorList(list,today){
+  if(!today){var d=new Date();today=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+  return (list||[]).filter(function(s){
+    if(s.on===false)return false;
+    if(s.from&&today<s.from)return false;
+    if(s.to&&today>s.to)return false;
+    return true;
+  });
+}
+// 一覧を差し替える。いま出しているスポンサーが新しい一覧にもあれば、その位置を保つ（画面が飛ばない）
+function applySponsorList(list){
+  var act=activeSponsorList(list);
+  if(!act.length)return false;                   // 全部OFFなら内蔵の一覧のまま（バナー枠を空にしない）
+  var cur=(SPONSORS[sponsorIndex]&&SPONSORS[sponsorIndex].name)||'';
+  SPONSORS=act.map(function(s){return {name:s.name,url:s.url||'',bannerC:imgBanner(s.img)};});
+  var at=0;for(var i=0;i<SPONSORS.length;i++){if(SPONSORS[i].name===cur){at=i;break;}}
+  sponsorIndex=at; _sponsorShownIdx=-1;
+  try{updateSponsorDisplay();}catch(_){}
+  return true;
+}
+function loadRemoteSponsors(){
+  if(!FIREBASE.projectId||!FIREBASE.apiKey)return;
+  var cached=null;try{cached=JSON.parse(localStorage.getItem(_spKEY)||'null');}catch(_){}
+  var appliedSig='';
+  if(cached&&cached.list&&validSponsorList(cached.list)===''){ if(applySponsorList(cached.list))appliedSig=JSON.stringify(cached.list); }
+  var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/sponsors?key='+encodeURIComponent(FIREBASE.apiKey);
+  fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(doc){
+    var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
+    var err=validSponsorList(d.list);
+    if(err)throw new Error('データ不正: '+err);
+    try{localStorage.setItem(_spKEY,JSON.stringify({list:d.list,v:d.v}));}catch(_){}
+    var sig=JSON.stringify(d.list);
+    if(sig!==appliedSig){applySponsorList(d.list);appliedSig=sig;}
+  }).catch(function(e){console.warn('[スポンサー] Firestoreから読めないので内蔵の一覧で続ける('+e.message+')');});
+}
 var _swipeSuppressClick=false;
 
 // バナー画像を更新（通常バナー＋全画面バナー両方）
@@ -8064,6 +8122,7 @@ function init(){
   }, {passive:false});
   setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
+  loadRemoteSponsors(); // スポンサー一覧も同じく（無ければ内蔵の一覧のまま）
   statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),powerOn);
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
