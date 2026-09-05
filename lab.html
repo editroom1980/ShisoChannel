@@ -2137,6 +2137,21 @@ html.tvpc .news-ttl{
   overflow:hidden;
   min-height:calc(1.35em * 3);
 }
+
+/* ══ Phase C（2026-09-06）：テレビの番組表・お知らせの文字を、離れた所から読める大きさに ══
+   実測（1280×720のCSS px。テレビでは×1.5）：題名13px・時刻の札10px・分類11px・お知らせ12px。
+   テレビ向けアプリの本文はおおむね16〜18px相当が普通なので、題名18px・札13px・分類13px・お知らせ16pxへ。
+   幅は変えない（動画の大きさを保つ）。札は入りきる分だけ出す（hideClippedChips がはみ出しを隠す） */
+html.tvpc .sb-ttl{font-size:16px;letter-spacing:2px;}
+html.tvpc #today-date{font-size:13px;}
+html.tvpc .time-bar{padding:6px 12px 4px;}
+html.tvpc .time-chip-item{font-size:13px;padding:2px 6px;border-radius:3px;}
+html.tvpc .time-sep{font-size:10px;}
+html.tvpc .pinfo{padding:6px 12px 9px;gap:4px;}
+html.tvpc .pname{font-size:18px;line-height:1.35;}
+html.tvpc .pcat,html.tvpc .pdur{font-size:13px;}
+html.tvpc .news-tag{font-size:11px;padding:2px 8px;}
+html.tvpc .news-ttl{font-size:16px;line-height:1.35;min-height:calc(1.35em * 3);}
 /* 設定画面（2026-08-11指示の配置）：スクロール不要で全項目を1画面に収める。
    左列＝アプリの使い方／背景の色／アプリについて
    右列＝表示と動作／投稿・お問い合わせ
@@ -2274,7 +2289,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.26-lab（スポンサー一覧をFirestoreから）</div>
+    <div class="ps-version">version 4.27-lab（テレビの番組表の文字を大きく）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
