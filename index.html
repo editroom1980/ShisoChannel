@@ -1876,6 +1876,31 @@ html.tvpc .news-ttl{
   overflow:hidden;
   min-height:calc(1.35em * 3);
 }
+
+/* ══ Phase C（2026-09-06）：テレビの番組表・お知らせの文字の大きさは、設定「文字の大きさ」で選ぶ ══
+   標準＝今までどおり（題名13px・省スペース）／大＝題名18px（テレビの既定）／特大＝題名21px。
+   スマホ・PCの標準/大/特大（body.text-1/2）はそのまま。テレビ表示のときだけ、より大きな段に置き換える。
+   幅は変えない（動画の大きさを保つ）。時刻の札は入りきる分だけ出す（hideClippedChips） */
+html.tvpc body.text-1 .sb-ttl{font-size:16px;letter-spacing:2px;}
+html.tvpc body.text-1 #today-date{font-size:13px;}
+html.tvpc body.text-1 .time-bar{padding:6px 12px 4px;}
+html.tvpc body.text-1 .time-chip-item{font-size:13px;padding:2px 6px;border-radius:3px;}
+html.tvpc body.text-1 .time-sep{font-size:10px;}
+html.tvpc body.text-1 .pinfo{padding:6px 12px 9px;gap:4px;}
+html.tvpc body.text-1 .pname{font-size:18px;line-height:1.35;}
+html.tvpc body.text-1 .pcat,html.tvpc body.text-1 .pdur{font-size:13px;}
+html.tvpc body.text-1 .news-tag{font-size:11px;padding:2px 8px;}
+html.tvpc body.text-1 .news-ttl{font-size:16px;line-height:1.35;min-height:calc(1.35em * 3);}
+html.tvpc body.text-2 .sb-ttl{font-size:18px;letter-spacing:2px;}
+html.tvpc body.text-2 #today-date{font-size:14px;}
+html.tvpc body.text-2 .time-bar{padding:6px 12px 4px;}
+html.tvpc body.text-2 .time-chip-item{font-size:15px;padding:2px 7px;border-radius:3px;}
+html.tvpc body.text-2 .time-sep{font-size:11px;}
+html.tvpc body.text-2 .pinfo{padding:7px 12px 10px;gap:4px;}
+html.tvpc body.text-2 .pname{font-size:21px;line-height:1.3;}
+html.tvpc body.text-2 .pcat,html.tvpc body.text-2 .pdur{font-size:15px;}
+html.tvpc body.text-2 .news-tag{font-size:12px;padding:2px 8px;}
+html.tvpc body.text-2 .news-ttl{font-size:18px;line-height:1.3;min-height:calc(1.3em * 3);}
 /* 設定画面（2026-08-11指示の配置）：スクロール不要で全項目を1画面に収める。
    左列＝アプリの使い方／背景の色／アプリについて
    右列＝表示と動作／投稿・お問い合わせ
@@ -2013,7 +2038,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.85</div>
+    <div class="ps-version">version 3.86</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -5029,7 +5054,8 @@ function renderBgChoices(){
 //  端末に保存し次回も引き継ぐ。既定値は「今までと同じ動作」＝設定していない人には変化がない。
 var OPT_KEY='shisochan_opts';
 var OPTS={
-  text:0,          // 文字の大きさ 0=標準 1=大 2=特大
+  text:0,          // 文字の大きさ 0=標準 1=大 2=特大（テレビ表示の既定は「大」＝2026-09-06 Phase C。選んだことが無ければ）
+  textSet:false,   // 文字の大きさを自分で選んだことがあるか（無ければテレビは「大」）
   skip:30,         // 送り・戻しの秒数（10/15/30）
   stopnews:false,  // お知らせの自動切り替えを止める
   volsave:true,    // 音量を記憶する（既定=オン＝今までと同じ動作。オフにすると毎回この端末の初期音量に戻る）
@@ -5044,6 +5070,9 @@ function loadOpts(){
   try{ var v=JSON.parse(localStorage.getItem(OPT_KEY)||'null');
     if(v){
       if(typeof v.text==='number')  OPTS.text=Math.max(0,Math.min(2,v.text|0));
+      // ★「選んだ印」は、文字の段のボタンを押した時だけ付く。音量などの保存で text:0 が入っていても
+      //   選んだことにはならない（2026-09-06実機：テレビに text:0 が残っていて既定の「大」が効かなかった）
+      OPTS.textSet=(v.textSet===true);
       if(v.skip===10||v.skip===15||v.skip===30) OPTS.skip=v.skip;
       if(v.cursor===0||v.cursor===1||v.cursor===2) OPTS.cursor=v.cursor;
       if(v.scroll===0||v.scroll===1||v.scroll===2) OPTS.scroll=v.scroll;
@@ -5141,8 +5170,11 @@ function applyOpts(){
       try{ 隠す = regHome() || regIsPc(); }catch(_){ 隠す = regHome(); }
       if(lr) lr.style.display = 隠す ? 'none' : '';
     }catch(_){}
+    // ★テレビ表示で一度も選んでいなければ「大」（2026-09-06承認：番組表の題名18px）。選べば標準（省スペース）にも戻せる
+    if(!OPTS.textSet && document.documentElement.classList.contains('tvpc')) OPTS.text=1;
     b.classList.toggle('text-1', OPTS.text===1);
     b.classList.toggle('text-2', OPTS.text===2);
+    try{ hideClippedChipsSoon(); }catch(_){}   // 札の大きさが変わるので、入りきる数を測り直す
     // お知らせの自動切り替え
     if(OPTS.stopnews){ if(_newsTimer){ clearInterval(_newsTimer); _newsTimer=null; } }
     else if(!_newsTimer){ _newsTimer=setInterval(rotateCityNews, 8000); }
@@ -7465,6 +7497,7 @@ function init(){
       box.addEventListener('click', function(e){
         var t=e.target; if(t.tagName!=='BUTTON') return;
         var v=t.getAttribute('data-v'); if(v===null) return;
+        if(key==='text') OPTS.textSet=true;   // 自分で選んだ印（テレビの既定「大」より優先）
         OPTS[key]=isNum?parseInt(v,10):v;
         saveOpts(); applyOpts(); renderOpts();
       });
