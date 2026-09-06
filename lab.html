@@ -2306,7 +2306,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.30-lab（LIVEの帯の文字も設定の段で）</div>
+    <div class="ps-version">version 4.31-lab（バナーの切り替え時間を管理アプリから）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -6225,7 +6225,11 @@ function activeSponsorList(list,today){
   });
 }
 // 一覧を差し替える。いま出しているスポンサーが新しい一覧にもあれば、その位置を保つ（画面が飛ばない）
-function applySponsorList(list){
+function applySponsorList(list,interval){
+  // 切り替えの秒数（3〜120秒の整数だけ受ける。それ以外は今のまま）
+  if(typeof interval==='number'&&interval>=3&&interval<=120&&interval===Math.floor(interval)){
+    var ms=interval*1000; if(ms!==SPONSOR_MS){SPONSOR_MS=ms; if(_sponsorTimer)resetSponsorTimer();}
+  }
   var act=activeSponsorList(list);
   if(!act.length)return false;                   // 全部OFFなら内蔵の一覧のまま（バナー枠を空にしない）
   var cur=(SPONSORS[sponsorIndex]&&SPONSORS[sponsorIndex].name)||'';
@@ -6239,16 +6243,16 @@ function loadRemoteSponsors(){
   if(!FIREBASE.projectId||!FIREBASE.apiKey)return;
   var cached=null;try{cached=JSON.parse(localStorage.getItem(_spKEY)||'null');}catch(_){}
   var appliedSig='';
-  if(cached&&cached.list&&validSponsorList(cached.list)===''){ if(applySponsorList(cached.list))appliedSig=JSON.stringify(cached.list); }
+  if(cached&&cached.list&&validSponsorList(cached.list)===''){ if(applySponsorList(cached.list,cached.interval))appliedSig=JSON.stringify([cached.list,cached.interval]); }
   var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/sponsors?key='+encodeURIComponent(FIREBASE.apiKey);
   fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
   .then(function(doc){
     var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
     var err=validSponsorList(d.list);
     if(err)throw new Error('データ不正: '+err);
-    try{localStorage.setItem(_spKEY,JSON.stringify({list:d.list,v:d.v}));}catch(_){}
-    var sig=JSON.stringify(d.list);
-    if(sig!==appliedSig){applySponsorList(d.list);appliedSig=sig;}
+    try{localStorage.setItem(_spKEY,JSON.stringify({list:d.list,v:d.v,interval:d.interval}));}catch(_){}
+    var sig=JSON.stringify([d.list,d.interval]);
+    if(sig!==appliedSig){applySponsorList(d.list,d.interval);appliedSig=sig;}
   }).catch(function(e){console.warn('[スポンサー] Firestoreから読めないので内蔵の一覧で続ける('+e.message+')');});
 }
 var _swipeSuppressClick=false;
@@ -6297,7 +6301,8 @@ function prevSponsor(){ sponsorIndex=(sponsorIndex-1+SPONSORS.length)%SPONSORS.l
 
 // 10秒ごとに自動切り替え（手動操作でリセット）
 function rotateSponsor(){ sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); }
-function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,7000); }  // 7秒ごと（2026-08-10指示）
+var SPONSOR_MS=7000;   // 切り替えの間隔。管理アプリ（broadcast/sponsors の interval 秒）で変えられる（2026-09-06）
+function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,SPONSOR_MS); }  // 7秒ごと（2026-08-10指示）
 
 // フリック（スワイプ）で手動切り替え。タップはクリックで開く
 function attachSponsorSwipe(el){

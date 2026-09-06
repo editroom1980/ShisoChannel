@@ -22,18 +22,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 body{font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;background:var(--off);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
 button,input,select{font-family:inherit;}
 /* ── 上の帯（本体のヘッダーと同じ深緑×金） ── */
-.top{background:var(--forest);color:#fff;height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 14px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.top{background:var(--forest);color:#fff;height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 14px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap;}
 .brand{font-weight:900;font-size:18px;letter-spacing:1px;white-space:nowrap;display:flex;align-items:center;gap:8px;}
 .brand em{color:var(--gold2);font-style:normal;}
 .brand .kanri{font-size:11px;font-weight:700;color:var(--gold2);border:1px solid var(--gold);border-radius:20px;padding:1px 8px;letter-spacing:2px;}
-.who{font-size:12px;color:var(--green4);display:flex;align-items:center;gap:8px;min-width:0;}
+.who{font-size:12px;color:var(--green4);display:flex;align-items:center;gap:8px;min-width:0;flex-shrink:0;white-space:nowrap;}
 .who b{color:#fff;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw;}
-.who button{padding:4px 10px;font-size:12px;background:transparent;color:var(--green4);border:1px solid var(--green3);border-radius:6px;min-height:28px;}
+.who button{padding:4px 10px;font-size:12px;background:transparent;color:var(--green4);border:1px solid var(--green3);border-radius:6px;min-height:28px;white-space:nowrap;flex-shrink:0;}
 .who button.in{background:var(--gold);color:#1e2a22;border-color:var(--gold);font-weight:700;}
 /* ── タブ（本体の見出し帯と同じ色。選択中は金の下線） ── */
 .tabs{display:flex;background:var(--band);position:sticky;top:0;z-index:5;box-shadow:0 1px 0 rgba(0,0,0,.15);}
-.tabs button{flex:1;padding:0 4px;height:44px;background:transparent;color:rgba(255,255,255,.72);border:0;border-bottom:3px solid transparent;font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;}
-.tabs button.on{color:#fff;border-bottom-color:var(--gold2);}
+.tabs button{flex:1;padding:0 4px;height:48px;background:transparent;color:#d9e8dd;border:0;border-bottom:4px solid transparent;font-size:16px;font-weight:700;letter-spacing:1px;cursor:pointer;}
+.tabs button.on{color:#fff;border-bottom-color:var(--gold2);background:rgba(255,255,255,.06);}
 main{max-width:960px;margin:0 auto;padding:10px 10px calc(84px + env(safe-area-inset-bottom));}
 /* ── 画面下に固定する「書き込む」の帯。変更がある時だけ出る（9本の下まで探しに行かない） ── */
 #bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--forest);color:#fff;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;box-shadow:0 -2px 8px rgba(0,0,0,.18);}
@@ -151,7 +151,8 @@ details summary{cursor:pointer;}
 .card details.gh > summary::-webkit-details-marker{display:none;}
 @media (max-width:700px){
   .brand{font-size:16px;}
-  .tabs button{font-size:13px;letter-spacing:0;}
+  .tabs button{font-size:15px;letter-spacing:0;}
+  .who b{display:none;}   /* 狭い画面ではメールを出さない（ヘッダーを必ず1行に） */
   .head3{gap:6px;}
   .prog .f,.spon .f{grid-template-columns:1fr;}
   .prog .ed,.spon .ed{padding-left:10px;}
@@ -226,7 +227,10 @@ details summary{cursor:pointer;}
 <section id="tab-spon" class="tab" hidden>
   <div class="card">
     <h2>ス ポ ン サ ー <span class="sub" id="sponInfo">読み込み中…</span></h2>
-    <div class="cb"><div id="sponStatus" class="status wait">読み込み中…</div></div>
+    <div class="cb">
+      <div class="ov"><span>バナーの切り替え　<input type="number" id="sponInterval" min="3" max="120" inputmode="numeric" style="width:84px;display:inline-block;min-height:36px;padding:4px 8px"> 秒ごと</span><span class="note">3〜120秒。アプリ側は本番 v3.87／lab v4.31 以降で効きます</span></div>
+      <div id="sponStatus" class="status wait">読み込み中…</div>
+    </div>
     <div id="spons"></div>
     <div class="cb">
       <div class="actions">
@@ -593,7 +597,7 @@ function writeDoc(path,obj){
 // ══════════════════════════════════════════════════════════════════════
 //  スポンサー
 // ══════════════════════════════════════════════════════════════════════
-var spon={v:0,updated:'',list:[]}, sponOK=false, sponLoadedSig='', sponExists=false;
+var spon={v:0,updated:'',interval:7,list:[]}, sponOK=false, sponLoadedSig='', sponExists=false;
 // アプリに内蔵されている一覧（Firestore にまだ無い時の取り込み用。取り込んだ後は Firestore が正）
 var BUILTIN_SPONSORS=[
   {name:'株式会社松本工務店',url:'https://www.matsukou.hyogo.jp',img:'_banner_matsumotokoumuten_port.jpg'},
@@ -606,7 +610,8 @@ var BUILTIN_SPONSORS=[
   {name:'バナー広告募集中',url:'',img:'_banner_recruit_port.jpg'}
 ];
 function sponPayloadList(list){return (list||[]).map(function(s){return {name:s.name,url:s.url||'',img:s.img,on:s.on!==false,from:s.from||'',to:s.to||''};});}
-function sponSig(s){return JSON.stringify(sponPayloadList(s.list));}
+function sponSig(s){return JSON.stringify([sponPayloadList(s.list),s.interval]);}
+function validInterval(n){return typeof n==='number'&&n>=3&&n<=120&&n===Math.floor(n);}
 // 一覧の形の検査（アプリ側の validSponsorList と同じ規則）
 function validSponsors(list){
   if(!Array.isArray(list)||list.length<1)return '一覧が空';
@@ -644,10 +649,10 @@ function loadSponsors(){
   .then(function(doc){
     if(doc){
       var d=fields(doc);sponExists=true;
-      spon={v:d.v||0,updated:d.updated||'',list:(d.list||[]).map(function(s){return {name:s.name||'',url:s.url||'',img:s.img||'',on:s.on!==false,from:s.from||'',to:s.to||'',_open:false};})};
+      spon={v:d.v||0,updated:d.updated||'',interval:validInterval(d.interval)?d.interval:7,list:(d.list||[]).map(function(s){return {name:s.name||'',url:s.url||'',img:s.img||'',on:s.on!==false,from:s.from||'',to:s.to||'',_open:false};})};
       el('sponInfo').textContent='版 '+spon.v+'　更新 '+jst(doc.updateTime);
     }else{
-      spon={v:0,updated:'',list:BUILTIN_SPONSORS.map(function(s){return {name:s.name,url:s.url,img:s.img,on:true,from:'',to:'',_open:false};})};
+      spon={v:0,updated:'',interval:7,list:BUILTIN_SPONSORS.map(function(s){return {name:s.name,url:s.url,img:s.img,on:true,from:'',to:'',_open:false};})};
       el('sponInfo').textContent='まだFirestoreに無い（内蔵の一覧を表示中）';
     }
     sponLoadedSig=sponExists?sponSig(spon):'';
@@ -655,6 +660,7 @@ function loadSponsors(){
   }).catch(function(e){el('sponStatus').className='status bad';el('sponStatus').textContent='一覧が読めません：'+e.message;});
 }
 function readSponFromForm(){
+  var iv=parseInt(el('sponInterval').value,10); spon.interval=isNaN(iv)?spon.interval:iv;
   document.querySelectorAll('#spons .spon').forEach(function(row,i){
     var s=spon.list[i];if(!s)return;
     s.url=row.querySelector('[data-k=url]').value.trim();
@@ -680,6 +686,8 @@ function sponRow(s,i,today){
     +'<div><label class="l">表示する期間の開始（空欄＝いつでも）</label><input type="date" data-k="from" value="'+esc(s.from)+'"></div>'
     +'<div><label class="l">表示する期間の終了（空欄＝いつまでも）</label><input type="date" data-k="to" value="'+esc(s.to)+'"></div>'
     +'<div class="w"><label class="sw"><input type="checkbox" data-k="on"'+(s.on!==false?' checked':'')+'>アプリに表示する</label></div>'
+    +'<div class="w"><label class="l">画像を差し替える（1170×107。違えば自動で合わせた見本を出します）</label><input type="file" data-k="newimg" accept="image/jpeg,image/png"></div>'
+    +'<div class="w" data-k="newprev"></div>'
     +'<div class="w note">画像 '+esc(s.img)+'　／　名前 '+esc(s.name)+'（集計の鍵・変更不可）</div>'
     +'</div>'
     +'<div class="actions"><button class="danger small" data-op="del">一覧から外す</button><span class="sp"></span><button class="g small" data-op="close">閉じる</button></div>'
@@ -687,6 +695,7 @@ function sponRow(s,i,today){
 }
 function renderSpons(){
   var today=dayStr(new Date());
+  el('sponInterval').value=spon.interval;
   var h='';spon.list.forEach(function(s,i){h+=sponRow(s,i,today);});
   el('spons').innerHTML=h;
   el('spons').querySelectorAll('[data-op]').forEach(function(b){
@@ -703,7 +712,11 @@ function renderSpons(){
       renderSpons();
     });
   });
-  el('spons').querySelectorAll('input').forEach(function(inp){
+  el('spons').querySelectorAll('input[data-k=newimg]').forEach(function(inp){
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+    inp.addEventListener('change',function(){var row=inp.closest('.spon');replaceImage(parseInt(row.getAttribute('data-i'),10),inp.files[0],row.querySelector('[data-k=newprev]'));});
+  });
+  el('spons').querySelectorAll('input:not([data-k=newimg])').forEach(function(inp){
     inp.addEventListener('click',function(e){e.stopPropagation();});
     inp.addEventListener('input',checkSpon);
     inp.addEventListener('change',function(){readSponFromForm();if(inp.getAttribute('data-k')==='on'||inp.getAttribute('data-k')==='from'||inp.getAttribute('data-k')==='to')renderSpons();});
@@ -712,7 +725,7 @@ function renderSpons(){
 }
 function checkSpon(){
   readSponFromForm();
-  var err=validSponsors(spon.list);
+  var err=validSponsors(spon.list)||(validInterval(spon.interval)?'':'切り替えの秒数は3〜120の整数にしてください');
   var changed=sponSig(spon)!==sponLoadedSig;
   var act=activeSponsors(spon.list);
   sponOK=!err;
@@ -723,11 +736,12 @@ function checkSpon(){
   el('btnSponWrite').disabled=!(ID_TOKEN&&sponOK&&changed);
   barState.spon={changed:changed,ok:sponOK,label:err||(spon.list.length+'件・いま出るのは '+act.length+' 枚')};updateBar();
 }
+el('sponInterval').addEventListener('input',checkSpon);
 el('btnSponReload').onclick=function(){if(sponSig(spon)!==sponLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSponsors();};
 el('btnSponWrite').onclick=function(){
   readSponFromForm();var err=validSponsors(spon.list);if(err){toast('✖ '+err);return;}
   if(!confirm('スポンサーの一覧をアプリに反映します（'+spon.list.length+'件・いま出るのは '+activeSponsors(spon.list).length+' 枚）。よろしいですか？'))return;
-  var out={v:(spon.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),list:sponPayloadList(spon.list)};
+  var out={v:(spon.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),interval:spon.interval,list:sponPayloadList(spon.list)};
   writeDoc('broadcast/sponsors',out).then(function(){toast('✔ 反映しました（版 '+out.v+'）');loadSponsors();}).catch(function(e){toast('✖ 反映できません：'+e.message);});
 };
 
@@ -762,6 +776,46 @@ el('nFile').addEventListener('change',function(){
   img.onerror=function(){el('nStat').textContent='画像として読めません';};
   img.src=url;
 });
+// 画像ファイルを規格に合わせて {blob, ext, fitted} にする（新規・差し替え共通）
+function prepareBanner(file){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){
+      var exact=(img.naturalWidth===BANNER_W&&img.naturalHeight===BANNER_H);
+      var ext=(file.type==='image/png')?'png':'jpg';
+      if(exact){res({blob:file,ext:ext,fitted:false,w:img.naturalWidth,h:img.naturalHeight});}
+      else fitBanner(img).then(function(b){res({blob:b,ext:'jpg',fitted:true,w:img.naturalWidth,h:img.naturalHeight});});
+      URL.revokeObjectURL(url);
+    };
+    img.onerror=function(){rej(new Error('画像として読めません'));};
+    img.src=url;
+  });
+}
+// 既存のスポンサーの画像を差し替える：新しい名前（英字＋日付）で GitHub へ上げ、この行の img を書き換える
+function replaceImage(i,file,prevBox){
+  var s=spon.list[i]; if(!s||!file)return;
+  var base=(s.img.match(/^_banner_([a-z0-9-]+?)(?:_\d{8}(?:-\d+)?)?_port\./i)||[])[1]||('s'+(i+1));
+  prevBox.innerHTML='<div class="note">画像を確かめています…</div>';
+  prepareBanner(file).then(function(img){
+    var kb=Math.round(img.blob.size/1024);
+    prevBox.innerHTML='<img class="preview" src="'+URL.createObjectURL(img.blob)+'" alt=""><div class="note">'
+      +(img.fitted?('元の画像は '+img.w+'×'+img.h+'。規格に合わせた見本です'):'規格どおりです')+'　'+kb+'KB</div>'
+      +'<div class="actions"><button class="gold small" data-op="doreplace">この画像に差し替える</button></div>';
+    var b=prevBox.querySelector('[data-op=doreplace]');
+    b.onclick=function(e){
+      e.stopPropagation(); b.disabled=true; prevBox.querySelector('.note').textContent='GitHub へ上げています…';
+      var d=new Date(),stamp=d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+      var tryPut=function(n){var fname='_banner_'+base+'_'+stamp+(n?'-'+n:'')+'_port.'+img.ext;
+        return ghPut(fname,img.blob,'sponsor: バナー画像を差し替え（'+s.name+'）').then(function(){return fname;})
+          .catch(function(err){ if(/既にあります/.test(err.message)&&n<9) return tryPut(n+1); throw err; });};
+      tryPut(0).then(function(fname){
+        readSponFromForm(); spon.list[i].img=fname; spon.list[i]._open=true; renderSpons();
+        toast('上がりました。公開を待っています（1〜2分）…');
+        return waitPublished(SITE+fname).then(function(ok){ toast(ok?'✔ 新しい画像が公開されました。「アプリに反映する」で切り替わります':'公開の確認が取れません。少し待って「読み直す」を'); if(ok)renderSpons(); });
+      }).catch(function(err){ b.disabled=false; prevBox.querySelector('.note').textContent='✖ '+err.message; });
+    };
+  }).catch(function(err){prevBox.innerHTML='<div class="err">'+esc(err.message)+'</div>';});
+}
 function ghToken(){return lsGet('kanri_gh_token')||'';}
 el('btnGhSave').onclick=function(){var t=el('ghToken').value.trim();if(!t){toast('鍵が空です');return;}lsSet('kanri_gh_token',t);el('ghToken').value='';el('ghStat').textContent='✔ この端末に保存しました';el('ghStat').className='ok';el('ghSub').textContent='保存済み ✔ ▾';};
 el('btnGhTest').onclick=function(){
@@ -985,6 +1039,7 @@ function selfTest(){
   t('表示OFFと期間外は出ない（9/6 は A だけ）',act.length===1&&act[0].name==='A');
   t('期間内なら出る（10/15 は A と C）',activeSponsors(sp,'2026-10-15').length===2);
   t('スポンサーの保存する形にも印が入らない',JSON.stringify(sponPayloadList([{name:'A',img:'_a.jpg',_open:true}])).indexOf('_open')<0);
+  t('切り替えの秒数は3〜120の整数だけ通る',validInterval(7)&&validInterval(120)&&!validInterval(2)&&!validInterval(121)&&!validInterval(7.5)&&!validInterval('7'));
   var rt=fsVal(fsEnc({a:1,b:'x',c:true,d:null,e:[1,'y'],f:{g:2}}));
   t('Firestore の型付き値の往復',rt.a===1&&rt.b==='x'&&rt.c===true&&rt.d===null&&rt.e[1]==='y'&&rt.f.g===2);
   el('selftest').hidden=false;el('selftestOut').textContent=out.join('\n')+'\n\n'+(ng?('★ 不合格 '+ng+' 件'):'◯ 自己検査：全部合格（'+out.length+'項目）');
