@@ -642,6 +642,7 @@ function activeSponsors(list,today){
   });
 }
 function loadSponsors(){
+  LOADSTAMP=Date.now();   // 読み直すたびに画像も取り直す
   el('sponStatus').className='status wait';el('sponStatus').textContent='読み込み中…';
   return fetch(DOCBASE+'broadcast/sponsors?key='+encodeURIComponent(FIREBASE.apiKey),{cache:'no-store'})
   .then(function(r){
@@ -680,7 +681,7 @@ function sponRow(s,i,today){
   return '<div class="spon'+(act?'':' off')+(s._open?' open':'')+'" data-i="'+i+'">'
     +'<div class="s1" data-op="toggle">'
     +'<div class="no">'+(i+1)+'</div>'
-    +'<div style="min-width:0"><img class="bn" alt="" src="'+esc(pendingImg[s.img]||(SITE+s.img))+'" onerror="this.onerror=null;this.src=PIX;this.classList.add(\'miss\');this.insertAdjacentHTML(\'afterend\',\'<div class=miss-t>画像がまだ見つかりません（公開待ちなら1〜2分後に「読み直す」）</div>\')"><div class="nm">'+esc(s.name)+'</div><div class="meta">'+(pendingImg[s.img]?'<span class="wait">公開待ち</span>':'')+meta+'</div></div>'
+    +'<div style="min-width:0"><img class="bn" alt="" src="'+esc(pendingImg[s.img]||imgUrl(s.img))+'" onerror="this.onerror=null;this.src=PIX;this.classList.add(\'miss\');this.insertAdjacentHTML(\'afterend\',\'<div class=miss-t>画像がまだ見つかりません（公開待ちなら1〜2分後に「読み直す」）</div>\')"><div class="nm">'+esc(s.name)+'</div><div class="meta">'+(pendingImg[s.img]?'<span class="wait">公開待ち</span>':'')+meta+'</div></div>'
     +'<div class="ops"><button class="g ic" data-op="up" aria-label="上へ">▲</button><button class="g ic" data-op="down" aria-label="下へ">▼</button></div>'
     +'</div>'
     +'<div class="ed"'+(s._open?'':' hidden')+'>'
@@ -760,6 +761,10 @@ function sponWriteNow(){
 var newImg=null;
 var PIX='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';   // 壊れた画像の代わり（透明1ピクセル）
 var pendingImg={};   // 上げたばかりで公開待ちの画像：ファイル名 → 手元の見本のURL
+// ★画像のURLに付ける印。上げた直後の「404」をブラウザや配信網が覚えてしまい、公開後も
+//   同じURLだと「無い」のままになる（2026-09-06実機）。読み直すたびに印を変えて取り直す
+var LOADSTAMP=Date.now();
+function imgUrl(name){return SITE+name+'?t='+LOADSTAMP;}
 function fitBanner(img){
   var c=document.createElement('canvas');c.width=BANNER_W;c.height=BANNER_H;
   var ctx=c.getContext('2d');
@@ -825,7 +830,7 @@ function replaceImage(i,file,prevBox){
         pendingImg[fname]=URL.createObjectURL(img.blob);   // 公開されるまでは手元の見本を出す
         readSponFromForm(); spon.list[i].img=fname; spon.list[i]._open=false; renderSpons();
         toast('上がりました。公開を待っています（1〜2分）。押し直さないでください');
-        return waitPublished(SITE+fname).then(function(ok){ if(ok){delete pendingImg[fname];toast('✔ 新しい画像が公開されました。「アプリに反映する」で切り替わります');renderSpons();} else toast('公開の確認が取れません。少し待って「読み直す」を'); });
+        return waitPublished(SITE+fname).then(function(ok){ if(ok){delete pendingImg[fname];LOADSTAMP=Date.now();toast('✔ 新しい画像が公開されました。「アプリに反映する」で切り替わります');renderSpons();} else toast('公開の確認が取れません。少し待って「読み直す」を'); });
       }).catch(function(err){ b.disabled=false; prevBox.querySelector('.note').textContent='✖ '+err.message; });
     };
   }).catch(function(err){prevBox.innerHTML='<div class="err">'+esc(err.message)+'</div>';});
@@ -883,7 +888,7 @@ el('btnNewSpon').onclick=function(){
     return waitPublished(SITE+fname);
   }).then(function(ok){
     el('nStat').textContent=ok?'✔ 画像が公開されました。一覧を確認して「アプリに反映する」を押してください':'公開の確認が取れません（少し待ってから「読み直す」で画像が出るか見てください）';
-    if(ok){for(var k in pendingImg){if(pendingImg[k]&&/_port\./.test(k))delete pendingImg[k];}renderSpons();}
+    if(ok){for(var k in pendingImg){if(pendingImg[k]&&/_port\./.test(k))delete pendingImg[k];}LOADSTAMP=Date.now();renderSpons();}
   }).catch(function(e){el('nStat').textContent='✖ '+e.message;b.disabled=false;});
 };
 
