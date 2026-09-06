@@ -11,114 +11,153 @@
 <title>しそチャンNET 管理</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap');
+/* ── アプリ本体（index.html）と同じ色・書体。管理アプリだけの色は作らない ── */
 :root{
   --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;--green3:#52a070;--green4:#a8d5b5;--green5:#e4f2e8;
-  --gold:#c8992a;--gold2:#e8b84a;--off:#f6f8f6;--border:#d4e0d6;
-  --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;--band:#2f5f42;
+  --gold:#c8992a;--gold2:#e8b84a;--off:#f6f8f6;--border:#d4e0d6;--band:#2f5f42;
+  --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
-body{font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;background:var(--off);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh;}
-/* 上の帯：アプリと同じ深緑×金 */
-.top{background:var(--forest);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.brand{font-weight:900;font-size:20px;letter-spacing:1px;white-space:nowrap;}
+body{font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;background:var(--off);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+button,input,select{font-family:inherit;}
+/* ── 上の帯（本体のヘッダーと同じ深緑×金） ── */
+.top{background:var(--forest);color:#fff;height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 14px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.brand{font-weight:900;font-size:18px;letter-spacing:1px;white-space:nowrap;display:flex;align-items:center;gap:8px;}
 .brand em{color:var(--gold2);font-style:normal;}
-.brand .kanri{font-size:13px;font-weight:500;color:var(--green4);margin-left:8px;}
-.who{font-size:12px;color:var(--green4);text-align:right;line-height:1.3;}
-.who b{color:#fff;font-weight:500;}
-.who button{margin-left:8px;padding:4px 10px;font-size:12px;background:transparent;color:var(--green4);border:1px solid var(--green3);border-radius:6px;}
-.tabs{display:flex;background:var(--band);position:sticky;top:0;z-index:5;}
-.tabs button{flex:1;padding:12px 4px;background:transparent;color:var(--green4);border:0;border-bottom:3px solid transparent;font:inherit;font-size:15px;font-weight:700;cursor:pointer;min-height:48px;}
+.brand .kanri{font-size:11px;font-weight:700;color:var(--gold2);border:1px solid var(--gold);border-radius:20px;padding:1px 8px;letter-spacing:2px;}
+.who{font-size:12px;color:var(--green4);display:flex;align-items:center;gap:8px;min-width:0;}
+.who b{color:#fff;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw;}
+.who button{padding:4px 10px;font-size:12px;background:transparent;color:var(--green4);border:1px solid var(--green3);border-radius:6px;min-height:28px;}
+.who button.in{background:var(--gold);color:#1e2a22;border-color:var(--gold);font-weight:700;}
+/* ── タブ（本体の見出し帯と同じ色。選択中は金の下線） ── */
+.tabs{display:flex;background:var(--band);position:sticky;top:0;z-index:5;box-shadow:0 1px 0 rgba(0,0,0,.15);}
+.tabs button{flex:1;padding:0 4px;height:44px;background:transparent;color:rgba(255,255,255,.72);border:0;border-bottom:3px solid transparent;font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;}
 .tabs button.on{color:#fff;border-bottom-color:var(--gold2);}
-main{max-width:980px;margin:0 auto;padding:14px 14px calc(30px + env(safe-area-inset-bottom));}
-.card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.04);}
-.card h2{font-size:15px;color:var(--forest);margin-bottom:10px;border-bottom:2px solid var(--green5);padding-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-.card h2 .sub{font-size:12px;font-weight:400;color:var(--text3);}
-.note{color:var(--text3);font-size:12px;line-height:1.7;}
+main{max-width:960px;margin:0 auto;padding:10px 10px calc(84px + env(safe-area-inset-bottom));}
+/* ── 画面下に固定する「書き込む」の帯。変更がある時だけ出る（9本の下まで探しに行かない） ── */
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--forest);color:#fff;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;box-shadow:0 -2px 8px rgba(0,0,0,.18);}
+#bar[hidden]{display:none;}
+#bar .t{flex:1;min-width:0;font-size:13px;line-height:1.35;}
+#bar .t b{color:var(--gold2);}
+#bar button{white-space:nowrap;}
+/* ── カード：本体の番組表と同じ、深緑の帯に白い字間広めの題 ── */
+.card{background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 4px rgba(30,58,40,.05);}
+.card > h2,.band{background:var(--band);color:#fff;font-size:13px;font-weight:700;letter-spacing:3px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.card > h2 .sub,.band .sub{font-size:11px;font-weight:400;letter-spacing:0;color:rgba(255,255,255,.7);text-align:right;}
+.cb{padding:10px 12px;}
+.note{color:var(--text3);font-size:12px;line-height:1.6;}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-input,select,button,textarea{font-family:inherit;font-size:15px;}
-input[type=text],input[type=email],input[type=password],input[type=url],input[type=number],input[type=date],select{padding:9px 10px;border:1px solid var(--border);border-radius:7px;background:#fff;min-height:44px;color:var(--text);}
+input[type=text],input[type=email],input[type=password],input[type=url],input[type=number],input[type=date],select{
+  width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);
+  font-size:16px;/* 16px未満だと iPhone が入力時に画面を拡大する */min-height:40px;}
 input:focus,select:focus{outline:2px solid var(--green3);outline-offset:1px;}
-button{padding:9px 14px;border:0;border-radius:7px;background:var(--green2);color:#fff;font-weight:700;cursor:pointer;min-height:44px;}
-button:hover{background:var(--forest);}
-button.g{background:#eef3ef;color:var(--forest);border:1px solid var(--border);}
+input[readonly]{background:var(--off);color:var(--text2);}
+label.l{display:block;font-size:11px;color:var(--text3);margin:0 0 3px;line-height:1.2;}
+button{padding:8px 14px;border:0;border-radius:6px;background:var(--green2);color:#fff;font-weight:700;cursor:pointer;min-height:40px;font-size:14px;}
+button.g{background:#fff;color:var(--forest);border:1px solid var(--border);}
 button.gold{background:var(--gold);color:#1e2a22;}
-button.gold:hover{background:var(--gold2);}
 button.danger{background:#fff;color:var(--red);border:1px solid #e6b8b8;}
-button.small{padding:5px 9px;min-height:36px;font-size:13px;}
-button:disabled{opacity:.45;cursor:default;}
+button.small{padding:4px 10px;min-height:32px;font-size:13px;}
+button.ic{width:36px;min-width:36px;padding:0;min-height:36px;font-size:13px;}
+button:disabled{opacity:.4;cursor:default;}
 .ok{color:var(--green2);font-weight:700;} .err{color:var(--red);font-weight:700;} .warn{color:#9a6b00;font-weight:700;}
 .tab[hidden]{display:none;}
-/* 状態の帯 */
-.status{border-radius:8px;padding:10px 12px;font-size:14px;margin:8px 0;}
+.status{border-radius:6px;padding:7px 10px;font-size:13px;margin:8px 0;line-height:1.45;}
 .status.good{background:var(--green5);color:var(--forest);}
 .status.bad{background:#fdf0f0;color:var(--red);}
 .status.wait{background:#fff7e0;color:#7a5200;}
-/* 番組表 */
-.head3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
-.head3 label{font-size:12px;color:var(--text2);display:block;}
-.head3 input{width:100%;}
-.prog{border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:8px;background:#fff;display:grid;grid-template-columns:34px 96px 1fr auto;gap:10px;align-items:start;}
-.prog.now{border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,153,42,.25);}
-.prog .no{font-size:13px;font-weight:700;color:var(--text3);padding-top:6px;}
-.prog .thumb{width:96px;height:54px;background:#dfe7e1;border-radius:5px;object-fit:cover;display:block;}
-.prog .f{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
+.actions .sp{flex:1;}
+/* ── 番組表：頭の3つの数と、合計の帯 ── */
+.head3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.sum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;align-items:center;}
+/* 放送時間・1周の要約（普段は1行。「変更」で入力欄を開く） */
+.ov{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text2);}
+.ov b{color:var(--text);font-weight:700;}
+#schedHead{margin-top:8px;}
+#schedHead[hidden]{display:none;}
+.chip{background:var(--green5);color:var(--forest);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap;}
+.chip b{font-size:15px;font-weight:900;margin-right:2px;}
+/* ── 番組の行：一覧は1行に要点だけ。押すと編集欄が開く ── */
+.prog{border-top:1px solid var(--border);}
+.prog:first-child{border-top:0;}
+.prog.now .r1{background:#fbf6e8;}
+.prog.open .r1,.spon.open .s1{box-shadow:inset 3px 0 0 var(--gold);}
+.r1 .no,.s1 .no{position:relative;}
+.prog.open .r1 .no::after,.spon.open .s1 .no::after{content:'';display:block;margin:3px auto 0;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--gold);}
+.prog:not(.open) .r1 .no::after,.spon:not(.open) .s1 .no::after{content:'';display:block;margin:3px auto 0;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:5px solid var(--border);}
+.r1{display:grid;grid-template-columns:22px 72px 1fr auto;gap:8px;align-items:center;padding:8px 10px;cursor:pointer;}
+.r1 .no{font-size:12px;font-weight:700;color:var(--text3);text-align:center;}
+.r1 .thumb{width:72px;height:40px;background:#dfe7e1;border-radius:4px;object-fit:cover;display:block;}
+.r1 .info{min-width:0;}
+.r1 .ttl{font-size:14px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.r1 .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--text3);margin-top:2px;line-height:1.3;}
+.r1 .meta .cat{color:var(--green2);font-weight:700;}
+.r1 .meta .yt{font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px;}
+.r1 .meta .now{background:var(--gold);color:#1e2a22;border-radius:3px;padding:0 5px;font-weight:700;}
+.r1 .meta .tag{border:1px solid var(--border);border-radius:3px;padding:0 4px;}
+.r1 .ops{display:flex;gap:4px;}
+.r1 .ops button.g{background:var(--off);}
+.prog .ed{padding:2px 10px 10px 40px;background:#fafcfa;border-top:1px dashed var(--border);}
+.prog .f{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .prog .f .w{grid-column:1/-1;}
-.prog .f label{font-size:11px;color:var(--text3);display:block;line-height:1.2;margin-bottom:2px;}
-.prog .f input,.prog .f select{width:100%;min-height:40px;padding:6px 8px;font-size:14px;}
-.prog .ops{display:flex;flex-direction:column;gap:6px;}
-.prog .ops button{min-width:44px;}
-.nowtag{font-size:11px;color:var(--gold);font-weight:700;}
-.sum{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:10px 0;}
-.sum .n{font-size:22px;font-weight:900;color:var(--forest);}
-.sum .l{font-size:12px;color:var(--text3);}
-/* スポンサー */
-.spon{border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:8px;background:#fff;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:start;}
-.spon.off{opacity:.55;}
-.spon .no{font-size:13px;font-weight:700;color:var(--text3);padding-top:6px;}
-.spon .bn{width:100%;max-width:520px;aspect-ratio:1170/107;background:#dfe7e1;border-radius:4px;object-fit:cover;display:block;margin-bottom:6px;}
-.spon .f{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;}
+.prog .ed .actions{margin-top:8px;}
+/* ── スポンサー ── */
+.spon{border-top:1px solid var(--border);}
+.spon:first-child{border-top:0;}
+.spon.off .s1{opacity:.55;}
+.s1{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:8px 10px;cursor:pointer;}
+.s1 .no{font-size:12px;font-weight:700;color:var(--text3);text-align:center;}
+.s1 .bn{width:100%;max-width:420px;aspect-ratio:1170/107;background:#dfe7e1;border-radius:3px;object-fit:cover;display:block;}
+.s1 .nm{font-size:14px;font-weight:700;margin-top:5px;line-height:1.3;}
+.s1 .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--text3);margin-top:2px;}
+.s1 .meta .tag{border:1px solid var(--border);border-radius:3px;padding:0 4px;}
+.s1 .meta .on{background:var(--green5);color:var(--forest);border-radius:3px;padding:0 5px;font-weight:700;}
+.s1 .meta .offtag{background:#eee;color:#666;border-radius:3px;padding:0 5px;font-weight:700;}
+.s1 .ops{display:flex;flex-direction:column;gap:4px;}
+.s1 .ops button.g{background:var(--off);}
+.spon .ed{padding:2px 10px 10px 40px;background:#fafcfa;border-top:1px dashed var(--border);}
+.spon .f{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .spon .f .w{grid-column:1/-1;}
-.spon .f label{font-size:11px;color:var(--text3);display:block;line-height:1.2;margin-bottom:2px;}
-.spon .f input{width:100%;min-height:40px;padding:6px 8px;font-size:14px;}
-.spon .f input[readonly]{background:var(--off);color:var(--text2);}
-.spon .ops{display:flex;flex-direction:column;gap:6px;}
-.spon .ops button{min-width:44px;}
 .sw{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--forest);}
-.sw input{width:22px;height:22px;}
+.sw input{width:20px;height:20px;}
 .preview{max-width:100%;border:1px dashed var(--border);border-radius:4px;display:block;margin:6px 0;}
-/* レポート */
-.kpis{display:flex;gap:10px;flex-wrap:wrap;}
-.kpi{flex:1;min-width:120px;background:var(--green5);border-radius:8px;padding:12px;text-align:center;}
-.kpi .n{font-size:22px;font-weight:900;color:var(--forest);}
+/* ── レポート ── */
+.kpis{display:flex;gap:8px;flex-wrap:wrap;}
+.kpi{flex:1;min-width:110px;background:var(--green5);border-radius:6px;padding:10px;text-align:center;}
+.kpi .n{font-size:20px;font-weight:900;color:var(--forest);line-height:1.2;}
 .kpi .l{font-size:11px;color:var(--text3);}
 table{width:100%;border-collapse:collapse;margin-top:4px;}
-th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--green5);font-size:13px;vertical-align:top;}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--green5);font-size:13px;vertical-align:top;}
 th{color:var(--text3);font-weight:600;font-size:11px;}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .tbl{overflow-x:auto;}
 .bar-row{display:flex;align-items:center;gap:8px;margin:3px 0;}
 .bar-h{width:34px;font-size:11px;color:var(--text3);text-align:right;}
-.bar-t{flex:1;background:var(--green5);border-radius:3px;height:16px;}
+.bar-t{flex:1;background:var(--green5);border-radius:3px;height:14px;}
 .bar-f{background:var(--green2);height:100%;border-radius:3px;min-width:2px;}
 .bar-v{font-size:11px;color:var(--text3);width:28px;}
-button.rg.on{background:var(--gold);color:#fff;border-color:var(--gold);}
-#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--forest);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:20;}
+button.rg.on{background:var(--gold);color:#1e2a22;border-color:var(--gold);}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--forest);color:#fff;padding:9px 14px;border-radius:6px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;z-index:20;}
 #toast.show{opacity:1;}
 .steps{counter-reset:s;padding-left:0;list-style:none;}
-.steps li{position:relative;padding-left:30px;margin:6px 0;font-size:13px;line-height:1.6;}
-.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:2px;width:22px;height:22px;border-radius:50%;background:var(--green5);color:var(--forest);font-weight:700;font-size:12px;text-align:center;line-height:22px;}
-code{background:var(--off);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:12px;}
-pre{background:#0f1f16;color:#cfe8d8;border-radius:8px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre;}
+.steps li{position:relative;padding-left:28px;margin:5px 0;font-size:12px;line-height:1.55;}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--green5);color:var(--forest);font-weight:700;font-size:11px;text-align:center;line-height:20px;}
+code{background:var(--off);border:1px solid var(--border);border-radius:4px;padding:0 4px;font-size:12px;}
+pre{background:#0f1f16;color:#cfe8d8;border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;white-space:pre;}
+details summary{cursor:pointer;}
+.card details.gh > summary{list-style:none;}
+.card details.gh > summary::-webkit-details-marker{display:none;}
 @media (max-width:700px){
-  .brand{font-size:17px;}
-  .head3{grid-template-columns:1fr 1fr;}
-  .prog{grid-template-columns:28px 1fr;}
-  .prog .thumb{width:100%;height:auto;aspect-ratio:16/9;max-width:220px;}
-  .prog .ops{flex-direction:row;grid-column:1/-1;justify-content:flex-end;}
-  .spon{grid-template-columns:28px 1fr;}
-  .spon .ops{flex-direction:row;grid-column:1/-1;justify-content:flex-end;}
-  .spon .f,.prog .f{grid-template-columns:1fr;}
+  .brand{font-size:16px;}
+  .tabs button{font-size:13px;letter-spacing:0;}
+  .head3{gap:6px;}
+  .prog .f,.spon .f{grid-template-columns:1fr;}
+  .prog .ed,.spon .ed{padding-left:10px;}
+  .r1{grid-template-columns:18px 64px 1fr auto;gap:6px;padding:8px 8px;}
+  .r1 .thumb{width:64px;height:36px;}
+  .s1{grid-template-columns:18px 1fr auto;gap:6px;padding:8px 8px;}
   .kpi{min-width:44%;}
 }
 </style>
@@ -136,108 +175,115 @@ pre{background:#0f1f16;color:#cfe8d8;border-radius:8px;padding:12px;font-size:12
 </nav>
 <main>
 
-<section class="card" id="login">
-  <h2>ログイン <span class="sub">書き込みとレポートの閲覧に必要です</span></h2>
-  <div class="row">
-    <input type="email" id="em" placeholder="メールアドレス" autocomplete="username" style="flex:1;min-width:200px">
-    <input type="password" id="pw" placeholder="パスワード" autocomplete="current-password" style="flex:1;min-width:160px">
-    <button id="btnLogin">ログイン</button>
+<section class="card" id="login" hidden>
+  <h2>ログイン <span class="sub">書き込みとレポートに必要</span></h2>
+  <div class="cb">
+    <div class="row">
+      <div style="flex:1;min-width:180px"><input type="email" id="em" placeholder="メールアドレス" autocomplete="username"></div>
+      <div style="flex:1;min-width:150px"><input type="password" id="pw" placeholder="パスワード" autocomplete="current-password"></div>
+      <button id="btnLogin">ログイン</button>
+    </div>
+    <div class="row" style="margin-top:8px;justify-content:space-between">
+      <label class="sw"><input type="checkbox" id="keep" checked> この端末でログイン状態を保つ</label>
+      <span id="authstat" class="note">未ログイン（読むだけならログイン不要）</span>
+    </div>
   </div>
-  <label class="sw" style="margin-top:8px"><input type="checkbox" id="keep" checked> この端末でログイン状態を保つ</label>
-  <div id="authstat" class="note" style="margin-top:6px">未ログイン（番組表とスポンサーの「読む」はログイン無しでもできます）</div>
 </section>
 
 <!-- ══ 番組表 ══ -->
 <section id="tab-sched" class="tab">
   <div class="card">
-    <h2>番組表 <span class="sub" id="schedInfo">読み込み中…</span></h2>
-    <div class="head3">
-      <div><label>放送開始（時）</label><input type="number" id="airStart" min="0" max="23"></div>
-      <div><label>放送終了（時）</label><input type="number" id="airEnd" min="1" max="24"></div>
-      <div><label>1周の長さ（分）</label><input type="number" id="cycleMinutes" min="1"></div>
+    <h2>番 組 表 <span class="sub" id="schedInfo">読み込み中…</span></h2>
+    <div class="cb">
+      <div class="ov"><span id="schedOv">読み込み中…</span><button class="g small" id="btnHead" type="button">放送時間を変更</button></div>
+      <div class="head3" id="schedHead" hidden>
+        <div><label class="l">放送開始（時）</label><input type="number" id="airStart" min="0" max="23" inputmode="numeric"></div>
+        <div><label class="l">放送終了（時）</label><input type="number" id="airEnd" min="1" max="24" inputmode="numeric"></div>
+        <div><label class="l">1周の長さ（分）</label><input type="number" id="cycleMinutes" min="1" inputmode="numeric"></div>
+      </div>
+      <div class="sum">
+        <span class="chip"><b id="sumDur">0</b>分（合計）</span>
+        <span class="chip"><b id="sumCnt">0</b>本</span>
+        <span class="chip"><b id="sumLoops">0</b>周／日</span>
+      </div>
+      <div id="schedStatus" class="status wait">読み込み中…</div>
     </div>
-    <div class="sum">
-      <div><span class="n" id="sumDur">0</span><span class="l">　分（番組の合計）</span></div>
-      <div><span class="n" id="sumCnt">0</span><span class="l">　本</span></div>
-      <div><span class="n" id="sumLoops">0</span><span class="l">　周／日</span></div>
-    </div>
-    <div id="schedStatus" class="status wait">読み込み中…</div>
     <div id="progs"></div>
-    <div class="row" style="margin-top:8px">
-      <button class="g" id="btnAdd">＋ 番組を足す</button>
-      <button class="g" id="btnReload">読み直す</button>
-      <button class="g" id="btnUndo" disabled>直前の書き込み前に戻す</button>
-      <span style="flex:1"></span>
-      <button class="gold" id="btnWrite" disabled>この内容で放送する（書き込む）</button>
+    <div class="cb">
+      <div class="actions">
+        <button class="g small" id="btnAdd">＋ 番組を足す</button>
+        <button class="g small" id="btnReload">読み直す</button>
+        <button class="g small" id="btnUndo" disabled>直前に戻す</button>
+        <span class="sp"></span>
+        <button class="gold small" id="btnWrite" disabled hidden>この内容で放送する</button>
+      </div>
+      <p class="note" style="margin-top:8px">行を押すと編集欄が開きます。分＝流す長さ。合計が「1周の長さ」と同じで、放送時間が1周で割り切れる時だけ書き込めます。YouTubeの欄はURLでも構いません（IDだけ取り出します）。</p>
     </div>
-    <p class="note" style="margin-top:8px">分＝その番組を流す長さ（動画の長さと同じか短く）。合計が「1周の長さ」とぴったり同じで、放送時間が1周の長さで割り切れる時だけ書き込めます。YouTubeの欄は動画のURLを貼っても構いません（IDだけを取り出します）。</p>
   </div>
 </section>
 
 <!-- ══ スポンサー ══ -->
 <section id="tab-spon" class="tab" hidden>
   <div class="card">
-    <h2>スポンサー・バナー <span class="sub" id="sponInfo">読み込み中…</span></h2>
-    <div id="sponStatus" class="status wait">読み込み中…</div>
+    <h2>ス ポ ン サ ー <span class="sub" id="sponInfo">読み込み中…</span></h2>
+    <div class="cb"><div id="sponStatus" class="status wait">読み込み中…</div></div>
     <div id="spons"></div>
-    <div class="row" style="margin-top:8px">
-      <button class="g" id="btnSponReload">読み直す</button>
-      <span style="flex:1"></span>
-      <button class="gold" id="btnSponWrite" disabled>この内容をアプリに反映する</button>
+    <div class="cb">
+      <div class="actions">
+        <button class="g small" id="btnSponReload">読み直す</button>
+        <span class="sp"></span>
+        <button class="gold small" id="btnSponWrite" disabled hidden>アプリに反映する</button>
+      </div>
+      <p class="note" style="margin-top:8px">上から順に10秒ごとに切り替わります。行を押すと行き先・期間・表示ON/OFFを編集できます。名前は集計の鍵なので作ったあとは変えられません。</p>
     </div>
-    <p class="note" style="margin-top:8px">上から順に10秒ごとに切り替わります。「表示」を外すと一覧に残したまま出さなくなります。期間を入れると、その期間だけ表示します（空欄＝いつでも）。名前は視聴数の集計の鍵なので、作ったあとは変えられません。</p>
   </div>
   <div class="card">
-    <h2>新しいバナーを足す</h2>
-    <div class="row">
-      <input type="text" id="nName" placeholder="表示名（例：鉄板居酒屋のりすけ）" style="flex:2;min-width:200px">
-      <input type="text" id="nSlug" placeholder="ファイル名用の英字（例：norisuke）" style="flex:1;min-width:150px" pattern="[a-z0-9-]+">
+    <h2>新 し い バ ナ ー</h2>
+    <div class="cb">
+      <div class="row">
+        <div style="flex:2;min-width:180px"><label class="l">表示名</label><input type="text" id="nName" placeholder="例：鉄板居酒屋のりすけ"></div>
+        <div style="flex:1;min-width:140px"><label class="l">ファイル名用の英字</label><input type="text" id="nSlug" placeholder="例：norisuke" pattern="[a-z0-9-]+" autocapitalize="off"></div>
+      </div>
+      <div style="margin-top:8px"><label class="l">押した時の行き先</label><input type="url" id="nUrl" placeholder="https://…" autocapitalize="off"></div>
+      <div style="margin-top:8px"><label class="l">画像（1170×107。違えば自動で合わせた見本を出します）</label><input type="file" id="nFile" accept="image/jpeg,image/png"></div>
+      <div id="nPreview"></div>
+      <div class="actions"><button id="btnNewSpon" disabled>画像を公開して一覧に足す</button><span class="note" id="nStat"></span></div>
     </div>
-    <div class="row" style="margin-top:8px">
-      <input type="url" id="nUrl" placeholder="押した時の行き先 https://…" style="flex:1;min-width:240px">
-    </div>
-    <div class="row" style="margin-top:8px">
-      <input type="file" id="nFile" accept="image/jpeg,image/png" style="flex:1;min-width:200px">
-    </div>
-    <div id="nPreview"></div>
-    <div class="row" style="margin-top:8px">
-      <button id="btnNewSpon" disabled>画像を公開して一覧に足す</button>
-      <span class="note" id="nStat"></span>
-    </div>
-    <p class="note" style="margin-top:8px">画像は 1170×107 が規格です。大きさが違う時は、自動で規格に合わせた見本を出すので確認してください。画像は GitHub（アプリの置き場）へ上がり、1〜2分で公開されます。</p>
   </div>
-  <div class="card" id="ghCard">
-    <h2>GitHub の鍵 <span class="sub">画像を上げるのに一度だけ必要</span></h2>
-    <div class="row">
-      <input type="password" id="ghToken" placeholder="github_pat_… を貼る" style="flex:1;min-width:240px" autocomplete="off">
-      <button class="g" id="btnGhSave">この端末に保存</button>
-      <button class="g" id="btnGhTest">つながるか試す</button>
+  <div class="card" id="ghCard"><details class="gh">
+    <summary><h2>G i t H u b の 鍵 <span class="sub" id="ghSub">画像を上げる時に一度だけ ▾</span></h2></summary>
+    <div class="cb">
+      <div class="row">
+        <div style="flex:1;min-width:200px"><input type="password" id="ghToken" placeholder="github_pat_… を貼る" autocomplete="off"></div>
+        <button class="g small" id="btnGhSave">この端末に保存</button>
+        <button class="g small" id="btnGhTest">つながるか試す</button>
+      </div>
+      <div id="ghStat" class="note" style="margin-top:6px"></div>
+      <details style="margin-top:8px"><summary class="note">鍵の作り方（GitHubの画面で）</summary>
+        <ol class="steps">
+          <li>GitHub にログインし、右上の自分のアイコン → Settings</li>
+          <li>左の一番下 Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</li>
+          <li>名前は「shisochan-kanri」など。Repository access は「Only select repositories」で <code>ShisoChannel</code> だけ</li>
+          <li>Permissions → Repository permissions → <b>Contents</b> を <b>Read and write</b> に</li>
+          <li>Generate token を押し、<code>github_pat_…</code> を上の欄に貼って「この端末に保存」</li>
+        </ol>
+        <p class="note">鍵はこの端末のブラウザの中だけに保存されます（画像を上げる時に GitHub へ直接渡すだけ）。</p>
+      </details>
     </div>
-    <div id="ghStat" class="note" style="margin-top:6px"></div>
-    <details style="margin-top:8px"><summary class="note" style="cursor:pointer">鍵の作り方（GitHubの画面で）</summary>
-      <ol class="steps">
-        <li>GitHub にログインし、右上の自分のアイコン → Settings を開く</li>
-        <li>左の一番下 Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</li>
-        <li>名前は「shisochan-kanri」など。Repository access は「Only select repositories」で <code>ShisoChannel</code> だけを選ぶ</li>
-        <li>Permissions → Repository permissions → <b>Contents</b> を <b>Read and write</b> にする（他はそのまま）</li>
-        <li>Generate token を押し、表示された <code>github_pat_…</code> を上の欄に貼って「この端末に保存」</li>
-      </ol>
-      <p class="note">※ 鍵はこの端末（ブラウザ）の中だけに保存され、どこにも送りません（画像を上げる時に GitHub へ直接渡すだけ）。</p>
-    </details>
-  </div>
+  </details></div>
 </section>
 
 <!-- ══ レポート ══ -->
 <section id="tab-rep" class="tab" hidden>
   <div class="card">
-    <h2>期間 <span class="sub">ログインが必要です</span></h2>
-    <div class="row">
-      <button class="g rg" data-range="today">今日</button>
-      <button class="g rg" data-range="yest">昨日</button>
-      <button class="g rg" data-range="7d">直近7日</button>
-      <input type="date" id="dpick">
-      <button class="g rg" data-range="pick">指定日</button>
-    </div>
+    <h2>期 間 <span class="sub">ログインが必要</span></h2>
+    <div class="cb"><div class="row">
+      <button class="g small rg" data-range="today">今日</button>
+      <button class="g small rg" data-range="yest">昨日</button>
+      <button class="g small rg" data-range="7d">直近7日</button>
+      <div style="width:150px"><input type="date" id="dpick"></div>
+      <button class="g small rg" data-range="pick">指定日</button>
+    </div></div>
   </div>
   <div id="report"></div>
 </section>
@@ -245,15 +291,17 @@ pre{background:#0f1f16;color:#cfe8d8;border-radius:8px;padding:12px;font-size:12
 <!-- ══ 会計（将来） ══ -->
 <section id="tab-acct" class="tab" hidden>
   <div class="card">
-    <h2>会計 <span class="sub">準備中（入れ物だけ用意）</span></h2>
-    <p class="note">ここには将来、スポンサーの掲載料（請求・入金）と、サポーター会員（月額500円）の登録・継続を並べます。
-    決済（Stripe など）とサーバー側の処理（Firebase の従量プラン＋Cloud Functions）が必要なため、別の段として設計→承認→実装します。</p>
-    <p class="note" style="margin-top:8px">用意してあるデータの形：スポンサーの一覧に「契約の開始日・終了日」の欄（期間外は自動で非表示）。会員は <code>members/{会員ID}</code> に「状態・開始日・次回請求日」を持たせる予定。</p>
+    <h2>会 計 <span class="sub">準備中</span></h2>
+    <div class="cb">
+      <p class="note">ここには将来、スポンサーの掲載料（請求・入金）と、サポーター会員（月額500円）の登録・継続を並べます。決済（Stripe など）とサーバー側の処理（Firebase の従量プラン＋Cloud Functions）が必要なため、別の段として設計→承認→実装します。</p>
+      <p class="note" style="margin-top:8px">用意してあるデータの形：スポンサーの「表示する期間」（期間外は自動で非表示）。会員は <code>members/{会員ID}</code> に状態・開始日・次回請求日を持たせる予定。</p>
+    </div>
   </div>
 </section>
 
-<section class="card" id="selftest" hidden><h2>自己検査</h2><pre id="selftestOut"></pre></section>
+<section class="card" id="selftest" hidden><h2>自 己 検 査</h2><div class="cb"><pre id="selftestOut"></pre></div></section>
 </main>
+<div id="bar" hidden><div class="t" id="barT"></div><button class="gold" id="barBtn">書き込む</button></div>
 <div id="toast"></div>
 
 <script>
@@ -261,10 +309,10 @@ pre{background:#0f1f16;color:#cfe8d8;border-radius:8px;padding:12px;font-size:12
 // ══════════════════════════════════════════════════════════════════════
 //  しそチャンNET 管理（kanri.html）2026-09-06
 //  ・番組表：broadcast/schedule（アプリが読む番組表そのもの）
-//  ・スポンサー：broadcast/sponsors（アプリ lab v4.26 以降が読む。無ければアプリは内蔵の一覧で動く）
+//  ・スポンサー：broadcast/sponsors（本番 v3.85 / lab v4.26 以降が読む。無ければアプリは内蔵の一覧で動く）
 //  ・レポート：stats_daily / stats_programs / stats_devices（ログインが必要）
 //  ・画像：GitHub の倉庫（＝shisochan.net の置き場）へ直接上げる。鍵はこの端末の中だけ
-//  ・PC でも iPhone でも同じ1ファイル。狭い画面では縦に並ぶ
+//  ・PC でも iPhone でも同じ1ファイル。一覧は1行に要点だけ、押すと編集欄が開く（2026-09-06 作り直し）
 // ══════════════════════════════════════════════════════════════════════
 var FIREBASE={ projectId:'shisochan-net', apiKey:'AIzaSyCrgNeYr8vLUHzEJMFIgSDm-WheRCPVS3Q' };
 var GITHUB={ owner:'editroom1980', repo:'ShisoChannel', branch:'main' };
@@ -280,6 +328,8 @@ function pad(n){return('0'+n).slice(-2);}
 function dayStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function lsGet(k){try{return localStorage.getItem(k);}catch(_){return null;}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(_){}}
+// Firestore の時刻（UTC）を日本時間の「9/6 08:50」に
+function jst(iso){if(!iso)return '—';var d=new Date(iso);if(isNaN(d))return String(iso).slice(0,16);return (d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
 
 // ── Firestore REST の型付き値 ⇄ JS値（setup.html / report.html と同じ）──
 function fsEnc(v){
@@ -305,9 +355,11 @@ function fsVal(v){
 function fields(doc){var d={},f=(doc&&doc.fields)||{};for(var k in f)d[k]=fsVal(f[k]);return d;}
 
 // ── ログイン（Firebase Authentication・メール/パスワード）。1時間で切れる札は自動で取り直す ──
+function showLogin(){el('login').hidden=false;el('login').scrollIntoView({block:'start'});setTimeout(function(){try{el(el('em').value?'pw':'em').focus();}catch(_){}},50);}
 function setWho(){
-  el('who').innerHTML=ID_TOKEN?('<b>'+esc(EMAIL)+'</b><button id="btnOut">ログアウト</button>'):'未ログイン';
-  if(ID_TOKEN){el('btnOut').onclick=logout;el('login').hidden=true;}else{el('login').hidden=false;}
+  el('who').innerHTML=ID_TOKEN?('<b>'+esc(EMAIL)+'</b><button id="btnOut">ログアウト</button>'):'<button class="in" id="btnIn">ログイン</button>';
+  if(ID_TOKEN){el('btnOut').onclick=logout;el('login').hidden=true;}else{el('btnIn').onclick=showLogin;}
+  updateBar();
   el('btnWrite').disabled=!(ID_TOKEN&&schedOK);
   el('btnSponWrite').disabled=!(ID_TOKEN&&sponOK);
 }
@@ -329,7 +381,6 @@ function refreshToken(){
   .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
   .then(function(x){ if(!(x.ok&&x.j.id_token))throw new Error('refresh-failed'); ID_TOKEN=x.j.id_token;REFRESH=x.j.refresh_token||REFRESH;saveAuth();setWho(); });
 }
-// 認証付きの fetch。401/403 なら札を取り直して1回だけやり直す
 function authFetch(url,opts,retried){
   opts=opts||{};opts.headers=Object.assign({},opts.headers||{},{'Authorization':'Bearer '+ID_TOKEN});
   return fetch(url,opts).then(function(r){
@@ -342,9 +393,22 @@ el('btnLogin').onclick=function(){
   if(!em||!pw){el('authstat').textContent='メールアドレスとパスワードを入力してください';el('authstat').className='err';return;}
   el('authstat').textContent='ログイン中…';el('authstat').className='note';
   login(em,pw).then(function(){el('authstat').textContent='✔ ログインしました';el('authstat').className='ok';el('pw').value='';if(curTab==='rep')pick('today');})
-  .catch(function(e){el('authstat').textContent='✖ ログインできません：'+e.message+'（パスワード誤り・未登録など）';el('authstat').className='err';});
+  .catch(function(e){el('authstat').textContent='✖ ログインできません：'+e.message;el('authstat').className='err';});
 };
 el('pw').addEventListener('keydown',function(e){if(e.key==='Enter')el('btnLogin').click();});
+// ── 画面下の帯：変更がある時だけ出て、主ボタンを持つ（番組表・スポンサー共通） ──
+var barState={sched:{changed:false,ok:false,label:''},spon:{changed:false,ok:false,label:''}};
+function updateBar(){
+  var b=el('bar'),k=curTab;var st=barState[k];
+  if(!st||!st.changed){b.hidden=true;return;}
+  b.hidden=false;
+  if(!st.ok){el('barT').innerHTML='<b>直してから</b>　'+esc(st.label);el('barBtn').hidden=true;return;}
+  el('barBtn').hidden=false;
+  if(!ID_TOKEN){el('barT').innerHTML='<b>変更あり</b>　書き込むにはログインが必要です';el('barBtn').textContent='ログイン';el('barBtn').onclick=showLogin;return;}
+  el('barT').innerHTML='<b>変更あり</b>　'+esc(st.label);
+  el('barBtn').textContent=(k==='sched'?'この内容で放送する':'アプリに反映する');
+  el('barBtn').onclick=function(){el(k==='sched'?'btnWrite':'btnSponWrite').click();};
+}
 
 // ── タブ ──
 var curTab='sched';
@@ -353,6 +417,7 @@ function showTab(k){
   document.querySelectorAll('#tabs button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===k);});
   ['sched','spon','rep','acct'].forEach(function(t){el('tab-'+t).hidden=(t!==k);});
   lsSet('kanri_tab',k);
+  updateBar();
   if(k==='rep'&&ID_TOKEN&&!el('report').innerHTML)pick('today');
 }
 document.querySelectorAll('#tabs button').forEach(function(b){b.addEventListener('click',function(){showTab(b.getAttribute('data-tab'));});});
@@ -377,7 +442,6 @@ function validSchedule(d){
   if(tot!==cm)return '番組の合計('+tot+'分)がサイクル('+cm+'分)と不一致';
   return '';
 }
-// YouTube の URL から ID を取り出す（ID そのものならそのまま）
 function ytIdFrom(s){
   s=String(s||'').trim();
   var m=s.match(/[?&]v=([A-Za-z0-9_-]{11})/)||s.match(/youtu\.be\/([A-Za-z0-9_-]{11})/)||s.match(/\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/);
@@ -393,16 +457,18 @@ function nowProgIndex(d,now){
   for(var i=0;i<d.cycle.length;i++){acc+=d.cycle[i].dur;if(off<acc)return i;}
   return d.cycle.length-1;
 }
-function schedSig(d){return JSON.stringify(d);}
+// 保存する形だけを取り出す（画面用の印 _open は入れない）
+function schedPayload(d){return {airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){return {ytId:ytIdFrom(p.ytId),title:p.title,cat:p.cat,dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||''};})};}
+function schedSig(d){return JSON.stringify(schedPayload(d));}
 function loadSchedule(){
   el('schedStatus').className='status wait';el('schedStatus').textContent='読み込み中…';
   return fetch(DOCBASE+'broadcast/schedule?key='+encodeURIComponent(FIREBASE.apiKey),{cache:'no-store'})
   .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
   .then(function(doc){
     var d=fields(doc);
-    sched={airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){return {ytId:p.ytId||'',title:p.title||'',cat:p.cat||'',dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||''};})};
+    sched={airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){return {ytId:p.ytId||'',title:p.title||'',cat:p.cat||'',dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||'',_open:false};})};
     schedLoadedSig=schedSig(sched);
-    el('schedInfo').textContent='最終更新 '+(doc.updateTime?doc.updateTime.replace('T',' ').slice(0,16)+' (UTC)':'—');
+    el('schedInfo').textContent='更新 '+jst(doc.updateTime);
     renderSched();
   }).catch(function(e){el('schedStatus').className='status bad';el('schedStatus').textContent='番組表が読めません：'+e.message;});
 }
@@ -418,47 +484,69 @@ function readSchedFromForm(){
     var ex=row.querySelector('[data-k=expiresAt]').value;p.expiresAt=ex?ex:null;
   });
 }
+// 一覧の1行：見本・題名・分類・分・ID・印。押すと下の編集欄が開く
+function progRow(p,i,now){
+  var id=ytIdFrom(p.ytId);
+  var meta='<span class="cat">'+esc(p.cat||'（分類なし）')+'</span><span>'+esc(isNaN(p.dur)?'?':p.dur)+'分</span>'
+    +'<span class="yt">'+esc(id||'IDなし')+'</span>'
+    +(i===now?'<span class="now">放送中</span>':'')
+    +(p.telop?'<span class="tag">テロップ</span>':'')
+    +(p.expiresAt?'<span class="tag">期限 '+esc(p.expiresAt)+'</span>':'');
+  return '<div class="prog'+(i===now?' now':'')+(p._open?' open':'')+'" data-i="'+i+'">'
+    +'<div class="r1" data-op="toggle">'
+    +'<div class="no">'+(i+1)+'</div>'
+    +'<img class="thumb" alt="" src="'+(id?'https://i.ytimg.com/vi/'+esc(id)+'/mqdefault.jpg':'')+'" onerror="this.style.visibility=\'hidden\'">'
+    +'<div class="info"><div class="ttl">'+esc(p.title||'（題名なし）')+'</div><div class="meta">'+meta+'</div></div>'
+    +'<div class="ops"><button class="g ic" data-op="up" title="上へ" aria-label="上へ">▲</button><button class="g ic" data-op="down" title="下へ" aria-label="下へ">▼</button></div>'
+    +'</div>'
+    +'<div class="ed"'+(p._open?'':' hidden')+'>'
+    +'<div class="f">'
+    +'<div class="w"><label class="l">題名</label><input type="text" data-k="title" value="'+esc(p.title)+'"></div>'
+    +'<div><label class="l">YouTube（IDかURL）</label><input type="text" data-k="ytId" value="'+esc(p.ytId)+'" autocapitalize="off"></div>'
+    +'<div><label class="l">分類</label><input type="text" data-k="cat" list="cats" value="'+esc(p.cat)+'"></div>'
+    +'<div><label class="l">分（流す長さ）</label><input type="number" data-k="dur" min="1" inputmode="numeric" value="'+esc(p.dur)+'"></div>'
+    +'<div><label class="l">期限（空欄＝なし）</label><input type="date" data-k="expiresAt" value="'+esc(p.expiresAt||'')+'"></div>'
+    +'<div class="w"><label class="l">テロップ（見始めの10秒。空欄＝なし）</label><input type="text" data-k="telop" value="'+esc(p.telop||'')+'"></div>'
+    +'</div>'
+    +'<div class="actions"><button class="danger small" data-op="del">この番組を外す</button><span class="sp"></span><button class="g small" data-op="close">閉じる</button></div>'
+    +'</div></div>';
+}
 function renderSched(){
   el('airStart').value=sched.airStart;el('airEnd').value=sched.airEnd;el('cycleMinutes').value=sched.cycleMinutes;
   var now=nowProgIndex(sched);
   var h='';
-  sched.cycle.forEach(function(p,i){
-    var id=ytIdFrom(p.ytId);
-    h+='<div class="prog'+(i===now?' now':'')+'" data-i="'+i+'">'
-      +'<div class="no">'+(i+1)+(i===now?'<br><span class="nowtag">放送中</span>':'')+'</div>'
-      +'<img class="thumb" alt="" src="'+(id?'https://i.ytimg.com/vi/'+esc(id)+'/mqdefault.jpg':'')+'" onerror="this.style.visibility=\'hidden\'">'
-      +'<div class="f">'
-      +'<div class="w"><label>題名</label><input type="text" data-k="title" value="'+esc(p.title)+'"></div>'
-      +'<div><label>YouTube（IDかURL）</label><input type="text" data-k="ytId" value="'+esc(p.ytId)+'"></div>'
-      +'<div><label>分類</label><input type="text" data-k="cat" list="cats" value="'+esc(p.cat)+'"></div>'
-      +'<div><label>分</label><input type="number" data-k="dur" min="1" value="'+esc(p.dur)+'"></div>'
-      +'<div><label>期限（空欄＝なし）</label><input type="date" data-k="expiresAt" value="'+esc(p.expiresAt||'')+'"></div>'
-      +'<div class="w"><label>テロップ（見始めの10秒。空欄＝なし）</label><input type="text" data-k="telop" value="'+esc(p.telop||'')+'"></div>'
-      +'</div>'
-      +'<div class="ops"><button class="g small" data-op="up" title="上へ">▲</button><button class="g small" data-op="down" title="下へ">▼</button><button class="danger small" data-op="del">削除</button></div>'
-      +'</div>';
-  });
+  sched.cycle.forEach(function(p,i){h+=progRow(p,i,now);});
   el('progs').innerHTML=h+'<datalist id="cats">'+CATS.map(function(c){return '<option value="'+esc(c)+'">';}).join('')+'</datalist>';
-  el('progs').querySelectorAll('button[data-op]').forEach(function(b){
-    b.addEventListener('click',function(){
+  el('progs').querySelectorAll('[data-op]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      var op=b.getAttribute('data-op');
+      var row=b.closest('.prog'),i=parseInt(row.getAttribute('data-i'),10);
+      if(op==='toggle'){ if(e.target.closest('button'))return; readSchedFromForm(); sched.cycle[i]._open=!sched.cycle[i]._open; renderSched(); return; }
+      e.stopPropagation();
       readSchedFromForm();
-      var i=parseInt(b.closest('.prog').getAttribute('data-i'),10),op=b.getAttribute('data-op');
+      if(op==='close'){sched.cycle[i]._open=false;}
       if(op==='up'&&i>0){var t=sched.cycle[i-1];sched.cycle[i-1]=sched.cycle[i];sched.cycle[i]=t;}
       if(op==='down'&&i<sched.cycle.length-1){var t2=sched.cycle[i+1];sched.cycle[i+1]=sched.cycle[i];sched.cycle[i]=t2;}
       if(op==='del'){if(!confirm((i+1)+'番目「'+sched.cycle[i].title+'」を一覧から外しますか？（書き込むまで放送は変わりません）'))return;sched.cycle.splice(i,1);}
       renderSched();
     });
   });
-  el('progs').querySelectorAll('input').forEach(function(inp){inp.addEventListener('input',checkSched);inp.addEventListener('change',function(){readSchedFromForm();if(inp.getAttribute('data-k')==='ytId')renderSched();});});
+  el('progs').querySelectorAll('input').forEach(function(inp){
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+    inp.addEventListener('input',checkSched);
+    inp.addEventListener('change',function(){readSchedFromForm();if(inp.getAttribute('data-k')==='ytId'||inp.getAttribute('data-k')==='title')renderSched();});
+  });
   checkSched();
 }
 function checkSched(){
   readSchedFromForm();
   var tot=0;sched.cycle.forEach(function(p){tot+=(isNaN(p.dur)?0:p.dur);});
+  var now=nowProgIndex(sched);
+  el('schedOv').innerHTML='放送 <b>'+esc(sched.airStart)+'時〜'+esc(sched.airEnd)+'時</b>　1周 <b>'+esc(sched.cycleMinutes)+'分</b>'+(now>=0?'　放送中 <b>'+(now+1)+'. '+esc((sched.cycle[now].title||'').slice(0,12))+((sched.cycle[now].title||'').length>12?'…':'')+'</b>':'　（放送時間外）');
   el('sumDur').textContent=tot;el('sumCnt').textContent=sched.cycle.length;
   var mins=(sched.airEnd-sched.airStart)*60;
   el('sumLoops').textContent=(sched.cycleMinutes>0&&mins>0)?(mins%sched.cycleMinutes===0?(mins/sched.cycleMinutes):'—'):'—';
-  var err=validSchedule(sched);
+  var err=validSchedule(schedPayload(sched));
   var changed=schedSig(sched)!==schedLoadedSig;
   schedOK=!err;
   var st=el('schedStatus');
@@ -467,15 +555,18 @@ function checkSched(){
   else{st.className='status good';st.textContent='✔ 形は正しい。書き込むと当日中に全端末へ反映されます';}
   el('btnWrite').disabled=!(ID_TOKEN&&schedOK&&changed);
   el('btnUndo').disabled=!lsGet('kanri_sched_prev');
+  if(err)el('schedHead').hidden=false;   // 放送時間の設定が原因の時は入力欄を見せる
+  barState.sched={changed:changed,ok:schedOK,label:err||('番組'+sched.cycle.length+'本・1周'+sched.cycleMinutes+'分')};updateBar();
 }
+el('btnHead').onclick=function(){var h=el('schedHead');h.hidden=!h.hidden;el('btnHead').textContent=h.hidden?'放送時間を変更':'閉じる';};
 ['airStart','airEnd','cycleMinutes'].forEach(function(id){el(id).addEventListener('input',checkSched);});
-el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',dur:5,expiresAt:null,telop:''});renderSched();window.scrollTo(0,document.body.scrollHeight);};
+el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',dur:5,expiresAt:null,telop:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
 el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSchedule();};
 el('btnWrite').onclick=function(){
-  readSchedFromForm();var err=validSchedule(sched);if(err){toast('✖ '+err);return;}
-  if(!confirm('番組表を書き込みます。番組'+sched.cycle.length+'本・1周'+sched.cycleMinutes+'分・'+sched.airStart+'時〜'+sched.airEnd+'時。よろしいですか？'))return;
+  readSchedFromForm();var out=schedPayload(sched);var err=validSchedule(out);if(err){toast('✖ '+err);return;}
+  if(!confirm('番組表を書き込みます。番組'+out.cycle.length+'本・1周'+out.cycleMinutes+'分・'+out.airStart+'時〜'+out.airEnd+'時。よろしいですか？'))return;
   var prev=schedLoadedSig;
-  writeDoc('broadcast/schedule',sched).then(function(){
+  writeDoc('broadcast/schedule',out).then(function(){
     lsSet('kanri_sched_prev',prev);            // 直前の内容を1つだけ覚える（戻す用）
     toast('✔ 書き込みました');loadSchedule();
   }).catch(function(e){toast('✖ 書き込めません：'+e.message);});
@@ -503,7 +594,7 @@ function writeDoc(path,obj){
 //  スポンサー
 // ══════════════════════════════════════════════════════════════════════
 var spon={v:0,updated:'',list:[]}, sponOK=false, sponLoadedSig='', sponExists=false;
-// アプリに内蔵されている今の一覧（Firestore にまだ無い時の取り込み用。取り込んだ後は Firestore が正）
+// アプリに内蔵されている一覧（Firestore にまだ無い時の取り込み用。取り込んだ後は Firestore が正）
 var BUILTIN_SPONSORS=[
   {name:'株式会社松本工務店',url:'https://www.matsukou.hyogo.jp',img:'_banner_matsumotokoumuten_port.jpg'},
   {name:'株式会社川本石材商会',url:'https://www.kawamoto-sekizai.com',img:'_banner_kawamotosekizai_port.jpg'},
@@ -514,8 +605,9 @@ var BUILTIN_SPONSORS=[
   {name:'クラウドファンディング実施中',url:'https://readyfor.jp/projects/shiso-chan',img:'_banner_cf_port.png'},
   {name:'バナー広告募集中',url:'',img:'_banner_recruit_port.jpg'}
 ];
-function sponSig(s){return JSON.stringify(s.list);}
-// 一覧の形の検査（アプリ側も同じ規則で読む）
+function sponPayloadList(list){return (list||[]).map(function(s){return {name:s.name,url:s.url||'',img:s.img,on:s.on!==false,from:s.from||'',to:s.to||''};});}
+function sponSig(s){return JSON.stringify(sponPayloadList(s.list));}
+// 一覧の形の検査（アプリ側の validSponsorList と同じ規則）
 function validSponsors(list){
   if(!Array.isArray(list)||list.length<1)return '一覧が空';
   var names={};
@@ -552,11 +644,11 @@ function loadSponsors(){
   .then(function(doc){
     if(doc){
       var d=fields(doc);sponExists=true;
-      spon={v:d.v||0,updated:d.updated||'',list:(d.list||[]).map(function(s){return {name:s.name||'',url:s.url||'',img:s.img||'',on:s.on!==false,from:s.from||'',to:s.to||''};})};
-      el('sponInfo').textContent='版 '+spon.v+'　更新 '+(spon.updated||'—');
+      spon={v:d.v||0,updated:d.updated||'',list:(d.list||[]).map(function(s){return {name:s.name||'',url:s.url||'',img:s.img||'',on:s.on!==false,from:s.from||'',to:s.to||'',_open:false};})};
+      el('sponInfo').textContent='版 '+spon.v+'　更新 '+jst(doc.updateTime);
     }else{
-      spon={v:0,updated:'',list:BUILTIN_SPONSORS.map(function(s){return {name:s.name,url:s.url,img:s.img,on:true,from:'',to:''};})};
-      el('sponInfo').textContent='まだ Firestore に無い（アプリ内蔵の一覧を表示中）';
+      spon={v:0,updated:'',list:BUILTIN_SPONSORS.map(function(s){return {name:s.name,url:s.url,img:s.img,on:true,from:'',to:'',_open:false};})};
+      el('sponInfo').textContent='まだFirestoreに無い（内蔵の一覧を表示中）';
     }
     sponLoadedSig=sponExists?sponSig(spon):'';
     renderSpons();
@@ -571,35 +663,51 @@ function readSponFromForm(){
     s.to=row.querySelector('[data-k=to]').value;
   });
 }
+function sponRow(s,i,today){
+  var act=activeSponsors([s],today).length>0;
+  var meta=(s.on===false?'<span class="offtag">表示しない</span>':(act?'<span class="on">表示中</span>':'<span class="offtag">期間外</span>'))
+    +(s.url?'<span class="tag">リンクあり</span>':'<span class="tag">リンクなし</span>')
+    +((s.from||s.to)?'<span class="tag">'+esc(s.from||'…')+' 〜 '+esc(s.to||'…')+'</span>':'');
+  return '<div class="spon'+(act?'':' off')+(s._open?' open':'')+'" data-i="'+i+'">'
+    +'<div class="s1" data-op="toggle">'
+    +'<div class="no">'+(i+1)+'</div>'
+    +'<div style="min-width:0"><img class="bn" alt="" src="'+esc(SITE+s.img)+'" onerror="this.style.background=\'#f3d9d9\'"><div class="nm">'+esc(s.name)+'</div><div class="meta">'+meta+'</div></div>'
+    +'<div class="ops"><button class="g ic" data-op="up" aria-label="上へ">▲</button><button class="g ic" data-op="down" aria-label="下へ">▼</button></div>'
+    +'</div>'
+    +'<div class="ed"'+(s._open?'':' hidden')+'>'
+    +'<div class="f">'
+    +'<div class="w"><label class="l">押した時の行き先（空欄＝押しても動かない）</label><input type="url" data-k="url" value="'+esc(s.url)+'" autocapitalize="off"></div>'
+    +'<div><label class="l">表示する期間の開始（空欄＝いつでも）</label><input type="date" data-k="from" value="'+esc(s.from)+'"></div>'
+    +'<div><label class="l">表示する期間の終了（空欄＝いつまでも）</label><input type="date" data-k="to" value="'+esc(s.to)+'"></div>'
+    +'<div class="w"><label class="sw"><input type="checkbox" data-k="on"'+(s.on!==false?' checked':'')+'>アプリに表示する</label></div>'
+    +'<div class="w note">画像 '+esc(s.img)+'　／　名前 '+esc(s.name)+'（集計の鍵・変更不可）</div>'
+    +'</div>'
+    +'<div class="actions"><button class="danger small" data-op="del">一覧から外す</button><span class="sp"></span><button class="g small" data-op="close">閉じる</button></div>'
+    +'</div></div>';
+}
 function renderSpons(){
-  var h='';
-  spon.list.forEach(function(s,i){
-    h+='<div class="spon'+(s.on?'':' off')+'" data-i="'+i+'">'
-      +'<div class="no">'+(i+1)+'</div>'
-      +'<div><img class="bn" alt="" src="'+esc(SITE+s.img)+'" onerror="this.style.background=\'#f3d9d9\'">'
-      +'<div class="f">'
-      +'<div><label>名前（集計の鍵・変更不可）</label><input type="text" value="'+esc(s.name)+'" readonly></div>'
-      +'<div><label>画像ファイル</label><input type="text" value="'+esc(s.img)+'" readonly></div>'
-      +'<div class="w"><label>押した時の行き先（空欄＝押しても動かない）</label><input type="url" data-k="url" value="'+esc(s.url)+'"></div>'
-      +'<div><label>表示する期間の開始（空欄＝いつでも）</label><input type="date" data-k="from" value="'+esc(s.from)+'"></div>'
-      +'<div><label>表示する期間の終了（空欄＝いつまでも）</label><input type="date" data-k="to" value="'+esc(s.to)+'"></div>'
-      +'</div></div>'
-      +'<div class="ops"><label class="sw"><input type="checkbox" data-k="on"'+(s.on?' checked':'')+'>表示</label>'
-      +'<button class="g small" data-op="up">▲</button><button class="g small" data-op="down">▼</button><button class="danger small" data-op="del">削除</button></div>'
-      +'</div>';
-  });
+  var today=dayStr(new Date());
+  var h='';spon.list.forEach(function(s,i){h+=sponRow(s,i,today);});
   el('spons').innerHTML=h;
-  el('spons').querySelectorAll('button[data-op]').forEach(function(b){
-    b.addEventListener('click',function(){
+  el('spons').querySelectorAll('[data-op]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      var op=b.getAttribute('data-op');
+      var row=b.closest('.spon'),i=parseInt(row.getAttribute('data-i'),10);
+      if(op==='toggle'){ if(e.target.closest('button'))return; readSponFromForm(); spon.list[i]._open=!spon.list[i]._open; renderSpons(); return; }
+      e.stopPropagation();
       readSponFromForm();
-      var i=parseInt(b.closest('.spon').getAttribute('data-i'),10),op=b.getAttribute('data-op');
+      if(op==='close'){spon.list[i]._open=false;}
       if(op==='up'&&i>0){var t=spon.list[i-1];spon.list[i-1]=spon.list[i];spon.list[i]=t;}
       if(op==='down'&&i<spon.list.length-1){var t2=spon.list[i+1];spon.list[i+1]=spon.list[i];spon.list[i]=t2;}
       if(op==='del'){if(!confirm('「'+spon.list[i].name+'」を一覧から外しますか？（画像は残ります。反映するまでアプリは変わりません）'))return;spon.list.splice(i,1);}
       renderSpons();
     });
   });
-  el('spons').querySelectorAll('input').forEach(function(inp){inp.addEventListener('input',checkSpon);inp.addEventListener('change',checkSpon);});
+  el('spons').querySelectorAll('input').forEach(function(inp){
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+    inp.addEventListener('input',checkSpon);
+    inp.addEventListener('change',function(){readSponFromForm();if(inp.getAttribute('data-k')==='on'||inp.getAttribute('data-k')==='from'||inp.getAttribute('data-k')==='to')renderSpons();});
+  });
   checkSpon();
 }
 function checkSpon(){
@@ -611,21 +719,21 @@ function checkSpon(){
   var st=el('sponStatus');
   if(err){st.className='status bad';st.textContent='✖ '+err;}
   else if(!changed){st.className='status good';st.textContent='✔ アプリに反映済みの内容と同じです（いま出るのは '+act.length+' 枚）';}
-  else{st.className='status good';st.textContent='✔ 形は正しい。反映すると当日中に全端末へ届きます（いま出るのは '+act.length+' 枚）'+(sponExists?'':'。初回の反映で Firestore に一覧が作られます');}
+  else{st.className='status good';st.textContent='✔ 形は正しい。反映すると当日中に全端末へ届きます（いま出るのは '+act.length+' 枚）'+(sponExists?'':'。初回の反映でFirestoreに一覧が作られます');}
   el('btnSponWrite').disabled=!(ID_TOKEN&&sponOK&&changed);
+  barState.spon={changed:changed,ok:sponOK,label:err||(spon.list.length+'件・いま出るのは '+act.length+' 枚')};updateBar();
 }
 el('btnSponReload').onclick=function(){if(sponSig(spon)!==sponLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSponsors();};
 el('btnSponWrite').onclick=function(){
   readSponFromForm();var err=validSponsors(spon.list);if(err){toast('✖ '+err);return;}
   if(!confirm('スポンサーの一覧をアプリに反映します（'+spon.list.length+'件・いま出るのは '+activeSponsors(spon.list).length+' 枚）。よろしいですか？'))return;
-  var out={v:(spon.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),list:spon.list.map(function(s){return {name:s.name,url:s.url||'',img:s.img,on:s.on!==false,from:s.from||'',to:s.to||''};})};
+  var out={v:(spon.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),list:sponPayloadList(spon.list)};
   writeDoc('broadcast/sponsors',out).then(function(){toast('✔ 反映しました（版 '+out.v+'）');loadSponsors();}).catch(function(e){toast('✖ 反映できません：'+e.message);});
 };
 
 // ── 新しいバナー：画像の検査と規格合わせ → GitHub へ上げる → 一覧に足す ──
-var newImg=null;   // {blob, ext, w, h, fitted:boolean}
+var newImg=null;
 function fitBanner(img){
-  // 規格と違う画像は、はみ出す分を切って 1170×107 に合わせる（縦横比を保つ・中央を残す）
   var c=document.createElement('canvas');c.width=BANNER_W;c.height=BANNER_H;
   var ctx=c.getContext('2d');
   var sc=Math.max(BANNER_W/img.naturalWidth,BANNER_H/img.naturalHeight);
@@ -644,7 +752,7 @@ el('nFile').addEventListener('change',function(){
       newImg={blob:blob,ext:fitted?'jpg':ext,w:BANNER_W,h:BANNER_H,fitted:fitted};
       var kb=Math.round(blob.size/1024);
       el('nPreview').innerHTML='<img class="preview" src="'+URL.createObjectURL(blob)+'" alt=""><div class="note">'
-        +(fitted?('元の画像は '+img.naturalWidth+'×'+img.naturalHeight+' でした。規格 '+BANNER_W+'×'+BANNER_H+' に合わせた見本です（切れ方を確認してください）'):('規格どおり '+BANNER_W+'×'+BANNER_H+' です'))
+        +(fitted?('元の画像は '+img.naturalWidth+'×'+img.naturalHeight+'。規格 '+BANNER_W+'×'+BANNER_H+' に合わせた見本です（切れ方を確認してください）'):('規格どおり '+BANNER_W+'×'+BANNER_H+' です'))
         +'　'+kb+'KB'+(kb>300?'　<span class="warn">少し重めです（300KB以下が目安）</span>':'')+'</div>';
       el('btnNewSpon').disabled=false;
     };
@@ -655,7 +763,7 @@ el('nFile').addEventListener('change',function(){
   img.src=url;
 });
 function ghToken(){return lsGet('kanri_gh_token')||'';}
-el('btnGhSave').onclick=function(){var t=el('ghToken').value.trim();if(!t){toast('鍵が空です');return;}lsSet('kanri_gh_token',t);el('ghToken').value='';el('ghStat').textContent='✔ この端末に保存しました';el('ghStat').className='ok';};
+el('btnGhSave').onclick=function(){var t=el('ghToken').value.trim();if(!t){toast('鍵が空です');return;}lsSet('kanri_gh_token',t);el('ghToken').value='';el('ghStat').textContent='✔ この端末に保存しました';el('ghStat').className='ok';el('ghSub').textContent='保存済み ✔ ▾';};
 el('btnGhTest').onclick=function(){
   var t=ghToken()||el('ghToken').value.trim();if(!t){el('ghStat').textContent='鍵がありません';el('ghStat').className='err';return;}
   el('ghStat').textContent='確かめ中…';el('ghStat').className='note';
@@ -680,7 +788,6 @@ function ghPut(path,blob,message){
   }).then(function(r){return r.json().then(function(j){return {ok:r.ok,status:r.status,j:j};});})
   .then(function(x){if(!x.ok)throw new Error('GitHub が受け付けません（'+x.status+'）：'+((x.j&&x.j.message)||''));return x.j;});
 }
-// 公開されたか（GitHub Pages は1〜2分）を確かめる
 function waitPublished(url,tries){
   tries=tries==null?24:tries;   // 10秒×24＝4分
   return fetch(url,{method:'HEAD',cache:'no-store'}).then(function(r){return r.ok;}).catch(function(){return false;})
@@ -700,9 +807,8 @@ el('btnNewSpon').onclick=function(){
     el('nStat').textContent='上がりました。公開されるのを待っています（1〜2分）…';
     readSponFromForm();
     var idx=spon.list.length;
-    // 募集中・クラファンの前に入れる（実際の順番は▲▼で変えられる）
     for(var i=0;i<spon.list.length;i++){if(!spon.list[i].url||/readyfor\.jp/.test(spon.list[i].url)){idx=i;break;}}
-    spon.list.splice(idx,0,{name:name,url:url,img:fname,on:true,from:'',to:''});
+    spon.list.splice(idx,0,{name:name,url:url,img:fname,on:true,from:'',to:'',_open:true});
     renderSpons();
     el('nName').value='';el('nSlug').value='';el('nUrl').value='';el('nFile').value='';el('nPreview').innerHTML='';newImg=null;
     return waitPublished(SITE+fname);
@@ -755,15 +861,16 @@ var ranges={
   '7d':function(){var a=[];for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);a.push(dayStr(d));}return a;},
   pick:function(){return[el('dpick').value||dayStr(new Date())];}
 };
+function card(title,body,sub){return '<div class="card"><h2>'+title+(sub?'<span class="sub">'+sub+'</span>':'')+'</h2><div class="cb">'+body+'</div></div>';}
 function pick(kind){
-  if(!ID_TOKEN){el('report').innerHTML='<div class="card"><span class="err">レポートはログインすると見られます</span></div>';return;}
+  if(!ID_TOKEN){el('report').innerHTML=card('レ ポ ー ト','<span class="err">レポートはログインすると見られます</span>');return;}
   document.querySelectorAll('button.rg').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-range')===kind);});
   var days=ranges[kind]();
-  el('report').innerHTML='<div class="card">読み込み中…</div>';
+  el('report').innerHTML=card('レ ポ ー ト','読み込み中…');
   loadTitles().then(function(){return Promise.all([Promise.all(days.map(getDay)),getDevices()]);}).then(function(res){
     render(kind,days,res[0],res[1]);
   }).catch(function(e){
-    el('report').innerHTML='<div class="card"><span class="err">'+(e.message==='PERMISSION'?'読み取りが許可されていません（Firestoreの規則で管理者の読み取りが未許可）':'読み取りエラー: '+esc(e.message))+'</span></div>';
+    el('report').innerHTML=card('レ ポ ー ト','<span class="err">'+(e.message==='PERMISSION'?'読み取りが許可されていません（Firestoreの規則で管理者の読み取りが未許可）':'読み取りエラー: '+esc(e.message))+'</span>');
   });
 }
 document.querySelectorAll('button.rg').forEach(function(b){b.addEventListener('click',function(){pick(b.getAttribute('data-range'));});});
@@ -788,23 +895,23 @@ function regFunnelHtml(reg){
   var at={},quit={};
   for(var k in reg){if(k.indexOf('at_')===0)at[k.slice(3)]=reg[k];else if(k.indexOf('quit_')===0)quit[k.slice(5)]=reg[k];}
   var opened=at.start||0,ok=reg.ok||0,yes=reg.tapYes||0,no=reg.tapNo||0,home=reg.homeOpen||0,homeUrl=reg.homeUrl||0;
-  if(!opened&&!ok&&!Object.keys(at).length){return '<div class="card"><h2>ホーム画面への登録案内</h2><div class="note">この期間に案内が開かれた記録はありません。</div></div>';}
+  if(!opened&&!ok&&!Object.keys(at).length){return card('登 録 案 内','<div class="note">この期間に案内が開かれた記録はありません。</div>');}
   var rows=Object.keys(at).map(function(k){return {k:k,at:at[k],quit:quit[k]||0};}).sort(function(a,b){return b.at-a.at;});
-  var h='<div class="card"><h2>ホーム画面への登録案内</h2><div class="kpis">'
+  var h='<div class="kpis">'
     +'<div class="kpi"><div class="n">'+opened+'</div><div class="l">案内が開かれた</div></div>'
     +'<div class="kpi"><div class="n">'+home+'</div><div class="l">アイコンから開いた端末</div></div>'
     +'<div class="kpi"><div class="n">'+ok+'</div><div class="l">追加できた（Androidのみ）</div></div>'
     +'<div class="kpi"><div class="n">'+yes+'</div><div class="l">1タップ追加を承諾</div></div>'
     +'<div class="kpi"><div class="n">'+no+'</div><div class="l">1タップ追加を辞退</div></div></div>'
     +'<div class="note" style="margin-top:8px"><b>「アイコンから開いた端末」が、いちばん確かな成果です。</b>iPhoneは追加された瞬間を知る仕組みがApple側に無いため、これが唯一の手掛かりです。'+(homeUrl?('　うち'+homeUrl+'台はmanifestの印つきで開いています。'):'')+'</div>';
-  h+='<div class="tbl"><table style="margin-top:12px"><tr><th>画面</th><th class="num">到達</th><th class="num">そこで閉じた</th><th class="num">離脱率</th></tr>';
+  h+='<div class="tbl"><table style="margin-top:10px"><tr><th>画面</th><th class="num">到達</th><th class="num">そこで閉じた</th><th class="num">離脱率</th></tr>';
   rows.forEach(function(r){
     var rate=r.at>0?((r.quit/r.at*100).toFixed(0)+'%'):'—';
     var heavy=(r.at>=5&&r.quit/r.at>=0.5);
     h+='<tr'+(heavy?' style="background:#fdf3f3"':'')+'><td>'+esc(regNameOf(r.k))+'</td><td class="num">'+r.at+'</td><td class="num">'+r.quit+'</td><td class="num">'+(heavy?'<b style="color:var(--red)">'+rate+'</b>':rate)+'</td></tr>';
   });
-  h+='</table></div><div class="note" style="margin-top:8px">よく通る画面（到達5以上）で半分以上が消えている行は赤。そこが次に直すべき場所です。</div></div>';
-  return h;
+  h+='</table></div><div class="note" style="margin-top:8px">よく通る画面（到達5以上）で半分以上が消えている行は赤。そこが次に直すべき場所です。</div>';
+  return card('登 録 案 内',h);
 }
 function render(kind,days,list,devices){
   devices=devices||[];
@@ -820,34 +927,34 @@ function render(kind,days,list,devices){
     var h=d.hours||{};for(var hk in h){hours[hk]=(hours[hk]||0)+(h[hk]||0);}
     var g=d.reg||{};for(var rk in g){reg[rk]=(reg[rk]||0)+(g[rk]||0);}
   });
-  var label=(kind==='7d')?('直近7日 ('+days[days.length-1]+' 〜 '+days[0]+')'):days[0];
+  var label=(kind==='7d')?('直近7日 '+days[days.length-1]+' 〜 '+days[0]):days[0];
   var devNote='<div class="note" style="margin-top:8px">累計ユニーク端末（これまでにアプリを使った端末）：<b>'+totalDev+'</b>台'+(exclDev>0?('　制作側の端末 '+exclDev+' 台は含みません'):'')
-    +'<br>・ブラウザごとに1台と数えます。iPhoneのSafariは7日間開かないと目印が消えるため、累計は実際より多めに出ます。ホーム画面のアイコンから開く人は対象外です。</div>';
-  if(!anyData){el('report').innerHTML='<div class="card"><h2>'+esc(label)+'</h2><div class="kpis"><div class="kpi"><div class="n">'+totalDev+'</div><div class="l">累計ユニーク端末</div></div><div class="kpi"><div class="n">'+activeDev+'</div><div class="l">この期間のアクティブ端末</div></div></div><div class="note" style="margin-top:8px">この期間の視聴・バナー計測はありません。</div></div>';return;}
+    +'<br>ブラウザごとに1台と数えます。iPhoneのSafariは7日間開かないと目印が消えるため、累計は実際より多めに出ます。ホーム画面のアイコンから開く人は対象外です。</div>';
+  if(!anyData){el('report').innerHTML=card('サ マ リ ー','<div class="kpis"><div class="kpi"><div class="n">'+totalDev+'</div><div class="l">累計ユニーク端末</div></div><div class="kpi"><div class="n">'+activeDev+'</div><div class="l">この期間のアクティブ端末</div></div></div><div class="note" style="margin-top:8px">この期間の視聴・バナー計測はありません。</div>',esc(label));return;}
   var totV=0,totS=0;for(var id in prog){totV+=prog[id].v;totS+=prog[id].s;}
   var totImp=0,totClk=0;for(var nm in ban){totImp+=ban[nm].imp;totClk+=ban[nm].clk;}
   var ctr=totImp>0?((totClk/totImp*100).toFixed(2)+'%'):'—';
-  var html='<div class="card"><h2>サマリー（'+esc(label)+'）</h2><div class="kpis">'
+  var html=card('サ マ リ ー','<div class="kpis">'
     +'<div class="kpi"><div class="n">'+activeDev+'</div><div class="l">アクティブ端末</div></div>'
     +'<div class="kpi"><div class="n">'+totV+'</div><div class="l">総視聴数(30秒以上)</div></div>'
     +'<div class="kpi"><div class="n">'+fmtSec(totS)+'</div><div class="l">総再生時間</div></div>'
     +'<div class="kpi"><div class="n">'+totImp+'</div><div class="l">バナー表示</div></div>'
     +'<div class="kpi"><div class="n">'+totClk+'</div><div class="l">バナークリック</div></div>'
-    +'<div class="kpi"><div class="n">'+ctr+'</div><div class="l">バナーCTR</div></div></div>'+devNote+'</div>';
+    +'<div class="kpi"><div class="n">'+ctr+'</div><div class="l">バナーCTR</div></div></div>'+devNote,esc(label));
   var pArr=Object.keys(prog).map(function(id){return{id:id,v:prog[id].v,s:prog[id].s};}).sort(function(a,b){return b.v-a.v||b.s-a.s;});
-  html+='<div class="card"><h2>番組別</h2><div class="tbl"><table><tr><th>番組</th><th class="num">視聴数</th><th class="num">再生時間</th><th class="num">平均視聴</th></tr>';
-  pArr.forEach(function(r){var t=TITLES[r.id]||('(ID: '+r.id+')');html+='<tr><td>'+esc(t)+'</td><td class="num">'+r.v+'</td><td class="num">'+fmtSec(r.s)+'</td><td class="num">'+(r.v>0?fmtSec(r.s/r.v):'—')+'</td></tr>';});
-  html+='</table></div></div>';
+  var t='<div class="tbl"><table><tr><th>番組</th><th class="num">視聴数</th><th class="num">再生時間</th><th class="num">平均視聴</th></tr>';
+  pArr.forEach(function(r){var tt=TITLES[r.id]||('(ID: '+r.id+')');t+='<tr><td>'+esc(tt)+'</td><td class="num">'+r.v+'</td><td class="num">'+fmtSec(r.s)+'</td><td class="num">'+(r.v>0?fmtSec(r.s/r.v):'—')+'</td></tr>';});
+  html+=card('番 組 別',t+'</table></div>');
   var bArr=Object.keys(ban).map(function(nm){return{nm:nm,imp:ban[nm].imp,clk:ban[nm].clk};}).sort(function(a,b){return b.imp-a.imp;});
-  html+='<div class="card"><h2>バナー別</h2><div class="tbl"><table><tr><th>スポンサー</th><th class="num">表示</th><th class="num">クリック</th><th class="num">CTR</th></tr>';
-  bArr.forEach(function(r){html+='<tr><td>'+esc(r.nm)+'</td><td class="num">'+r.imp+'</td><td class="num">'+r.clk+'</td><td class="num">'+(r.imp>0?((r.clk/r.imp*100).toFixed(2)+'%'):'—')+'</td></tr>';});
-  html+='</table></div></div>';
+  var bt='<div class="tbl"><table><tr><th>スポンサー</th><th class="num">表示</th><th class="num">クリック</th><th class="num">CTR</th></tr>';
+  bArr.forEach(function(r){bt+='<tr><td>'+esc(r.nm)+'</td><td class="num">'+r.imp+'</td><td class="num">'+r.clk+'</td><td class="num">'+(r.imp>0?((r.clk/r.imp*100).toFixed(2)+'%'):'—')+'</td></tr>';});
+  html+=card('バ ナ ー 別',bt+'</table></div>');
   var hk=Object.keys(hours);
   if(hk.length){
     var mx=0;hk.forEach(function(k){mx=Math.max(mx,hours[k]);});
-    html+='<div class="card"><h2>時間帯別の視聴</h2>';
-    for(var h=0;h<24;h++){var v=hours[String(h)]||hours[pad(h)]||0;html+='<div class="bar-row"><div class="bar-h">'+h+'時</div><div class="bar-t"><div class="bar-f" style="width:'+(mx?Math.round(v/mx*100):0)+'%"></div></div><div class="bar-v">'+v+'</div></div>';}
-    html+='</div>';
+    var hb='';
+    for(var h=0;h<24;h++){var v=hours[String(h)]||hours[pad(h)]||0;hb+='<div class="bar-row"><div class="bar-h">'+h+'時</div><div class="bar-t"><div class="bar-f" style="width:'+(mx?Math.round(v/mx*100):0)+'%"></div></div><div class="bar-v">'+v+'</div></div>';}
+    html+=card('時 間 帯 別',hb);
   }
   html+=regFunnelHtml(reg);
   el('report').innerHTML=html;
@@ -866,6 +973,8 @@ function selfTest(){
   t('URLからIDを取り出す',ytIdFrom('https://www.youtube.com/watch?v=FqqKCo3WTts&t=1')==='FqqKCo3WTts'&&ytIdFrom('https://youtu.be/FqqKCo3WTts')==='FqqKCo3WTts'&&ytIdFrom('FqqKCo3WTts')==='FqqKCo3WTts');
   t('放送中の番号：6:00は1番目、7:00は2番目、7:30は次の周の1番目',nowProgIndex(good,360)===0&&nowProgIndex(good,420)===1&&nowProgIndex(good,450)===0);
   t('放送時間外は放送中なし',nowProgIndex(good,300)===-1&&nowProgIndex(good,1440)===-1);
+  var withOpen={airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,_open:true}]};
+  t('画面用の印（_open）は保存する形に入らない',JSON.stringify(schedPayload(withOpen)).indexOf('_open')<0);
   var sp=[{name:'A',url:'https://a',img:'_banner_a_port.jpg',on:true},{name:'B',url:'',img:'_banner_b_port.png',on:false},{name:'C',url:'https://c',img:'_banner_c_port.jpg',on:true,from:'2026-10-01',to:'2026-10-31'}];
   t('正しい一覧は通る',validSponsors(sp)==='');
   t('名前の重複は落ちる',validSponsors([{name:'A',img:'_a.jpg'},{name:'A',img:'_b.jpg'}])!=='');
@@ -875,6 +984,7 @@ function selfTest(){
   var act=activeSponsors(sp,'2026-09-06');
   t('表示OFFと期間外は出ない（9/6 は A だけ）',act.length===1&&act[0].name==='A');
   t('期間内なら出る（10/15 は A と C）',activeSponsors(sp,'2026-10-15').length===2);
+  t('スポンサーの保存する形にも印が入らない',JSON.stringify(sponPayloadList([{name:'A',img:'_a.jpg',_open:true}])).indexOf('_open')<0);
   var rt=fsVal(fsEnc({a:1,b:'x',c:true,d:null,e:[1,'y'],f:{g:2}}));
   t('Firestore の型付き値の往復',rt.a===1&&rt.b==='x'&&rt.c===true&&rt.d===null&&rt.e[1]==='y'&&rt.f.g===2);
   el('selftest').hidden=false;el('selftestOut').textContent=out.join('\n')+'\n\n'+(ng?('★ 不合格 '+ng+' 件'):'◯ 自己検査：全部合格（'+out.length+'項目）');
@@ -887,12 +997,13 @@ function selfTest(){
   var a=null;try{a=JSON.parse(lsGet('kanri_auth')||'null');}catch(_){}
   el('dpick').value=dayStr(new Date());
   showTab(lsGet('kanri_tab')||'sched');
-  if(ghToken())el('ghStat').textContent='✔ 鍵はこの端末に保存済み（「つながるか試す」で確認できます）';
+  if(ghToken()){el('ghStat').textContent='✔ 鍵はこの端末に保存済み（「つながるか試す」で確認できます）';el('ghSub').textContent='保存済み ✔ ▾';}
   loadSchedule().then(loadSponsors);
   if(a&&a.r){REFRESH=a.r;EMAIL=a.e||'';refreshToken().then(function(){el('authstat').textContent='✔ ログイン状態を復元しました';el('authstat').className='ok';if(curTab==='rep')pick('today');}).catch(function(){REFRESH='';setWho();});}
   else setWho();
   if(/[?&]selftest=1/.test(location.search))selfTest();
-  setInterval(function(){if(curTab==='sched'&&sched.cycle.length){var now=nowProgIndex(sched);document.querySelectorAll('#progs .prog').forEach(function(r,i){r.classList.toggle('now',i===now);var tag=r.querySelector('.nowtag');if(i===now&&!tag)r.querySelector('.no').innerHTML=(i+1)+'<br><span class="nowtag">放送中</span>';if(i!==now&&tag)r.querySelector('.no').textContent=(i+1);});}},30000);
+  // 放送中の印を30秒ごとに更新（入力中は触らない）
+  setInterval(function(){if(curTab==='sched'&&sched.cycle.length&&!(document.activeElement&&document.activeElement.matches('input'))){var now=nowProgIndex(sched);var cur=-1;document.querySelectorAll('#progs .prog').forEach(function(r,i){if(r.classList.contains('now'))cur=i;});if(cur!==now){readSchedFromForm();renderSched();}}},30000);
 })();
 </script>
 </body>
