@@ -109,7 +109,10 @@ button:disabled{opacity:.4;cursor:default;}
 .spon.off .s1{opacity:.55;}
 .s1{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:8px 10px;cursor:pointer;}
 .s1 .no{font-size:12px;font-weight:700;color:var(--text3);text-align:center;}
-.s1 .bn{width:100%;max-width:420px;aspect-ratio:1170/107;background:#dfe7e1;border-radius:3px;object-fit:cover;display:block;}
+.s1 .bn{width:100%;max-width:420px;aspect-ratio:1170/107;height:auto;background:#dfe7e1;border-radius:3px;object-fit:cover;display:block;}
+.s1 .bn.miss{background:#f3d9d9;}
+.s1 .miss-t{font-size:11px;color:var(--red);margin-top:2px;}
+.s1 .meta .wait{background:#fff7e0;color:#7a5200;border-radius:3px;padding:0 5px;font-weight:700;}
 .s1 .nm{font-size:14px;font-weight:700;margin-top:5px;line-height:1.3;}
 .s1 .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--text3);margin-top:2px;}
 .s1 .meta .tag{border:1px solid var(--border);border-radius:3px;padding:0 4px;}
@@ -677,7 +680,7 @@ function sponRow(s,i,today){
   return '<div class="spon'+(act?'':' off')+(s._open?' open':'')+'" data-i="'+i+'">'
     +'<div class="s1" data-op="toggle">'
     +'<div class="no">'+(i+1)+'</div>'
-    +'<div style="min-width:0"><img class="bn" alt="" src="'+esc(SITE+s.img)+'" onerror="this.style.background=\'#f3d9d9\'"><div class="nm">'+esc(s.name)+'</div><div class="meta">'+meta+'</div></div>'
+    +'<div style="min-width:0"><img class="bn" alt="" src="'+esc(pendingImg[s.img]||(SITE+s.img))+'" onerror="this.onerror=null;this.src=PIX;this.classList.add(\'miss\');this.insertAdjacentHTML(\'afterend\',\'<div class=miss-t>画像がまだ見つかりません（公開待ちなら1〜2分後に「読み直す」）</div>\')"><div class="nm">'+esc(s.name)+'</div><div class="meta">'+(pendingImg[s.img]?'<span class="wait">公開待ち</span>':'')+meta+'</div></div>'
     +'<div class="ops"><button class="g ic" data-op="up" aria-label="上へ">▲</button><button class="g ic" data-op="down" aria-label="下へ">▼</button></div>'
     +'</div>'
     +'<div class="ed"'+(s._open?'':' hidden')+'>'
@@ -740,6 +743,14 @@ el('sponInterval').addEventListener('input',checkSpon);
 el('btnSponReload').onclick=function(){if(sponSig(spon)!==sponLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSponsors();};
 el('btnSponWrite').onclick=function(){
   readSponFromForm();var err=validSponsors(spon.list);if(err){toast('✖ '+err);return;}
+  var waiting=spon.list.filter(function(s){return !!pendingImg[s.img];});
+  if(waiting.length){toast('画像の公開待ちです（'+waiting.map(function(s){return s.name;}).join('・')+'）。1〜2分後にもう一度');return;}
+  // 反映の前に、一覧の画像がすべて公開されているかを確かめる（公開前に反映するとアプリのバナーが空になる）
+  var b=el('barBtn');b.disabled=true;
+  Promise.all(spon.list.map(function(s){return fetch(SITE+s.img,{method:'HEAD',cache:'no-store'}).then(function(r){return r.ok?null:s.name;}).catch(function(){return s.name;});}))
+  .then(function(miss){ b.disabled=false; miss=miss.filter(Boolean); if(miss.length){toast('✖ 画像が公開されていません：'+miss.join('・')+'。公開を待つか画像を確かめてください');return;} sponWriteNow(); });
+};
+function sponWriteNow(){
   if(!confirm('スポンサーの一覧をアプリに反映します（'+spon.list.length+'件・いま出るのは '+activeSponsors(spon.list).length+' 枚）。よろしいですか？'))return;
   var out={v:(spon.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),interval:spon.interval,list:sponPayloadList(spon.list)};
   writeDoc('broadcast/sponsors',out).then(function(){toast('✔ 反映しました（版 '+out.v+'）');loadSponsors();}).catch(function(e){toast('✖ 反映できません：'+e.message);});
@@ -747,6 +758,8 @@ el('btnSponWrite').onclick=function(){
 
 // ── 新しいバナー：画像の検査と規格合わせ → GitHub へ上げる → 一覧に足す ──
 var newImg=null;
+var PIX='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';   // 壊れた画像の代わり（透明1ピクセル）
+var pendingImg={};   // 上げたばかりで公開待ちの画像：ファイル名 → 手元の見本のURL
 function fitBanner(img){
   var c=document.createElement('canvas');c.width=BANNER_W;c.height=BANNER_H;
   var ctx=c.getContext('2d');
@@ -809,9 +822,10 @@ function replaceImage(i,file,prevBox){
         return ghPut(fname,img.blob,'sponsor: バナー画像を差し替え（'+s.name+'）').then(function(){return fname;})
           .catch(function(err){ if(/既にあります/.test(err.message)&&n<9) return tryPut(n+1); throw err; });};
       tryPut(0).then(function(fname){
-        readSponFromForm(); spon.list[i].img=fname; spon.list[i]._open=true; renderSpons();
-        toast('上がりました。公開を待っています（1〜2分）…');
-        return waitPublished(SITE+fname).then(function(ok){ toast(ok?'✔ 新しい画像が公開されました。「アプリに反映する」で切り替わります':'公開の確認が取れません。少し待って「読み直す」を'); if(ok)renderSpons(); });
+        pendingImg[fname]=URL.createObjectURL(img.blob);   // 公開されるまでは手元の見本を出す
+        readSponFromForm(); spon.list[i].img=fname; spon.list[i]._open=false; renderSpons();
+        toast('上がりました。公開を待っています（1〜2分）。押し直さないでください');
+        return waitPublished(SITE+fname).then(function(ok){ if(ok){delete pendingImg[fname];toast('✔ 新しい画像が公開されました。「アプリに反映する」で切り替わります');renderSpons();} else toast('公開の確認が取れません。少し待って「読み直す」を'); });
       }).catch(function(err){ b.disabled=false; prevBox.querySelector('.note').textContent='✖ '+err.message; });
     };
   }).catch(function(err){prevBox.innerHTML='<div class="err">'+esc(err.message)+'</div>';});
@@ -862,13 +876,14 @@ el('btnNewSpon').onclick=function(){
     readSponFromForm();
     var idx=spon.list.length;
     for(var i=0;i<spon.list.length;i++){if(!spon.list[i].url||/readyfor\.jp/.test(spon.list[i].url)){idx=i;break;}}
-    spon.list.splice(idx,0,{name:name,url:url,img:fname,on:true,from:'',to:'',_open:true});
+    pendingImg[fname]=URL.createObjectURL(newImg.blob);
+    spon.list.splice(idx,0,{name:name,url:url,img:fname,on:true,from:'',to:'',_open:false});
     renderSpons();
     el('nName').value='';el('nSlug').value='';el('nUrl').value='';el('nFile').value='';el('nPreview').innerHTML='';newImg=null;
     return waitPublished(SITE+fname);
   }).then(function(ok){
     el('nStat').textContent=ok?'✔ 画像が公開されました。一覧を確認して「アプリに反映する」を押してください':'公開の確認が取れません（少し待ってから「読み直す」で画像が出るか見てください）';
-    if(ok)renderSpons();
+    if(ok){for(var k in pendingImg){if(pendingImg[k]&&/_port\./.test(k))delete pendingImg[k];}renderSpons();}
   }).catch(function(e){el('nStat').textContent='✖ '+e.message;b.disabled=false;});
 };
 
