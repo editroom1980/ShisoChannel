@@ -1209,6 +1209,11 @@ html.tvapp #row-cursor,html.tvapp #row-scroll,html.tvapp #row-aicap{display:flex
   border-bottom:none;padding-top:12px;color:var(--ai-sub);
   font-size:19px;letter-spacing:2px;
 }
+/* ★選べる行（次にできること）。押せる物だと分かるよう右端に「›」（設計v2 §3。2026-09-08） */
+#ai-list li.ai-opt{ position:relative;padding-right:44px;border-radius:6px; }
+#ai-list li.ai-opt::after{ content:'›';position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  font-size:30px;line-height:1;opacity:.55; }
+#ai-list li.ai-opt.ai-cur::after{ opacity:1;color:#fff; }
 #ai-list li.ai-step{
   padding-left:30px;color:var(--ai-step);font-size:19px;
   border-bottom:1px dashed rgba(255,255,255,0.10);
@@ -2306,7 +2311,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.31-lab（バナーの切り替え時間を管理アプリから）</div>
+    <div class="ps-version">version 4.33-lab（答えに「次にできること」・選べる行を明示）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -5025,7 +5030,11 @@ window.__aiPick=function(n, 初回){
     var ul=_aiEl('ai-list'); if(!ul) return;
     var ら=ul.querySelectorAll('li');
     var 実=[];                      // 見出し（ai-sep）は数えない
-    for(var i=0;i<ら.length;i++){ if(!ら[i].classList.contains('ai-sep')) 実.push(ら[i]); }
+    // ★選べる行が明示された答え（設計v2 §3）では、その行（ai-opt）だけを数える。
+    //   アプリ側の「選べる行」と同じ並びになる＝2か所で別々に数えない
+    var _opt=ul.querySelectorAll('li.ai-opt');
+    if(_opt.length){ for(var k=0;k<_opt.length;k++) 実.push(_opt[k]); }
+    else { for(var i=0;i<ら.length;i++){ if(!ら[i].classList.contains('ai-sep')) 実.push(ら[i]); } }
     for(var j=0;j<実.length;j++) 実[j].classList.toggle('ai-cur', j===n);
     // ★いま何番目を見ているかを見出しの右端に出す（2026-09-01）。
     //   14件や16件の一覧では、下にまだ在るのかが画面から読み取れなかった
@@ -5056,9 +5065,13 @@ window.__aiPick=function(n, 初回){
     //   消えてしまう。光らせるのと、案内を書き換えるのは別のこと
     if(!初回){
       var note=_aiEl('ai-note');
+      // ★2列の一覧は左右で隣の列へ動く（2026-09-07 アプリ 23.24 と同時）。案内もそれに合わせる
       if(note) note.textContent = (ul.className==='ai-pick')
-        ? '上下で選ぶ　／　決定で決まる'
-        : '上下で選ぶ　／　決定でくわしく';
+        ? '上下で選ぶ　／　左右で隣の列　／　決定で決まる'
+        : (ul.className.indexOf('ai-pick')>=0)
+          ? '上下で選ぶ　／　決定で決まる'
+          : (ul.querySelector('li.ai-opt') ? '上下で選ぶ　／　決定で進む　／　番号でも言えます'
+                                            : '上下で選ぶ　／　決定でくわしく');
       _aiErandeiru = (n>=0);       // ★選んでいる最中だと覚えておく
       var tx=_aiEl('ai-text');   if(tx) tx.textContent='';
       var hi=_aiEl('ai-hint');   if(hi) hi.textContent='戻るで閉じます';
@@ -5469,6 +5482,16 @@ window.__aiAnswer=function(obj){
     if(o['選択'] && typeof o['選び']==='number' && o['選び']>=0){
       window.__aiPick(o['選び'], true);
     }
+    // ★選べる行が明示された答え（設計v2 §3「行き止まりゼロ」）：その行に印を付け、先頭を光らせる。
+    //   アプリは出した瞬間から先頭（0番）を選んだ状態で持っている（画面に出した）
+    try{
+      var _sel=o['選べる行'];
+      if(_sel && _sel.length){
+        var _li=ul.querySelectorAll('li');
+        for(var _s=0;_s<_sel.length;_s++){ var _e=_li[_sel[_s]]; if(_e){ _e.classList.add('ai-opt'); } }
+        window.__aiPick(0, true);
+      }
+    }catch(_){}
     // ごみカレンダー等の画像。アプリが答えのJSONに 画像:[URL,…] を載せてくる
     var box=_aiEl('ai-imgs'); box.innerHTML='';
     var IM=o['画像']||[];
