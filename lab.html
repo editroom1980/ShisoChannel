@@ -566,6 +566,13 @@ html.tvapp .sb-note{display:none;}
 .prow.active .pname{color:var(--green);font-weight:700;}
 .pmeta{display:flex;align-items:center;gap:6px;}
 .pcat{font-size:11px;font-weight:700;color:var(--green2);}
+/* ★新しく入った番組の印（2026-09-15）。この端末で前に見た時に無かった番組に付き、
+   その番組を再生すると消える。初めて開いた時は付けない（全部に付くと印の意味が無くなる）。
+   字の大きさと太さは隣の分類(.pcat)に揃える（並んで出る物は揃える） */
+.pnew{font-size:11px;font-weight:700;color:var(--forest);background:var(--gold2);
+      border-radius:3px;padding:0 5px;letter-spacing:1px;flex-shrink:0;}
+.sb-new{font-size:11px;font-weight:700;color:var(--forest);background:var(--gold2);
+        border-radius:9px;padding:1px 8px;margin-left:8px;flex-shrink:0;white-space:nowrap;}
 .pdur{font-size:11px;color:var(--text3);}
 
 /* ══ 宍粟市お知らせ・イベント（番組表と同形式の独立ウインドウ・データがある時のみ表示） ══ */
@@ -2155,6 +2162,7 @@ html.tvpc body.text-1 .time-sep{font-size:10px;}
 html.tvpc body.text-1 .pinfo{padding:6px 12px 9px;gap:4px;}
 html.tvpc body.text-1 .pname{font-size:18px;line-height:1.35;}
 html.tvpc body.text-1 .pcat,html.tvpc body.text-1 .pdur{font-size:13px;}
+html.tvpc body.text-1 .pnew,html.tvpc body.text-1 .sb-new{font-size:13px;}
 html.tvpc body.text-1 .news-tag{font-size:11px;padding:2px 8px;}
 html.tvpc body.text-1 .news-ttl{font-size:16px;line-height:1.35;min-height:calc(1.35em * 3);}
 html.tvpc body.text-2 .sb-ttl{font-size:18px;letter-spacing:2px;}
@@ -2165,6 +2173,7 @@ html.tvpc body.text-2 .time-sep{font-size:11px;}
 html.tvpc body.text-2 .pinfo{padding:7px 12px 10px;gap:4px;}
 html.tvpc body.text-2 .pname{font-size:21px;line-height:1.3;}
 html.tvpc body.text-2 .pcat,html.tvpc body.text-2 .pdur{font-size:15px;}
+html.tvpc body.text-2 .pnew,html.tvpc body.text-2 .sb-new{font-size:15px;}
 html.tvpc body.text-2 .news-tag{font-size:12px;padding:2px 8px;}
 html.tvpc body.text-2 .news-ttl{font-size:18px;line-height:1.3;min-height:calc(1.3em * 3);}
 /* LIVEの帯（動画の上の題名）も同じ段で（Phase C 第2弾・2026-09-06） */
@@ -2311,7 +2320,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.33-lab（答えに「次にできること」・選べる行を明示）</div>
+    <div class="ps-version">version 4.34-lab（新しく入った番組に「新」の印・?shinchk=2 で確認）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2462,6 +2471,7 @@ html.tvapp #lnk-reg{display:none;}
     <div class="sidebar" id="sb-panel">
       <div class="sb-head">
         <div class="sb-ttl">番 組 表</div>
+        <span class="sb-new" id="sb-new-count" style="display:none"></span>
         
         <div id="today-date">—</div>
       </div>
@@ -7527,6 +7537,7 @@ function maybeShowTelop(ytId){
 
 function loadVideo(ytId,sec,msg){
   try{statsSessionStart(ytId);}catch(_){}
+  try{clearNewProg(ytId);}catch(_){}     // ★見た番組の「新」は消す（2026-09-15）
   try{maybeShowTelop(ytId);}catch(_){}
   clearSpinnerTimer();
   showEnded(false);
@@ -7761,6 +7772,74 @@ function addTap(el,onTap){
 }
 
 // ══════════════════════════════════════════════
+//  新しく入った番組の印（2026-09-15）
+// ══════════════════════════════════════════════
+//  この端末で前に見た時の番組の一覧を控えておき、そこに無かった番組に「新」を付ける。
+//  ★初めて開いた時は付けない。全部に付くと印の意味が無くなるし、
+//    「新しく入った」という事実にも反する（その人が今来ただけ）
+//  ★その番組を再生したら消える。番組表から消えた番組の印も一緒に落とす
+//  ★控えが読めない端末（プライベートモード等）では、何も付けずに黙って素通りする
+var NEWIDS=[];
+var shinchkDone=false;
+// ★検証用の口（2026-09-15）。?shinchk=2 を付けて開くと
+//   「後ろの2本が新しく入った」状態を作り、印の出方を実機で確かめられる。
+//   触るのは**この端末の控えだけ**。番組表そのものにも、ほかの人にも影響しない。
+//   1回だけ働くので、そのあと番組を再生すれば印がちゃんと消えることまで確かめられる
+function newMarksCheckSetup(){
+  var m=(location.search||'').match(/[?&]shinchk=(\d+)/);
+  if(!m)return;
+  var n=parseInt(m[1],10)||0; if(n<1)n=1; if(n>8)n=8;
+  var cur=[];
+  for(var i=0;i<CYCLE.length;i++){var p=CYCLE[i];if(p&&p.ytId)cur.push(p.ytId);}
+  if(cur.length<=n)return;
+  nvSet('sc_seen_ids',cur.slice(0,cur.length-n));
+  nvSet('sc_new_ids',[]);
+}
+function nvGet(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(_){return null;}}
+function nvSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(_){}}
+function newMarksUpdate(){
+  if(!shinchkDone){shinchkDone=true;try{newMarksCheckSetup();}catch(_){}}
+  var cur=[];
+  for(var i=0;i<CYCLE.length;i++){var p=CYCLE[i];if(p&&p.ytId)cur.push(p.ytId);}
+  if(!cur.length)return;                       // 番組表がまだ取れていない＝何も変えない
+  var seen=nvGet('sc_seen_ids');
+  if(!seen||!seen.length){                     // 初めて開いた
+    NEWIDS=[];nvSet('sc_seen_ids',cur);nvSet('sc_new_ids',[]);return;
+  }
+  var keep=nvGet('sc_new_ids')||[],out=[];
+  for(var j=0;j<cur.length;j++){
+    var id=cur[j];
+    // 前に見た時に無かった＝新しく入った。すでに印が付いていて、まだ見ていない物も残す
+    if(seen.indexOf(id)<0||keep.indexOf(id)>=0)out.push(id);
+  }
+  NEWIDS=out;nvSet('sc_seen_ids',cur);nvSet('sc_new_ids',out);
+}
+function isNewProg(id){return !!id&&NEWIDS.indexOf(id)>=0;}
+function clearNewProg(id){
+  var i=NEWIDS.indexOf(id);if(i<0)return;
+  NEWIDS.splice(i,1);nvSet('sc_new_ids',NEWIDS);
+  try{renderNewMarks();}catch(_){}
+}
+// 印だけを今の状態に合わせる。番組表を丸ごと描き直さない
+//（再生中に描き直すと、見ている位置が飛ぶ）
+function renderNewMarks(){
+  for(var i=0;i<CYCLE.length;i++){
+    var row=document.getElementById('row-'+i);if(!row)continue;
+    var tag=row.querySelector('.pnew'),meta=row.querySelector('.pmeta');
+    var need=isNewProg(CYCLE[i]&&CYCLE[i].ytId);
+    if(need&&!tag&&meta){
+      var sp=document.createElement('span');sp.className='pnew';sp.textContent='新';
+      meta.insertBefore(sp,meta.firstChild);
+    }else if(!need&&tag&&tag.parentNode){tag.parentNode.removeChild(tag);}
+  }
+  var b=document.getElementById('sb-new-count');
+  if(b){
+    if(NEWIDS.length){b.textContent='新 '+NEWIDS.length;b.style.display='';}
+    else b.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════
 //  番組表描画
 // ══════════════════════════════════════════════
 function renderSB(){
@@ -7824,6 +7903,8 @@ function renderSB(){
       list.appendChild(row);
     })(pIdx);
   }
+  try{ newMarksUpdate(); }catch(_){}    // 新しく入った番組を数え直す
+  try{ renderNewMarks(); }catch(_){}    // その印を行と見出しに出す
   try{ hideClippedChips(); }catch(_){}  // 描画直後の端切れも隠す
 }
 
