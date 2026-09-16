@@ -1,17 +1,7 @@
 {
- "updated": "2026-09-16T09:17:39+09:00",
+ "updated": "2026-09-16T14:16:06+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "9/16 移動図書館「ささゆり号」が千種に",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/ibento/1462514391298.html",
-   "date": "9月16日",
-   "ts": "2026-09-16T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-09-16",
-   "place": "千種町内"
-  },
   {
    "tag": "催し",
    "title": "9/19 元気をもらおう講座",
@@ -119,6 +109,15 @@
    "src": "山崎文化会館",
    "when": "2026-10-04",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "学校",
+   "title": "10/10 西播中学校新人大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "date": "10月10日",
+   "ts": "2026-10-10T00:00:00+09:00",
+   "src": "山崎西中学校",
+   "when": "2026-10-10"
   }
  ]
 }
