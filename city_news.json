@@ -1,7 +1,47 @@
 {
- "updated": "2026-09-18T18:13:41+09:00",
+ "updated": "2026-09-18T22:35:46+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
+  {
+   "tag": "学校",
+   "title": "9/18 千種小学校 中高合同体育祭練習",
+   "url": "https://city-shiso-chikusa-es.edumap.jp/event",
+   "date": "9月18日",
+   "ts": "2026-09-18T00:00:00+09:00",
+   "src": "千種小学校",
+   "when": "2026-09-18",
+   "place": "千種小学校"
+  },
+  {
+   "tag": "学校",
+   "title": "9/18 山崎西中学校 学校のようす 【山南ニュース】市新人大会壮行会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "date": "9月18日",
+   "ts": "2026-09-18T00:00:00+09:00",
+   "src": "山崎西中学校",
+   "when": "2026-09-18",
+   "place": "山崎西中学校"
+  },
+  {
+   "tag": "学校",
+   "title": "9/18 山崎南中学校 のようす 【東風だより】宍粟市新人大会 壮行会",
+   "url": "https://city-shiso-yamasakiminami-jhs.edumap.jp/event",
+   "date": "9月18日",
+   "ts": "2026-09-18T00:00:00+09:00",
+   "src": "山崎南中学校",
+   "when": "2026-09-18",
+   "place": "山崎南中学校"
+  },
+  {
+   "tag": "学校",
+   "title": "9/18 山崎東中学校 学校のようす 【山南ニュース】市新人大会壮行会",
+   "url": "https://city-shiso-yamasakihigashi-jhs.edumap.jp/event",
+   "date": "9月18日",
+   "ts": "2026-09-18T00:00:00+09:00",
+   "src": "山崎東中学校",
+   "when": "2026-09-18",
+   "place": "山崎東中学校"
+  },
   {
    "tag": "催し",
    "title": "9/19 元気をもらおう講座",
@@ -79,45 +119,6 @@
    "src": "宍粟市公式サイト",
    "when": "2026-09-26",
    "place": "波賀公園"
-  },
-  {
-   "tag": "イベント",
-   "title": "9/26 いちのぴあで「えほんのじかん」",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyasyogaigakushujimusho/ibento/14037.html",
-   "date": "9月26日",
-   "ts": "2026-09-26T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-09-26",
-   "place": "いちのぴあ 会議室1"
-  },
-  {
-   "tag": "催し",
-   "title": "9/27 宍粟労音定例会第8回第九公演",
-   "url": "http://www.yamabun.org/%e5%ae%8d%e7%b2%9f%e5%8a%b4%e9%9f%b3%e5%ae%9a%e4%be%8b%e4%bc%9a%e7%ac%ac%ef%bc%98%e5%9b%9e%e7%ac%ac%e4%b9%9d%e5%85%ac%e6%bc%94/",
-   "date": "9月27日",
-   "ts": "2026-09-27T00:00:00+09:00",
-   "src": "山崎文化会館",
-   "when": "2026-09-27",
-   "place": "山崎文化会館"
-  },
-  {
-   "tag": "催し",
-   "title": "10/4 邦寿一人ライブ宍粟編",
-   "url": "http://www.yamabun.org/%e9%82%a6%e5%af%bf%e4%b8%80%e4%ba%ba%e3%83%a9%e3%82%a4%e3%83%96%e5%ae%8d%e7%b2%9f%e7%b7%a8/",
-   "date": "10月4日",
-   "ts": "2026-10-04T00:00:00+09:00",
-   "src": "山崎文化会館",
-   "when": "2026-10-04",
-   "place": "山崎文化会館"
-  },
-  {
-   "tag": "学校",
-   "title": "10/10 西播中学校新人大会",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "10月10日",
-   "ts": "2026-10-10T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-10-10"
   }
  ]
 }
