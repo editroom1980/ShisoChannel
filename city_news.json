@@ -1,55 +1,7 @@
 {
- "updated": "2026-09-19T22:24:04+09:00",
+ "updated": "2026-09-20T01:48:22+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "催し",
-   "title": "9/19 元気をもらおう講座",
-   "url": "http://www.yamabun.org/%e5%85%83%e6%b0%97%e3%82%92%e3%82%82%e3%82%89%e3%81%8a%e3%81%86%e8%ac%9b%e5%ba%a7-3/",
-   "date": "9月19日",
-   "ts": "2026-09-19T00:00:00+09:00",
-   "src": "山崎文化会館",
-   "when": "2026-09-19",
-   "place": "山崎文化会館"
-  },
-  {
-   "tag": "イベント",
-   "title": "9/19 男女共同参画セミナー 参加者募集",
-   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/tantojoho/danzyokyoudousankaku/gender-equality-seminar.html",
-   "date": "9月19日",
-   "ts": "2026-09-19T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-09-19"
-  },
-  {
-   "tag": "学校",
-   "title": "9/19 山崎西中学校 粟市新人大会開幕〜青空のもと、爽やかな山南生",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "9月19日",
-   "ts": "2026-09-19T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-09-19",
-   "place": "山崎西中学校"
-  },
-  {
-   "tag": "学校",
-   "title": "9/19 宍粟市中学校新人大会",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "9月19日",
-   "ts": "2026-09-19T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-09-19"
-  },
-  {
-   "tag": "学校",
-   "title": "9/19 山崎東中学校 粟市新人大会開幕〜青空のもと、爽やかな山南生",
-   "url": "https://city-shiso-yamasakihigashi-jhs.edumap.jp/event",
-   "date": "9月19日",
-   "ts": "2026-09-19T00:00:00+09:00",
-   "src": "山崎東中学校",
-   "when": "2026-09-19",
-   "place": "山崎東中学校"
-  },
   {
    "tag": "催し",
    "title": "9/20 映画「TOKYOタクシー」",
@@ -118,6 +70,54 @@
    "ts": "2026-10-04T00:00:00+09:00",
    "src": "山崎文化会館",
    "when": "2026-10-04",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "学校",
+   "title": "10/10 西播中学校新人大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "date": "10月10日",
+   "ts": "2026-10-10T00:00:00+09:00",
+   "src": "山崎西中学校",
+   "when": "2026-10-10"
+  },
+  {
+   "tag": "イベント",
+   "title": "10/14 最新デジタル活用と実践的な事業展開を学ぶ 起業準備セミナー 受講生を募集",
+   "url": "https://www.city.shiso.lg.jp/soshiki/shichokoshitsu/tiikisouseika/ibennto/20261014.html",
+   "date": "10月14日",
+   "ts": "2026-10-14T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-10-14",
+   "place": "宍粟防災センター4階研修室（宍粟市山崎町鹿沢65-3）"
+  },
+  {
+   "tag": "学校",
+   "title": "10/15 宍粟市中学校駅伝競走大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "date": "10月15日",
+   "ts": "2026-10-15T00:00:00+09:00",
+   "src": "山崎西中学校",
+   "when": "2026-10-15"
+  },
+  {
+   "tag": "イベント",
+   "title": "10/17 男女共同参画講演会「男と女、どっちがずるい？」参加者募集",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/ibent/4559.html",
+   "date": "10月17日",
+   "ts": "2026-10-17T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-10-17",
+   "place": "一宮市民協働センター1階ホール"
+  },
+  {
+   "tag": "催し",
+   "title": "10/18 おさらい会",
+   "url": "http://www.yamabun.org/%e3%81%8a%e3%81%95%e3%82%89%e3%81%84%e4%bc%9a-2/",
+   "date": "10月18日",
+   "ts": "2026-10-18T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-10-18",
    "place": "山崎文化会館"
   }
  ]
