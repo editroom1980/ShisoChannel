@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-18T22:36:44+09:00",
+ "updated": "2026-09-19T14:04:35+09:00",
  "items": [
   {
    "tag": "学校",
@@ -13,33 +13,13 @@
   },
   {
    "tag": "学校",
-   "title": "千種小学校 中高合同体育祭練習",
-   "url": "https://city-shiso-chikusa-es.edumap.jp/event",
-   "src": "千種小学校",
-   "ts": null,
-   "when": "2026-09-18",
-   "place": "千種小学校",
-   "no": "schikusa-es918"
-  },
-  {
-   "tag": "学校",
-   "title": "山崎西中学校 学校のようす 【山南ニュース】市新人大会壮行会",
+   "title": "山崎西中学校 粟市新人大会開幕〜青空のもと、爽やかな山南生",
    "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
    "src": "山崎西中学校",
    "ts": null,
-   "when": "2026-09-18",
+   "when": "2026-09-19",
    "place": "山崎西中学校",
-   "no": "syamasakinishi-jhs918"
-  },
-  {
-   "tag": "学校",
-   "title": "山崎西中学校 8:30 【東風だより】宍粟市新人大会 壮行会",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "src": "山崎西中学校",
-   "ts": null,
-   "when": "2026-09-18",
-   "place": "山崎西中学校",
-   "no": "syamasakinishi-jhs918"
+   "no": "syamasakinishi-jhs919"
   },
   {
    "tag": "学校",
@@ -103,16 +83,6 @@
   },
   {
    "tag": "学校",
-   "title": "山崎南中学校 のようす 【東風だより】宍粟市新人大会 壮行会",
-   "url": "https://city-shiso-yamasakiminami-jhs.edumap.jp/event",
-   "src": "山崎南中学校",
-   "ts": null,
-   "when": "2026-09-18",
-   "place": "山崎南中学校",
-   "no": "syamasakiminami-jhs918"
-  },
-  {
-   "tag": "学校",
    "title": "宍粟市中学校新人大会",
    "url": "https://city-shiso-yamasakiminami-jhs.edumap.jp/event",
    "src": "山崎南中学校",
@@ -163,13 +133,13 @@
   },
   {
    "tag": "学校",
-   "title": "山崎東中学校 学校のようす 【山南ニュース】市新人大会壮行会",
+   "title": "山崎東中学校 粟市新人大会開幕〜青空のもと、爽やかな山南生",
    "url": "https://city-shiso-yamasakihigashi-jhs.edumap.jp/event",
    "src": "山崎東中学校",
    "ts": null,
-   "when": "2026-09-18",
+   "when": "2026-09-19",
    "place": "山崎東中学校",
-   "no": "syamasakihigashi-jhs918"
+   "no": "syamasakihigashi-jhs919"
   },
   {
    "tag": "学校",
