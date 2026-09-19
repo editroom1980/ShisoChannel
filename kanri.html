@@ -670,7 +670,7 @@ function loadSponsors(){
     }
     sponLoadedSig=sponExists?sponSig(spon):'';
     renderSpons();
-    loadExistingBanners();
+    loadExistingBanners().then(applySponsorPrefill);
   }).catch(function(e){el('sponStatus').className='status bad';el('sponStatus').textContent='一覧が読めません：'+e.message;});
 }
 function readSponFromForm(){
@@ -798,10 +798,36 @@ function usableBanners(names,list){
   return (names||[]).filter(function(nm){
     return nm&&/^_banner_[a-z0-9-]+(?:_\d{8}(?:-\d+)?)?_port\.(?:jpe?g|png)$/i.test(nm)&&!used[nm];}).sort().reverse();
 }
+// ★リンクで開いたら「新しいバナー」に中身を入れておく（2026-09-19）。
+//   例）kanri.html?sp=株式会社山弘&img=_banner_yamahiro_20260918_port.png&url=https://www.yamahiro.org/
+//   入れるだけで、書き込みはしない。押すのは必ず人（「アプリに出す」→確認）。
+//   ログインしていなければ、先にログインの欄を出す
+var prefillDone=false;
+function applySponsorPrefill(){
+  if(prefillDone)return; prefillDone=true;
+  var q=new URLSearchParams(location.search||''), nm=(q.get('sp')||'').trim();
+  if(!nm)return;
+  showTab('spon');
+  el('nName').value=nm;
+  var u=(q.get('url')||'').trim(); if(/^https?:\/\//.test(u))el('nUrl').value=u;
+  var im=(q.get('img')||'').trim(), sel=el('nExisting');
+  if(im&&sel&&[].some.call(sel.options,function(o){return o.value===im;})){
+    sel.value=im; sel.dispatchEvent(new Event('change'));
+  }
+  if(spon.list.some(function(x){return x.name===nm;})){
+    el('nStat').textContent='「'+nm+'」はもう一覧にあります（アプリに出ています）';
+  }else{
+    // ★保存してあるログインは、開いた直後に裏で復元される（REFRESHがある＝復元中）。その時はログイン欄を出さない
+    var 未ログイン=!ID_TOKEN&&!REFRESH;
+    el('nStat').textContent=未ログイン?'先にログインしてください。そのあと「アプリに出す」を押せば出ます':'入力しておきました。「アプリに出す」を押してください';
+    if(未ログイン)showLogin();
+  }
+  setTimeout(function(){try{el('btnNewSpon').scrollIntoView({block:'center'});}catch(_){}},300);
+}
 function loadExistingBanners(){
-  var sel=el('nExisting'),box=el('nExistingBox'); if(!sel||!box)return;
+  var sel=el('nExisting'),box=el('nExistingBox'); if(!sel||!box)return Promise.resolve();
   var t=ghToken(),H={'Accept':'application/vnd.github+json'}; if(t)H['Authorization']='Bearer '+t;
-  fetch('https://api.github.com/repos/'+GITHUB.owner+'/'+GITHUB.repo+'/contents/?ref='+GITHUB.branch,{headers:H,cache:'no-store'})
+  return fetch('https://api.github.com/repos/'+GITHUB.owner+'/'+GITHUB.repo+'/contents/?ref='+GITHUB.branch,{headers:H,cache:'no-store'})
   .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
   .then(function(arr){
     var files=usableBanners((arr||[]).map(function(x){return x&&x.name;}),spon.list);
