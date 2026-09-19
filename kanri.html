@@ -253,8 +253,9 @@ details summary{cursor:pointer;}
       </div>
       <div style="margin-top:8px"><label class="l">押した時の行き先</label><input type="url" id="nUrl" placeholder="https://…" autocapitalize="off"></div>
       <div style="margin-top:8px"><label class="l">画像（1170×107。違えば自動で合わせた見本を出します）</label><input type="file" id="nFile" accept="image/jpeg,image/png"></div>
+      <div id="nExistingBox" style="margin-top:8px" hidden><label class="l">または、すでに上がっている画像を使う（上げ直さない）</label><select id="nExisting"><option value="">（使わない：新しい画像を上げる）</option></select></div>
       <div id="nPreview"></div>
-      <div class="actions"><button id="btnNewSpon" disabled>画像を公開して一覧に足す</button><span class="note" id="nStat"></span></div>
+      <div class="actions"><button id="btnNewSpon" disabled>アプリに出す</button><span class="note" id="nStat"></span></div>
     </div>
   </div>
   <div class="card" id="ghCard"><details class="gh">
@@ -417,6 +418,14 @@ function updateBar(){
   el('barBtn').onclick=function(){el(k==='sched'?'btnWrite':'btnSponWrite').click();};
 }
 
+// ★保存していない変更があるまま閉じようとしたら止める（2026-09-19）。
+//   画像を上げたのに一覧が保存されず、何の警告もなく消えた（株式会社山弘）の再発防止。
+//   ※iPhoneのホーム画面から開いた時は、閉じる操作をアプリが知る手段が無く、この警告は出ない。
+//     だから新しいバナーは「公開されたら自動で保存する」作りにしてある（こちらが本命）
+window.addEventListener('beforeunload',function(e){
+  var a=barState.spon,c=barState.sched;
+  if((a&&a.changed)||(c&&c.changed)||Object.keys(pendingImg).length){e.preventDefault();e.returnValue='';return '';}
+});
 // ── タブ ──
 var curTab='sched';
 function showTab(k){
@@ -661,6 +670,7 @@ function loadSponsors(){
     }
     sponLoadedSig=sponExists?sponSig(spon):'';
     renderSpons();
+    loadExistingBanners();
   }).catch(function(e){el('sponStatus').className='status bad';el('sponStatus').textContent='一覧が読めません：'+e.message;});
 }
 function readSponFromForm(){
@@ -742,20 +752,26 @@ function checkSpon(){
 }
 el('sponInterval').addEventListener('input',checkSpon);
 el('btnSponReload').onclick=function(){if(sponSig(spon)!==sponLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSponsors();};
-el('btnSponWrite').onclick=function(){
-  readSponFromForm();var err=validSponsors(spon.list);if(err){toast('✖ '+err);return;}
+el('btnSponWrite').onclick=function(){ sponCheckAndWrite(false); };
+// ★反映の入口はここ1つ（2026-09-19）。「アプリに反映する」と、画像を上げたあとの
+//   自動の反映が、同じ確かめ方を通る。確認を先に済ませた時（already=true）は聞き直さない。
+//   戻り値：書けたら true
+function sponCheckAndWrite(already){
+  readSponFromForm();var err=validSponsors(spon.list);if(err){toast('✖ '+err);return Promise.resolve(false);}
   var waiting=spon.list.filter(function(s){return !!pendingImg[s.img];});
-  if(waiting.length){toast('画像の公開待ちです（'+waiting.map(function(s){return s.name;}).join('・')+'）。1〜2分後にもう一度');return;}
+  if(waiting.length){toast('画像の公開待ちです（'+waiting.map(function(s){return s.name;}).join('・')+'）。1〜2分後にもう一度');return Promise.resolve(false);}
   // 反映の前に、一覧の画像がすべて公開されているかを確かめる（公開前に反映するとアプリのバナーが空になる）
   var b=el('barBtn');b.disabled=true;
-  Promise.all(spon.list.map(function(s){return fetch(SITE+s.img,{method:'HEAD',cache:'no-store'}).then(function(r){return r.ok?null:s.name;}).catch(function(){return s.name;});}))
-  .then(function(miss){ b.disabled=false; miss=miss.filter(Boolean); if(miss.length){toast('✖ 画像が公開されていません：'+miss.join('・')+'。公開を待つか画像を確かめてください');return;} sponWriteNow(); });
-};
-function sponWriteNow(){
-  if(!confirm('スポンサーの一覧をアプリに反映します（'+spon.list.length+'件・いま出るのは '+activeSponsors(spon.list).length+' 枚）。よろしいですか？'))return;
+  return Promise.all(spon.list.map(function(s){return fetch(SITE+s.img,{method:'HEAD',cache:'no-store'}).then(function(r){return r.ok?null:s.name;}).catch(function(){return s.name;});}))
+  .then(function(miss){ b.disabled=false; miss=miss.filter(Boolean); if(miss.length){toast('✖ 画像が公開されていません：'+miss.join('・')+'。公開を待つか画像を確かめてください');return false;} return sponWriteNow(already); });
+}
+function sponConfirmText(){return 'スポンサーの一覧をアプリに反映します（'+spon.list.length+'件・いま出るのは '+activeSponsors(spon.list).length+' 枚）。よろしいですか？';}
+function sponWriteNow(already){
+  if(!already&&!confirm(sponConfirmText()))return Promise.resolve(false);
   var out={v:(spon.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),interval:spon.interval,list:sponPayloadList(spon.list)};
-  writeDoc('broadcast/sponsors',out).then(function(){toast('✔ 反映しました（版 '+out.v+'）');loadSponsors();}).catch(function(e){toast('✖ 反映できません：'+e.message);});
-};
+  return writeDoc('broadcast/sponsors',out).then(function(){toast('✔ アプリに反映しました（版 '+out.v+'）');loadSponsors();return true;})
+    .catch(function(e){toast('✖ 反映できません：'+e.message);return false;});
+}
 
 // ── 新しいバナー：画像の検査と規格合わせ → GitHub へ上げる → 一覧に足す ──
 var newImg=null;
@@ -773,7 +789,41 @@ function fitBanner(img){
   ctx.drawImage(img,(BANNER_W-w)/2,(BANNER_H-h)/2,w,h);
   return new Promise(function(res){c.toBlob(function(b){res(b);},'image/jpeg',0.86);});
 }
+// ★すでにGitHubに上がっているバナー画像のうち、一覧で使っていない物を選べるようにする（2026-09-19）。
+//   画像だけ上がって一覧に残らなかった物（山弘）を、上げ直さずに出すため。
+//   読めない時は欄ごと隠す（新しい画像を上げる道はそのまま使える）
+// 候補にしてよい画像：バナーの名前の決まりに合い、いまの一覧で使っていない物（新しい順）
+function usableBanners(names,list){
+  var used={}; (list||[]).forEach(function(x){if(x&&x.img)used[x.img]=1;});
+  return (names||[]).filter(function(nm){
+    return nm&&/^_banner_[a-z0-9-]+(?:_\d{8}(?:-\d+)?)?_port\.(?:jpe?g|png)$/i.test(nm)&&!used[nm];}).sort().reverse();
+}
+function loadExistingBanners(){
+  var sel=el('nExisting'),box=el('nExistingBox'); if(!sel||!box)return;
+  var t=ghToken(),H={'Accept':'application/vnd.github+json'}; if(t)H['Authorization']='Bearer '+t;
+  fetch('https://api.github.com/repos/'+GITHUB.owner+'/'+GITHUB.repo+'/contents/?ref='+GITHUB.branch,{headers:H,cache:'no-store'})
+  .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(arr){
+    var files=usableBanners((arr||[]).map(function(x){return x&&x.name;}),spon.list);
+    var cur=sel.value;
+    sel.innerHTML='<option value="">（使わない：新しい画像を上げる）</option>'
+      +files.map(function(nm){return '<option value="'+esc(nm)+'">'+esc(nm)+'</option>';}).join('');
+    if(cur&&files.indexOf(cur)>=0)sel.value=cur;
+    box.hidden=!files.length;
+  }).catch(function(){box.hidden=true;});
+}
+el('nExisting').addEventListener('change',function(){
+  var f=el('nExisting').value;el('nStat').textContent='';
+  if(f){
+    newImg=null;el('nFile').value='';el('nSlug').disabled=true;
+    el('nPreview').innerHTML='<img class="preview" src="'+esc(imgUrl(f))+'" alt=""><div class="note">すでに公開されている画像です（上げ直しません）</div>';
+    el('btnNewSpon').disabled=false;
+  }else{
+    el('nSlug').disabled=false;el('nPreview').innerHTML='';el('btnNewSpon').disabled=!newImg;
+  }
+});
 el('nFile').addEventListener('change',function(){
+  if(el('nExisting'))el('nExisting').value='';el('nSlug').disabled=false;
   newImg=null;el('nPreview').innerHTML='';el('btnNewSpon').disabled=true;el('nStat').textContent='';
   var f=el('nFile').files[0];if(!f)return;
   var url=URL.createObjectURL(f),img=new Image();
@@ -821,7 +871,11 @@ function replaceImage(i,file,prevBox){
       +'<div class="actions"><button class="gold small" data-op="doreplace">この画像に差し替える</button></div>';
     var b=prevBox.querySelector('[data-op=doreplace]');
     b.onclick=function(e){
-      e.stopPropagation(); b.disabled=true; prevBox.querySelector('.note').textContent='GitHub へ上げています…';
+      e.stopPropagation();
+      // ★差し替えも「上げただけで保存されない」同じ欠陥があった（2026-09-19）。ログイン必須・確認は先に1回・公開されたら自動で反映
+      if(!ID_TOKEN){toast('先にログインしてください（画像だけ上がって、アプリに出ない事故を防ぐため）');showLogin();return;}
+      if(!confirm('「'+s.name+'」の画像を差し替えて、一覧をアプリに反映します（公開の確認に1〜2分）。よろしいですか？'))return;
+      b.disabled=true; prevBox.querySelector('.note').textContent='GitHub へ上げています…';
       var d=new Date(),stamp=d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
       var tryPut=function(n){var fname='_banner_'+base+'_'+stamp+(n?'-'+n:'')+'_port.'+img.ext;
         return ghPut(fname,img.blob,'sponsor: バナー画像を差し替え（'+s.name+'）').then(function(){return fname;})
@@ -829,8 +883,12 @@ function replaceImage(i,file,prevBox){
       tryPut(0).then(function(fname){
         pendingImg[fname]=URL.createObjectURL(img.blob);   // 公開されるまでは手元の見本を出す
         readSponFromForm(); spon.list[i].img=fname; spon.list[i]._open=false; renderSpons();
-        toast('上がりました。公開を待っています（1〜2分）。押し直さないでください');
-        return waitPublished(SITE+fname).then(function(ok){ if(ok){delete pendingImg[fname];LOADSTAMP=Date.now();toast('✔ 新しい画像が公開されました。「アプリに反映する」で切り替わります');renderSpons();} else toast('公開の確認が取れません。少し待って「読み直す」を'); });
+        toast('上がりました。公開を待っています（1〜2分）。この画面を閉じないでください');
+        return waitPublished(SITE+fname).then(function(ok){
+          if(!ok){toast('公開の確認が取れません。少し待って「読み直す」を。まだアプリには出ていません');return;}
+          delete pendingImg[fname];LOADSTAMP=Date.now();renderSpons();
+          return sponCheckAndWrite(true).then(function(w){toast(w?'✔ 画像を差し替えて、アプリに反映しました':'✖ 保存に失敗しました。画面下の「アプリに反映する」を押してください');});
+        });
       }).catch(function(err){ b.disabled=false; prevBox.querySelector('.note').textContent='✖ '+err.message; });
     };
   }).catch(function(err){prevBox.innerHTML='<div class="err">'+esc(err.message)+'</div>';});
@@ -866,30 +924,56 @@ function waitPublished(url,tries){
   return fetch(url,{method:'HEAD',cache:'no-store'}).then(function(r){return r.ok;}).catch(function(){return false;})
   .then(function(ok){ if(ok)return true; if(tries<=0)return false; return new Promise(function(res){setTimeout(res,10000);}).then(function(){return waitPublished(url,tries-1);}); });
 }
+// ★★ 2026-09-19 根治：画像を上げたのに、アプリに出なかった（株式会社山弘）。
+//   これまでは「画像を公開して一覧に足す」を押しても、足すのは**画面の中の一覧だけ**で、
+//   「アプリに反映する」を押すまでどこにも保存されなかった。入力欄も空になるので済んだように
+//   見え、そのまま閉じると**何の警告もなく消えた**（画像だけがGitHubに残る）。
+//   直し方：①ログインしていなければ上げる前に止める ②確認は押した時に1回だけ
+//          ③画像が公開されたら、そのまま一覧も保存する＝ボタン1回で最後まで終わる
+//          ④すでに上がっている画像を選べる（上げ直さない）
 el('btnNewSpon').onclick=function(){
   var name=el('nName').value.trim(),slug=el('nSlug').value.trim().toLowerCase(),url=el('nUrl').value.trim();
+  var 既存=el('nExisting')?el('nExisting').value:'';
+  if(!ID_TOKEN){toast('先にログインしてください（画像だけ上がって、アプリに出ない事故を防ぐため）');showLogin();return;}
   if(!name){toast('表示名を入れてください');return;}
-  if(!/^[a-z0-9-]{2,30}$/.test(slug)){toast('ファイル名用の英字は a-z 0-9 - で2〜30字');return;}
+  if(!既存&&!/^[a-z0-9-]{2,30}$/.test(slug)){toast('ファイル名用の英字は a-z 0-9 - で2〜30字');return;}
   if(url&&!/^https?:\/\//.test(url)){toast('行き先は https:// で始めてください');return;}
-  if(!newImg){toast('画像を選んでください');return;}
+  if(!既存&&!newImg){toast('画像を選んでください');return;}
   if(spon.list.some(function(s){return s.name===name;})){toast('同じ名前が既にあります');return;}
-  var d=new Date(),stamp=d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
-  var fname='_banner_'+slug+'_'+stamp+'_port.'+newImg.ext;
-  var b=el('btnNewSpon');b.disabled=true;el('nStat').textContent='GitHub へ上げています…';
-  ghPut(fname,newImg.blob,'sponsor: バナー画像を追加（'+name+'）').then(function(){
-    el('nStat').textContent='上がりました。公開されるのを待っています（1〜2分）…';
+  if(!confirm('「'+name+'」のバナーをアプリに出します。\n'
+      +(既存?'すでに公開されている画像を使い、':'画像を上げて公開を確かめてから（1〜2分）、')
+      +'そのまま一覧に保存します。\nよろしいですか？'))return;
+  var b=el('btnNewSpon');b.disabled=true;
+  // 一覧に足す（まだ画面の中だけ）。これを書くのは、画像の公開を確かめた後
+  function 足す(fname){
     readSponFromForm();
     var idx=spon.list.length;
     for(var i=0;i<spon.list.length;i++){if(!spon.list[i].url||/readyfor\.jp/.test(spon.list[i].url)){idx=i;break;}}
-    pendingImg[fname]=URL.createObjectURL(newImg.blob);
     spon.list.splice(idx,0,{name:name,url:url,img:fname,on:true,from:'',to:'',_open:false});
     renderSpons();
     el('nName').value='';el('nSlug').value='';el('nUrl').value='';el('nFile').value='';el('nPreview').innerHTML='';newImg=null;
+    if(el('nExisting'))el('nExisting').value='';
+  }
+  function 仕上げ(ok){
+    if(!ok){el('nStat').textContent='公開の確認が取れません（少し待ってから「読み直す」で画像が出るか見てください）。まだアプリには出ていません';b.disabled=false;return;}
+    for(var k in pendingImg){if(pendingImg[k]&&/_port\./.test(k))delete pendingImg[k];}LOADSTAMP=Date.now();renderSpons();
+    el('nStat').textContent='画像が公開されました。一覧に保存しています…';
+    return sponCheckAndWrite(true).then(function(w){
+      el('nStat').textContent=w?'✔ アプリに出しました（全端末へ当日中に届きます）':'✖ 一覧の保存に失敗しました。画面下の「アプリに反映する」を押してください';
+      b.disabled=false; loadExistingBanners();
+    });
+  }
+  if(既存){ 足す(既存); el('nStat').textContent='画像を確かめています…'; waitPublished(SITE+既存,0).then(仕上げ); return; }
+  var d=new Date(),stamp=d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+  var fname='_banner_'+slug+'_'+stamp+'_port.'+newImg.ext;
+  el('nStat').textContent='GitHub へ上げています…';
+  var blob=newImg.blob;
+  ghPut(fname,blob,'sponsor: バナー画像を追加（'+name+'）').then(function(){
+    el('nStat').textContent='上がりました。公開されるのを待っています（1〜2分）。この画面を閉じないでください…';
+    pendingImg[fname]=URL.createObjectURL(blob);
+    足す(fname);
     return waitPublished(SITE+fname);
-  }).then(function(ok){
-    el('nStat').textContent=ok?'✔ 画像が公開されました。一覧を確認して「アプリに反映する」を押してください':'公開の確認が取れません（少し待ってから「読み直す」で画像が出るか見てください）';
-    if(ok){for(var k in pendingImg){if(pendingImg[k]&&/_port\./.test(k))delete pendingImg[k];}LOADSTAMP=Date.now();renderSpons();}
-  }).catch(function(e){el('nStat').textContent='✖ '+e.message;b.disabled=false;});
+  }).then(仕上げ).catch(function(e){el('nStat').textContent='✖ '+e.message;b.disabled=false;});
 };
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1044,6 +1128,17 @@ function selfTest(){
   t('合計が違えば落ちる',validSchedule({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:60}]})!=='');
   t('割り切れなければ落ちる',validSchedule({airStart:6,airEnd:24,cycleMinutes:70,cycle:[{ytId:'a',title:'x',cat:'c',dur:70}]})!=='');
   t('IDが空なら落ちる',validSchedule({airStart:6,airEnd:24,cycleMinutes:60,cycle:[{ytId:'',title:'x',cat:'c',dur:60}]})!=='');
+  // ★上がっている画像の候補（2026-09-19 山弘の件）
+  var ub=usableBanners(['_banner_yamahiro_20260918_port.png','_banner_cf_20260906-1_port.jpg','_banner_prev.png','icon-180.png','_banner_norisuke_port.png','_banner_x_port.gif'],[{img:'_banner_norisuke_port.png'}]);
+  t('候補：上がっているのに一覧に無い画像は出る（山弘）',ub.indexOf('_banner_yamahiro_20260918_port.png')>=0);
+  t('候補：日付と枝番つきの名前も出る',ub.indexOf('_banner_cf_20260906-1_port.jpg')>=0);
+  t('候補：一覧で使っている画像は出さない',ub.indexOf('_banner_norisuke_port.png')<0);
+  t('候補：決まりに合わない名前は出さない（_port が無い・アイコン・gif）',ub.indexOf('_banner_prev.png')<0&&ub.indexOf('icon-180.png')<0&&ub.indexOf('_banner_x_port.gif')<0);
+  t('候補：新しい順に並ぶ',usableBanners(['_banner_a_20260101_port.jpg','_banner_a_20260918_port.jpg'],[])[0]==='_banner_a_20260918_port.jpg');
+  t('反映の入口は1つ（アプリに反映するも自動の反映も同じ確かめ方を通る）',typeof sponCheckAndWrite==='function'&&String(el('btnSponWrite').onclick).indexOf('sponCheckAndWrite')>=0);
+  t('新しいバナーは、ログインしていなければ上げる前に止める',String(el('btnNewSpon').onclick).indexOf('if(!ID_TOKEN)')>=0&&String(el('btnNewSpon').onclick).indexOf('if(!ID_TOKEN)')<String(el('btnNewSpon').onclick).indexOf('ghPut('));
+  t('新しいバナーは、公開されたらそのまま保存する',String(el('btnNewSpon').onclick).indexOf('sponCheckAndWrite(true)')>=0);
+  t('ボタンの名前は「アプリに出す」（押したら最後まで終わる）',el('btnNewSpon').textContent==='アプリに出す');
   t('URLからIDを取り出す',ytIdFrom('https://www.youtube.com/watch?v=FqqKCo3WTts&t=1')==='FqqKCo3WTts'&&ytIdFrom('https://youtu.be/FqqKCo3WTts')==='FqqKCo3WTts'&&ytIdFrom('FqqKCo3WTts')==='FqqKCo3WTts');
   t('放送中の番号：6:00は1番目、7:00は2番目、7:30は次の周の1番目',nowProgIndex(good,360)===0&&nowProgIndex(good,420)===1&&nowProgIndex(good,450)===0);
   t('放送時間外は放送中なし',nowProgIndex(good,300)===-1&&nowProgIndex(good,1440)===-1);
