@@ -142,7 +142,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 .bar-f{background:var(--green2);height:100%;border-radius:3px;min-width:2px;}
 .bar-v{font-size:11px;color:var(--text3);width:28px;}
 button.rg.on{background:var(--gold);color:#1e2a22;border-color:var(--gold);}
-#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--forest);color:#fff;padding:9px 14px;border-radius:6px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:92vw;z-index:20;}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--forest);color:#fff;padding:9px 14px;border-radius:6px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;width:max-content;max-width:92vw;z-index:20;}
 #toast.show{opacity:1;}
 .steps{counter-reset:s;padding-left:0;list-style:none;}
 .steps li{position:relative;padding-left:28px;margin:5px 0;font-size:12px;line-height:1.55;}
@@ -255,7 +255,7 @@ details summary{cursor:pointer;}
       <div style="margin-top:8px"><label class="l">画像（1170×107。違えば自動で合わせた見本を出します）</label><input type="file" id="nFile" accept="image/jpeg,image/png"></div>
       <div id="nExistingBox" style="margin-top:8px" hidden><label class="l">または、すでに上がっている画像を使う（上げ直さない）</label><select id="nExisting"><option value="">（使わない：新しい画像を上げる）</option></select></div>
       <div id="nPreview"></div>
-      <div class="actions"><button id="btnNewSpon" disabled>アプリに出す</button><span class="note" id="nStat"></span></div>
+      <div class="actions"><button id="btnNewSpon" disabled>このバナーを掲載する</button><span class="note" id="nStat"></span></div>
     </div>
   </div>
   <div class="card" id="ghCard"><details class="gh">
@@ -759,7 +759,8 @@ el('btnSponWrite').onclick=function(){ sponCheckAndWrite(false); };
 function sponCheckAndWrite(already){
   readSponFromForm();var err=validSponsors(spon.list);if(err){toast('✖ '+err);return Promise.resolve(false);}
   var waiting=spon.list.filter(function(s){return !!pendingImg[s.img];});
-  if(waiting.length){toast('画像の公開待ちです（'+waiting.map(function(s){return s.name;}).join('・')+'）。1〜2分後にもう一度');return Promise.resolve(false);}
+  // ★名前は入れない（名前の長さで、行末に2〜3字の余りが出るため。2026-09-19実測）
+  if(waiting.length){toast('画像の公開待ちです。1〜2分後にもう一度どうぞ');return Promise.resolve(false);}
   // 反映の前に、一覧の画像がすべて公開されているかを確かめる（公開前に反映するとアプリのバナーが空になる）
   var b=el('barBtn');b.disabled=true;
   return Promise.all(spon.list.map(function(s){return fetch(SITE+s.img,{method:'HEAD',cache:'no-store'}).then(function(r){return r.ok?null:s.name;}).catch(function(){return s.name;});}))
@@ -769,7 +770,7 @@ function sponConfirmText(){return 'スポンサーの一覧をアプリに反映
 function sponWriteNow(already){
   if(!already&&!confirm(sponConfirmText()))return Promise.resolve(false);
   var out={v:(spon.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),interval:spon.interval,list:sponPayloadList(spon.list)};
-  return writeDoc('broadcast/sponsors',out).then(function(){toast('✔ アプリに反映しました（版 '+out.v+'）');loadSponsors();return true;})
+  return writeDoc('broadcast/sponsors',out).then(function(){toast('✔ 反映しました（版 '+out.v+'）');loadSponsors();return true;})
     .catch(function(e){toast('✖ 反映できません：'+e.message);return false;});
 }
 
@@ -800,7 +801,7 @@ function usableBanners(names,list){
 }
 // ★リンクで開いたら「新しいバナー」に中身を入れておく（2026-09-19）。
 //   例）kanri.html?sp=株式会社山弘&img=_banner_yamahiro_20260918_port.png&url=https://www.yamahiro.org/
-//   入れるだけで、書き込みはしない。押すのは必ず人（「アプリに出す」→確認）。
+//   入れるだけで、書き込みはしない。押すのは必ず人（「このバナーを掲載する」→確認）。
 //   ログインしていなければ、先にログインの欄を出す
 var prefillDone=false;
 function applySponsorPrefill(){
@@ -815,11 +816,11 @@ function applySponsorPrefill(){
     sel.value=im; sel.dispatchEvent(new Event('change'));
   }
   if(spon.list.some(function(x){return x.name===nm;})){
-    el('nStat').textContent='「'+nm+'」はもう一覧にあります（アプリに出ています）';
+    el('nStat').textContent='この名前はもう掲載されています';
   }else{
     // ★保存してあるログインは、開いた直後に裏で復元される（REFRESHがある＝復元中）。その時はログイン欄を出さない
     var 未ログイン=!ID_TOKEN&&!REFRESH;
-    el('nStat').textContent=未ログイン?'先にログインしてください。そのあと「アプリに出す」を押せば出ます':'入力しておきました。「アプリに出す」を押してください';
+    el('nStat').textContent=未ログイン?'先にログインしてから押してください':'入力済みです。このまま押せば掲載されます';
     if(未ログイン)showLogin();
   }
   setTimeout(function(){try{el('btnNewSpon').scrollIntoView({block:'center'});}catch(_){}},300);
@@ -899,7 +900,7 @@ function replaceImage(i,file,prevBox){
     b.onclick=function(e){
       e.stopPropagation();
       // ★差し替えも「上げただけで保存されない」同じ欠陥があった（2026-09-19）。ログイン必須・確認は先に1回・公開されたら自動で反映
-      if(!ID_TOKEN){toast('先にログインしてください（画像だけ上がって、アプリに出ない事故を防ぐため）');showLogin();return;}
+      if(!ID_TOKEN){toast('先にログインしてください');showLogin();return;}
       if(!confirm('「'+s.name+'」の画像を差し替えて、一覧をアプリに反映します（公開の確認に1〜2分）。よろしいですか？'))return;
       b.disabled=true; prevBox.querySelector('.note').textContent='GitHub へ上げています…';
       var d=new Date(),stamp=d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
@@ -909,11 +910,11 @@ function replaceImage(i,file,prevBox){
       tryPut(0).then(function(fname){
         pendingImg[fname]=URL.createObjectURL(img.blob);   // 公開されるまでは手元の見本を出す
         readSponFromForm(); spon.list[i].img=fname; spon.list[i]._open=false; renderSpons();
-        toast('上がりました。公開を待っています（1〜2分）。この画面を閉じないでください');
+        toast('1〜2分で公開されます。閉じないでください');
         return waitPublished(SITE+fname).then(function(ok){
-          if(!ok){toast('公開の確認が取れません。少し待って「読み直す」を。まだアプリには出ていません');return;}
+          if(!ok){toast('公開を確かめられず、まだ差し替わっていません');return;}
           delete pendingImg[fname];LOADSTAMP=Date.now();renderSpons();
-          return sponCheckAndWrite(true).then(function(w){toast(w?'✔ 画像を差し替えて、アプリに反映しました':'✖ 保存に失敗しました。画面下の「アプリに反映する」を押してください');});
+          return sponCheckAndWrite(true).then(function(w){toast(w?'✔ 画像を差し替えました':'✖ 保存できず。画面下のボタンで保存してください');});
         });
       }).catch(function(err){ b.disabled=false; prevBox.querySelector('.note').textContent='✖ '+err.message; });
     };
@@ -960,13 +961,13 @@ function waitPublished(url,tries){
 el('btnNewSpon').onclick=function(){
   var name=el('nName').value.trim(),slug=el('nSlug').value.trim().toLowerCase(),url=el('nUrl').value.trim();
   var 既存=el('nExisting')?el('nExisting').value:'';
-  if(!ID_TOKEN){toast('先にログインしてください（画像だけ上がって、アプリに出ない事故を防ぐため）');showLogin();return;}
+  if(!ID_TOKEN){toast('先にログインしてください');showLogin();return;}
   if(!name){toast('表示名を入れてください');return;}
   if(!既存&&!/^[a-z0-9-]{2,30}$/.test(slug)){toast('ファイル名用の英字は a-z 0-9 - で2〜30字');return;}
   if(url&&!/^https?:\/\//.test(url)){toast('行き先は https:// で始めてください');return;}
   if(!既存&&!newImg){toast('画像を選んでください');return;}
   if(spon.list.some(function(s){return s.name===name;})){toast('同じ名前が既にあります');return;}
-  if(!confirm('「'+name+'」のバナーをアプリに出します。\n'
+  if(!confirm('「'+name+'」のバナーを掲載します。\n'
       +(既存?'すでに公開されている画像を使い、':'画像を上げて公開を確かめてから（1〜2分）、')
       +'そのまま一覧に保存します。\nよろしいですか？'))return;
   var b=el('btnNewSpon');b.disabled=true;
@@ -981,11 +982,11 @@ el('btnNewSpon').onclick=function(){
     if(el('nExisting'))el('nExisting').value='';
   }
   function 仕上げ(ok){
-    if(!ok){el('nStat').textContent='公開の確認が取れません（少し待ってから「読み直す」で画像が出るか見てください）。まだアプリには出ていません';b.disabled=false;return;}
+    if(!ok){el('nStat').textContent='まだ掲載されていません。少し待ってから保存してください';b.disabled=false;return;}
     for(var k in pendingImg){if(pendingImg[k]&&/_port\./.test(k))delete pendingImg[k];}LOADSTAMP=Date.now();renderSpons();
     el('nStat').textContent='画像が公開されました。一覧に保存しています…';
     return sponCheckAndWrite(true).then(function(w){
-      el('nStat').textContent=w?'✔ アプリに出しました（全端末へ当日中に届きます）':'✖ 一覧の保存に失敗しました。画面下の「アプリに反映する」を押してください';
+      el('nStat').textContent=w?'✔ 掲載しました（全端末へ当日中に届きます）':'✖ 保存できず。画面下のボタンで保存してください';
       b.disabled=false; loadExistingBanners();
     });
   }
@@ -995,7 +996,7 @@ el('btnNewSpon').onclick=function(){
   el('nStat').textContent='GitHub へ上げています…';
   var blob=newImg.blob;
   ghPut(fname,blob,'sponsor: バナー画像を追加（'+name+'）').then(function(){
-    el('nStat').textContent='上がりました。公開されるのを待っています（1〜2分）。この画面を閉じないでください…';
+    el('nStat').textContent='公開を待っています（1〜2分）。閉じないでください';
     pendingImg[fname]=URL.createObjectURL(blob);
     足す(fname);
     return waitPublished(SITE+fname);
@@ -1164,7 +1165,7 @@ function selfTest(){
   t('反映の入口は1つ（アプリに反映するも自動の反映も同じ確かめ方を通る）',typeof sponCheckAndWrite==='function'&&String(el('btnSponWrite').onclick).indexOf('sponCheckAndWrite')>=0);
   t('新しいバナーは、ログインしていなければ上げる前に止める',String(el('btnNewSpon').onclick).indexOf('if(!ID_TOKEN)')>=0&&String(el('btnNewSpon').onclick).indexOf('if(!ID_TOKEN)')<String(el('btnNewSpon').onclick).indexOf('ghPut('));
   t('新しいバナーは、公開されたらそのまま保存する',String(el('btnNewSpon').onclick).indexOf('sponCheckAndWrite(true)')>=0);
-  t('ボタンの名前は「アプリに出す」（押したら最後まで終わる）',el('btnNewSpon').textContent==='アプリに出す');
+  t('ボタンの名前は「このバナーを掲載する」（押したら掲載まで終わる）',el('btnNewSpon').textContent==='このバナーを掲載する');
   t('URLからIDを取り出す',ytIdFrom('https://www.youtube.com/watch?v=FqqKCo3WTts&t=1')==='FqqKCo3WTts'&&ytIdFrom('https://youtu.be/FqqKCo3WTts')==='FqqKCo3WTts'&&ytIdFrom('FqqKCo3WTts')==='FqqKCo3WTts');
   t('放送中の番号：6:00は1番目、7:00は2番目、7:30は次の周の1番目',nowProgIndex(good,360)===0&&nowProgIndex(good,420)===1&&nowProgIndex(good,450)===0);
   t('放送時間外は放送中なし',nowProgIndex(good,300)===-1&&nowProgIndex(good,1440)===-1);
