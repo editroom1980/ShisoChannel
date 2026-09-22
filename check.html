@@ -2320,7 +2320,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.34-lab（新しく入った番組に「新」の印・?shinchk=2 で確認）</div>
+    <div class="ps-version">version 4.35-lab（電話番号の答えは3分は消えない）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -5525,6 +5525,9 @@ window.__aiAnswer=function(obj){
     var 量=(o.text||'').length + (o.title||'').length + L.join('').length;
     var 猶予=Math.max(12000, Math.min(90000, 量*220+8000));
     if(IM.length>0) 猶予=Math.max(猶予, 120000);
+    // ★電話番号を出している答えは、メモを取る時間ぶん長く置く（最低3分。2026-09-22）。
+    //   実機：電話番号の答えが12〜90秒で消え、書き留める前に無くなっていた
+    if(/\d{2,4}-\d{2,4}-\d{3,4}/.test((o.text||'')+(o.note||'')+(o.title||'')+L.join(''))) 猶予=Math.max(猶予, 180000);
     // ★お尋ねしている最中（続きがある）は、答えを考える時間を長くとる。
     //   バス停を39か所ならべて「どれから乗りますか」と聞いておきながら、
     //   21秒で消えてしまっては、お年寄りには考える間もない（2026-08-27のご指示）
