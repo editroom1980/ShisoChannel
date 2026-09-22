@@ -27,6 +27,9 @@
   color-scheme: only light;
   --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;--green3:#52a070;
   --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
+/* ★AIの窓は白ベース（2026-09-01のご指示）。帯だけ背景色から計算する */
+  --ai-bg:#fbfaf7;--ai-band:#2f5f42;--ai-ink:#1d2126;--ai-sub:#4c545c;
+  --ai-step:#2b3138;--ai-note:#6e4704;--ai-gold:#b8860b;--ai-listen:#1b5e20;
   --white:#fff;--off:#f6f8f6;--border:#d4e0d6;
   --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;
   /* 全モード共通のバナー基準幅＝画面短辺−左右余白12px（＝縦の動画ウインドウ幅390・全間隔6px統一）。縦横問わず一定 */
@@ -2286,7 +2289,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.88</div>
+    <div class="ps-version">version 3.89</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
