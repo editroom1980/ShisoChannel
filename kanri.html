@@ -453,6 +453,7 @@ function validSchedule(d){
   for(var i=0;i<d.cycle.length;i++){
     var p=d.cycle[i];
     if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string'||typeof p.dur!=='number'||isNaN(p.dur)||p.dur<=0)return (i+1)+'番目の番組データが不正（YouTube ID・題名・分は必須）';
+    if(p.vid&&!/^[A-Za-z0-9_-]{1,64}$/.test(p.vid))return (i+1)+'番目の自前の動画の名前が不正（半角の英数字と _ - だけ）';
     tot+=p.dur;
   }
   if(tot!==cm)return '番組の合計('+tot+'分)がサイクル('+cm+'分)と不一致';
@@ -474,7 +475,7 @@ function nowProgIndex(d,now){
   return d.cycle.length-1;
 }
 // 保存する形だけを取り出す（画面用の印 _open は入れない）
-function schedPayload(d){return {airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){return {ytId:ytIdFrom(p.ytId),title:p.title,cat:p.cat,dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||''};})};}
+function schedPayload(d){return {airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){var o={ytId:ytIdFrom(p.ytId),title:p.title,cat:p.cat,dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||''};if(p.vid)o.vid=p.vid;return o;})};}
 function schedSig(d){return JSON.stringify(schedPayload(d));}
 function loadSchedule(){
   el('schedStatus').className='status wait';el('schedStatus').textContent='読み込み中…';
@@ -482,7 +483,7 @@ function loadSchedule(){
   .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
   .then(function(doc){
     var d=fields(doc);
-    sched={airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){return {ytId:p.ytId||'',title:p.title||'',cat:p.cat||'',dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||'',_open:false};})};
+    sched={airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){return {ytId:p.ytId||'',title:p.title||'',cat:p.cat||'',dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||'',vid:p.vid||'',_open:false};})};
     schedLoadedSig=schedSig(sched);
     el('schedInfo').textContent='更新 '+jst(doc.updateTime);
     renderSched();
@@ -497,6 +498,7 @@ function readSchedFromForm(){
     p.cat=row.querySelector('[data-k=cat]').value.trim();
     p.dur=parseInt(row.querySelector('[data-k=dur]').value,10);
     p.telop=row.querySelector('[data-k=telop]').value.trim();
+    p.vid=row.querySelector('[data-k=vid]').value.trim();
     var ex=row.querySelector('[data-k=expiresAt]').value;p.expiresAt=ex?ex:null;
   });
 }
@@ -507,6 +509,7 @@ function progRow(p,i,now){
     +'<span class="yt">'+esc(id||'IDなし')+'</span>'
     +(i===now?'<span class="now">放送中</span>':'')
     +(p.telop?'<span class="tag">テロップ</span>':'')
+    +(p.vid?'<span class="tag">自前の動画</span>':'')
     +(p.expiresAt?'<span class="tag">期限 '+esc(p.expiresAt)+'</span>':'');
   return '<div class="prog'+(i===now?' now':'')+(p._open?' open':'')+'" data-i="'+i+'">'
     +'<div class="r1" data-op="toggle">'
@@ -523,6 +526,7 @@ function progRow(p,i,now){
     +'<div><label class="l">分（流す長さ）</label><input type="number" data-k="dur" min="1" inputmode="numeric" value="'+esc(p.dur)+'"></div>'
     +'<div><label class="l">期限（空欄＝なし）</label><input type="date" data-k="expiresAt" value="'+esc(p.expiresAt||'')+'"></div>'
     +'<div class="w"><label class="l">テロップ（見始めの10秒。空欄＝なし）</label><input type="text" data-k="telop" value="'+esc(p.telop||'')+'"></div>'
+    +'<div class="w"><label class="l">自前の動画（置き場の名前。空欄＝YouTubeで流す）</label><input type="text" data-k="vid" value="'+esc(p.vid||'')+'" autocapitalize="off" autocorrect="off" spellcheck="false"></div>'
     +'</div>'
     +'<div class="actions"><button class="danger small" data-op="del">この番組を外す</button><span class="sp"></span><button class="g small" data-op="close">閉じる</button></div>'
     +'</div></div>';
@@ -576,7 +580,7 @@ function checkSched(){
 }
 el('btnHead').onclick=function(){var h=el('schedHead');h.hidden=!h.hidden;el('btnHead').textContent=h.hidden?'放送時間を変更':'閉じる';};
 ['airStart','airEnd','cycleMinutes'].forEach(function(id){el(id).addEventListener('input',checkSched);});
-el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',dur:5,expiresAt:null,telop:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
+el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',dur:5,expiresAt:null,telop:'',vid:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
 el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSchedule();};
 el('btnWrite').onclick=function(){
   readSchedFromForm();var out=schedPayload(sched);var err=validSchedule(out);if(err){toast('✖ '+err);return;}
@@ -1171,6 +1175,10 @@ function selfTest(){
   t('放送時間外は放送中なし',nowProgIndex(good,300)===-1&&nowProgIndex(good,1440)===-1);
   var withOpen={airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,_open:true}]};
   t('画面用の印（_open）は保存する形に入らない',JSON.stringify(schedPayload(withOpen)).indexOf('_open')<0);
+  t('自前の動画の名前は保存する形に残る',JSON.stringify(schedPayload({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:'cf_thanks'}]})).indexOf('"vid":"cf_thanks"')>=0);
+  t('自前の動画が空なら保存する形に入れない',JSON.stringify(schedPayload({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:''}]})).indexOf('vid')<0);
+  t('自前の動画の名前が正しければ通る',validSchedule({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:'cf_thanks-2026'}]})==='');
+  t('自前の動画の名前に / や空白があれば落ちる',validSchedule({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:'a/b'}]})!==''&&validSchedule({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:'a b'}]})!=='');
   var sp=[{name:'A',url:'https://a',img:'_banner_a_port.jpg',on:true},{name:'B',url:'',img:'_banner_b_port.png',on:false},{name:'C',url:'https://c',img:'_banner_c_port.jpg',on:true,from:'2026-10-01',to:'2026-10-31'}];
   t('正しい一覧は通る',validSponsors(sp)==='');
   t('名前の重複は落ちる',validSponsors([{name:'A',img:'_a.jpg'},{name:'A',img:'_b.jpg'}])!=='');

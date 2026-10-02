@@ -239,6 +239,9 @@ body.ori-l .h-gear svg, body.ori-tp .h-gear svg, body.ori-tl .h-gear svg{width:3
   width:calc(100% + 6px);height:calc(100% + 3.375px);
 }
 #yt-player-api iframe{pointer-events:none;}
+/* 自前の動画（2026-10-02）：YouTubeの枠と同じ位置・大きさに出す（位置は fitPlayer の後で _ownGeom が合わせる）。
+   押した操作は上の透明な層が今までどおり受けるので、動画そのものは押せないようにする */
+#own-video{position:absolute;left:0;top:0;width:100%;height:100%;z-index:1;background:#000;object-fit:contain;display:none;pointer-events:none;}
 
 #ended-ov{position:absolute;inset:0;z-index:35;background:var(--forest);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 #sw-ov{position:absolute;inset:0;z-index:30;background:rgba(30,58,40,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
@@ -2320,7 +2323,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.35-lab（電話番号の答えは3分は消えない）</div>
+    <div class="ps-version">version 4.36-lab（動画を自前の置き場からも流せる）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2406,6 +2409,7 @@ html.tvapp #lnk-reg{display:none;}
           <div class="sw-lbl" id="sw-lbl">切り替え中...</div>
         </div>
         <div id="yt-player-api"></div>
+        <video id="own-video" playsinline webkit-playsinline preload="none" disablepictureinpicture></video>
         <div id="yt-mouse-block"></div>
         <!-- 中央の半透明・再生ボタン（一時停止中のみ表示・視覚用） -->
         <div id="center-play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
@@ -6428,6 +6432,7 @@ function validSchedule(d){
 // 検証済みデータを適用して番組表を再構築（放送中なら現在番組に同期し直す）
 function applySchedule(d){
   CYCLE=d.cycle;
+  try{ _ownMap(CYCLE); }catch(_){}   // ★自前の動画の対応表（ytId→vid）を作る（2026-10-02）
   if(d.airStart!=null)S=d.airStart;
   if(d.airEnd!=null)E=d.airEnd;
   if(d.cycleMinutes!=null)CM=d.cycleMinutes;
@@ -6461,7 +6466,7 @@ function showLoadErr(state){
 // 番組表の内容シグネチャ（同一データの無駄な再適用＝再生の巻き戻しを防ぐための比較用）
 function schedSig(d){
   var s=d.airStart+'|'+d.airEnd+'|'+d.cycleMinutes+'|';
-  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+p.title+':'+p.cat+':'+(p.telop||'')+';';}
+  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+p.title+':'+p.cat+':'+(p.telop||'')+':'+(p.vid||'')+';';}
   return s;
 }
 // 取得本体（stale-while-revalidate）：キャッシュがあれば即描画し、必ずサーバーの最新も取得して
@@ -6861,6 +6866,260 @@ var spinnerTimer=null,endTimer=null;
 // ══════════════════════════════════════════════
 //  YouTube IFrame API
 // ══════════════════════════════════════════════
+// ★YouTubeの状態の知らせ（1再生/2停止/3読込中/0終了/5準備/-1未開始）を受ける本体（2026-10-02に切り出した）。
+//   自前の動画（OWN）も同じ番号でここへ知らせる。中身は切り出す前と同じ
+function _ytOnState(st){
+  try{statsOnState(st);}catch(_){}
+  if(st===1||st===5){ killCaptions(); } // 再生開始/キュー時に字幕を無効化
+  // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
+  var _isPlay=(st===1||st===3);
+  (function(){
+    var _pp='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    var _pl='<path d="M8 5v14l11-7z"/>';
+    var _ic=document.getElementById('ctrl-play-icon');
+    var _fi=document.getElementById('fs-play-icon');
+    if(_ic)_ic.innerHTML=_isPlay?_pp:_pl;
+    if(_fi)_fi.innerHTML=_isPlay?_pp:_pl;
+  })();
+  if(st===1){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
+  if(st===3&&!isOff){ showEnded(false); } // バッファ中は終了画面だけ消す
+  // iOS: st=5(cued)でスピナーを消す（cueVideoById後は自動再生されないため）
+  if(st===5&&isIOS){ clearSpinnerTimer();showSpinner(false); }
+  // 動画終了
+  if(st===0&&!isOff&&_endSwitchOK()){ showSpinner(true,'切り替え中...'); onEnded(); }
+  // Now Playingインジケーター抑制（Dynamic Island非表示の試み）
+  if('mediaSession' in navigator){
+    navigator.mediaSession.playbackState='none';
+  }
+}
+// ══════════════════════════════════════════════
+//  自前の動画（2026-10-02・lab 4.36）
+//  ★番組表の番組に vid（自前の動画の名前）があれば、その番組はYouTubeではなく
+//    自前の置き場（OWN.base）から流す。vid が無い番組は今までどおりYouTube。
+//  ★YouTubeを呼ぶ所（ytPlayer.xxx 約90か所）は書き換えない。ytPlayer を「振り分け役」で包み、
+//    自前の番組の間だけ中身を <video id="own-video"> に替える。状態の番号もYouTubeと同じにする
+//    （1再生／2停止／3読込中／0終了／5準備／-1未開始）。
+//  ★再生の方式：iPhone・iPad・Mac の Safari は本体のHLS。それ以外（Android・テレビ・パソコンのChrome）は hls.js。
+//    Androidは「HLSを読める」と答えるが、本体に任せると始めの位置合わせを無視して0秒から流した（2026-10-01 実測）。
+//  ★自前の動画が読めない時（置き場が落ちた・名前の間違い）は、同じ番組をYouTubeで同じ位置から流し直す
+//    （そのために番組表の ytId は残す）。
+// ══════════════════════════════════════════════
+var OWN={
+  base:'https://video.shisochan.net/',
+  map:{},            // ytId → vid（番組表から作る）
+  v:null, hls:null, raw:null,
+  active:false, vid:'', ytId:'', st:-1,
+  failed:{},         // この起動中に読めなかった vid（以後はYouTubeで流す）
+  vol:100, muted:false, unlocked:false, debug:false, testMap:'',
+  apple:(function(){ var ua=navigator.userAgent||''; return /iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Safari\//.test(ua)&&!/Chrome|Chromium|CriOS|Android/.test(ua)); })(),
+  hlsSrc:'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.15/hls.min.js',
+  hlsSri:'sha512-CSVqc4a7tn+tizDNt+eDoVn2fXYAwMDpCLrwGlWrOktNfZQ9gp4dKKScElMeRlrIifhliXs0a06BLaUgmMlCUw==',
+  hlsState:0, hlsWait:[]   // 0=未読込 1=読込中 2=読込済 3=失敗
+};
+// 試験用（labで確かめる時だけ）：?vbase=http://…/ で置き場を、?vmap=ytId:vid,…（*:vid で全番組）で番組との対応を差し替える。
+// ?owndebug=1 で画面の左下に状態を出し、自前の動画は消音で流す（試験の音を出さないため）
+(function(){
+  try{
+    var q=location.search;
+    var mb=q.match(/[?&]vbase=([^&]+)/); if(mb){ var b=decodeURIComponent(mb[1]); if(/^https?:\/\/[^\s"'<>]+\/$/.test(b)) OWN.base=b; }
+    var mm=q.match(/[?&]vmap=([^&]+)/); if(mm){ OWN.testMap=decodeURIComponent(mm[1]); }
+    if(/[?&]owndebug=1/.test(q)) OWN.debug=true;
+  }catch(_){}
+})();
+function _ownVidOk(s){ return typeof s==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(s); }
+function _ownMap(cycle){
+  var m={}, i;
+  for(i=0;i<cycle.length;i++){ var p=cycle[i]; if(p&&p.ytId&&_ownVidOk(p.vid)) m[p.ytId]=p.vid; }
+  if(OWN.testMap){
+    OWN.testMap.split(',').forEach(function(kv){
+      var a=kv.split(':'); if(a.length!==2||!_ownVidOk(a[1])) return;
+      if(a[0]==='*'){ for(var j=0;j<cycle.length;j++){ if(cycle[j]&&cycle[j].ytId) m[cycle[j].ytId]=a[1]; } }
+      else if(a[0]) m[a[0]]=a[1];
+    });
+  }
+  OWN.map=m;
+  // 自前の番組があれば、Apple以外は hls.js を先に読んでおく（番組が始まった時に待たせない）
+  if(!OWN.apple){ for(var k in m){ _ownHls(function(){}); break; } }
+}
+function _ownEl(){
+  if(OWN.v) return OWN.v;
+  var v=document.getElementById('own-video'); if(!v) return null;
+  OWN.v=v;
+  v.muted=OWN.muted||OWN.debug;
+  try{ v.volume=Math.max(0,Math.min(1,OWN.vol/100)); }catch(_){}
+  function S(st){ if(!OWN.active) return; OWN.st=st; try{ _ytOnState(st); }catch(_){} }
+  v.addEventListener('playing',function(){ S(1); });
+  v.addEventListener('pause',function(){ if(!v.ended) S(2); });
+  v.addEventListener('waiting',function(){ S(3); });
+  v.addEventListener('ended',function(){ S(0); });
+  v.addEventListener('loadedmetadata',function(){ try{ _ownGeom(); }catch(_){} });
+  v.addEventListener('error',function(){ if(OWN.active&&!OWN.hls) _ownFail('本体の再生が失敗 code='+(v.error&&v.error.code)); });
+  // 枠の大きさが変わったら（回転・全画面・文字の大きさ）、YouTubeの枠に合わせ直す
+  try{
+    if(window.ResizeObserver){ new ResizeObserver(function(){ try{ _ownGeom(); }catch(_){} }).observe(document.getElementById('player-wrap')); }
+  }catch(_){}
+  if(OWN.debug) _ownDebugBox();
+  return v;
+}
+// 再生の許しを取る（iPhoneは「指で押した時」に一度 load() しておくと、後から音つきで流せる）
+function _ownUnlock(){
+  var v=_ownEl(); if(!v||OWN.unlocked) return;
+  OWN.unlocked=true;
+  if(!OWN.active){ try{ v.load(); }catch(_){} }
+}
+function _ownHls(cb){
+  if(window.Hls){ OWN.hlsState=2; cb(true); return; }
+  if(OWN.hlsState===3){ cb(false); return; }
+  OWN.hlsWait.push(cb);
+  if(OWN.hlsState===1) return;
+  OWN.hlsState=1;
+  function done(ok){ OWN.hlsState=ok?2:3; var w=OWN.hlsWait; OWN.hlsWait=[]; w.forEach(function(f){ try{ f(ok); }catch(_){} }); }
+  var s=document.createElement('script');
+  s.src=OWN.hlsSrc; s.integrity=OWN.hlsSri; s.crossOrigin='anonymous'; s.async=true;
+  s.onload=function(){ done(!!window.Hls); };
+  s.onerror=function(){ done(false); };
+  (document.head||document.documentElement).appendChild(s);
+}
+function _ownUrl(vid){ return OWN.base+encodeURIComponent(vid)+'/master.m3u8'; }
+// YouTubeの枠（fitPlayer が位置と大きさを決めた物）と、ぴったり同じ所に自前の動画を置く
+function _ownGeom(){
+  var v=OWN.v; if(!v||!OWN.active) return;
+  var yt=document.getElementById('yt-player-api'), pw=document.getElementById('player-wrap');
+  if(!yt||!pw) return;
+  var r=yt.getBoundingClientRect(), p=pw.getBoundingClientRect();
+  if(r.width<2||r.height<2) return;
+  v.style.left=(r.left-p.left)+'px'; v.style.top=(r.top-p.top)+'px';
+  v.style.width=r.width+'px'; v.style.height=r.height+'px';
+}
+function _ownShow(on){
+  var yt=document.getElementById('yt-player-api');
+  if(yt) yt.style.visibility=on?'hidden':'';
+  if(OWN.v) OWN.v.style.display=on?'block':'none';
+}
+function _ownStop(){
+  var v=OWN.v;
+  if(OWN.hls){ try{ OWN.hls.destroy(); }catch(_){} OWN.hls=null; }
+  if(v){ try{ v.pause(); }catch(_){} try{ v.removeAttribute('src'); v.load(); }catch(_){} }
+}
+// 自前の番組をやめて、YouTubeの枠に戻す
+function _ownOff(){
+  if(!OWN.active) return;
+  OWN.active=false; OWN.st=-1;
+  _ownStop(); _ownShow(false);
+  OWN.vid=''; OWN.ytId='';
+}
+function _ownPlay(){
+  var v=OWN.v; if(!v) return;
+  if(OWN.debug) v.muted=true;
+  var pr=null; try{ pr=v.play(); }catch(_){}
+  if(pr&&pr.catch) pr.catch(function(err){
+    // 音つきの自動再生を断られた時は、消音で流す（画面の音のボタンで戻せる）
+    if(err&&err.name==='NotAllowedError'&&!v.muted){
+      v.muted=true; OWN.muted=true;
+      try{ isMuted=true; syncVolumeUI(); }catch(_){}
+      try{ v.play(); }catch(_){}
+    }
+  });
+}
+function _ownReady(auto){
+  if(auto) _ownPlay(); else { OWN.st=5; try{ _ytOnState(5); }catch(_){} }
+}
+function _ownLoad(ytId,vid,start,auto,raw){
+  var v=_ownEl(); if(!v) return false;
+  start=Math.max(0,+start||0);
+  // 同じ動画を流している最中なら、位置を合わせるだけ（読み直さない）
+  if(OWN.active&&OWN.vid===vid&&(OWN.hls||v.currentSrc)){
+    try{ v.currentTime=start; }catch(_){}
+    if(auto) _ownPlay();
+    return true;
+  }
+  try{ raw.pauseVideo(); }catch(_){}    // 裏のYouTubeは止める（見えない所で流さない＝YouTubeの規約）
+  _ownStop();
+  OWN.active=true; OWN.vid=vid; OWN.ytId=ytId; OWN.st=-1; OWN.raw=raw;
+  _ownShow(true);
+  try{ fitPlayer(); }catch(_){}        // 位置と大きさをYouTubeの枠に合わせる
+  try{ _ytOnState(-1); }catch(_){}
+  var url=_ownUrl(vid);
+  if(OWN.apple&&v.canPlayType('application/vnd.apple.mpegurl')){
+    v.src=url;
+    v.addEventListener('loadedmetadata',function f(){
+      v.removeEventListener('loadedmetadata',f);
+      if(!OWN.active||OWN.vid!==vid) return;
+      try{ if(start>0) v.currentTime=start; }catch(_){}
+      _ownReady(auto);
+    });
+    try{ v.load(); }catch(_){}
+  }else{
+    _ownHls(function(ok){
+      if(!OWN.active||OWN.vid!==vid||OWN.hls) return;
+      if(!ok||!window.Hls||!Hls.isSupported()){ _ownFail('hls.js が使えない'); return; }
+      var h=new Hls({startPosition:start, capLevelToPlayerSize:true, backBufferLength:30});
+      OWN.hls=h;
+      var tries={net:0,media:0};
+      h.on(Hls.Events.MANIFEST_PARSED,function(){ if(OWN.active&&OWN.hls===h) _ownReady(auto); });
+      h.on(Hls.Events.ERROR,function(_e,d){
+        if(!d||!d.fatal||OWN.hls!==h) return;
+        // 途中の通信の切れは1回だけ読み直す。映像の壊れは1回だけ立て直す。それでも駄目ならYouTubeへ
+        if(d.type===Hls.ErrorTypes.NETWORK_ERROR&&tries.net<1&&d.details!=='manifestLoadError'){ tries.net++; try{ h.startLoad(); }catch(_){} return; }
+        if(d.type===Hls.ErrorTypes.MEDIA_ERROR&&tries.media<1){ tries.media++; try{ h.recoverMediaError(); }catch(_){} return; }
+        _ownFail('hls.js '+d.type+':'+d.details);
+      });
+      h.loadSource(url); h.attachMedia(v);
+    });
+  }
+  return true;
+}
+// 自前の動画が読めなかった：この起動中はその動画をあきらめ、同じ番組をYouTubeで同じ位置から流し直す
+function _ownFail(why){
+  if(!OWN.active) return;
+  var vid=OWN.vid, ytId=OWN.ytId, raw=OWN.raw, t=0;
+  try{ t=OWN.v.currentTime||0; }catch(_){}
+  OWN.failed[vid]=why||'?';
+  try{ console.log('自前の動画が読めないのでYouTubeで流す',vid,why); }catch(_){}
+  _ownOff();
+  try{ raw.loadVideoById({videoId:ytId,startSeconds:Math.floor(t>0?t:(vCurrentSec||0)),suggestedQuality:'hd1080'}); }catch(_){}
+}
+// ytPlayer の振り分け役。YouTubeの持つ働きは全部そのまま通し、自前の番組の間だけ自前の動画を動かす
+function _ownWrap(raw){
+  if(!raw||raw.__own) return raw;
+  var f={__own:true, __raw:raw};
+  for(var k in raw){ (function(k){ if(typeof raw[k]==='function') f[k]=function(){ return raw[k].apply(raw,arguments); }; })(k); }
+  function idOf(a){ return (a&&typeof a==='object')?a.videoId:a; }
+  function startOf(a,b){ return (a&&typeof a==='object')?(a.startSeconds||0):(b||0); }
+  function vidFor(id){ var x=OWN.map[id]; return (x&&!OWN.failed[x])?x:''; }
+  f.loadVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); if(vid&&_ownLoad(id,vid,startOf(a,b),true,raw)) return; _ownOff(); return raw.loadVideoById.apply(raw,arguments); };
+  f.cueVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); if(vid&&_ownLoad(id,vid,startOf(a,b),false,raw)) return; _ownOff(); return raw.cueVideoById.apply(raw,arguments); };
+  f.playVideo=function(){ if(OWN.active){ _ownPlay(); return; } return raw.playVideo(); };
+  f.pauseVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.pauseVideo(); };
+  f.stopVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.stopVideo(); };
+  f.seekTo=function(s,ah){ if(OWN.active){ try{ OWN.v.currentTime=Math.max(0,+s||0); }catch(_){} return; } return raw.seekTo(s,ah); };
+  f.getCurrentTime=function(){ return OWN.active?(OWN.v.currentTime||0):raw.getCurrentTime(); };
+  f.getDuration=function(){ if(OWN.active){ var d=OWN.v.duration; return (d&&isFinite(d))?d:0; } return raw.getDuration(); };
+  f.getPlayerState=function(){ return OWN.active?OWN.st:raw.getPlayerState(); };
+  // 音は両方へ同じに伝える（番組が切り替わっても音の状態がずれないように）
+  f.mute=function(){ OWN.muted=true; if(OWN.v) OWN.v.muted=true; return raw.mute(); };
+  f.unMute=function(){ OWN.muted=false; if(OWN.v) OWN.v.muted=!!OWN.debug; return raw.unMute(); };
+  f.isMuted=function(){ return OWN.active?OWN.muted:raw.isMuted(); };
+  f.setVolume=function(n){ OWN.vol=n; if(OWN.v){ try{ OWN.v.volume=Math.max(0,Math.min(1,n/100)); }catch(_){} } return raw.setVolume(n); };
+  f.getVolume=function(){ return OWN.active?OWN.vol:raw.getVolume(); };
+  return f;
+}
+// 試験用の表示（?owndebug=1 の時だけ）。いまの方式・位置・予定の位置を左下に出す
+function _ownDebugBox(){
+  if(_ownDebugBox.on) return; _ownDebugBox.on=true;
+  setInterval(function(){
+    var b=_ownDebugBox.el;
+    if(!b){ b=_ownDebugBox.el=document.createElement('div');
+      b.style.cssText='position:fixed;left:4px;bottom:4px;z-index:2147483647;background:rgba(0,0,0,.78);color:#fff;font:12px/1.4 Menlo,monospace;padding:4px 6px;pointer-events:none;white-space:pre;';
+      document.body.appendChild(b); }
+    var v=OWN.v, st='-', exp='-';
+    try{ st=ytPlayer&&ytPlayer.getPlayerState?ytPlayer.getPlayerState():'-'; }catch(_){}
+    try{ var pos=nowPos(); if(pos&&!isManual) exp=esOf(pos.c,pos.p); }catch(_){}
+    var fl=[]; for(var k in OWN.failed) fl.push(k);
+    b.textContent='方式:'+(OWN.active?(OWN.hls?'hls.js':'本体'):'YouTube')+' 動画:'+(OWN.active?OWN.vid:'-')+' 状態:'+st
+      +'\n位置:'+(v&&OWN.active?v.currentTime.toFixed(1):'-')+' 予定:'+exp+(fl.length?' 失敗:'+fl.join(','):'');
+  },1000);
+}
 var ytInitialized=false;
 function onYouTubeIframeAPIReady(){
   if(ytInitialized)return; // キャッシュ等による二重呼び出しを防止
@@ -6870,32 +7129,11 @@ function onYouTubeIframeAPIReady(){
     playerVars:{autoplay:0,playsinline:1,rel:0,modestbranding:1,fs:0,controls:0,disablekb:1,cc_load_policy:0},
     events:{
       onStateChange:function(e){
-        var st=e.data;
-        try{statsOnState(st);}catch(_){}
-        if(st===1||st===5){ killCaptions(); } // 再生開始/キュー時に字幕を無効化
-        // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
-        var _isPlay=(st===1||st===3);
-        (function(){
-          var _pp='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-          var _pl='<path d="M8 5v14l11-7z"/>';
-          var _ic=document.getElementById('ctrl-play-icon');
-          var _fi=document.getElementById('fs-play-icon');
-          if(_ic)_ic.innerHTML=_isPlay?_pp:_pl;
-          if(_fi)_fi.innerHTML=_isPlay?_pp:_pl;
-        })();
-        if(st===1){ clearSpinnerTimer();if(!isOff){showEnded(false);}showSpinner(false); }
-        if(st===3&&!isOff){ showEnded(false); } // バッファ中は終了画面だけ消す
-        // iOS: st=5(cued)でスピナーを消す（cueVideoById後は自動再生されないため）
-        if(st===5&&isIOS){ clearSpinnerTimer();showSpinner(false); }
-        // 動画終了
-        if(st===0&&!isOff&&_endSwitchOK()){ showSpinner(true,'切り替え中...'); onEnded(); }
-        // Now Playingインジケーター抑制（Dynamic Island非表示の試み）
-        if('mediaSession' in navigator){
-          navigator.mediaSession.playbackState='none';
-        }
+        if(OWN.active) return;   // ★自前の動画を流している間は、裏で止めたYouTubeの知らせを無視する
+        _ytOnState(e.data);
       },
       onReady:function(e){
-        ytReady=true;ytPlayer=e.target;
+        ytReady=true;ytPlayer=_ownWrap(e.target);   // ★自前の動画への振り分け役で包む（2026-10-02）
         try{ applySavedVolume(); }catch(_){}   // 前回の音量・消音状態を思い出す
         armStartBtn();   // API準備完了 → 放送開始ボタンを有効化
         killCaptions();  // 字幕を無効化
@@ -6903,8 +7141,8 @@ function onYouTubeIframeAPIReady(){
         if(pendingYtId){
           var id=pendingYtId,sec=pendingSec;
           pendingYtId='';pendingSec=0;
-          e.target.loadVideoById({videoId:id,startSeconds:sec,suggestedQuality:'hd1080'});
-          try{ e.target.playVideo(); }catch(_){} // 遅延ロード時も再生を試みる
+          ytPlayer.loadVideoById({videoId:id,startSeconds:sec,suggestedQuality:'hd1080'});
+          try{ ytPlayer.playVideo(); }catch(_){} // 遅延ロード時も再生を試みる
           clearSpinnerTimer();
           spinnerTimer=setTimeout(function(){showSpinner(false);},60000);
           setTimeout(killCaptions,600); // ロード後に再度字幕を無効化
@@ -6943,7 +7181,8 @@ var isExpanded=false,fsUiTimer=null;
 // ★内部サイズの固定は枠が非表示(サイズ0)でも必ず行う＝動画ロード前に確定させるのが肝。
 // 副次効果: YouTubeのUIも1920枠基準で描かれ縮小表示になり目立たない。将来4K素材なら3840×2160に。
 var _fitW0=1920,_fitH0=1080;
-function fitPlayer(){
+function fitPlayer(){ _fitPlayerYT(); try{ _ownGeom(); }catch(_){} }   // ★自前の動画もYouTubeの枠と同じ位置・大きさに（2026-10-02）
+function _fitPlayerYT(){
   var yt=document.getElementById('yt-player-api');
   if(!yt) return;
   var pw=document.getElementById('player-wrap');
@@ -8062,6 +8301,7 @@ function powerOn(){
   setHdrVar();
   requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); recordNormBanner(); });
   hasPoweredOn=true;
+  try{ _ownUnlock(); }catch(_){}   // ★自前の動画の再生の許しを、指で押したこの時に取る（iPhone・2026-10-02）
   userWantsPlay=true;
   var pos = CYCLE.length ? nowPos() : null;
   if(!CYCLE.length){ showLoadErr(scheduleFailed?'error':'loading'); } // 番組表未取得:読み込み中/エラー（届き次第applyScheduleで自動再生）
