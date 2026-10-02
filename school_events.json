@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-02T05:30:44+09:00",
+ "updated": "2026-10-02T20:21:28+09:00",
  "items": [
   {
    "tag": "学校",
@@ -10,6 +10,26 @@
    "when": "2026-10-31",
    "place": "山崎小学校",
    "no": "syamasaki-es1031"
+  },
+  {
+   "tag": "学校",
+   "title": "千種小学校 のようす 【千中ニュース】体育祭 生徒感想紹介",
+   "url": "https://city-shiso-chikusa-es.edumap.jp/event",
+   "src": "千種小学校",
+   "ts": null,
+   "when": "2026-10-02",
+   "place": "千種小学校",
+   "no": "schikusa-es102"
+  },
+  {
+   "tag": "学校",
+   "title": "山崎西中学校 いよいよ明日、体育祭スローガンを胸に晴れ舞台へ",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "src": "山崎西中学校",
+   "ts": null,
+   "when": "2026-10-02",
+   "place": "山崎西中学校",
+   "no": "syamasakinishi-jhs102"
   },
   {
    "tag": "学校",
@@ -100,6 +120,16 @@
    "when": "2027-01-16",
    "place": "",
    "no": "t116西播中学校新人駅伝競走大会"
+  },
+  {
+   "tag": "学校",
+   "title": "山崎東中学校 いよいよ明日、体育祭スローガンを胸に晴れ舞台へ",
+   "url": "https://city-shiso-yamasakihigashi-jhs.edumap.jp/event",
+   "src": "山崎東中学校",
+   "ts": null,
+   "when": "2026-10-02",
+   "place": "山崎東中学校",
+   "no": "syamasakihigashi-jhs102"
   },
   {
    "tag": "学校",
