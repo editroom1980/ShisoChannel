@@ -1,26 +1,7 @@
 {
- "updated": "2026-10-10T18:03:40+09:00",
+ "updated": "2026-10-11T00:21:03+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "学校",
-   "title": "10/10 山崎西小学校 【山南ニュース】秋晴れの中、西播新人大会開幕",
-   "url": "https://city-shiso-yamasakinishi-es.edumap.jp/event",
-   "date": "10月10日",
-   "ts": "2026-10-10T00:00:00+09:00",
-   "src": "山崎西小学校",
-   "when": "2026-10-10",
-   "place": "山崎西小学校"
-  },
-  {
-   "tag": "学校",
-   "title": "10/10 西播中学校新人大会",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "10月10日",
-   "ts": "2026-10-10T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-10-10"
-  },
   {
    "tag": "イベント",
    "title": "10/14 最新デジタル活用と実践的な事業展開を学ぶ 起業準備セミナー 受講生を募集",
@@ -117,6 +98,26 @@
    "ts": "2026-10-24T00:00:00+09:00",
    "src": "山崎文化会館",
    "when": "2026-10-24",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "10/24 いちのぴあで「えほんのじかん」",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyasyogaigakushujimusho/ibento/14037.html",
+   "date": "10月24日",
+   "ts": "2026-10-24T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-10-24",
+   "place": "いちのぴあ 会議室1"
+  },
+  {
+   "tag": "催し",
+   "title": "10/25 民俗芸能祭inひょうご",
+   "url": "http://www.yamabun.org/%e6%b0%91%e4%bf%97%e8%8a%b8%e8%83%bd%e7%a5%adin%e3%81%b2%e3%82%87%e3%81%86%e3%81%94/",
+   "date": "10月25日",
+   "ts": "2026-10-25T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-10-25",
    "place": "山崎文化会館"
   }
  ]
