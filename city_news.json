@@ -1,26 +1,7 @@
 {
- "updated": "2026-10-15T20:24:38+09:00",
+ "updated": "2026-10-16T00:43:41+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "学校",
-   "title": "10/15 千種小学校 うす 【千中ニュース】宍粟市中学校駅伝競走大会",
-   "url": "https://city-shiso-chikusa-es.edumap.jp/event",
-   "date": "10月15日",
-   "ts": "2026-10-15T00:00:00+09:00",
-   "src": "千種小学校",
-   "when": "2026-10-15",
-   "place": "千種小学校"
-  },
-  {
-   "tag": "学校",
-   "title": "10/15 宍粟市中学校駅伝競走大会",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "10月15日",
-   "ts": "2026-10-15T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-10-15"
-  },
   {
    "tag": "イベント",
    "title": "10/17 移動図書館ささゆり号が一宮に",
@@ -119,6 +100,26 @@
    "src": "山崎文化会館",
    "when": "2026-10-25",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "10/25 令和8年度「民俗芸能祭inひょうご」観覧者募集",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kyoikuiinkai/syakaikyoiku/ibento/21950.html",
+   "date": "10月25日",
+   "ts": "2026-10-25T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-10-25",
+   "place": "山崎文化会館（宍粟市山崎町鹿沢88番地1）"
+  },
+  {
+   "tag": "イベント",
+   "title": "10/29 いちのぴあで公開講座",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyasyogaigakushujimusho/iwamigakuen/22411.html",
+   "date": "10月29日",
+   "ts": "2026-10-29T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-10-29",
+   "place": "いちのぴあ ホール"
   }
  ]
 }
