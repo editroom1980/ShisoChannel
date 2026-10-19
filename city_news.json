@@ -1,36 +1,7 @@
 {
- "updated": "2026-10-19T20:15:36+09:00",
+ "updated": "2026-10-20T02:29:11+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "10/19 フードドライブ実施 10月19日から",
-   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/tantojoho/syouhisyagyousei/shohishashiminshakai/fooddrive_in_shiso.html",
-   "date": "10月19日",
-   "ts": "2026-10-19T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-10-19"
-  },
-  {
-   "tag": "学校",
-   "title": "10/19 山崎西小学校 校のようす 【山南ニュース】放課後合唱練習開始",
-   "url": "https://city-shiso-yamasakinishi-es.edumap.jp/event",
-   "date": "10月19日",
-   "ts": "2026-10-19T00:00:00+09:00",
-   "src": "山崎西小学校",
-   "when": "2026-10-19",
-   "place": "山崎西小学校"
-  },
-  {
-   "tag": "学校",
-   "title": "10/19 山崎東中学校 校のようす 【山南ニュース】放課後合唱練習開始",
-   "url": "https://city-shiso-yamasakihigashi-jhs.edumap.jp/event",
-   "date": "10月19日",
-   "ts": "2026-10-19T00:00:00+09:00",
-   "src": "山崎東中学校",
-   "when": "2026-10-19",
-   "place": "山崎東中学校"
-  },
   {
    "tag": "イベント",
    "title": "10/21 移動図書館「ささゆり号」が千種に",
@@ -120,6 +91,35 @@
    "src": "宍粟市公式サイト",
    "when": "2026-10-30",
    "place": "宍粟市役所4階会議室"
+  },
+  {
+   "tag": "学校",
+   "title": "10/31 山崎小学校 ささの子発表会",
+   "url": "https://city-shiso-yamasaki-es.edumap.jp/event",
+   "date": "10月31日",
+   "ts": "2026-10-31T00:00:00+09:00",
+   "src": "山崎小学校",
+   "when": "2026-10-31",
+   "place": "山崎小学校"
+  },
+  {
+   "tag": "学校",
+   "title": "10/31 西播中学校駅伝競走大会",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "date": "10月31日",
+   "ts": "2026-10-31T00:00:00+09:00",
+   "src": "山崎西中学校",
+   "when": "2026-10-31"
+  },
+  {
+   "tag": "催し",
+   "title": "11/3 第36回秋のふれあい文化祭",
+   "url": "http://www.yamabun.org/%e7%ac%ac%ef%bc%93%ef%bc%96%e5%9b%9e%e7%a7%8b%e3%81%ae%e3%81%b5%e3%82%8c%e3%81%82%e3%81%84%e6%96%87%e5%8c%96%e7%a5%ad/",
+   "date": "11月3日",
+   "ts": "2026-11-03T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-11-03",
+   "place": "山崎文化会館"
   }
  ]
 }
