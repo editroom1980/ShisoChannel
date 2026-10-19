@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-19T05:39:17+09:00",
+ "updated": "2026-10-19T20:16:00+09:00",
  "items": [
   {
    "tag": "学校",
@@ -10,6 +10,16 @@
    "when": "2026-10-31",
    "place": "山崎小学校",
    "no": "syamasaki-es1031"
+  },
+  {
+   "tag": "学校",
+   "title": "山崎西小学校 校のようす 【山南ニュース】放課後合唱練習開始",
+   "url": "https://city-shiso-yamasakinishi-es.edumap.jp/event",
+   "src": "山崎西小学校",
+   "ts": null,
+   "when": "2026-10-19",
+   "place": "山崎西小学校",
+   "no": "syamasakinishi-es1019"
   },
   {
    "tag": "学校",
@@ -40,6 +50,36 @@
    "when": "2026-11-13",
    "place": "山崎西中学校",
    "no": "syamasakinishi-jhs1113"
+  },
+  {
+   "tag": "学校",
+   "title": "西播中学校駅伝競走大会",
+   "url": "https://city-shiso-yamasakiminami-jhs.edumap.jp/event",
+   "src": "山崎南中学校",
+   "ts": null,
+   "when": "2026-10-31",
+   "place": "",
+   "no": "t1031西播中学校駅伝競走大会"
+  },
+  {
+   "tag": "学校",
+   "title": "西播中学校新人駅伝競走大会",
+   "url": "https://city-shiso-yamasakiminami-jhs.edumap.jp/event",
+   "src": "山崎南中学校",
+   "ts": null,
+   "when": "2027-01-16",
+   "place": "",
+   "no": "t116西播中学校新人駅伝競走大会"
+  },
+  {
+   "tag": "学校",
+   "title": "山崎東中学校 校のようす 【山南ニュース】放課後合唱練習開始",
+   "url": "https://city-shiso-yamasakihigashi-jhs.edumap.jp/event",
+   "src": "山崎東中学校",
+   "ts": null,
+   "when": "2026-10-19",
+   "place": "山崎東中学校",
+   "no": "syamasakihigashi-jhs1019"
   },
   {
    "tag": "学校",
