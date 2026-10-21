@@ -1,17 +1,7 @@
 {
- "updated": "2026-10-21T09:57:19+09:00",
+ "updated": "2026-10-21T15:00:49+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "10/21 移動図書館「ささゆり号」が千種に",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/ibento/1462514391298.html",
-   "date": "10月21日",
-   "ts": "2026-10-21T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-10-21",
-   "place": "千種町内"
-  },
   {
    "tag": "イベント",
    "title": "10/23 福祉施設製品販売会 市役所で",
@@ -105,10 +95,10 @@
   {
    "tag": "学校",
    "title": "10/31 西播中学校駅伝競走大会",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "url": "https://city-shiso-yamasakiminami-jhs.edumap.jp/event",
    "date": "10月31日",
    "ts": "2026-10-31T00:00:00+09:00",
-   "src": "山崎西中学校",
+   "src": "山崎南中学校",
    "when": "2026-10-31"
   },
   {
@@ -120,6 +110,16 @@
    "src": "山崎文化会館",
    "when": "2026-11-03",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "11/3 いちのみやふるさとまつり 11月3日開催",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyashiminkyokumachizukurisuishinka/ibento/news/7608.html",
+   "date": "11月3日",
+   "ts": "2026-11-03T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-11-03",
+   "place": "スポニックパーク一宮"
   }
  ]
 }
