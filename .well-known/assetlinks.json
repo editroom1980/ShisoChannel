@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "net.shisochan.app",
+      "sha256_cert_fingerprints": [
+        "42:27:F8:30:5B:53:03:FE:22:4D:92:64:48:73:E5:A0:9E:AA:C3:26:9B:86:78:6E:F8:9D:5B:ED:0A:BD:44:9D"
+      ]
+    }
+  }
+]
