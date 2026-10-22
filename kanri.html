@@ -243,6 +243,7 @@ details summary{cursor:pointer;}
       <div class="actions">
         <button class="g small" id="btnAdd">＋ 番組を足す</button>
         <button class="g small" id="btnVault">＋ 動画保管庫から足す</button>
+        <button class="g small" id="btnVaultUp">⬆ 動画保管庫に入れる</button>
         <button class="g small" id="btnReload">読み直す</button>
         <button class="g small" id="btnUndo" disabled>直前に戻す</button>
         <span class="sp"></span>
@@ -840,6 +841,12 @@ function checkSched(){
 }
 el('btnHead').onclick=function(){var h=el('schedHead');h.hidden=!h.hidden;el('btnHead').textContent=h.hidden?'放送時間を変更':'閉じる';};
 ['airStart','airEnd'].forEach(function(id){el(id).addEventListener('input',checkSched);});
+// 「⬆ 動画保管庫に入れる」：同じ窓を開き、一番上の「新しい動画を入れる」へ移る（ログインしていなければログインの欄を出す）
+el('btnVaultUp').onclick=function(){
+  var b=el('vaultBox'); if(b.hidden) el('btnVault').onclick();
+  if(!ID_TOKEN){ try{ showLogin(); }catch(_){} toast('動画を入れるには、先にログインしてください'); return; }
+  var u=b.querySelector('.vup'); if(u) u.scrollIntoView({block:'center'});
+};
 el('btnVault').onclick=function(){ var b=el('vaultBox'); b.hidden=!b.hidden; el('btnVault').textContent=b.hidden?'＋ 動画保管庫から足す':'閉じる'; if(!b.hidden){ renderVault(); if(!VAULT.list) loadVault(); loadVaultJobs(); } };
 el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',expiresAt:null,telop:'',vid:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
 el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadVault();loadSchedule();};
