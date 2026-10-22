@@ -2292,7 +2292,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.40-lab（新番組のお知らせ：通知とアイコンの数字）</div>
+    <div class="ps-version">version 4.41-lab（ダウンロード版の中を見分ける）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2664,6 +2664,19 @@ html.tvapp #lnk-reg{display:none;}
 // どの関数よりも先に確定させるため、スクリプトの最上部に置く
 var IS_TVAPP=false;
 try{ IS_TVAPP=/ShisochanTV\//.test(navigator.userAgent); }catch(_){}
+// ══ ダウンロード版（ストアのアプリ）の中で開いているか（2026-10-22）══
+// ・iPhone版（Capacitor）は名乗りに「ShisochanApp/」を足して開く
+// ・Android版（Google Play・TWA）は、起動した時の参照元が android-app://net.shisochan.app になる。
+//   参照元は最初の1画面にしか付かないので、同じ窓の中では覚えておく
+// アプリの中では「ホーム画面に追加」の案内は意味が無いので、ホーム画面から開いた時と同じ扱いにする（regHome）
+var IS_STOREAPP=(function(){
+  try{
+    if(/ShisochanApp\//.test(navigator.userAgent)) return 'ios';
+    if(/^android-app:\/\/net\.shisochan\.app/.test(document.referrer||'')){ try{ sessionStorage.setItem('sc_twa','1'); }catch(_){} return 'android'; }
+    if(sessionStorage.getItem('sc_twa')==='1') return 'android';
+  }catch(_){}
+  return '';
+})();
 // 画面の寸法指定（meta viewport の中身）は必ずこの関数を通す。
 // テレビ用アプリはCSSの幅を1280に固定＝テレビブラウザの実測(1280x720)と同じ環境。
 // 数字を持つのはここ1か所だけ（アプリ側には倍率を書かない＝2か所に書くと必ずずれる）
@@ -3366,6 +3379,7 @@ function regMayGetPrompt(){
 }
 
 function regHome(){                       // ホーム画面から開いているか
+  if(IS_STOREAPP) return true;            // ダウンロード版の中＝ホーム画面から開いた時と同じ扱い
   try{
     if(window.navigator.standalone===true) return true;
     if(window.matchMedia && matchMedia('(display-mode: standalone)').matches) return true;
@@ -6810,6 +6824,7 @@ function statsHomeOpen(){
   try{
     if(!_stCanRecord()) return;
     if(!regHome()) return;                                  // ブラウザで見ている間は数えない
+    if(IS_STOREAPP) return;                                 // ダウンロード版はホーム画面への追加の数に入れない
     if(localStorage.getItem(_stHomeKEY)==='1') return;      // この端末では数え済み
     localStorage.setItem(_stHomeKEY,'1');
     statsRegStep('homeOpen');
