@@ -77,6 +77,16 @@ button:disabled{opacity:.4;cursor:default;}
 .r1 .meta .lchg{color:#9a6b00;font-weight:700;}
 .r1 .meta .lwait{color:#7a5200;}
 #schedEnd{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.5;}
+/* 動画保管庫から足す：目録の一覧 */
+#vaultBox{margin-top:8px;border:1px solid var(--border);border-radius:8px;background:#fafcfa;}
+#vaultBox[hidden]{display:none;}
+#vaultBox .vh{font-size:13px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:var(--forest);}
+#vaultBox .vi{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 10px;border-top:1px solid var(--border);}
+#vaultBox .vi:first-of-type{border-top:0;}
+#vaultBox .vt{font-size:14px;font-weight:700;line-height:1.3;}
+#vaultBox .vm{font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;}
+#vaultBox .vm .tag{border:1px solid var(--border);border-radius:3px;padding:0 4px;}
+#vaultBox .vmsg{font-size:13px;padding:10px;color:var(--text2);}
 #schedEnd b{color:var(--text);}
 .sum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;align-items:center;}
 /* 放送時間・1周の要約（普段は1行。「変更」で入力欄を開く） */
@@ -223,11 +233,13 @@ details summary{cursor:pointer;}
     <div class="cb">
       <div class="actions">
         <button class="g small" id="btnAdd">＋ 番組を足す</button>
+        <button class="g small" id="btnVault">＋ 動画保管庫から足す</button>
         <button class="g small" id="btnReload">読み直す</button>
         <button class="g small" id="btnUndo" disabled>直前に戻す</button>
         <span class="sp"></span>
         <button class="gold small" id="btnWrite" disabled hidden>この内容で放送する</button>
       </div>
+      <div id="vaultBox" hidden></div>
       <p class="note" style="margin-top:8px">行を押すと編集欄が開きます。長さは動画の実際の長さを自動で読みます（手では入れません）。毎朝の放送開始に1番目から始め、上から順に繰り返します。YouTubeの欄はURLでも構いません（IDだけ取り出します）。</p>
     </div>
   </div>
@@ -458,9 +470,11 @@ function validSchedule(d){
   if(typeof s!=='number'||typeof e!=='number'||isNaN(s)||isNaN(e)||s>=e)return '放送時間の設定が不正';
   for(var i=0;i<d.cycle.length;i++){
     var p=d.cycle[i];
-    if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string')return (i+1)+'番目の番組データが不正（YouTube ID・題名は必須）';
+    // ★2026-10-22 YouTube の無い番組（動画保管庫だけ）も書ける（アプリ 本番3.92 / lab4.38 以降が流せる）
+    if(!p||typeof p.title!=='string'||!p.title||typeof p.cat!=='string')return (i+1)+'番目の番組データが不正（題名は必須）';
+    if(p.vid&&!/^[A-Za-z0-9_-]{1,64}$/.test(p.vid))return (i+1)+'番目の動画保管庫の名前が不正（半角の英数字と _ - だけ）';
+    if(!((typeof p.ytId==='string'&&p.ytId)||p.vid))return (i+1)+'番目の番組に、YouTubeも動画保管庫の動画もありません';
     if(!(plen(p)>0))return (i+1)+'番目の番組の長さが不正（1秒以上）';
-    if(p.vid&&!/^[A-Za-z0-9_-]{1,64}$/.test(p.vid))return (i+1)+'番目の自前の動画の名前が不正（半角の英数字と _ - だけ）';
   }
   return '';
 }
@@ -522,7 +536,7 @@ function probeLens(){
   var job=todo.p.vid?ownLen(todo.p.vid):ytLen(ytIdFrom(todo.p.ytId));
   job.then(function(sec){LEN[todo.k]={sec:sec};},function(e){LEN[todo.k]={err:e.message||'読めない'};})
   .then(function(){ _lenBusy=false; applyLens();
-    var a=document.activeElement; if(!(a&&a.matches&&a.matches('#progs input'))){ readSchedFromForm(); renderSched(); } else checkSched();
+    var a=document.activeElement; if(!(a&&a.matches&&a.matches('#progs input,#progs select'))){ readSchedFromForm(); renderSched(); } else { refreshLenTexts(); checkSched(); }
     probeLens(); });
 }
 // 読めた長さを番組へ入れる（その番組の長さ＝実際の長さ）
@@ -587,6 +601,43 @@ function readSchedFromForm(){
   });
 }
 // 一覧の1行：見本・題名・分類・分・ID・印。押すと下の編集欄が開く
+// ══ 動画保管庫の目録（catalog.json）══
+// 動画を入れる時に1行ずつ足していく一覧（名前・題名・長さ・入れた日）。保管庫そのものは中身を一覧で見せないので、これが頼り
+var VAULT={list:null,err:''};
+function loadVault(){
+  return fetch(VBASE+'catalog.json',{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(c){ VAULT={list:(c&&c.videos)||[],err:''}; },function(e){ VAULT={list:null,err:e.message||'読めない'}; })
+  .then(function(){ if(!el('vaultBox').hidden) renderVault(); try{ if(sched.cycle.length){ readSchedFromForm(); renderSched(); } }catch(_){} });
+}
+function vaultFind(vid){ return (VAULT.list||[]).filter(function(v){return v.vid===vid;})[0]||null; }
+// 編集欄の「動画保管庫の動画」：目録から選ぶ。目録に無い名前が入っていれば、その名前も選択肢に残す（消さない）
+function vaultSelect(cur){
+  var h='<select data-k="vid"><option value="">（使わない＝YouTubeで流す）</option>', found=false;
+  (VAULT.list||[]).forEach(function(v){ var on=v.vid===cur; if(on)found=true;
+    h+='<option value="'+esc(v.vid)+'"'+(on?' selected':'')+'>'+esc(v.title)+'（'+esc(lenText(v.sec))+'）</option>'; });
+  if(cur&&!found) h+='<option value="'+esc(cur)+'" selected>'+esc(cur)+'（目録に無い名前）</option>';
+  return h+'</select>';
+}
+// 「＋ 動画保管庫から足す」の一覧
+function renderVault(){
+  var b=el('vaultBox'), h='<div class="vh">動画保管庫の動画（選ぶと、題名と長さが入った番組を一番下に足します）</div>';
+  if(VAULT.err) h+='<div class="vmsg">目録が読めません（'+esc(VAULT.err)+'）。「読み直す」を押してください</div>';
+  else if(!VAULT.list) h+='<div class="vmsg">読み込み中…</div>';
+  else if(!VAULT.list.length) h+='<div class="vmsg">動画保管庫に動画がまだありません</div>';
+  else VAULT.list.forEach(function(v,i){
+    var used=sched.cycle.some(function(p){return p.vid===v.vid;});
+    h+='<div class="vi"><div><div class="vt">'+esc(v.title)+'</div><div class="vm"><span>'+esc(lenText(v.sec))+'</span><span>'+esc(v.added||'')+' に入れた</span>'
+      +(used?'<span class="tag">番組表に入っています</span>':'')+'</div></div><button class="g small" data-vi="'+i+'">足す</button></div>';
+  });
+  b.innerHTML=h;
+  b.querySelectorAll('[data-vi]').forEach(function(btn){ btn.onclick=function(){ vaultAdd(VAULT.list[+btn.getAttribute('data-vi')]); }; });
+}
+function vaultProg(v){ return {ytId:'',title:v.title,cat:'',expiresAt:null,telop:'',vid:v.vid,_open:true}; }
+function vaultAdd(v){
+  readSchedFromForm(); sched.cycle.push(vaultProg(v));
+  el('vaultBox').hidden=true; el('btnVault').textContent='＋ 動画保管庫から足す';
+  renderSched(); var rows=document.querySelectorAll('#progs .prog'); if(rows.length){ rows[rows.length-1].scrollIntoView({block:'center'}); var c=rows[rows.length-1].querySelector('[data-k=cat]'); if(c) c.focus(); }
+}
 // 行に出す長さ：実時間／読み込み中／読めない／保存と違う
 function lenMeta(p){
   var L=lenState(p);
@@ -596,14 +647,27 @@ function lenMeta(p){
   if(p._stored>0&&Math.abs(p._stored-L.sec)>=1) h+='<span class="lchg">保存 '+esc(lenText(p._stored))+' → 実時間に直します</span>';
   return h;
 }
-function progRow(p,i,now){
+// 一覧の行の小さな文字（分類・長さ・ID・印）
+function progMeta(p,i,now){
   var id=ytIdFrom(p.ytId);
-  var meta='<span class="cat">'+esc(p.cat||'（分類なし）')+'</span>'+lenMeta(p)
-    +'<span class="yt">'+esc(id||'IDなし')+'</span>'
+  return '<span class="cat">'+esc(p.cat||'（分類なし）')+'</span>'+lenMeta(p)
+    +'<span class="yt">'+esc(id||(p.vid?'YouTubeなし':'IDなし'))+'</span>'
     +(i===now?'<span class="now">放送中</span>':'')
     +(p.telop?'<span class="tag">テロップ</span>':'')
-    +(p.vid?'<span class="tag">自前の動画</span>':'')
+    +(p.vid?'<span class="tag">動画保管庫</span>':'')
     +(p.expiresAt?'<span class="tag">期限 '+esc(p.expiresAt)+'</span>':'');
+}
+function lenBox(p){ var L=lenState(p); return (L.err?'<span class="err">読めません</span>':(L.sec>0?esc(lenText(L.sec)):'確認中…'))+'<small>'+(p.vid?'動画保管庫の動画':'YouTube')+'</small>'; }
+// 入力中で描き直せない時は、行の小さな文字と長さの欄だけを書き換える（入力欄には触らない）
+function refreshLenTexts(){
+  var now=nowProgIndex(sched);
+  document.querySelectorAll('#progs .prog').forEach(function(row,i){ var p=sched.cycle[i]; if(!p) return;
+    var m=row.querySelector('.meta'); if(m) m.innerHTML=progMeta(p,i,now);
+    var l=row.querySelector('.lenro'); if(l) l.innerHTML=lenBox(p); });
+}
+function progRow(p,i,now){
+  var id=ytIdFrom(p.ytId);
+  var meta=progMeta(p,i,now);
   return '<div class="prog'+(i===now?' now':'')+(p._open?' open':'')+'" data-i="'+i+'">'
     +'<div class="r1" data-op="toggle">'
     +'<div class="no">'+(i+1)+'</div>'
@@ -614,12 +678,12 @@ function progRow(p,i,now){
     +'<div class="ed"'+(p._open?'':' hidden')+'>'
     +'<div class="f">'
     +'<div class="w"><label class="l">題名</label><input type="text" data-k="title" value="'+esc(p.title)+'"></div>'
-    +'<div><label class="l">YouTube（IDかURL）</label><input type="text" data-k="ytId" value="'+esc(p.ytId)+'" autocapitalize="off"></div>'
+    +'<div><label class="l">YouTube（IDかURL。無ければ空欄）</label><input type="text" data-k="ytId" value="'+esc(p.ytId)+'" autocapitalize="off"></div>'
     +'<div><label class="l">分類</label><input type="text" data-k="cat" list="cats" value="'+esc(p.cat)+'"></div>'
-    +'<div><label class="l">長さ（動画から自動で読みます）</label><div class="lenro">'+(function(){var L=lenState(p);return L.err?'<span class="err">読めません</span>':(L.sec>0?esc(lenText(L.sec)):'確認中…');})()+'<small>'+(p.vid?'置き場の動画':'YouTube')+'</small></div></div>'
+    +'<div><label class="l">長さ（動画から自動で読みます）</label><div class="lenro">'+lenBox(p)+'</div></div>'
     +'<div><label class="l">期限（空欄＝なし）</label><input type="date" data-k="expiresAt" value="'+esc(p.expiresAt||'')+'"></div>'
     +'<div class="w"><label class="l">テロップ（見始めの10秒。空欄＝なし）</label><input type="text" data-k="telop" value="'+esc(p.telop||'')+'"></div>'
-    +'<div class="w"><label class="l">自前の動画（置き場の名前。空欄＝YouTubeで流す）</label><input type="text" data-k="vid" value="'+esc(p.vid||'')+'" autocapitalize="off" autocorrect="off" spellcheck="false"></div>'
+    +'<div class="w"><label class="l">動画保管庫の動画（選ばない＝YouTubeで流す）</label>'+vaultSelect(p.vid)+'</div>'
     +'</div>'
     +'<div class="actions"><button class="danger small" data-op="del">この番組を外す</button><span class="sp"></span><button class="g small" data-op="close">閉じる</button></div>'
     +'</div></div>';
@@ -644,10 +708,15 @@ function renderSched(){
       renderSched();
     });
   });
-  el('progs').querySelectorAll('input').forEach(function(inp){
+  el('progs').querySelectorAll('input,select').forEach(function(inp){
     inp.addEventListener('click',function(e){e.stopPropagation();});
     inp.addEventListener('input',checkSched);
-    inp.addEventListener('change',function(){readSchedFromForm();if(inp.getAttribute('data-k')==='ytId'||inp.getAttribute('data-k')==='title')renderSched();});
+    inp.addEventListener('change',function(){
+      readSchedFromForm(); var k=inp.getAttribute('data-k');
+      // 動画保管庫の動画を選んだ時、題名が空なら目録の題名を入れる
+      if(k==='vid'){ var i=+inp.closest('.prog').getAttribute('data-i'), p=sched.cycle[i], v=vaultFind(p.vid); if(v&&!p.title) p.title=v.title; }
+      if(k==='ytId'||k==='title'||k==='vid')renderSched();
+    });
   });
   checkSched();
   probeLens();
@@ -666,7 +735,7 @@ function checkSched(){
   var secs=(sched.airEnd-sched.airStart)*3600;
   el('sumLoops').textContent=(tot>0&&secs>0)?(Math.round(secs/tot*10)/10):'—';
   var err=validSchedule(schedPayload(sched));
-  if(!err&&lerr.length) err=lerr.join('・')+'番目の動画の長さが読めません。IDか自前の動画の名前を確かめてください';
+  if(!err&&lerr.length) err=lerr.join('・')+'番目の動画の長さが読めません。YouTubeのIDか動画保管庫の動画を確かめてください';
   if(!err&&lwait) err='動画の長さを確認中です（あと'+lwait+'本）。終わるまで書き込めません';
   var changed=schedSig(sched)!==schedLoadedSig;
   schedOK=!err;
@@ -681,8 +750,9 @@ function checkSched(){
 }
 el('btnHead').onclick=function(){var h=el('schedHead');h.hidden=!h.hidden;el('btnHead').textContent=h.hidden?'放送時間を変更':'閉じる';};
 ['airStart','airEnd'].forEach(function(id){el(id).addEventListener('input',checkSched);});
+el('btnVault').onclick=function(){ var b=el('vaultBox'); b.hidden=!b.hidden; el('btnVault').textContent=b.hidden?'＋ 動画保管庫から足す':'閉じる'; if(!b.hidden){ renderVault(); if(!VAULT.list) loadVault(); } };
 el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',expiresAt:null,telop:'',vid:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
-el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSchedule();};
+el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadVault();loadSchedule();};
 el('btnWrite').onclick=function(){
   readSchedFromForm();var out=schedPayload(sched);var err=validSchedule(out);if(err){toast('✖ '+err);return;}
   if(!confirm('番組表を書き込みます。番組'+out.cycle.length+'本・1周'+lenText(totalSec(out))+'・'+out.airStart+'時〜'+out.airEnd+'時。よろしいですか？'))return;
@@ -1290,6 +1360,11 @@ function selfTest(){
   t('放送中の番号：合計40分15秒なら 6:40:00はCM、6:40:15は次の周の1番目',nowProgIndex(odd,21600+2400)===1&&nowProgIndex(odd,21600+2415)===0);
   var withOpen={airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,_open:true}]};
   t('画面用の印（_open）は保存する形に入らない',JSON.stringify(schedPayload(withOpen)).indexOf('_open')<0);
+  t('YouTube無し＋動画保管庫の動画は通る',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'',title:'x',cat:'c',sec:60,vid:'enjoy_midoen'}]})==='');
+  t('YouTubeも動画保管庫も無ければ落ちる',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'',title:'x',cat:'c',sec:60,vid:''}]})!=='');
+  var vp=vaultProg({vid:'enjoy_midoen',title:'押忍！潜入！エンジョイ君‼︎「味道園」編',sec:840.039,added:'2026-10-22'});
+  t('動画保管庫から足すと、題名と名前が入りYouTubeは空',vp.title==='押忍！潜入！エンジョイ君‼︎「味道園」編'&&vp.vid==='enjoy_midoen'&&vp.ytId===''&&vp._open===true);
+  t('編集欄の選択肢：目録に無い名前も消さずに残す',vaultSelect('nai_x').indexOf('value="nai_x" selected')>=0&&vaultSelect('').indexOf('（使わない＝YouTubeで流す）')>=0);
   t('自前の動画の名前は保存する形に残る',JSON.stringify(schedPayload({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:'cf_thanks'}]})).indexOf('"vid":"cf_thanks"')>=0);
   t('自前の動画が空なら保存する形に入れない',JSON.stringify(schedPayload({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:''}]})).indexOf('vid')<0);
   t('自前の動画の名前が正しければ通る',validSchedule({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:'cf_thanks-2026'}]})==='');
@@ -1318,12 +1393,12 @@ function selfTest(){
   el('dpick').value=dayStr(new Date());
   showTab(lsGet('kanri_tab')||'sched');
   if(ghToken()){el('ghStat').textContent='✔ 鍵はこの端末に保存済み（「つながるか試す」で確認できます）';el('ghSub').textContent='保存済み ✔ ▾';}
-  loadSchedule().then(loadSponsors);
+  loadSchedule().then(loadSponsors); loadVault();
   if(a&&a.r){REFRESH=a.r;EMAIL=a.e||'';refreshToken().then(function(){el('authstat').textContent='✔ ログイン状態を復元しました';el('authstat').className='ok';if(curTab==='rep')pick('today');}).catch(function(){REFRESH='';setWho();});}
   else setWho();
   if(/[?&]selftest=1/.test(location.search))selfTest();
   // 放送中の印を30秒ごとに更新（入力中は触らない）
-  setInterval(function(){if(curTab==='sched'&&sched.cycle.length&&!(document.activeElement&&document.activeElement.matches('input'))){var now=nowProgIndex(sched);var cur=-1;document.querySelectorAll('#progs .prog').forEach(function(r,i){if(r.classList.contains('now'))cur=i;});if(cur!==now){readSchedFromForm();renderSched();}}},30000);
+  setInterval(function(){if(curTab==='sched'&&sched.cycle.length&&!(document.activeElement&&document.activeElement.matches('input,select'))){var now=nowProgIndex(sched);var cur=-1;document.querySelectorAll('#progs .prog').forEach(function(r,i){if(r.classList.contains('now'))cur=i;});if(cur!==now){readSchedFromForm();renderSched();}}},30000);
 })();
 </script>
 </body>
