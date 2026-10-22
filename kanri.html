@@ -70,7 +70,8 @@ button:disabled{opacity:.4;cursor:default;}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
 .actions .sp{flex:1;}
 /* ── 番組表：頭の3つの数と、合計の帯 ── */
-.head3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.head3{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.ms{display:flex;align-items:center;gap:6px;}.ms input{min-width:0;flex:1;}.ms span{font-size:12px;color:var(--text3);}
 .sum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;align-items:center;}
 /* 放送時間・1周の要約（普段は1行。「変更」で入力欄を開く） */
 .ov{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text2);}
@@ -203,10 +204,9 @@ details summary{cursor:pointer;}
       <div class="head3" id="schedHead" hidden>
         <div><label class="l">放送開始（時）</label><input type="number" id="airStart" min="0" max="23" inputmode="numeric"></div>
         <div><label class="l">放送終了（時）</label><input type="number" id="airEnd" min="1" max="24" inputmode="numeric"></div>
-        <div><label class="l">1周の長さ（分）</label><input type="number" id="cycleMinutes" min="1" inputmode="numeric"></div>
       </div>
       <div class="sum">
-        <span class="chip"><b id="sumDur">0</b>分（合計）</span>
+        <span class="chip"><b id="sumDur">0分</b>（合計）</span>
         <span class="chip"><b id="sumCnt">0</b>本</span>
         <span class="chip"><b id="sumLoops">0</b>周／日</span>
       </div>
@@ -221,7 +221,7 @@ details summary{cursor:pointer;}
         <span class="sp"></span>
         <button class="gold small" id="btnWrite" disabled hidden>この内容で放送する</button>
       </div>
-      <p class="note" style="margin-top:8px">行を押すと編集欄が開きます。分＝流す長さ。合計が「1周の長さ」と同じで、放送時間が1周で割り切れる時だけ書き込めます。YouTubeの欄はURLでも構いません（IDだけ取り出します）。</p>
+      <p class="note" style="margin-top:8px">行を押すと編集欄が開きます。長さ＝流す長さ（分と秒）。毎朝の放送開始に1番目から始め、上から順に繰り返します。合計の長さは自由です。YouTubeの欄はURLでも構いません（IDだけ取り出します）。</p>
     </div>
   </div>
 </section>
@@ -441,41 +441,47 @@ document.querySelectorAll('#tabs button').forEach(function(b){b.addEventListener
 // ══════════════════════════════════════════════════════════════════════
 //  番組表
 // ══════════════════════════════════════════════════════════════════════
-var sched={airStart:6,airEnd:24,cycleMinutes:60,cycle:[]}, schedOK=false, schedLoadedSig='';
+var sched={airStart:6,airEnd:24,cycle:[]}, schedOK=false, schedLoadedSig='';
 var CATS=['お知らせ','イベント','風景','番組','その他'];
 // アプリ（index.html の validSchedule）と同じ規則。ここで通らない物はアプリでも拒まれる
+// ★2026-10-22「合計＝1周」「放送時間が1周で割り切れる」の決まりを廃止（アプリ 3.91 / lab 4.37 と同時）
 function validSchedule(d){
   if(!d||Object.prototype.toString.call(d.cycle)!=='[object Array]'||d.cycle.length<1)return '番組リストが空か形式不正';
-  var s=d.airStart,e=d.airEnd,cm=d.cycleMinutes;
-  if(typeof s!=='number'||typeof e!=='number'||typeof cm!=='number'||isNaN(s)||isNaN(e)||isNaN(cm)||s>=e||cm<=0)return '放送時間の設定が不正';
-  if(((e-s)*60)%cm!==0)return '放送時間('+((e-s)*60)+'分)がサイクル('+cm+'分)で割り切れない';
-  var tot=0;
+  var s=d.airStart,e=d.airEnd;
+  if(typeof s!=='number'||typeof e!=='number'||isNaN(s)||isNaN(e)||s>=e)return '放送時間の設定が不正';
   for(var i=0;i<d.cycle.length;i++){
     var p=d.cycle[i];
-    if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string'||typeof p.dur!=='number'||isNaN(p.dur)||p.dur<=0)return (i+1)+'番目の番組データが不正（YouTube ID・題名・分は必須）';
+    if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string')return (i+1)+'番目の番組データが不正（YouTube ID・題名は必須）';
+    if(!(plen(p)>0))return (i+1)+'番目の番組の長さが不正（1秒以上）';
     if(p.vid&&!/^[A-Za-z0-9_-]{1,64}$/.test(p.vid))return (i+1)+'番目の自前の動画の名前が不正（半角の英数字と _ - だけ）';
-    tot+=p.dur;
   }
-  if(tot!==cm)return '番組の合計('+tot+'分)がサイクル('+cm+'分)と不一致';
   return '';
 }
+// 番組の長さ（秒）。アプリの plen と同じ：sec があればそれ、無ければ dur（分）×60
+function plen(p){ return (typeof p.sec==='number'&&p.sec>0)?p.sec:((typeof p.dur==='number'&&p.dur>0)?p.dur*60:NaN); }
+function lenText(sec){ if(!(sec>0))return '?'; sec=Math.round(sec); var m=Math.floor(sec/60), r=sec%60;
+  return m&&r ? m+'分'+r+'秒' : (m ? m+'分' : r+'秒'); }
+function totalSec(d){ var t=0;(d.cycle||[]).forEach(function(p){var l=plen(p);if(l>0)t+=l;});return t; }
 function ytIdFrom(s){
   s=String(s||'').trim();
   var m=s.match(/[?&]v=([A-Za-z0-9_-]{11})/)||s.match(/youtu\.be\/([A-Za-z0-9_-]{11})/)||s.match(/\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/);
   if(m)return m[1];
   return /^[A-Za-z0-9_-]{11}$/.test(s)?s:s;
 }
-// いま放送中の番組の番号（アプリの nowPos と同じ計算：周の頭からの経過分で決める）
+// いま放送中の番組の番号（アプリの nowPos と同じ計算：放送開始からの経過秒を、合計の長さで割った余り）
+// now は「その日の0時からの秒」（省略＝いま）
 function nowProgIndex(d,now){
   if(!d||!d.cycle||!d.cycle.length)return -1;
-  var n=now!=null?now:(function(){var t=new Date();return t.getHours()*60+t.getMinutes()+t.getSeconds()/60;})();
-  if(n<d.airStart*60||n>=d.airEnd*60)return -1;
-  var off=(n-d.airStart*60)%d.cycleMinutes, acc=0;
-  for(var i=0;i<d.cycle.length;i++){acc+=d.cycle[i].dur;if(off<acc)return i;}
+  var tot=totalSec(d); if(!(tot>0))return -1;
+  var n=now!=null?now:(function(){var t=new Date();return t.getHours()*3600+t.getMinutes()*60+t.getSeconds();})();
+  if(n<d.airStart*3600||n>=d.airEnd*3600)return -1;
+  var off=(n-d.airStart*3600)%tot, acc=0;
+  for(var i=0;i<d.cycle.length;i++){var l=plen(d.cycle[i]);acc+=(l>0?l:0);if(off<acc)return i;}
   return d.cycle.length-1;
 }
 // 保存する形だけを取り出す（画面用の印 _open は入れない）
-function schedPayload(d){return {airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){var o={ytId:ytIdFrom(p.ytId),title:p.title,cat:p.cat,dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||''};if(p.vid)o.vid=p.vid;return o;})};}
+// 長さは sec（秒）で保存し、dur（分）にも同じ長さを入れる（分で読む所が残っても正しい長さになる）
+function schedPayload(d){return {airStart:d.airStart,airEnd:d.airEnd,cycle:(d.cycle||[]).map(function(p){var l=plen(p);var o={ytId:ytIdFrom(p.ytId),title:p.title,cat:p.cat,sec:l,dur:l/60,expiresAt:p.expiresAt||null,telop:p.telop||''};if(p.vid)o.vid=p.vid;return o;})};}
 function schedSig(d){return JSON.stringify(schedPayload(d));}
 function loadSchedule(){
   el('schedStatus').className='status wait';el('schedStatus').textContent='読み込み中…';
@@ -483,20 +489,24 @@ function loadSchedule(){
   .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
   .then(function(doc){
     var d=fields(doc);
-    sched={airStart:d.airStart,airEnd:d.airEnd,cycleMinutes:d.cycleMinutes,cycle:(d.cycle||[]).map(function(p){return {ytId:p.ytId||'',title:p.title||'',cat:p.cat||'',dur:p.dur,expiresAt:p.expiresAt||null,telop:p.telop||'',vid:p.vid||'',_open:false};})};
+    sched={airStart:d.airStart,airEnd:d.airEnd,cycle:(d.cycle||[]).map(function(p){return {ytId:p.ytId||'',title:p.title||'',cat:p.cat||'',sec:plen(p),expiresAt:p.expiresAt||null,telop:p.telop||'',vid:p.vid||'',_open:false};})};
     schedLoadedSig=schedSig(sched);
     el('schedInfo').textContent='更新 '+jst(doc.updateTime);
     renderSched();
   }).catch(function(e){el('schedStatus').className='status bad';el('schedStatus').textContent='番組表が読めません：'+e.message;});
 }
 function readSchedFromForm(){
-  sched.airStart=parseInt(el('airStart').value,10);sched.airEnd=parseInt(el('airEnd').value,10);sched.cycleMinutes=parseInt(el('cycleMinutes').value,10);
+  sched.airStart=parseInt(el('airStart').value,10);sched.airEnd=parseInt(el('airEnd').value,10);
   document.querySelectorAll('#progs .prog').forEach(function(row,i){
     var p=sched.cycle[i];if(!p)return;
     p.ytId=ytIdFrom(row.querySelector('[data-k=ytId]').value);
     p.title=row.querySelector('[data-k=title]').value.trim();
     p.cat=row.querySelector('[data-k=cat]').value.trim();
-    p.dur=parseInt(row.querySelector('[data-k=dur]').value,10);
+    // 長さ：分と秒の欄から秒にする（空欄は0。両方空なら長さなし＝不正として止める）
+    var mv=row.querySelector('[data-k=min]').value.trim(), sv=row.querySelector('[data-k=sec]').value.trim();
+    var mn=mv===''?0:Number(mv), sc=sv===''?0:Number(sv);
+    p.sec=(mv===''&&sv==='')||!(mn>=0)||!(sc>=0)||Math.floor(mn)!==mn||Math.floor(sc)!==sc?NaN:mn*60+sc;
+    delete p.dur;
     p.telop=row.querySelector('[data-k=telop]').value.trim();
     p.vid=row.querySelector('[data-k=vid]').value.trim();
     var ex=row.querySelector('[data-k=expiresAt]').value;p.expiresAt=ex?ex:null;
@@ -505,7 +515,7 @@ function readSchedFromForm(){
 // 一覧の1行：見本・題名・分類・分・ID・印。押すと下の編集欄が開く
 function progRow(p,i,now){
   var id=ytIdFrom(p.ytId);
-  var meta='<span class="cat">'+esc(p.cat||'（分類なし）')+'</span><span>'+esc(isNaN(p.dur)?'?':p.dur)+'分</span>'
+  var meta='<span class="cat">'+esc(p.cat||'（分類なし）')+'</span><span>'+esc(lenText(plen(p)))+'</span>'
     +'<span class="yt">'+esc(id||'IDなし')+'</span>'
     +(i===now?'<span class="now">放送中</span>':'')
     +(p.telop?'<span class="tag">テロップ</span>':'')
@@ -523,7 +533,7 @@ function progRow(p,i,now){
     +'<div class="w"><label class="l">題名</label><input type="text" data-k="title" value="'+esc(p.title)+'"></div>'
     +'<div><label class="l">YouTube（IDかURL）</label><input type="text" data-k="ytId" value="'+esc(p.ytId)+'" autocapitalize="off"></div>'
     +'<div><label class="l">分類</label><input type="text" data-k="cat" list="cats" value="'+esc(p.cat)+'"></div>'
-    +'<div><label class="l">分（流す長さ）</label><input type="number" data-k="dur" min="1" inputmode="numeric" value="'+esc(p.dur)+'"></div>'
+    +'<div><label class="l">長さ（流す長さ）</label><div class="ms"><input type="number" data-k="min" min="0" step="1" inputmode="numeric" value="'+(plen(p)>0?Math.floor(Math.round(plen(p))/60):'')+'"><span>分</span><input type="number" data-k="sec" min="0" max="59" step="1" inputmode="numeric" value="'+(plen(p)>0?Math.round(plen(p))%60:'')+'"><span>秒</span></div></div>'
     +'<div><label class="l">期限（空欄＝なし）</label><input type="date" data-k="expiresAt" value="'+esc(p.expiresAt||'')+'"></div>'
     +'<div class="w"><label class="l">テロップ（見始めの10秒。空欄＝なし）</label><input type="text" data-k="telop" value="'+esc(p.telop||'')+'"></div>'
     +'<div class="w"><label class="l">自前の動画（置き場の名前。空欄＝YouTubeで流す）</label><input type="text" data-k="vid" value="'+esc(p.vid||'')+'" autocapitalize="off" autocorrect="off" spellcheck="false"></div>'
@@ -532,7 +542,7 @@ function progRow(p,i,now){
     +'</div></div>';
 }
 function renderSched(){
-  el('airStart').value=sched.airStart;el('airEnd').value=sched.airEnd;el('cycleMinutes').value=sched.cycleMinutes;
+  el('airStart').value=sched.airStart;el('airEnd').value=sched.airEnd;
   var now=nowProgIndex(sched);
   var h='';
   sched.cycle.forEach(function(p,i){h+=progRow(p,i,now);});
@@ -560,12 +570,13 @@ function renderSched(){
 }
 function checkSched(){
   readSchedFromForm();
-  var tot=0;sched.cycle.forEach(function(p){tot+=(isNaN(p.dur)?0:p.dur);});
+  var tot=totalSec(sched);
   var now=nowProgIndex(sched);
-  el('schedOv').innerHTML='放送 <b>'+esc(sched.airStart)+'時〜'+esc(sched.airEnd)+'時</b>　1周 <b>'+esc(sched.cycleMinutes)+'分</b>'+(now>=0?'　放送中 <b>'+(now+1)+'. '+esc((sched.cycle[now].title||'').slice(0,12))+((sched.cycle[now].title||'').length>12?'…':'')+'</b>':'　（放送時間外）');
-  el('sumDur').textContent=tot;el('sumCnt').textContent=sched.cycle.length;
-  var mins=(sched.airEnd-sched.airStart)*60;
-  el('sumLoops').textContent=(sched.cycleMinutes>0&&mins>0)?(mins%sched.cycleMinutes===0?(mins/sched.cycleMinutes):'—'):'—';
+  el('schedOv').innerHTML='放送 <b>'+esc(sched.airStart)+'時〜'+esc(sched.airEnd)+'時</b>　1周 <b>'+esc(lenText(tot))+'</b>'+(now>=0?'　放送中 <b>'+(now+1)+'. '+esc((sched.cycle[now].title||'').slice(0,12))+((sched.cycle[now].title||'').length>12?'…':'')+'</b>':'　（放送時間外）');
+  el('sumDur').textContent=tot>0?lenText(tot):'0分';el('sumCnt').textContent=sched.cycle.length;
+  // 1日に何周するか（端数あり。24時をまたぐ番組は見ている人には最後まで流れる）
+  var secs=(sched.airEnd-sched.airStart)*3600;
+  el('sumLoops').textContent=(tot>0&&secs>0)?(Math.round(secs/tot*10)/10):'—';
   var err=validSchedule(schedPayload(sched));
   var changed=schedSig(sched)!==schedLoadedSig;
   schedOK=!err;
@@ -576,15 +587,15 @@ function checkSched(){
   el('btnWrite').disabled=!(ID_TOKEN&&schedOK&&changed);
   el('btnUndo').disabled=!lsGet('kanri_sched_prev');
   if(err)el('schedHead').hidden=false;   // 放送時間の設定が原因の時は入力欄を見せる
-  barState.sched={changed:changed,ok:schedOK,label:err||('番組'+sched.cycle.length+'本・1周'+sched.cycleMinutes+'分')};updateBar();
+  barState.sched={changed:changed,ok:schedOK,label:err||('番組'+sched.cycle.length+'本・1周'+lenText(tot))};updateBar();
 }
 el('btnHead').onclick=function(){var h=el('schedHead');h.hidden=!h.hidden;el('btnHead').textContent=h.hidden?'放送時間を変更':'閉じる';};
-['airStart','airEnd','cycleMinutes'].forEach(function(id){el(id).addEventListener('input',checkSched);});
-el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',dur:5,expiresAt:null,telop:'',vid:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
+['airStart','airEnd'].forEach(function(id){el(id).addEventListener('input',checkSched);});
+el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',sec:300,expiresAt:null,telop:'',vid:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
 el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadSchedule();};
 el('btnWrite').onclick=function(){
   readSchedFromForm();var out=schedPayload(sched);var err=validSchedule(out);if(err){toast('✖ '+err);return;}
-  if(!confirm('番組表を書き込みます。番組'+out.cycle.length+'本・1周'+out.cycleMinutes+'分・'+out.airStart+'時〜'+out.airEnd+'時。よろしいですか？'))return;
+  if(!confirm('番組表を書き込みます。番組'+out.cycle.length+'本・1周'+lenText(totalSec(out))+'・'+out.airStart+'時〜'+out.airEnd+'時。よろしいですか？'))return;
   var prev=schedLoadedSig;
   writeDoc('broadcast/schedule',out).then(function(){
     lsSet('kanri_sched_prev',prev);            // 直前の内容を1つだけ覚える（戻す用）
@@ -1156,9 +1167,15 @@ function selfTest(){
   var out=[],ng=0;function t(name,cond){out.push((cond?'OK ':'NG ')+name);if(!cond)ng++;}
   var good={airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:60},{ytId:'b',title:'y',cat:'c',dur:30}]};
   t('正しい番組表は通る',validSchedule(good)==='');
-  t('合計が違えば落ちる',validSchedule({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:60}]})!=='');
-  t('割り切れなければ落ちる',validSchedule({airStart:6,airEnd:24,cycleMinutes:70,cycle:[{ytId:'a',title:'x',cat:'c',dur:70}]})!=='');
-  t('IDが空なら落ちる',validSchedule({airStart:6,airEnd:24,cycleMinutes:60,cycle:[{ytId:'',title:'x',cat:'c',dur:60}]})!=='');
+  // ★2026-10-22 1周の決まりを廃止：合計が半端でも、1周の値が無くても通る
+  t('合計が半端でも通る（1周の値なし）',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'a',title:'x',cat:'c',sec:83*60+17}]})==='');
+  t('秒だけの番組（CM 15秒）も通る',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'a',title:'x',cat:'CM',sec:15}]})==='');
+  t('長さが無ければ落ちる',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'a',title:'x',cat:'c'}]})!==''&&validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'a',title:'x',cat:'c',sec:NaN}]})!=='');
+  t('放送時間が逆なら落ちる',validSchedule({airStart:24,airEnd:6,cycle:[{ytId:'a',title:'x',cat:'c',sec:60}]})!=='');
+  t('IDが空なら落ちる',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'',title:'x',cat:'c',sec:60}]})!=='');
+  var pl=schedPayload({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:16}]});
+  t('保存する形：分だけの古いデータは秒に直り、1周の値は入らない',pl.cycle[0].sec===960&&pl.cycle[0].dur===16&&!('cycleMinutes' in pl));
+  t('長さの表示（16分・1分30秒・15秒）',lenText(960)==='16分'&&lenText(90)==='1分30秒'&&lenText(15)==='15秒');
   // ★上がっている画像の候補（2026-09-19 山弘の件）
   var ub=usableBanners(['_banner_yamahiro_20260918_port.png','_banner_cf_20260906-1_port.jpg','_banner_prev.png','icon-180.png','_banner_norisuke_port.png','_banner_x_port.gif'],[{img:'_banner_norisuke_port.png'}]);
   t('候補：上がっているのに一覧に無い画像は出る（山弘）',ub.indexOf('_banner_yamahiro_20260918_port.png')>=0);
@@ -1171,8 +1188,10 @@ function selfTest(){
   t('新しいバナーは、公開されたらそのまま保存する',String(el('btnNewSpon').onclick).indexOf('sponCheckAndWrite(true)')>=0);
   t('ボタンの名前は「このバナーを掲載する」（押したら掲載まで終わる）',el('btnNewSpon').textContent==='このバナーを掲載する');
   t('URLからIDを取り出す',ytIdFrom('https://www.youtube.com/watch?v=FqqKCo3WTts&t=1')==='FqqKCo3WTts'&&ytIdFrom('https://youtu.be/FqqKCo3WTts')==='FqqKCo3WTts'&&ytIdFrom('FqqKCo3WTts')==='FqqKCo3WTts');
-  t('放送中の番号：6:00は1番目、7:00は2番目、7:30は次の周の1番目',nowProgIndex(good,360)===0&&nowProgIndex(good,420)===1&&nowProgIndex(good,450)===0);
-  t('放送時間外は放送中なし',nowProgIndex(good,300)===-1&&nowProgIndex(good,1440)===-1);
+  t('放送中の番号：6:00は1番目、7:00は2番目、7:30は次の周の1番目',nowProgIndex(good,21600)===0&&nowProgIndex(good,25200)===1&&nowProgIndex(good,27000)===0);
+  t('放送時間外は放送中なし',nowProgIndex(good,18000)===-1&&nowProgIndex(good,86400)===-1);
+  var odd={airStart:6,airEnd:24,cycle:[{ytId:'a',title:'x',cat:'c',sec:40*60},{ytId:'b',title:'CM',cat:'CM',sec:15}]};
+  t('放送中の番号：合計40分15秒なら 6:40:00はCM、6:40:15は次の周の1番目',nowProgIndex(odd,21600+2400)===1&&nowProgIndex(odd,21600+2415)===0);
   var withOpen={airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,_open:true}]};
   t('画面用の印（_open）は保存する形に入らない',JSON.stringify(schedPayload(withOpen)).indexOf('_open')<0);
   t('自前の動画の名前は保存する形に残る',JSON.stringify(schedPayload({airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,vid:'cf_thanks'}]})).indexOf('"vid":"cf_thanks"')>=0);
