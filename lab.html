@@ -2292,7 +2292,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.38-lab（YouTubeの無い番組も流せる）</div>
+    <div class="ps-version">version 4.39-lab（YouTubeの無い番組も流せる・検証用の番組表）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -6444,7 +6444,20 @@ function schedSig(d){
 // 取得本体（stale-while-revalidate）：キャッシュがあれば即描画し、必ずサーバーの最新も取得して
 // 変わっていればその場で差し替える。→ 番組表の更新が当日中に全端末へ反映される（旧: 1日1回取得だと当日反映されない不具合を修正）。
 // 番組表は常にFirestoreが正。コード側に固定番組表は持たない。
+// 検証用（lab.html だけ）：?testprog=名前|秒|題名,… で、YouTube の無い番組（動画保管庫だけ）の番組表を作って流す。
+// 管理アプリで本当に入れた時と同じ形（ytId 無し・vid と題名あり）で確かめるため。Firestore の番組表は読まない
+function _testProgs(){
+  try{
+    if(!/lab\.html/.test(location.pathname)) return null;
+    var m=location.search.match(/[?&]testprog=([^&]+)/); if(!m) return null;
+    var cyc=decodeURIComponent(m[1]).split(',').map(function(x){ var a=x.split('|');
+      return {ytId:'',vid:a[0],sec:parseFloat(a[1]),title:a[2]||a[0],cat:'検証'}; });
+    var d={airStart:6,airEnd:24,cycle:cyc};
+    return validSchedule(d)===''?d:null;
+  }catch(_){ return null; }
+}
 function loadRemoteSchedule(){
+  var tp=_testProgs(); if(tp){ applySchedule(tp); return; }
   if(!FIREBASE.projectId||!FIREBASE.apiKey)return; // 未設定なら何もしない
   var KEY='shisochan_schedule_cache_v2'; // v2: 「1日1回」キャッシュを廃し常に最新確認する設計へ（旧v1キャッシュは無視される）
   var cached=null;
