@@ -1,0 +1,29 @@
+# 動画保管庫：管理アプリから届いた元の動画を、配信用（HLS・画質3段）に変換して動画保管庫へ入れる。
+# 受付係（vault.shisochan.net）に「変換待ち」があるかを5分ごとに聞き、あれば1本ずつ変換する。
+# 鍵は使わない：GitHub が発行する「この自動処理である」という証明書（OIDC）を受付係が確かめる。
+name: vault-convert
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'      # 5分ごと（GitHubの都合で遅れることがある）
+  workflow_dispatch:           # 手動実行も可能（Actionsタブから）
+
+permissions:
+  id-token: write              # 証明書（OIDC）を受け取るため
+  contents: read
+
+concurrency:
+  group: vault-convert
+  cancel-in-progress: false
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/vault_convert.py
+          sparse-checkout-cone-mode: false
+      - name: 変換待ちがあれば変換して動画保管庫へ入れる
+        run: python3 scripts/vault_convert.py
