@@ -26,7 +26,9 @@ def token():
 def call(method, path, body=None, ctype='application/json', timeout=120):
     data = json.dumps(body).encode() if isinstance(body, dict) else body
     r = urllib.request.Request(API + path, data=data, method=method,
-                               headers={'Authorization': 'Bearer ' + token(), 'Content-Type': ctype})
+                               headers={'Authorization': 'Bearer ' + token(), 'Content-Type': ctype,
+                                        # ★Python の標準の名乗り（Python-urllib）は Cloudflare の入口で403（1010）にされ、受付係まで届かない
+                                        'User-Agent': 'shisochan-vault-convert/1.0'})
     try:
         return urllib.request.urlopen(r, timeout=timeout)
     except urllib.error.HTTPError as e:
