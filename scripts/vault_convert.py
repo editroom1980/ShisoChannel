@@ -27,7 +27,11 @@ def call(method, path, body=None, ctype='application/json', timeout=120):
     data = json.dumps(body).encode() if isinstance(body, dict) else body
     r = urllib.request.Request(API + path, data=data, method=method,
                                headers={'Authorization': 'Bearer ' + token(), 'Content-Type': ctype})
-    return urllib.request.urlopen(r, timeout=timeout)
+    try:
+        return urllib.request.urlopen(r, timeout=timeout)
+    except urllib.error.HTTPError as e:
+        # 受付係の答え（断った理由）を記録に残す
+        raise RuntimeError('%s %s → %d %s' % (method, path, e.code, e.read().decode('utf-8', 'replace')[:300]))
 
 def main():
     res = call('GET', '/act/next')
