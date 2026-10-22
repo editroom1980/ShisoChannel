@@ -87,6 +87,15 @@ button:disabled{opacity:.4;cursor:default;}
 #vaultBox .vm{font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;}
 #vaultBox .vm .tag{border:1px solid var(--border);border-radius:3px;padding:0 4px;}
 #vaultBox .vmsg{font-size:13px;padding:10px;color:var(--text2);}
+/* 動画保管庫に入れる */
+#vaultBox .vup{padding:10px;border-bottom:1px solid var(--border);display:grid;gap:8px;}
+#vaultBox .vup .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+#vaultBox .vup input[type=file]{font-size:13px;max-width:100%;}
+#vaultBox .vprog{font-size:13px;color:var(--forest);font-weight:700;}
+#vaultBox .vjobs .vj{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-top:1px solid var(--border);font-size:13px;}
+#vaultBox .vjobs .vj b{font-weight:700;}
+#vaultBox .vjobs .st{white-space:nowrap;font-weight:700;}
+#vaultBox .vjobs .st.wait{color:#7a5200;} #vaultBox .vjobs .st.ng{color:var(--red);} #vaultBox .vjobs .st.ok{color:var(--green2);}
 #schedEnd b{color:var(--text);}
 .sum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;align-items:center;}
 /* 放送時間・1周の要約（普段は1行。「変更」で入力欄を開く） */
@@ -387,6 +396,7 @@ function setWho(){
   el('who').innerHTML=ID_TOKEN?('<b>'+esc(EMAIL)+'</b><button id="btnOut">ログアウト</button>'):'<button class="in" id="btnIn">ログイン</button>';
   if(ID_TOKEN){el('btnOut').onclick=logout;el('login').hidden=true;}else{el('btnIn').onclick=showLogin;}
   updateBar();
+  try{ if(!el('vaultBox').hidden&&!VUP.busy){ renderVault(); loadVaultJobs(); } }catch(_){}   // ログインの状態が変わったら「入れる」欄を描き直す
   el('btnWrite').disabled=!(ID_TOKEN&&schedOK);
   el('btnSponWrite').disabled=!(ID_TOKEN&&sponOK);
 }
@@ -619,8 +629,71 @@ function vaultSelect(cur){
   return h+'</select>';
 }
 // 「＋ 動画保管庫から足す」の一覧
+// ══ 動画保管庫に入れる（2026-10-22）══
+// 元の動画を受付係（vault.shisochan.net）へ50MBずつ送る → GitHub の自動処理が変換して動画保管庫に置き、目録に足す
+var VAPI='https://vault.shisochan.net';
+var VUP={busy:false,msg:'',jobs:null,timer:null};
+// 題名の初期値：ファイル名から拡張子と、書き出しの印「しそチャンNET用」を外す
+function vaultTitleFromName(n){ return String(n||'').replace(/\.[A-Za-z0-9]{2,5}$/,'').replace(/[\s　]*しそチャンNET用$/,'').trim(); }
+function vaultUpHtml(){
+  if(!ID_TOKEN) return '<div class="vup"><div class="note">新しい動画を入れるには、ログインしてください。</div></div>';
+  return '<div class="vup"><div class="vt">新しい動画を入れる</div>'
+    +'<div class="row"><input type="file" id="vFile" accept="video/*,.mp4,.mov,.m4v"'+(VUP.busy?' disabled':'')+'></div>'
+    +'<div><label class="l">題名（ファイル名から入ります。直せます）</label><input type="text" id="vTitle"'+(VUP.busy?' disabled':'')+'></div>'
+    +'<div class="row"><button class="gold small" id="vGo"'+(VUP.busy?' disabled':'')+'>動画保管庫に入れる</button><span class="vprog" id="vProg">'+esc(VUP.msg)+'</span></div>'
+    +'<div class="note">送り終わると、自動で配信用に変換します（目安：番組の長さと同じくらい）。終わると下の一覧に出ます。送っている間は、この画面を閉じないでください。</div></div>';
+}
+var VST={uploading:['送っている途中','wait'],queued:['変換待ち','wait'],converting:['変換中','wait'],done:['完了','ok'],failed:['失敗','ng'],canceled:['取り消し','ng']};
+function vaultJobsHtml(){
+  var js=(VUP.jobs||[]).filter(function(j){ return j.state!=='done'||Date.now()-Date.parse(j.updated)<24*3600e3; });
+  if(!js.length) return '';
+  return '<div class="vjobs"><div class="vh">入れた動画の進み具合</div>'+js.map(function(j){ var s=VST[j.state]||[j.state,'wait'];
+    return '<div class="vj"><b>'+esc(j.title)+'</b><span class="st '+s[1]+'">'+esc(s[0])+(j.state==='failed'&&j.msg?'（'+esc(j.msg.slice(0,60))+'）':'')+'</span></div>'; }).join('')+'</div>';
+}
+function loadVaultJobs(){
+  if(!ID_TOKEN) return Promise.resolve();
+  return authFetch(VAPI+'/jobs',{cache:'no-store'}).then(function(r){return r.json();}).then(function(x){
+    var before=(VUP.jobs||[]).filter(function(j){return j.state==='done';}).length;
+    VUP.jobs=x.jobs||[]; var after=VUP.jobs.filter(function(j){return j.state==='done';}).length;
+    if(after>before&&VUP.jobs!==null) loadVault(); else if(!el('vaultBox').hidden) renderVault();
+    // 変換待ち・変換中がある間は、開いている時だけ30秒ごとに見に行く
+    clearTimeout(VUP.timer);
+    if(!el('vaultBox').hidden&&VUP.jobs.some(function(j){return /uploading|queued|converting/.test(j.state);})) VUP.timer=setTimeout(loadVaultJobs,30000);
+  }).catch(function(){});
+}
+function vaultUpload(){
+  var f=el('vFile').files[0], title=el('vTitle').value.trim();
+  if(!f){ toast('動画のファイルを選んでください'); return; }
+  if(!title){ toast('題名を入れてください'); return; }
+  if(!ID_TOKEN){ toast('ログインしてください'); return; }
+  VUP.busy=true; VUP.msg='受付中…'; renderVault();
+  var vid='', ps=0, n=0, parts=[];
+  function prog(t){ VUP.msg=t; var e=el('vProg'); if(e) e.textContent=t; }
+  function body(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); }
+  authFetch(VAPI+'/up/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,filename:f.name,size:f.size,type:f.type})}).then(body)
+  .then(function(j){ vid=j.vid; ps=j.partSize; n=j.parts;
+    var i=0;
+    function next(){
+      if(i>=n) return Promise.resolve();
+      var k=i+1, blob=f.slice(i*ps,Math.min(f.size,(i+1)*ps));
+      prog('送っています '+k+' / '+n+'（'+Math.floor(i/n*100)+'%）');
+      function tryPut(t){ return authFetch(VAPI+'/up/part?vid='+encodeURIComponent(vid)+'&n='+k,{method:'PUT',body:blob}).then(body)
+        .catch(function(e){ if(t>=4) throw e; return new Promise(function(ok){setTimeout(ok,3000*t);}).then(function(){return tryPut(t+1);}); }); }
+      return tryPut(1).then(function(p){ parts.push(p); i++; return next(); });
+    }
+    return next();
+  })
+  .then(function(){ prog('仕上げています…'); return authFetch(VAPI+'/up/done',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:vid,parts:parts})}).then(body); })
+  .then(function(){ VUP.busy=false; VUP.msg='✔ 送り終わりました。変換を待っています'; toast('✔ 送り終わりました。変換が終わると一覧に出ます'); renderVault(); loadVaultJobs(); })
+  .catch(function(e){
+    VUP.busy=false; VUP.msg='✖ 送れませんでした：'+e.message; renderVault();
+    if(vid) authFetch(VAPI+'/up/abort',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:vid})}).then(loadVaultJobs).catch(function(){});
+  });
+}
+window.addEventListener('beforeunload',function(e){ if(VUP.busy){ e.preventDefault(); e.returnValue=''; } });
 function renderVault(){
-  var b=el('vaultBox'), h='<div class="vh">動画保管庫の動画（選ぶと、題名と長さが入った番組を一番下に足します）</div>';
+  var keepTitle=el('vTitle')?el('vTitle').value:'', keepFile=el('vFile')&&el('vFile').files[0];
+  var b=el('vaultBox'), h=vaultUpHtml()+vaultJobsHtml()+'<div class="vh">動画保管庫の動画（選ぶと、題名と長さが入った番組を一番下に足します）</div>';
   if(VAULT.err) h+='<div class="vmsg">目録が読めません（'+esc(VAULT.err)+'）。「読み直す」を押してください</div>';
   else if(!VAULT.list) h+='<div class="vmsg">読み込み中…</div>';
   else if(!VAULT.list.length) h+='<div class="vmsg">動画保管庫に動画がまだありません</div>';
@@ -629,8 +702,13 @@ function renderVault(){
     h+='<div class="vi"><div><div class="vt">'+esc(v.title)+'</div><div class="vm"><span>'+esc(lenText(v.sec))+'</span><span>'+esc(v.added||'')+' に入れた</span>'
       +(used?'<span class="tag">番組表に入っています</span>':'')+'</div></div><button class="g small" data-vi="'+i+'">足す</button></div>';
   });
-  b.innerHTML=h;
+  // 入れる欄を描き直すとファイルの選択が消えるので、送っていない間は欄だけ残して下を描き直す
+  var up=b.querySelector('.vup');
+  if(up&&keepFile&&!VUP.busy){ var tmp=document.createElement('div'); tmp.innerHTML=h; tmp.replaceChild(up,tmp.querySelector('.vup')); b.innerHTML=''; while(tmp.firstChild) b.appendChild(tmp.firstChild); }
+  else { b.innerHTML=h; if(el('vTitle')) el('vTitle').value=keepTitle; }
   b.querySelectorAll('[data-vi]').forEach(function(btn){ btn.onclick=function(){ vaultAdd(VAULT.list[+btn.getAttribute('data-vi')]); }; });
+  if(el('vFile')) el('vFile').onchange=function(){ var f=el('vFile').files[0]; if(f&&!el('vTitle').value.trim()) el('vTitle').value=vaultTitleFromName(f.name); };
+  if(el('vGo')) el('vGo').onclick=vaultUpload;
 }
 function vaultProg(v){ return {ytId:'',title:v.title,cat:'',expiresAt:null,telop:'',vid:v.vid,_open:true}; }
 function vaultAdd(v){
@@ -750,7 +828,7 @@ function checkSched(){
 }
 el('btnHead').onclick=function(){var h=el('schedHead');h.hidden=!h.hidden;el('btnHead').textContent=h.hidden?'放送時間を変更':'閉じる';};
 ['airStart','airEnd'].forEach(function(id){el(id).addEventListener('input',checkSched);});
-el('btnVault').onclick=function(){ var b=el('vaultBox'); b.hidden=!b.hidden; el('btnVault').textContent=b.hidden?'＋ 動画保管庫から足す':'閉じる'; if(!b.hidden){ renderVault(); if(!VAULT.list) loadVault(); } };
+el('btnVault').onclick=function(){ var b=el('vaultBox'); b.hidden=!b.hidden; el('btnVault').textContent=b.hidden?'＋ 動画保管庫から足す':'閉じる'; if(!b.hidden){ renderVault(); if(!VAULT.list) loadVault(); loadVaultJobs(); } };
 el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',expiresAt:null,telop:'',vid:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
 el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadVault();loadSchedule();};
 el('btnWrite').onclick=function(){
@@ -1360,6 +1438,7 @@ function selfTest(){
   t('放送中の番号：合計40分15秒なら 6:40:00はCM、6:40:15は次の周の1番目',nowProgIndex(odd,21600+2400)===1&&nowProgIndex(odd,21600+2415)===0);
   var withOpen={airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,_open:true}]};
   t('画面用の印（_open）は保存する形に入らない',JSON.stringify(schedPayload(withOpen)).indexOf('_open')<0);
+  t('入れる題名：拡張子と「しそチャンNET用」を外す',vaultTitleFromName('押忍！潜入！エンジョイ君‼︎「さいこ編」 しそチャンNET用.mp4')==='押忍！潜入！エンジョイ君‼︎「さいこ編」'&&vaultTitleFromName('赤西渓谷.MOV')==='赤西渓谷'&&vaultTitleFromName('a.b.mp4')==='a.b');
   t('YouTube無し＋動画保管庫の動画は通る',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'',title:'x',cat:'c',sec:60,vid:'enjoy_midoen'}]})==='');
   t('YouTubeも動画保管庫も無ければ落ちる',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'',title:'x',cat:'c',sec:60,vid:''}]})!=='');
   var vp=vaultProg({vid:'enjoy_midoen',title:'押忍！潜入！エンジョイ君‼︎「味道園」編',sec:840.039,added:'2026-10-22'});
