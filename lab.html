@@ -2292,7 +2292,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.39-lab（YouTubeの無い番組も流せる・検証用の番組表）</div>
+    <div class="ps-version">version 4.40-lab（新番組のお知らせ：通知とアイコンの数字）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2537,6 +2537,12 @@ html.tvapp #lnk-reg{display:none;}
       <div class="set-row">
         <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
         <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
+      </div>
+
+      <!-- 新番組のお知らせ（通知とアイコンの数字・2026-10-22）。使える端末だけに出す（ntfSupported） -->
+      <div class="set-row" id="row-ntf" style="display:none">
+        <div class="set-line"><b>新番組のお知らせ</b><i>通知とアイコンの数字で知らせます</i></div>
+        <button class="set-sw" id="opt-ntf" aria-label="新番組のお知らせ"></button>
       </div>
     </div>
 
@@ -3394,6 +3400,19 @@ function regIsPc(){                       // パソコン＝ホーム画面が�
 
 //  画面の定義。d は行ごとの配列（折り返しを決め打ちするため）
 var REG={
+ // ── 新番組のお知らせ（2026-10-22）：ホーム画面から開き、番組を1本見終わった時に1回だけ聞く ──
+ ntfAsk:{t:'新番組をお知らせしますか？',
+        d:['新しい番組が入った時に、','通知とアイコンの数字で','お知らせします。'],
+        b:[{l:'受け取る',go:'@notify',p:1},{l:'今はしない',go:null}]},
+ ntfOk:{t:'お知らせを受け取ります',
+        d:['新しい番組が入ったら','お知らせします。','止める時は設定から。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ ntfNg:{t:'お知らせは届きません',
+        d:['通知が止められています。','受け取る時は、端末の設定','で通知を許可してください。'],
+        b:[{l:'とじる',go:null,p:1}]},
+ ntfErr:{t:'うまくいきませんでした',
+        d:['通信を確かめて、設定の','「新番組のお知らせ」から','もう一度お試しください。'],
+        b:[{l:'とじる',go:null,p:1}]},
  // ── 入口（中央の窓）─────────────────────────────
  // ★見出しと説明は「？」の位置に出す誘いと一字一句そろえる（2026-08-14指示）。
  //   ずれると「押したら別の話が始まった」と感じさせるため、検査でも一致を機械照合する
@@ -4123,6 +4142,8 @@ function regPick(b){
   }
   if(b.go==='@pickback'){ regShow(_regPickFrom||_regStripLast||'route'); return; }
   if(b.go==='@prompt'){ regDoPrompt(); return; }
+  // 「受け取る」：通知の許可は、押したこの時（指の操作の中）で聞く必要がある＝ntfEnable の最初で聞く
+  if(b.go==='@notify'){ ntfEnable().then(function(r){ regShow(r==='ok'?'ntfOk':(r==='denied'?'ntfNg':'ntfErr')); try{ renderOpts(); }catch(_){} }); return; }
   if(b.go==='@escape'){ regDoEscape(); return; }
   if(b.go==='@back'){                 // 「手順にもどる」＝直前の帯へ
     if(_regStripLast && REG[_regStripLast]) regShow(_regStripLast);
@@ -6034,6 +6055,8 @@ function renderOpts(){
     var n=document.getElementById('opt-news'); if(n) n.classList.toggle('on', !!OPTS.stopnews);
     var vs2=document.getElementById('opt-volsave'); if(vs2) vs2.classList.toggle('on', !!OPTS.volsave);
     var ac=document.getElementById('opt-aicap');   if(ac)  ac.classList.toggle('on', !!OPTS.aicap);
+    var nr=document.getElementById('row-ntf');     if(nr)  nr.style.display=ntfSupported()?'':'none';
+    var nt=document.getElementById('opt-ntf');     if(nt)  nt.classList.toggle('on', ntfOn());
     var v=document.getElementById('about-ver');
     if(v){ var m=(document.querySelector('.ps-version')||{}).textContent||''; v.textContent=(m.match(/version\s*([0-9.]+[^（(]*)/)||[])[1]||'-'; }
   }catch(_){}
@@ -7816,6 +7839,7 @@ function pauseVideo(){
 
 // ── 動画終了 ──
 function onEnded(){
+  try{ ntfMaybeInvite(); }catch(_){}   // 番組を1本見終わった＝新番組のお知らせを聞くよい頃合い（1回だけ）
   // まずスピナーで画面を覆う（YouTubeのエンドスクリーン＝サムネイルを隠す）
   showSpinner(true,'切り替え中...');
   clearEndTimer();
@@ -8023,6 +8047,69 @@ function clearNewProg(id){
   NEWIDS.splice(i,1);nvSet('sc_new_ids',NEWIDS);
   try{renderNewMarks();}catch(_){}
 }
+// ══ 新番組のお知らせ（通知とアイコンの数字・2026-10-22）══
+// ・受け皿（sw-lab.js／本番は sw.js）は通知を受け取るだけ。ページを溜め込む役目は持たない
+// ・宛先は受付係（vault.shisochan.net）に預ける。管理アプリで新番組を書き込むと、受付係が全員に知らせる
+// ・アイコンの数字＝まだ見ていない新番組の数（上の「新」印と同じ数）。開いて見れば減る
+// ・使えるのは、iPhone/iPad はホーム画面から開いた時だけ（Safariのタブでは仕組みが無い）。テレビには無い
+var NTF={api:'https://vault.shisochan.net', pub:'BOAI4P1dqzSexXhiHgMeuMaWxP2G07Z5BfJTjqvsgJ46RRp2R-hhDxHh3B869VWVvKoPymJadUuxo4lsAzg_P1c', lab:/lab\.html/.test(location.pathname)};
+NTF.sw=NTF.lab?'sw-lab.js':'sw.js'; NTF.scope=NTF.lab?'./lab':'./';
+function ntfSupported(){ try{ return !IS_TVAPP&&('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window); }catch(_){ return false; } }
+function ntfOn(){ try{ return ntfSupported()&&Notification.permission==='granted'&&nvGet('sc_ntf_on')===true; }catch(_){ return false; } }
+function _ntfKey(){ var s=NTF.pub.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var b=atob(s),u=new Uint8Array(b.length); for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i); return u; }
+// 受け取りを始める。★許可を聞く呼び出しは必ず最初（押した操作の中でないと iPhone は聞いてくれない）
+function ntfEnable(){
+  if(!ntfSupported()) return Promise.resolve('unsupported');
+  var pr=null; try{ pr=Notification.requestPermission(); }catch(_){}
+  return Promise.resolve(pr).then(function(p){
+    p=p||Notification.permission;
+    if(p!=='granted') return 'denied';
+    return navigator.serviceWorker.register(NTF.sw,{scope:NTF.scope})
+      .then(function(){ return navigator.serviceWorker.ready; })
+      .then(function(reg){ return reg.pushManager.getSubscription().then(function(sb){ return sb||reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_ntfKey()}); }); })
+      .then(function(sb){ return fetch(NTF.api+'/push/sub',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sub:sb.toJSON(),lab:NTF.lab})})
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); }); })
+      .then(function(){ nvSet('sc_ntf_on',true); ntfBadgeSync(); return 'ok'; });
+  }).catch(function(e){ try{ console.warn('[お知らせ]',e); }catch(_){} return 'error'; });
+}
+// 受け取りを止める（宛先も受付係から消す）
+function ntfDisable(){
+  nvSet('sc_ntf_on',false);
+  try{ if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){}); }catch(_){}
+  if(!ntfSupported()) return Promise.resolve();
+  return navigator.serviceWorker.getRegistration(location.href).then(function(reg){
+    if(!reg) return;
+    return reg.pushManager.getSubscription().then(function(sb){
+      if(!sb) return; var ep=sb.endpoint;
+      return sb.unsubscribe().then(function(){ return fetch(NTF.api+'/push/unsub',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:ep})}); });
+    });
+  }).catch(function(){});
+}
+// アイコンの数字を「まだ見ていない新番組の数」に合わせる。受け皿にも同じ数を渡す（次の知らせでそこから1つ増やす）
+function ntfBadgeSync(){
+  var n=NEWIDS.length;
+  try{ if(navigator.setAppBadge){ (n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(function(){}); } }catch(_){}
+  if(ntfOn()){ try{ caches.open('sc-ntf').then(function(c){ return c.put('/__badge',new Response(String(n))); }).catch(function(){}); }catch(_){} }
+}
+// ホーム画面から開いていて、まだ一度も聞いていなければ、番組を1本見終わった時に1回だけ聞く
+function ntfMaybeInvite(){
+  try{
+    if(!ntfSupported()||!regHome()) return;
+    if(Notification.permission!=='default'||nvGet('sc_ntf_asked')) return;
+    var w=document.getElementById('reg'); if(w&&w.classList.contains('on')) return;
+    nvSet('sc_ntf_asked',true);
+    setTimeout(function(){ try{ regShow('ntfAsk'); }catch(_){} },1500);
+  }catch(_){}
+}
+// 通知を押して開いた時（?prog=番組の見分け名）：放送開始を押したら、その番組を頭から流す
+var NTF_PROG=(function(){ try{ var m=location.search.match(/[?&]prog=([^&]+)/); return m?decodeURIComponent(m[1]):''; }catch(_){ return ''; } })();
+function ntfTakeProg(){
+  if(!NTF_PROG) return -1;
+  var k=NTF_PROG; NTF_PROG='';
+  try{ history.replaceState(null,'',location.pathname+location.search.replace(/([?&])prog=[^&]*(&|$)/,'$1').replace(/[?&]$/,'')+location.hash); }catch(_){}
+  for(var i=0;i<CYCLE.length;i++){ if(CYCLE[i]&&CYCLE[i].ytId===k) return i; }
+  return -1;
+}
 // 印だけを今の状態に合わせる。番組表を丸ごと描き直さない
 //（再生中に描き直すと、見ている位置が飛ぶ）
 function renderNewMarks(){
@@ -8040,6 +8127,7 @@ function renderNewMarks(){
     if(NEWIDS.length){b.textContent='新 '+NEWIDS.length;b.style.display='';}
     else b.style.display='none';
   }
+  try{ ntfBadgeSync(); }catch(_){}   // アイコンの数字も同じ数にそろえる
 }
 
 // ══════════════════════════════════════════════
@@ -8238,8 +8326,9 @@ function powerOn(){
   hasPoweredOn=true;
   try{ _ownUnlock(); }catch(_){}   // ★自前の動画の再生の許しを、指で押したこの時に取る（iPhone・2026-10-02）
   userWantsPlay=true;
-  var pos = CYCLE.length ? nowPos() : null;
+  var pos = CYCLE.length ? nowPos() : null, _np=-1;
   if(!CYCLE.length){ showLoadErr(scheduleFailed?'error':'loading'); } // 番組表未取得:読み込み中/エラー（届き次第applyScheduleで自動再生）
+  else if((_np=ntfTakeProg())>=0){ playManual(_np); }   // 通知を押して開いた＝その新番組を頭から
   else if(pos){ playSchedule(pos.c,pos.p); }
   else { gotoOffAir(); }
   // iPhoneのみ: ジェスチャーチェーン内でplayVideoを直接呼ぶ
@@ -8630,6 +8719,12 @@ function init(){
       OPTS.aicap=!OPTS.aicap;
       if(!OPTS.aicap) try{ __aiClose(); }catch(_){}   // 消した瞬間に出ていたウインドウも片づける
       saveOpts(); applyOpts(); renderOpts();
+    });
+    var nb2=document.getElementById('opt-ntf');
+    if(nb2) nb2.addEventListener('click', function(){
+      if(ntfOn()){ ntfDisable().then(function(){ renderOpts(); }); nb2.classList.remove('on'); return; }
+      // 入れる時：許可はこの押した時に聞く（ntfEnable の最初）。結果は案内の箱で知らせる
+      ntfEnable().then(function(r){ renderOpts(); if(r!=='ok') try{ regShow(r==='denied'?'ntfNg':'ntfErr'); }catch(_){} });
     });
     var vb=document.getElementById('opt-volsave');
     if(vb) vb.addEventListener('click', function(){

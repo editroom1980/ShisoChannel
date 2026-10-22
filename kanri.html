@@ -77,6 +77,10 @@ button:disabled{opacity:.4;cursor:default;}
 .r1 .meta .lchg{color:#9a6b00;font-weight:700;}
 .r1 .meta .lwait{color:#7a5200;}
 #schedEnd{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.5;}
+/* 新番組を通知する（書き込みと一緒に、アプリの利用者へ知らせる） */
+.ntfchk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--forest);font-weight:700;cursor:pointer;}
+.ntfchk[hidden]{display:none;}
+.ntfchk input{width:18px;height:18px;margin:0;}
 /* 動画保管庫から足す：目録の一覧 */
 #vaultBox{margin-top:8px;border:1px solid var(--border);border-radius:8px;background:#fafcfa;}
 #vaultBox[hidden]{display:none;}
@@ -247,6 +251,7 @@ details summary{cursor:pointer;}
         <button class="g small" id="btnReload">読み直す</button>
         <button class="g small" id="btnUndo" disabled>直前に戻す</button>
         <span class="sp"></span>
+        <label class="ntfchk" id="ntfWrap" hidden><input type="checkbox" id="ntfSend" checked> <span id="ntfLbl">新番組を通知する</span></label>
         <button class="gold small" id="btnWrite" disabled hidden>この内容で放送する</button>
       </div>
       <div id="vaultBox" hidden></div>
@@ -593,6 +598,7 @@ function loadSchedule(){
     var d=fields(doc);
     sched={airStart:d.airStart,airEnd:d.airEnd,cycle:(d.cycle||[]).map(function(p){return {ytId:p.ytId||'',title:p.title||'',cat:p.cat||'',sec:plen(p),_stored:plen(p),expiresAt:p.expiresAt||null,telop:p.telop||'',vid:p.vid||'',_open:false};})};
     schedLoadedSig=schedSig(sched);
+    LOADED_KEYS=sched.cycle.map(progKeyK);   // 読み込んだ時の番組＝これに無い番組が「新番組」
     applyLens();   // すでに読んだ長さがあれば入れる（読み直しの時）
     el('schedInfo').textContent='更新 '+jst(doc.updateTime);
     renderSched();
@@ -835,6 +841,7 @@ function checkSched(){
   else if(!changed){st.className='status good';st.textContent='✔ 放送中の内容と同じです（変更なし）';}
   else{st.className='status good';st.textContent='✔ 形は正しい。書き込むと当日中に全端末へ反映されます';}
   el('btnWrite').disabled=!(ID_TOKEN&&schedOK&&changed);
+  try{ ntfShowChk(); }catch(_){}
   el('btnUndo').disabled=!lsGet('kanri_sched_prev');
   if(err==='放送時間の設定が不正')el('schedHead').hidden=false;   // 放送時間の設定が原因の時だけ入力欄を見せる
   barState.sched={changed:changed,ok:schedOK,label:err||('番組'+sched.cycle.length+'本・1周'+lenText(tot))};updateBar();
@@ -850,13 +857,45 @@ el('btnVaultUp').onclick=function(){
 el('btnVault').onclick=function(){ var b=el('vaultBox'); b.hidden=!b.hidden; el('btnVault').textContent=b.hidden?'＋ 動画保管庫から足す':'閉じる'; if(!b.hidden){ renderVault(); if(!VAULT.list) loadVault(); loadVaultJobs(); } };
 el('btnAdd').onclick=function(){readSchedFromForm();sched.cycle.push({ytId:'',title:'',cat:'風景',expiresAt:null,telop:'',vid:'',_open:true});renderSched();var rows=document.querySelectorAll('#progs .prog');if(rows.length)rows[rows.length-1].scrollIntoView({block:'center'});};
 el('btnReload').onclick=function(){if(schedSig(sched)!==schedLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadVault();loadSchedule();};
+// ══ 新番組のお知らせ（2026-10-22）══
+// 書き込む番組表に、読み込んだ時に無かった番組があれば「新番組」。書き込みと一緒に、受付係から
+// お知らせを受け取っているアプリの利用者全員へ「新番組：○○」を送る（アプリの見分け名と同じ作り）
+var LOADED_KEYS=null;
+function progKeyK(p){ var id=ytIdFrom(p.ytId); return id?id:(p.vid?'own~'+p.vid:''); }
+function newProgs(d){ if(!LOADED_KEYS) return []; return (d.cycle||[]).filter(function(p){ var k=progKeyK(p); return k&&LOADED_KEYS.indexOf(k)<0; }); }
+function ntfTitle(list){ return list.length?(list[0].title+(list.length>1?' ほか'+(list.length-1)+'本':'')):''; }
+var NTF_COUNT=null;
+function ntfLoadCount(){
+  if(!ID_TOKEN||NTF_COUNT!==null) return;
+  authFetch(VAPI+'/push/count',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(x){ if(x){ NTF_COUNT=x.count; checkSched(); } }).catch(function(){});
+}
+function ntfShowChk(){
+  var n=newProgs(sched), w=el('ntfWrap'); if(!w) return;
+  w.hidden=!(n.length&&ID_TOKEN);
+  el('ntfLbl').textContent='新番組（'+n.length+'本）を通知する'+(NTF_COUNT!==null?'（受け取る端末 '+NTF_COUNT+'台）':'');
+  if(n.length) ntfLoadCount();
+}
+// 全員へ送る：受付係は1回に40台ずつ送るので、終わるまで続きを頼む
+function ntfSendAll(title,key){
+  var tot={sent:0,removed:0,failed:0}, guard=0;
+  function step(cursor){
+    return authFetch(VAPI+'/push/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,key:key,cursor:cursor||''})})
+      .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); })
+      .then(function(j){ tot.sent+=j.sent; tot.removed+=j.removed; tot.failed+=j.failed; if(!j.done&&j.cursor&&++guard<500) return step(j.cursor); return tot; });
+  }
+  return step('');
+}
 el('btnWrite').onclick=function(){
   readSchedFromForm();var out=schedPayload(sched);var err=validSchedule(out);if(err){toast('✖ '+err);return;}
-  if(!confirm('番組表を書き込みます。番組'+out.cycle.length+'本・1周'+lenText(totalSec(out))+'・'+out.airStart+'時〜'+out.airEnd+'時。よろしいですか？'))return;
+  var news=newProgs(sched), doNtf=!!(news.length&&el('ntfSend').checked);
+  if(!confirm('番組表を書き込みます。番組'+out.cycle.length+'本・1周'+lenText(totalSec(out))+'・'+out.airStart+'時〜'+out.airEnd+'時。'+(doNtf?'\n新番組「'+ntfTitle(news)+'」のお知らせも送ります。':'')+'よろしいですか？'))return;
   var prev=schedLoadedSig;
   writeDoc('broadcast/schedule',out).then(function(){
     lsSet('kanri_sched_prev',prev);            // 直前の内容を1つだけ覚える（戻す用）
     toast('✔ 書き込みました');loadSchedule();
+    if(doNtf) ntfSendAll(ntfTitle(news),progKeyK(news[0])).then(function(t){
+      toast('✔ 新番組のお知らせを送りました（'+t.sent+'台'+(t.failed?'・届かなかった '+t.failed+'台':'')+'）'); NTF_COUNT=null;
+    }).catch(function(e){ toast('✖ お知らせを送れません：'+e.message); });
   }).catch(function(e){toast('✖ 書き込めません：'+e.message);});
 };
 el('btnUndo').onclick=function(){
@@ -1457,6 +1496,10 @@ function selfTest(){
   t('放送中の番号：合計40分15秒なら 6:40:00はCM、6:40:15は次の周の1番目',nowProgIndex(odd,21600+2400)===1&&nowProgIndex(odd,21600+2415)===0);
   var withOpen={airStart:6,airEnd:24,cycleMinutes:90,cycle:[{ytId:'a',title:'x',cat:'c',dur:90,_open:true}]};
   t('画面用の印（_open）は保存する形に入らない',JSON.stringify(schedPayload(withOpen)).indexOf('_open')<0);
+  var _lk=LOADED_KEYS; LOADED_KEYS=['a','own~x']; var _ns=newProgs({cycle:[{ytId:'a',title:'A'},{ytId:'',vid:'x',title:'X'},{ytId:'',vid:'y',title:'Y'},{ytId:'b',title:'B'}]});
+  t('新番組＝読み込んだ時に無かった番組（YouTube無しは動画保管庫の名前で見分ける）',_ns.length===2&&_ns[0].title==='Y'&&_ns[1].title==='B'&&progKeyK(_ns[0])==='own~y');
+  t('お知らせの題名：2本以上は「ほか○本」',ntfTitle(_ns)==='Y ほか1本'&&ntfTitle([{title:'A'}])==='A'&&ntfTitle([])==='');
+  LOADED_KEYS=null; t('読み込み前は新番組なし',newProgs({cycle:[{ytId:'a',title:'A'}]}).length===0); LOADED_KEYS=_lk;
   t('入れる題名：拡張子と「しそチャンNET用」を外す',vaultTitleFromName('押忍！潜入！エンジョイ君‼︎「さいこ編」 しそチャンNET用.mp4')==='押忍！潜入！エンジョイ君‼︎「さいこ編」'&&vaultTitleFromName('赤西渓谷.MOV')==='赤西渓谷'&&vaultTitleFromName('a.b.mp4')==='a.b');
   t('YouTube無し＋動画保管庫の動画は通る',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'',title:'x',cat:'c',sec:60,vid:'enjoy_midoen'}]})==='');
   t('YouTubeも動画保管庫も無ければ落ちる',validSchedule({airStart:6,airEnd:24,cycle:[{ytId:'',title:'x',cat:'c',sec:60,vid:''}]})!=='');
