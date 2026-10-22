@@ -2292,7 +2292,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.37-lab（番組表から時刻をなくし、順に流す）</div>
+    <div class="ps-version">version 4.38-lab（YouTubeの無い番組も流せる）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -6345,7 +6345,7 @@ var CYCLE=[];
   try{
     var c=JSON.parse(localStorage.getItem('shisochan_schedule_cache_v2')||'null');
     if(c&&c.data&&validSchedule(c.data)===''){
-      CYCLE=c.data.cycle;
+      CYCLE=_normCycle(c.data.cycle);
       if(c.data.airStart!=null)S=c.data.airStart;
       if(c.data.airEnd!=null)E=c.data.airEnd;
     }
@@ -6354,6 +6354,9 @@ var CYCLE=[];
 // ★2026-10-22 決まった「1周の長さ」をやめた。毎朝 airStart 時に1番目から始め、一覧を順に繰り返す。
 //   1周＝番組の長さの合計（秒）。24時をまたぐ番組は、見ている人には最後まで流す（periodicCheck）
 //   番組の長さは sec（秒）があればそれ、無ければ dur（分）×60
+// 番組の見分け用の名前。YouTube の無い番組は「own~動画保管庫の名前」（統計・「新」の印・テロップの見分けに使う）
+function progKey(p){ return (p&&p.ytId)?p.ytId:((p&&_ownVidOk(p.vid))?'own~'+p.vid:''); }
+function _normCycle(cycle){ for(var i=0;i<cycle.length;i++){ var p=cycle[i]; if(p&&!p.ytId) p.ytId=progKey(p); } return cycle; }
 function plen(p){ return (typeof p.sec==='number'&&p.sec>0)?p.sec:p.dur*60; }
 var CO=[],TOT=0;
 function _buildOffsets(){ CO=[];TOT=0;for(var i=0;i<CYCLE.length;i++){CO.push(TOT);TOT+=plen(CYCLE[i]);} }
@@ -6392,7 +6395,9 @@ function validSchedule(d){
   // ★「合計＝1周」「放送時間が1周で割り切れる」の決まりは2026-10-22に廃止（cycleMinutes は読まない）
   for(var i=0;i<d.cycle.length;i++){
     var p=d.cycle[i];
-    if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string')return (i+1)+'番目の番組データが不正';
+    // ★2026-10-22 YouTube の無い番組（動画保管庫だけ）も許す：ytId が空なら vid が正しいこと
+    if(!p||typeof p.title!=='string'||!p.title||typeof p.cat!=='string')return (i+1)+'番目の番組データが不正';
+    if(!((typeof p.ytId==='string'&&p.ytId)||_ownVidOk(p.vid)))return (i+1)+'番目の番組にYouTubeも動画保管庫の名前も無い';
     var okSec=(typeof p.sec==='number'&&p.sec>0), okDur=(typeof p.dur==='number'&&p.dur>0);
     if(!okSec&&!okDur)return (i+1)+'番目の番組の長さが不正';
   }
@@ -6401,7 +6406,7 @@ function validSchedule(d){
 
 // 検証済みデータを適用して番組表を再構築（放送中なら現在番組に同期し直す）
 function applySchedule(d){
-  CYCLE=d.cycle;
+  CYCLE=_normCycle(d.cycle);
   try{ _ownMap(CYCLE); }catch(_){}   // ★自前の動画の対応表（ytId→vid）を作る（2026-10-02）
   if(d.airStart!=null)S=d.airStart;
   if(d.airEnd!=null)E=d.airEnd;
@@ -6433,7 +6438,7 @@ function showLoadErr(state){
 // 番組表の内容シグネチャ（同一データの無駄な再適用＝再生の巻き戻しを防ぐための比較用）
 function schedSig(d){
   var s=d.airStart+'|'+d.airEnd+'|';
-  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+(p.sec||'')+':'+p.title+':'+p.cat+':'+(p.telop||'')+':'+(p.vid||'')+';';}
+  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=progKey(p)+':'+p.dur+':'+(p.sec||'')+':'+p.title+':'+p.cat+':'+(p.telop||'')+':'+(p.vid||'')+';';}
   return s;
 }
 // 取得本体（stale-while-revalidate）：キャッシュがあれば即描画し、必ずサーバーの最新も取得して
@@ -6835,6 +6840,7 @@ var spinnerTimer=null,endTimer=null;
 // ★YouTubeの状態の知らせ（1再生/2停止/3読込中/0終了/5準備/-1未開始）を受ける本体（2026-10-02に切り出した）。
 //   自前の動画（OWN）も同じ番号でここへ知らせる。中身は切り出す前と同じ
 function _ytOnState(st){
+  if(st===1) _ownSkip.n=0;   // 再生が始まったら「続けて読めない」の数を戻す
   try{statsOnState(st);}catch(_){}
   if(st===1||st===5){ killCaptions(); } // 再生開始/キュー時に字幕を無効化
   // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
@@ -6874,7 +6880,7 @@ var OWN={
   base:'https://video.shisochan.net/',
   map:{},            // ytId → vid（番組表から作る）
   v:null, hls:null, raw:null,
-  active:false, vid:'', ytId:'', st:-1,
+  active:false, vid:'', ytId:'', st:-1, req:'',
   failed:{},         // この起動中に読めなかった vid（以後はYouTubeで流す）
   vol:100, muted:false, unlocked:false, debug:false, testMap:'',
   apple:(function(){ var ua=navigator.userAgent||''; return /iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Safari\//.test(ua)&&!/Chrome|Chromium|CriOS|Android/.test(ua)); })(),
@@ -7036,11 +7042,21 @@ function _ownLoad(ytId,vid,start,auto,raw){
   return true;
 }
 // 自前の動画が読めなかった：この起動中はその動画をあきらめ、同じ番組をYouTubeで同じ位置から流し直す
+function _ownOnly(id){ return typeof id==='string'&&id.indexOf('own~')===0; }
+// ★2026-10-22 YouTube の無い番組が読めない時は、予備が無いので次の番組へ進む。
+//   通信が切れている等で続けて読めない時は、番組を次々に飛ばし続けないよう、番組の数を超えたら止めて知らせる。
+//   何か1本でも再生が始まれば（_ytOnState の 1）数え直す
+function _ownSkip(){
+  _ownSkip.n=(_ownSkip.n||0)+1;
+  if(_ownSkip.n>Math.max(3,CYCLE.length)){ try{ clearSpinnerTimer(); showSpinner(true,'番組を読み込めません。通信を確かめてください'); }catch(_){} return; }
+  setTimeout(function(){ try{ onEnded(); }catch(_){} },300);
+}
 function _ownFail(why){
   if(!OWN.active) return;
   var vid=OWN.vid, ytId=OWN.ytId, raw=OWN.raw, t=0;
   try{ t=OWN.v.currentTime||0; }catch(_){}
   OWN.failed[vid]=why||'?';
+  if(_ownOnly(ytId)){ try{ console.log('動画保管庫の動画が読めず、YouTubeの予備も無いので次の番組へ',vid,why); }catch(_){} _ownOff(); _ownSkip(); return; }
   try{ console.log('自前の動画が読めないのでYouTubeで流す',vid,why); }catch(_){}
   _ownOff();
   try{ raw.loadVideoById({videoId:ytId,startSeconds:Math.floor(t>0?t:(vCurrentSec||0)),suggestedQuality:'hd1080'}); }catch(_){}
@@ -7053,12 +7069,14 @@ function _ownWrap(raw){
   function idOf(a){ return (a&&typeof a==='object')?a.videoId:a; }
   function startOf(a,b){ return (a&&typeof a==='object')?(a.startSeconds||0):(b||0); }
   function vidFor(id){ var x=OWN.map[id]; return (x&&!OWN.failed[x])?x:''; }
-  f.loadVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); if(vid&&_ownLoad(id,vid,startOf(a,b),true,raw)) return; _ownOff(); return raw.loadVideoById.apply(raw,arguments); };
-  f.cueVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); if(vid&&_ownLoad(id,vid,startOf(a,b),false,raw)) return; _ownOff(); return raw.cueVideoById.apply(raw,arguments); };
-  f.playVideo=function(){ if(OWN.active){ _ownPlay(); return; } return raw.playVideo(); };
+  // YouTube の無い番組（own~）は、動画保管庫で流せなければ YouTube へ渡さず次の番組へ（_ownSkip）
+  // OWN.req＝いま選ばれている番組。YouTube の無い番組の間は、再生の指示を裏のYouTube（前の番組）へ渡さない
+  f.loadVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.req=id; if(vid&&_ownLoad(id,vid,startOf(a,b),true,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} _ownSkip(); return; } return raw.loadVideoById.apply(raw,arguments); };
+  f.cueVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.req=id; if(vid&&_ownLoad(id,vid,startOf(a,b),false,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} return; } return raw.cueVideoById.apply(raw,arguments); };
+  f.playVideo=function(){ if(OWN.active){ _ownPlay(); return; } if(_ownOnly(OWN.req)) return; return raw.playVideo(); };
   f.pauseVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.pauseVideo(); };
   f.stopVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.stopVideo(); };
-  f.seekTo=function(s,ah){ if(OWN.active){ try{ OWN.v.currentTime=Math.max(0,+s||0); }catch(_){} return; } return raw.seekTo(s,ah); };
+  f.seekTo=function(s,ah){ if(OWN.active){ try{ OWN.v.currentTime=Math.max(0,+s||0); }catch(_){} return; } if(_ownOnly(OWN.req)) return; return raw.seekTo(s,ah); };
   f.getCurrentTime=function(){ return OWN.active?(OWN.v.currentTime||0):raw.getCurrentTime(); };
   f.getDuration=function(){ if(OWN.active){ var d=OWN.v.duration; return (d&&isFinite(d))?d:0; } return raw.getDuration(); };
   f.getPlayerState=function(){ return OWN.active?OWN.st:raw.getPlayerState(); };
