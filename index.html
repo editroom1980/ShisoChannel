@@ -522,28 +522,7 @@ html.tvapp .sb-note{display:none;}
 }
 .prow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
 .prow.active{background:var(--green5);}
-/* 放送中セルは薄緑のみ（左端の深緑ストリップは廃止）。現在時刻の時刻チップ強調は別途維持 */
-
-/* 時刻バー（タイトル上・横並び） */
-.time-bar{
-  display:flex;align-items:center;
-  padding:5px 12px 3px;
-  border-bottom:1px solid var(--green5);
-  gap:0;flex-wrap:nowrap;
-  overflow-x:auto;overflow-y:hidden;
-  scrollbar-width:none;-webkit-overflow-scrolling:touch;
-}
-.time-bar::-webkit-scrollbar{display:none;}
-.time-chip-item{
-  font-size:10px;font-weight:600;color:var(--text3);
-  padding:1px 4px;border-radius:2px;
-  white-space:nowrap;flex-shrink:0;
-  cursor:pointer;-webkit-tap-highlight-color:transparent;
-  transition:background .1s,color .1s;
-}
-.time-chip-item:active{background:var(--green4);color:var(--forest);}
-.time-chip-item.on{color:var(--white);background:var(--green2);}
-.time-sep{font-size:8px;color:var(--border);padding:0 2px;flex-shrink:0;user-select:none;}
+/* 放送中セルは薄緑のみ（左端の深緑ストリップは廃止）。時刻ボタンは2026-10-22に廃止 */
 
 /* 番組情報エリア */
 .pinfo{padding:6px 12px 8px;display:flex;flex-direction:column;gap:3px;}
@@ -628,7 +607,6 @@ body.ori-p .news-item{flex-direction:row;align-items:center;gap:7px;}body.ori-p 
   /* バナーはコンパクト版SVG（viewBox 720x76）で自然に低背になる */
   /* 番組表を圧縮して一画面に多く表示 */
   .sb-head{padding:8px 14px;}
-  .time-bar{padding:3px 10px 2px;}
   .pinfo{padding:4px 10px 6px;gap:2px;}
   .pname{font-size:12px;line-height:1.35;}
   }
@@ -724,7 +702,7 @@ body.ori-l{overflow:hidden;height:100%;}
   /* 番組表を圧縮して横向きでも多く表示 */
   body.ori-l .sb-head{padding:6px 12px;}
   /* 見出し帯の補足文（出典・操作案内）は横向きでは非表示（2026-08-09指示） */
-  body.ori-l .sb-note{display:none;}body.ori-l .time-bar{padding:2px 10px 2px;}body.ori-l .pinfo{padding:3px 10px 5px;gap:2px;}body.ori-l .pname{font-size:11px;line-height:1.3;}
+  body.ori-l .sb-note{display:none;}body.ori-l .pinfo{padding:3px 10px 5px;gap:2px;}body.ori-l .pname{font-size:11px;line-height:1.3;}
 
 
 /* ══ 全画面コントロールバー ══ */
@@ -1376,10 +1354,10 @@ html.tvapp #row-stopnews{display:none;}
 .set-link-reset .set-link-txt b{color:#ffb4b4;}
 /* 文字の大きさ（0=標準 / 1=大 / 2=特大） */
 body.text-1 .pname{font-size:14px;} body.text-1 .news-ttl{font-size:14px;}
-body.text-1 .pcat,body.text-1 .pdur{font-size:12px;} body.text-1 .time-chip-item{font-size:11px;}
+body.text-1 .pcat,body.text-1 .pdur{font-size:12px;}
 body.ori-l.text-1 .pname,body.ori-tl.text-1 .pname{font-size:13px;}
 body.text-2 .pname{font-size:16px;} body.text-2 .news-ttl{font-size:16px;}
-body.text-2 .pcat,body.text-2 .pdur{font-size:13px;} body.text-2 .time-chip-item{font-size:12px;}
+body.text-2 .pcat,body.text-2 .pdur{font-size:13px;}
 body.text-2 #viewing-title{font-size:14px;}
 body.ori-l.text-2 .pname,body.ori-tl.text-2 .pname{font-size:14px;}
 
@@ -1489,10 +1467,7 @@ html.tvpc *::-webkit-scrollbar{width:0;height:0;display:none;}
    消えずに残った（2026-08-15指摘）。そこでTV/PCでは「消す」に頼らず、
    ①あふれさせない ②棒を枠の外へ追い出して切り落とす、の2手で確実に無くす。
 
-   ①時刻の行：244pxの枠に657pxの中身であふれていた（実測）。リモコンでは
-     横スクロールできないので、あふれ自体を止める。はみ出した時刻は
-     hideClippedChips が元から隠している */
-html.tvpc .time-bar{overflow-x:hidden;}
+   ①時刻の行：2026-10-22に時刻ボタンごと廃止したので、手当ても不要になった */
 
 /*  ②番組表の中身：縦スクロールは残す必要があるので、棒の幅ぶん外へ広げて
       親（.sidebar は overflow:hidden）に切り落とさせる。
@@ -1531,7 +1506,7 @@ html.tvpc #site-viewer{overflow-y:scroll;margin-right:-24px;padding-right:24px;}
    .sb-list と .time-bar だけ手当てして、設定画面の中身を見落としていた。
    設定画面は閉じていても画面の中に居るので、棒が出る作りの端末では
    常に細い棒が見えてしまう。以下がCSSにある「スクロールする指定」の全部：
-     .sb-list / .time-bar / .set-body / #settings-panel / #site-viewer /
+     .sb-list / .time-bar（2026-10-22廃止）/ .set-body / #settings-panel / #site-viewer /
      body.silk-mode .sidebar（FireTV用・tvpcでは効かない）/
      html.tvpc.narrowpc（テレビでは縦並びにしないので該当しない） */
 html.tvpc #settings-panel{
@@ -2132,12 +2107,9 @@ html.tvpc .news-ttl{
 /* ══ Phase C（2026-09-06）：テレビの番組表・お知らせの文字の大きさは、設定「文字の大きさ」で選ぶ ══
    標準＝今までどおり（題名13px・省スペース）／大＝題名18px（テレビの既定）／特大＝題名21px。
    スマホ・PCの標準/大/特大（body.text-1/2）はそのまま。テレビ表示のときだけ、より大きな段に置き換える。
-   幅は変えない（動画の大きさを保つ）。時刻の札は入りきる分だけ出す（hideClippedChips） */
+   幅は変えない（動画の大きさを保つ）。時刻の札は2026-10-22に廃止 */
 html.tvpc body.text-1 .sb-ttl{font-size:16px;letter-spacing:2px;}
 html.tvpc body.text-1 #today-date{font-size:13px;}
-html.tvpc body.text-1 .time-bar{padding:6px 12px 4px;}
-html.tvpc body.text-1 .time-chip-item{font-size:13px;padding:2px 6px;border-radius:3px;}
-html.tvpc body.text-1 .time-sep{font-size:10px;}
 html.tvpc body.text-1 .pinfo{padding:6px 12px 9px;gap:4px;}
 html.tvpc body.text-1 .pname{font-size:18px;line-height:1.35;}
 html.tvpc body.text-1 .pcat,html.tvpc body.text-1 .pdur{font-size:13px;}
@@ -2146,9 +2118,6 @@ html.tvpc body.text-1 .news-tag{font-size:11px;padding:2px 8px;}
 html.tvpc body.text-1 .news-ttl{font-size:16px;line-height:1.35;min-height:calc(1.35em * 3);}
 html.tvpc body.text-2 .sb-ttl{font-size:18px;letter-spacing:2px;}
 html.tvpc body.text-2 #today-date{font-size:14px;}
-html.tvpc body.text-2 .time-bar{padding:6px 12px 4px;}
-html.tvpc body.text-2 .time-chip-item{font-size:15px;padding:2px 7px;border-radius:3px;}
-html.tvpc body.text-2 .time-sep{font-size:11px;}
 html.tvpc body.text-2 .pinfo{padding:7px 12px 10px;gap:4px;}
 html.tvpc body.text-2 .pname{font-size:21px;line-height:1.3;}
 html.tvpc body.text-2 .pcat,html.tvpc body.text-2 .pdur{font-size:15px;}
@@ -2292,7 +2261,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.90</div>
+    <div class="ps-version">version 3.91</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -5895,7 +5864,6 @@ function applyOpts(){
     if(!OPTS.textSet && document.documentElement.classList.contains('tvpc')) OPTS.text=1;
     b.classList.toggle('text-1', OPTS.text===1);
     b.classList.toggle('text-2', OPTS.text===2);
-    try{ hideClippedChipsSoon(); }catch(_){}   // 札の大きさが変わるので、入りきる数を測り直す
     // お知らせの自動切り替え
     if(OPTS.stopnews){ if(_newsTimer){ clearInterval(_newsTimer); _newsTimer=null; } }
     else if(!_newsTimer){ _newsTimer=setInterval(rotateCityNews, 8000); }
@@ -6217,7 +6185,7 @@ function attachSponsorSwipe(el){
 // ══════════════════════════════════════════════
 // 番組表はFirestoreで一元管理し、コード側に固定番組表は持たない（番組変更時にコードを触らないため）。
 // 起動時は前回正常取得できたキャッシュから復元。無ければ空＝「読み込み中」表示のまま取得を待つ。
-var S=6,E=24,CM=120;
+var S=6,E=24;
 var CYCLE=[];
 (function initScheduleFromCache(){
   try{
@@ -6226,13 +6194,16 @@ var CYCLE=[];
       CYCLE=c.data.cycle;
       if(c.data.airStart!=null)S=c.data.airStart;
       if(c.data.airEnd!=null)E=c.data.airEnd;
-      if(c.data.cycleMinutes!=null)CM=c.data.cycleMinutes;
     }
   }catch(_){}
 })();
-var NC=(E-S)*60/CM;
-var CS=[];for(var i=0;i<NC;i++)CS.push(S*60+i*CM);
-var CO=[];var _a=0;for(var i=0;i<CYCLE.length;i++){CO.push(_a);_a+=CYCLE[i].dur;}
+// ★2026-10-22 決まった「1周の長さ」をやめた。毎朝 airStart 時に1番目から始め、一覧を順に繰り返す。
+//   1周＝番組の長さの合計（秒）。24時をまたぐ番組は、見ている人には最後まで流す（periodicCheck）
+//   番組の長さは sec（秒）があればそれ、無ければ dur（分）×60
+function plen(p){ return (typeof p.sec==='number'&&p.sec>0)?p.sec:p.dur*60; }
+var CO=[],TOT=0;
+function _buildOffsets(){ CO=[];TOT=0;for(var i=0;i<CYCLE.length;i++){CO.push(TOT);TOT+=plen(CYCLE[i]);} }
+_buildOffsets();
 
 // ══════════════════════════════════════════════
 //  Firestoreからの番組表取得（Step1: 番組表の外部化）
@@ -6262,16 +6233,15 @@ function fsVal(v){
 // 番組表データの検証。問題なければ''、問題があれば理由を返す
 function validSchedule(d){
   if(!d||Object.prototype.toString.call(d.cycle)!=='[object Array]'||d.cycle.length<1)return '番組リストが空か形式不正';
-  var s=(d.airStart!=null?d.airStart:S),e=(d.airEnd!=null?d.airEnd:E),cm=(d.cycleMinutes!=null?d.cycleMinutes:CM);
-  if(typeof s!=='number'||typeof e!=='number'||typeof cm!=='number'||s>=e||cm<=0)return '放送時間の設定が不正';
-  if(((e-s)*60)%cm!==0)return '放送時間('+((e-s)*60)+'分)がサイクル('+cm+'分)で割り切れない';
-  var tot=0;
+  var s=(d.airStart!=null?d.airStart:S),e=(d.airEnd!=null?d.airEnd:E);
+  if(typeof s!=='number'||typeof e!=='number'||s>=e)return '放送時間の設定が不正';
+  // ★「合計＝1周」「放送時間が1周で割り切れる」の決まりは2026-10-22に廃止（cycleMinutes は読まない）
   for(var i=0;i<d.cycle.length;i++){
     var p=d.cycle[i];
-    if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string'||typeof p.dur!=='number'||p.dur<=0)return (i+1)+'番目の番組データが不正';
-    tot+=p.dur;
+    if(!p||typeof p.ytId!=='string'||!p.ytId||typeof p.title!=='string'||!p.title||typeof p.cat!=='string')return (i+1)+'番目の番組データが不正';
+    var okSec=(typeof p.sec==='number'&&p.sec>0), okDur=(typeof p.dur==='number'&&p.dur>0);
+    if(!okSec&&!okDur)return (i+1)+'番目の番組の長さが不正';
   }
-  if(tot!==cm)return '番組の合計尺('+tot+'分)がサイクル('+cm+'分)と不一致';
   return '';
 }
 
@@ -6281,10 +6251,7 @@ function applySchedule(d){
   try{ _ownMap(CYCLE); }catch(_){}   // ★自前の動画の対応表（ytId→vid）を作る（2026-10-02）
   if(d.airStart!=null)S=d.airStart;
   if(d.airEnd!=null)E=d.airEnd;
-  if(d.cycleMinutes!=null)CM=d.cycleMinutes;
-  NC=(E-S)*60/CM;
-  CS=[];for(var i=0;i<NC;i++)CS.push(S*60+i*CM);
-  CO=[];var a=0;for(var j=0;j<CYCLE.length;j++){CO.push(a);a+=CYCLE[j].dur;}
+  _buildOffsets();
   try{renderSB();}catch(_){}
   scheduleFailed=false; try{showLoadErr('hide');}catch(_){}
   // 視聴意思がある場合は現在番組へ同期。番組表が未取得のまま放送開始→off-air表示になっていた時も、
@@ -6311,8 +6278,8 @@ function showLoadErr(state){
 }
 // 番組表の内容シグネチャ（同一データの無駄な再適用＝再生の巻き戻しを防ぐための比較用）
 function schedSig(d){
-  var s=d.airStart+'|'+d.airEnd+'|'+d.cycleMinutes+'|';
-  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+p.title+':'+p.cat+':'+(p.telop||'')+':'+(p.vid||'')+';';}
+  var s=d.airStart+'|'+d.airEnd+'|';
+  for(var i=0;i<d.cycle.length;i++){var p=d.cycle[i];s+=p.ytId+':'+p.dur+':'+(p.sec||'')+':'+p.title+':'+p.cat+':'+(p.telop||'')+':'+(p.vid||'')+';';}
   return s;
 }
 // 取得本体（stale-while-revalidate）：キャッシュがあれば即描画し、必ずサーバーの最新も取得して
@@ -6677,26 +6644,25 @@ function statsInit(){
 }
 
 var f2=function(n){return String(n).padStart(2,'0');};
-var hm=function(m){return f2(Math.floor(m/60))+':'+f2(m%60);};
-var nowF=function(){var d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;};
-var inAir=function(){var n=nowF();return n>=S*60&&n<E*60;};
+// 検証用：?clock=HH:MM で時計をその時刻からずらして進める（23時台の確認用。読み込んだ時点の差を保つ）
+var _clockOff=0;
+(function(){ var m=/[?&]clock=(\d{1,2}):(\d{2})/.exec(location.search); if(!m) return;
+  var d=new Date(), real=d.getHours()*3600+d.getMinutes()*60+d.getSeconds();
+  _clockOff=(+m[1])*3600+(+m[2])*60-real; })();
+// いまの時刻（その日の0時からの秒）
+var nowS=function(){var d=new Date();return d.getHours()*3600+d.getMinutes()*60+d.getSeconds()+d.getMilliseconds()/1000+_clockOff;};
+var inAir=function(){var n=nowS();return n>=S*3600&&n<E*3600;};
 
+// いま流れている番組。c＝その日の何周目か、p＝何番目の番組か
 function nowPos(){
-  if(!CYCLE.length)return null; // 番組表未取得（読み込み中）は現在番組なし扱い
+  if(!CYCLE.length||!(TOT>0))return null; // 番組表未取得（読み込み中）は現在番組なし扱い
   if(!inAir())return null;
-  var n=nowF();
-  for(var c=NC-1;c>=0;c--){
-    if(n>=CS[c]){
-      var off=n-CS[c],p=0;
-      for(var i=CYCLE.length-1;i>=0;i--){if(CO[i]<=off){p=i;break;}}
-      return{c:c,p:p};
-    }
-  }
-  return null;
+  var off=nowS()-S*3600, c=Math.floor(off/TOT), w=off-c*TOT, p=0;
+  for(var i=CYCLE.length-1;i>=0;i--){if(CO[i]<=w){p=i;break;}}
+  return{c:c,p:p};
 }
-var smOf=function(c,p){return CS[c]+CO[p];};
-var esOf=function(c,p){return Math.max(0,Math.floor((nowF()-smOf(c,p))*60));};
-var allT=function(pIdx){var r=[];for(var i=0;i<CS.length;i++)r.push(CS[i]+CO[pIdx]);return r;};
+var smOf=function(c,p){return S*3600+c*TOT+CO[p];};   // その回の番組が始まった時刻（秒）
+var esOf=function(c,p){return Math.max(0,Math.floor(nowS()-smOf(c,p)));};
 
 // ── 状態管理 ──
 var isManual=false,isOff=false;
@@ -7307,14 +7273,13 @@ function applyOrientationClass(){
       e.classList.toggle('ori-p',p);  e.classList.toggle('ori-l',l);
       e.classList.toggle('ori-tp',tp); e.classList.toggle('ori-tl',tl);
     });
-    // 向きが実際に変わった時だけ：番組表の時刻チップの強調と横スライドを付け直す（2026-08-11）。
-    // 従来は番組ロード時のみだったため、回転すると目盛りが古い位置のまま取り残されていた。
+    // 向きが実際に変わった時だけ：番組表の放送中の行の強調と送りを付け直す（2026-08-11）。
+    // 従来は番組ロード時のみだったため、回転すると古い位置のまま取り残されていた。
     // 500ms毎の定期呼び出しでは向きが同じ＝ここは走らない（無駄な再計算をしない）
     var sig=(p?'p':'')+(l?'l':'')+(tp?'tp':'')+(tl?'tl':'');
     if(sig!==_oriSig){
       _oriSig=sig;
       if(hasPoweredOn){ try{ hlSB(vC,vP); }catch(_){} }
-      try{ hideClippedChips(); }catch(_){}
     }
   }catch(_){}
 }
@@ -7731,7 +7696,6 @@ function gotoOffAir(){
   var pb=document.getElementById('p-bar');
   if(pb){pb.classList.add('no-transition');pb.style.width='100%';requestAnimationFrame(function(){pb.classList.remove('no-transition');});}
   document.querySelectorAll('.prow').forEach(function(r){r.classList.remove('active');});
-  document.querySelectorAll('.time-chip-item').forEach(function(c){c.classList.remove('on');});
 }
 
 // 復旧用: 再生が始まらず固まった場合（特にPCのbfキャッシュ復元時の黒画面）に
@@ -7782,55 +7746,21 @@ function refreshLive(){
 }
 function hlSB(c,p){
   document.querySelectorAll('.prow').forEach(function(r,i){r.classList.toggle('active',i===p);});
-  document.querySelectorAll('.time-chip-item').forEach(function(el){el.classList.remove('on');});
-  var chip=document.getElementById('chip-'+p+'-'+c);
-  if(chip){
-    chip.classList.add('on');
-    // sb-list内だけスクロール（ページ全体をスクロールしない）
-    var list=document.getElementById('sb-list');
-    var row=document.getElementById('row-'+p);
-    if(list&&row){
-      var listTop=list.getBoundingClientRect().top;
-      var rowTop=row.getBoundingClientRect().top;
-      var scrollTop=list.scrollTop;
-      var relTop=rowTop-listTop;
-      // ★放送中の番組を常にリストの一番上へ。最下部の番組はscrollTopが自動で上限にclampされ、
-      //   一番上には行かないが「見える位置」に収まる（＝ご指示通り：最下部は無理せず見えればOK）。
-      list.scrollTop=scrollTop+relTop-8;
-    }
+  // sb-list内だけスクロール（ページ全体をスクロールしない）
+  // ★2026-10-22 時刻ボタンを廃止。以前はボタンがある時だけ送っていたので、送りだけをここに残す
+  var list=document.getElementById('sb-list');
+  var row=document.getElementById('row-'+p);
+  if(list&&row){
+    var listTop=list.getBoundingClientRect().top;
+    var rowTop=row.getBoundingClientRect().top;
+    var scrollTop=list.scrollTop;
+    var relTop=rowTop-listTop;
+    // ★放送中の番組を常にリストの一番上へ。最下部の番組はscrollTopが自動で上限にclampされ、
+    //   一番上には行かないが「見える位置」に収まる（＝ご指示通り：最下部は無理せず見えればOK）。
+    list.scrollTop=scrollTop+relTop-8;
   }
-  // 各番組の時刻バーを現在サイクル(c)の位置へ横スクロール（現在時刻の目盛りが画面外に隠れないように）
-  for(var pi=0;pi<CYCLE.length;pi++){
-    var tb=document.querySelector('#row-'+pi+' .time-bar');
-    var cc=document.getElementById('chip-'+pi+'-'+c);
-    if(tb&&cc){
-      var delta=(cc.getBoundingClientRect().left-tb.getBoundingClientRect().left)-tb.clientWidth/2+cc.offsetWidth/2;
-      tb.scrollLeft+=delta;
-    }
-  }
-  try{ hideClippedChips(); }catch(_){}
 }
 
-// 画面端で数字が中途半端に切れて見えるのを防ぐ：枠に一部だけかかっているチップは丸ごと非表示にする。
-// 場所は取ったまま見えなくするだけ＝並びは1pxも動かない。何度呼んでも同じ結果になる冪等な処理（全バージョン共通・2026-08-11指示）
-function hideClippedChips(){
-  document.querySelectorAll('.time-bar').forEach(function(tb){
-    var tr=tb.getBoundingClientRect();
-    if(!tr.width) return;
-    tb.querySelectorAll('.time-chip-item').forEach(function(ch){
-      var r=ch.getBoundingClientRect();
-      var cut=(r.left<tr.left-1 && r.right>tr.left+1)||(r.left<tr.right-1 && r.right>tr.right+1);
-      ch.style.visibility=cut?'hidden':'';
-    });
-  });
-}
-// 窓のサイズ変更（PCで窓を伸縮した時など）でも切れ方が変わるので測り直す（rAFで間引き）
-var _hccRaf=null;
-function hideClippedChipsSoon(){
-  if(_hccRaf) return;
-  _hccRaf=requestAnimationFrame(function(){ _hccRaf=null; try{ hideClippedChips(); }catch(_){} });
-}
-window.addEventListener('resize',hideClippedChipsSoon);
 
 // ══════════════════════════════════════════════
 //  タップ判定（スクロールと区別）
@@ -7930,6 +7860,9 @@ function renderNewMarks(){
 // ══════════════════════════════════════════════
 //  番組表描画
 // ══════════════════════════════════════════════
+// 番組の長さの表示（例「12分」「1分30秒」「30秒」）
+function lenText(sec){ sec=Math.round(sec); var m=Math.floor(sec/60), r=sec%60;
+  return m&&r ? m+'分'+r+'秒' : (m ? m+'分' : r+'秒'); }
 function renderSB(){
   var list=document.getElementById('sb-list');
   list.innerHTML='';
@@ -7943,37 +7876,8 @@ function renderSB(){
   for(var pIdx=0;pIdx<CYCLE.length;pIdx++){
     (function(pIdx){
       var prog=CYCLE[pIdx];
-      var times=allT(pIdx);
-
       var row=document.createElement('div');
       row.className='prow';row.id='row-'+pIdx;
-
-      // 時刻バー（タイトル上・横並び・6時刻）
-      var timeBar=document.createElement('div');
-      timeBar.className='time-bar';
-      // 指でなぞって時刻バーを動かした時も、端で切れる数字を測り直して隠す
-      timeBar.addEventListener('scroll',hideClippedChipsSoon,{passive:true});
-      for(var ci=0;ci<times.length;ci++){
-        (function(cIdx){
-          if(cIdx>0){
-            var sep=document.createElement('span');
-            sep.className='time-sep';sep.textContent='|';
-            timeBar.appendChild(sep);
-          }
-          var chip=document.createElement('span');
-          chip.className='time-chip-item';
-          chip.id='chip-'+pIdx+'-'+cIdx;
-          chip.textContent=hm(times[cIdx]);
-                    addTap(chip,function(){
-            if(inAir()){
-              var pos=nowPos();
-              if(pos&&pos.p===pIdx){isManual=false;playSchedule(pos.c,pIdx);}
-              else{playManual(pIdx);}
-            }else{playManual(pIdx);}
-          });
-          timeBar.appendChild(chip);
-        })(ci);
-      }
 
       // 番組情報
       var pinfo=document.createElement('div');
@@ -7983,17 +7887,15 @@ function renderSB(){
       pinfo.innerHTML=
         '<div class="pname">'+escHtml(prog.title)+'</div>'+
         '<div class="pmeta"><span class="pcat">'+escHtml(prog.cat)+'</span>'+
-        '<span class="pdur">/ '+prog.dur+'分</span></div>';
+        '<span class="pdur">/ '+lenText(plen(prog))+'</span></div>';
       addTap(pinfo,function(){playManual(pIdx);});
 
-      row.appendChild(timeBar);
       row.appendChild(pinfo);
       list.appendChild(row);
     })(pIdx);
   }
   try{ newMarksUpdate(); }catch(_){}    // 新しく入った番組を数え直す
   try{ renderNewMarks(); }catch(_){}    // その印を行と見出しに出す
-  try{ hideClippedChips(); }catch(_){}  // 描画直後の端切れも隠す
 }
 
 // ══════════════════════════════════════════════
@@ -8107,10 +8009,12 @@ function periodicCheck(){
   if(isManual){refreshLive();return;}
   var pos=nowPos();
   if(!pos){
-    // 放送時間外(24時以降)。今の番組を再生中なら最後まで流し、終了時(onEnded→pos=null)にoff-airへ。
+    // 放送時間外(24時以降)。今の番組を見ている人には最後まで流し、終了時(onEnded→pos=null)にoff-airへ。
+    // ★2026-10-22 1周の長さを自由にしたので、24時をまたぐ番組が出る。一時停止中(2)も
+    //   「見ている人」なので切らない（以前は一時停止するとその場で放送終了の画面になった）
     if(!isOff){
       var stx=-99; try{ stx=ytPlayer.getPlayerState(); }catch(_){}
-      if(stx!==1 && stx!==3){ gotoOffAir(); } // 再生・バッファ中でなければ終了画面へ
+      if(stx!==1 && stx!==2 && stx!==3){ gotoOffAir(); } // 再生・一時停止・バッファ中でなければ終了画面へ
     }
     return;
   }
