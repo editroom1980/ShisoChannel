@@ -661,6 +661,14 @@ function loadVaultJobs(){
     if(!el('vaultBox').hidden&&VUP.jobs.some(function(j){return /uploading|queued|converting/.test(j.state);})) VUP.timer=setTimeout(loadVaultJobs,30000);
   }).catch(function(){});
 }
+// 送り終わったら、GitHub の変換の自動処理をすぐ動かす（管理アプリの GitHub の鍵に「Actions」の読み書きの許可が要る）。
+// 許可が無い・鍵が無い時は、5分ごとの見回りに任せる（変換は遅れて始まるだけで、失われない）
+function vaultKick(){
+  var t=ghToken(); if(!t) return Promise.resolve('no-key');
+  return fetch('https://api.github.com/repos/'+GITHUB.owner+'/'+GITHUB.repo+'/actions/workflows/vault-convert.yml/dispatches',
+    {method:'POST',headers:{'Authorization':'Bearer '+t,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({ref:GITHUB.branch})})
+  .then(function(r){ return r.status===204?'ok':('http-'+r.status); },function(){ return 'net'; });
+}
 function vaultUpload(){
   var f=el('vFile').files[0], title=el('vTitle').value.trim();
   if(!f){ toast('動画のファイルを選んでください'); return; }
@@ -684,7 +692,11 @@ function vaultUpload(){
     return next();
   })
   .then(function(){ prog('仕上げています…'); return authFetch(VAPI+'/up/done',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:vid,parts:parts})}).then(body); })
-  .then(function(){ VUP.busy=false; VUP.msg='✔ 送り終わりました。変換を待っています'; toast('✔ 送り終わりました。変換が終わると一覧に出ます'); renderVault(); loadVaultJobs(); })
+  .then(function(){ return vaultKick(); })
+  .then(function(k){
+    VUP.busy=false;
+    VUP.msg=k==='ok'?'✔ 送り終わりました。変換を始めました':'✔ 送り終わりました。変換は5分ごとの見回りで始まります（すぐ始める許可がありません）';
+    toast('✔ 送り終わりました。変換が終わると一覧に出ます'); renderVault(); loadVaultJobs(); })
   .catch(function(e){
     VUP.busy=false; VUP.msg='✖ 送れませんでした：'+e.message; renderVault();
     if(vid) authFetch(VAPI+'/up/abort',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:vid})}).then(loadVaultJobs).catch(function(){});
