@@ -645,9 +645,9 @@ function vaultTitleFromName(n){ return String(n||'').replace(/\.[A-Za-z0-9]{2,5}
 function vaultUpHtml(){
   if(!ID_TOKEN) return '<div class="vup"><div class="note">新しい動画を入れるには、ログインしてください。</div></div>';
   return '<div class="vup"><div class="vt">新しい動画を入れる</div>'
-    +'<div class="row"><input type="file" id="vFile" accept="video/*,.mp4,.mov,.m4v"'+(VUP.busy?' disabled':'')+'></div>'
-    +'<div><label class="l">題名（ファイル名から入ります。直せます）</label><input type="text" id="vTitle"'+(VUP.busy?' disabled':'')+'></div>'
-    +'<div class="row"><button class="gold small" id="vGo"'+(VUP.busy?' disabled':'')+'>動画保管庫に入れる</button><span class="vprog" id="vProg">'+esc(VUP.msg)+'</span></div>'
+    +'<div class="row"><input type="file" id="vFile" accept="video/*,.mp4,.mov,.m4v"></div>'
+    +'<div><label class="l">題名（ファイル名から入ります。直せます）</label><input type="text" id="vTitle"></div>'
+    +'<div class="row"><button class="gold small" id="vGo">動画保管庫に入れる</button><span class="vprog" id="vProg"></span></div>'
     +'<div class="note">送り終わると、自動で配信用に変換します（目安：番組の長さと同じくらい）。終わると下の一覧に出ます。送っている間は、この画面を閉じないでください。</div></div>';
 }
 var VST={uploading:['送っている途中','wait'],queued:['変換待ち','wait'],converting:['変換中','wait'],done:['完了','ok'],failed:['失敗','ng'],canceled:['取り消し','ng']};
@@ -710,9 +710,25 @@ function vaultUpload(){
   });
 }
 window.addEventListener('beforeunload',function(e){ if(VUP.busy){ e.preventDefault(); e.returnValue=''; } });
+// ★入れる欄（#vaultUp）は、ログインの有無が変わった時だけ作る。ほかの時は作り直さない。
+//   作り直すと、ファイル選びの窓を開いている間に欄が入れ替わり、選んだファイルが捨てた欄に入って
+//   「選んでも何も変わらない」になる（2026-10-22 実機で指摘）。送っている間の状態は欄の中身だけ書き換える
+function renderVaultUp(){
+  var u=el('vaultUp'); if(!u) return;
+  var want=ID_TOKEN?'in':'out';
+  if(u.getAttribute('data-k')!==want){
+    u.setAttribute('data-k',want); u.innerHTML=vaultUpHtml();
+    if(el('vFile')) el('vFile').onchange=function(){ var f=el('vFile').files[0]; if(f&&!el('vTitle').value.trim()) el('vTitle').value=vaultTitleFromName(f.name); };
+    if(el('vGo')) el('vGo').onclick=vaultUpload;
+  }
+  ['vFile','vTitle','vGo'].forEach(function(id){ var e=el(id); if(e) e.disabled=VUP.busy; });
+  var pg=el('vProg'); if(pg) pg.textContent=VUP.msg;
+}
 function renderVault(){
-  var keepTitle=el('vTitle')?el('vTitle').value:'', keepFile=el('vFile')&&el('vFile').files[0];
-  var b=el('vaultBox'), h=vaultUpHtml()+vaultJobsHtml()+'<div class="vh">動画保管庫の動画（選ぶと、題名と長さが入った番組を一番下に足します）</div>';
+  var b=el('vaultBox');
+  if(!el('vaultUp')){ b.innerHTML='<div id="vaultUp"></div><div id="vaultList"></div>'; }
+  renderVaultUp();
+  var h=vaultJobsHtml()+'<div class="vh">動画保管庫の動画（選ぶと、題名と長さが入った番組を一番下に足します）</div>';
   if(VAULT.err) h+='<div class="vmsg">目録が読めません（'+esc(VAULT.err)+'）。「読み直す」を押してください</div>';
   else if(!VAULT.list) h+='<div class="vmsg">読み込み中…</div>';
   else if(!VAULT.list.length) h+='<div class="vmsg">動画保管庫に動画がまだありません</div>';
@@ -721,13 +737,8 @@ function renderVault(){
     h+='<div class="vi"><div><div class="vt">'+esc(v.title)+'</div><div class="vm"><span>'+esc(lenText(v.sec))+'</span><span>'+esc(v.added||'')+' に入れた</span>'
       +(used?'<span class="tag">番組表に入っています</span>':'')+'</div></div><button class="g small" data-vi="'+i+'">足す</button></div>';
   });
-  // 入れる欄を描き直すとファイルの選択が消えるので、送っていない間は欄だけ残して下を描き直す
-  var up=b.querySelector('.vup');
-  if(up&&keepFile&&!VUP.busy){ var tmp=document.createElement('div'); tmp.innerHTML=h; tmp.replaceChild(up,tmp.querySelector('.vup')); b.innerHTML=''; while(tmp.firstChild) b.appendChild(tmp.firstChild); }
-  else { b.innerHTML=h; if(el('vTitle')) el('vTitle').value=keepTitle; }
-  b.querySelectorAll('[data-vi]').forEach(function(btn){ btn.onclick=function(){ vaultAdd(VAULT.list[+btn.getAttribute('data-vi')]); }; });
-  if(el('vFile')) el('vFile').onchange=function(){ var f=el('vFile').files[0]; if(f&&!el('vTitle').value.trim()) el('vTitle').value=vaultTitleFromName(f.name); };
-  if(el('vGo')) el('vGo').onclick=vaultUpload;
+  var L=el('vaultList'); L.innerHTML=h;
+  L.querySelectorAll('[data-vi]').forEach(function(btn){ btn.onclick=function(){ vaultAdd(VAULT.list[+btn.getAttribute('data-vi')]); }; });
 }
 function vaultProg(v){ return {ytId:'',title:v.title,cat:'',expiresAt:null,telop:'',vid:v.vid,_open:true}; }
 function vaultAdd(v){
@@ -768,7 +779,8 @@ function progRow(p,i,now){
   return '<div class="prog'+(i===now?' now':'')+(p._open?' open':'')+'" data-i="'+i+'">'
     +'<div class="r1" data-op="toggle">'
     +'<div class="no">'+(i+1)+'</div>'
-    +'<img class="thumb" alt="" src="'+(id?'https://i.ytimg.com/vi/'+esc(id)+'/mqdefault.jpg':'')+'" onerror="this.style.visibility=\'hidden\'">'
+    // 見本の絵：YouTube が無い番組は、動画保管庫の thumb.jpg（変換の時に作る・2026-10-22）
+    +'<img class="thumb" alt="" src="'+(id?'https://i.ytimg.com/vi/'+esc(id)+'/mqdefault.jpg':(p.vid?VBASE+esc(p.vid)+'/thumb.jpg':''))+'" onerror="this.style.visibility=\'hidden\'">'
     +'<div class="info"><div class="ttl">'+esc(p.title||'（題名なし）')+'</div><div class="meta">'+meta+'</div></div>'
     +'<div class="ops"><button class="g ic" data-op="up" title="上へ" aria-label="上へ">▲</button><button class="g ic" data-op="down" title="下へ" aria-label="下へ">▼</button></div>'
     +'</div>'

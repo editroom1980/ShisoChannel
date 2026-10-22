@@ -81,13 +81,21 @@ def run(job):
         '-master_pl_name', 'master.m3u8', '-var_stream_map', 'v:0,a:0 v:1,a:1 v:2,a:2', 'out/v%v/index.m3u8'],
         check=True)
     print('変換: %.1f秒' % (time.time() - t1))
+    # 見本の絵（管理アプリの一覧に出す）：動画の1割の所の1コマ。作れなくても変換は失敗にしない
+    try:
+        dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', 'src.bin'],
+                                   capture_output=True, text=True, check=True).stdout.strip() or 0)
+        subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-ss', '%.2f' % (dur * 0.1), '-i', 'src.bin',
+                        '-frames:v', '1', '-vf', 'scale=640:-2', '-q:v', '3', 'out/thumb.jpg'], check=True)
+    except Exception as e:
+        print('見本の絵は作れなかった:', e)
     os.remove('src.bin')
     # 送る（目次は最後に送る＝途中で止まっても、目次だけあって中身が無い状態を作らない）
     files = []
     for root, _, names in os.walk('out'):
         for n in names: files.append(os.path.relpath(os.path.join(root, n), 'out'))
     segs = sorted(f for f in files if f.endswith('.ts'))
-    lists = sorted(f for f in files if f.endswith('.m3u8') and f != 'master.m3u8') + ['master.m3u8']
+    lists = (['thumb.jpg'] if 'thumb.jpg' in files else []) + sorted(f for f in files if f.endswith('.m3u8') and f != 'master.m3u8') + ['master.m3u8']
     if 'master.m3u8' not in files or not segs: raise RuntimeError('変換の出来上がりが足りない')
     def put(f):
         for i in range(4):
