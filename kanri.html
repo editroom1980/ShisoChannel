@@ -648,7 +648,7 @@ function vaultUpHtml(){
     +'<div class="row"><input type="file" id="vFile" accept="video/*,.mp4,.mov,.m4v"></div>'
     +'<div><label class="l">題名（ファイル名から入ります。直せます）</label><input type="text" id="vTitle"></div>'
     +'<div class="row"><button class="gold small" id="vGo">動画保管庫に入れる</button><span class="vprog" id="vProg"></span></div>'
-    +'<div class="note">送り終わると、自動で配信用に変換します（目安：番組の長さと同じくらい）。終わると下の一覧に出ます。送っている間は、この画面を閉じないでください。</div></div>';
+    +'<div class="note">送り終わると、自動で配信用に変換します（目安：番組の長さの2〜3倍。11分の番組で約28分）。終わると下の一覧に出ます。送っている間は、この画面を閉じないでください。</div></div>';
 }
 var VST={uploading:['送っている途中','wait'],queued:['変換待ち','wait'],converting:['変換中','wait'],done:['完了','ok'],failed:['失敗','ng'],canceled:['取り消し','ng']};
 function vaultJobsHtml(){
