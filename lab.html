@@ -2292,7 +2292,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.43-lab（通信の途切れ対策）</div>
+    <div class="ps-version">version 4.44-lab（裏に回ったら止める）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -8706,6 +8706,18 @@ function init(){
     _lastW=window.innerWidth;
     scheduleRelayout();
   });
+  // ★2026-10-24 別のアプリに切り替えたら（裏に回ったら）止める：スマホ・タブレット・テレビ。
+  //   YouTubeの番組はスマホではYouTube側が自分で止まるが、自前の動画（動画保管庫）は誰も止めず、
+  //   裏で音が鳴り続けた（ユーザー実機）。止めても userWantsPlay は変えないので、戻れば resumeIfWanted が続きを流す。
+  //   パソコンは今までどおり（タブを切り替えても YouTube と同じく流れ続ける）
+  function pauseInBackground(){
+    var phoneLike=false;
+    try{ phoneLike=IS_TVAPP||(navigator.maxTouchPoints||0)>0||/iP(hone|ad|od)|Android/.test(navigator.userAgent); }catch(_){}
+    if(!phoneLike) return;
+    try{ if(OWN.v&&!OWN.v.paused) OWN.v.pause(); }catch(_){}
+    if(!(ytPlayer && ytReady)) return;
+    try{ var st=ytPlayer.getPlayerState(); if(st===1||st===3) ytPlayer.pauseVideo(); }catch(_){}
+  }
   // スポンサーリンクから戻った時に再生を再開（タブ復帰・bfキャッシュ復元）
   // userWantsPlay基準: iOSが自動一時停止してもユーザーの再生意図があれば再開
   function resumeIfWanted(){
@@ -8726,8 +8738,9 @@ function init(){
     },900);
   }
   document.addEventListener('visibilitychange',function(){
-    if(!document.hidden) resumeIfWanted();
+    if(!document.hidden) resumeIfWanted(); else pauseInBackground();
   });
+  window.addEventListener('pagehide',function(){ pauseInBackground(); });
   window.addEventListener('pageshow',function(e){ resumeIfWanted(); });
   window.addEventListener('focus',function(){ resumeIfWanted(); });
   // Now Playingセッション抑制（Dynamic Islandインジケーター非表示の試み）
