@@ -2292,7 +2292,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.42-lab（試験用の仕組みを公開サイトで止める）</div>
+    <div class="ps-version">version 4.43-lab（通信の途切れ対策）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -6934,7 +6934,9 @@ var OWN={
   map:{},            // ytId → vid（番組表から作る）
   v:null, hls:null, raw:null,
   active:false, vid:'', ytId:'', st:-1, req:'',
-  failed:{},         // この起動中に読めなかった vid（以後はYouTubeで流す）
+  failed:{},         // 読めなかった vid → {why,t}。印は OWN_FAIL_TTL で消える（_ownMarked）
+  force:'',          // 番組表から選ばれた番組（印があっても読み直す）
+  waitNet:null,      // 通信が戻るのを待っている番組 {id,t,timer}
   vol:100, muted:false, unlocked:false, debug:false, testMap:'',
   apple:(function(){ var ua=navigator.userAgent||''; return /iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Safari\//.test(ua)&&!/Chrome|Chromium|CriOS|Android/.test(ua)); })(),
   hlsSrc:'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.15/hls.min.js',
@@ -7098,8 +7100,57 @@ function _ownLoad(ytId,vid,start,auto,raw){
   }
   return true;
 }
-// 自前の動画が読めなかった：この起動中はその動画をあきらめ、同じ番組をYouTubeで同じ位置から流し直す
+// 自前の動画が読めなかった：その動画にしばらく印を付け、同じ番組をYouTubeで同じ位置から流し直す
 function _ownOnly(id){ return typeof id==='string'&&id.indexOf('own~')===0; }
+// ★2026-10-24 印は時間で消す。以前は「ページを開き直すまで消えない」作りで、通信が一度切れると
+//   自前の動画が全部使えなくなり、番組表から押しても「本日の放送は終了しました」になった（ユーザー実機・手元で再現）。
+//   印は3分で消え、通信が戻った時・画面をつけ直した時にも消す
+var OWN_FAIL_TTL=3*60*1000;
+function _ownMarked(vid){
+  var f=OWN.failed[vid]; if(!f) return false;
+  if(!(Date.now()-f.t<OWN_FAIL_TTL)){ delete OWN.failed[vid]; return false; }
+  return true;
+}
+function _ownClearMarks(){ OWN.failed={}; }
+// 通信が生きているかを、置き場の目録（704バイト・記憶されない）を読んで確かめる。6秒で答えが無ければ切れている扱い
+function _ownProbe(cb){
+  var done=false; function fin(ok){ if(done) return; done=true; cb(ok); }
+  setTimeout(function(){ fin(false); },6000);
+  try{ fetch(OWN.base+'catalog.json?p='+Date.now(),{cache:'no-store'}).then(function(r){ fin(!!r.ok); },function(){ fin(false); }); }catch(_){ fin(false); }
+}
+// 通信が切れている間は、番組を次々に送らない。つながったら同じ番組を続きから流す
+function _ownWaitNet(ytId,t){
+  _ownWaitEnd();
+  OWN.waitNet={id:ytId,t:t,timer:null};
+  try{ clearSpinnerTimer(); showSpinner(true,'通信を待っています。つながると続きを流します'); }catch(_){}
+  OWN.waitNet.timer=setTimeout(_ownWaitAgain,5000);
+}
+function _ownWaitEnd(){ if(OWN.waitNet){ clearTimeout(OWN.waitNet.timer); OWN.waitNet=null; } }
+function _ownWaitAgain(){
+  var w=OWN.waitNet; if(!w) return;
+  clearTimeout(w.timer);
+  _ownProbe(function(ok){
+    if(OWN.waitNet!==w) return;          // 待っている間に別の番組が選ばれた
+    if(!ok){ w.timer=setTimeout(_ownWaitAgain,5000); return; }
+    OWN.waitNet=null; _ownClearMarks();
+    // 放送の流れの中なら、いま放送中の番組へ。24時を過ぎていたり番組表から選んだ番組なら、同じ番組を続きから
+    var pos=null; try{ pos=(!isManual&&!isOff)?nowPos():null; }catch(_){}
+    if(pos){ playSchedule(pos.c,pos.p); return; }
+    try{ ytPlayer.loadVideoById({videoId:w.id,startSeconds:Math.floor(w.t||0),suggestedQuality:'hd1080'}); }catch(_){}
+  });
+}
+// 番組表から選んだ番組が読めなかった時は、勝手に別の番組へ飛ばさず、そう知らせる
+function _ownCantPlay(){
+  try{ clearSpinnerTimer(); showSpinner(false); }catch(_){}
+  var ov=document.getElementById('loaderr-ov'); if(!ov) return;
+  document.getElementById('loaderr-ttl').textContent='読み込めませんでした';
+  document.getElementById('loaderr-sub').textContent='番組表から、もう一度選んでください';
+  document.getElementById('reload-btn').style.display='none';
+  ov.style.display='flex'; _ownCantPlay.on=true;
+}
+function _ownCantHide(){ if(_ownCantPlay.on){ _ownCantPlay.on=false; try{ showLoadErr('hide'); }catch(_){} } }
+window.addEventListener('online',function(){ _ownClearMarks(); if(OWN.waitNet) _ownWaitAgain(); });
+document.addEventListener('visibilitychange',function(){ if(!document.hidden){ _ownClearMarks(); if(OWN.waitNet) _ownWaitAgain(); } });
 // ★2026-10-22 YouTube の無い番組が読めない時は、予備が無いので次の番組へ進む。
 //   通信が切れている等で続けて読めない時は、番組を次々に飛ばし続けないよう、番組の数を超えたら止めて知らせる。
 //   何か1本でも再生が始まれば（_ytOnState の 1）数え直す
@@ -7110,13 +7161,22 @@ function _ownSkip(){
 }
 function _ownFail(why){
   if(!OWN.active) return;
-  var vid=OWN.vid, ytId=OWN.ytId, raw=OWN.raw, t=0;
+  var vid=OWN.vid, ytId=OWN.ytId, raw=OWN.raw, t=0, manual=isManual;
   try{ t=OWN.v.currentTime||0; }catch(_){}
-  OWN.failed[vid]=why||'?';
-  if(_ownOnly(ytId)){ try{ console.log('動画保管庫の動画が読めず、YouTubeの予備も無いので次の番組へ',vid,why); }catch(_){} _ownOff(); _ownSkip(); return; }
-  try{ console.log('自前の動画が読めないのでYouTubeで流す',vid,why); }catch(_){}
   _ownOff();
-  try{ raw.loadVideoById({videoId:ytId,startSeconds:Math.floor(t>0?t:(vCurrentSec||0)),suggestedQuality:'hd1080'}); }catch(_){}
+  try{ clearSpinnerTimer(); showSpinner(true,'番組を読み込んでいます...'); }catch(_){}
+  // 通信が切れているのか、この動画だけが読めないのかを見分けてから決める（切れているなら印も付けない）
+  _ownProbe(function(ok){
+    if(OWN.req!==ytId||OWN.active) return;   // 確かめている間に別の番組が選ばれた
+    if(!ok){ try{ console.log('通信が切れているので、つながるまで待つ',vid,why); }catch(_){} _ownWaitNet(ytId,t); return; }
+    OWN.failed[vid]={why:why||'?',t:Date.now()};
+    if(_ownOnly(ytId)){
+      if(manual){ try{ console.log('選ばれた番組が読めない（通信は生きている）',vid,why); }catch(_){} _ownCantPlay(); return; }
+      try{ console.log('動画保管庫の動画が読めず、YouTubeの予備も無いので次の番組へ',vid,why); }catch(_){} _ownSkip(); return;
+    }
+    try{ console.log('自前の動画が読めないのでYouTubeで流す',vid,why); }catch(_){}
+    try{ raw.loadVideoById({videoId:ytId,startSeconds:Math.floor(t>0?t:(vCurrentSec||0)),suggestedQuality:'hd1080'}); }catch(_){}
+  });
 }
 // ytPlayer の振り分け役。YouTubeの持つ働きは全部そのまま通し、自前の番組の間だけ自前の動画を動かす
 function _ownWrap(raw){
@@ -7125,11 +7185,12 @@ function _ownWrap(raw){
   for(var k in raw){ (function(k){ if(typeof raw[k]==='function') f[k]=function(){ return raw[k].apply(raw,arguments); }; })(k); }
   function idOf(a){ return (a&&typeof a==='object')?a.videoId:a; }
   function startOf(a,b){ return (a&&typeof a==='object')?(a.startSeconds||0):(b||0); }
-  function vidFor(id){ var x=OWN.map[id]; return (x&&!OWN.failed[x])?x:''; }
+  // 番組表から選ばれた番組（OWN.force）は、印があっても読み直す＝押せば必ずもう一度試す
+  function vidFor(id){ var x=OWN.map[id]; if(!x) return ''; if(OWN.force===id) return x; return _ownMarked(x)?'':x; }
   // YouTube の無い番組（own~）は、動画保管庫で流せなければ YouTube へ渡さず次の番組へ（_ownSkip）
   // OWN.req＝いま選ばれている番組。YouTube の無い番組の間は、再生の指示を裏のYouTube（前の番組）へ渡さない
-  f.loadVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.req=id; if(vid&&_ownLoad(id,vid,startOf(a,b),true,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} _ownSkip(); return; } return raw.loadVideoById.apply(raw,arguments); };
-  f.cueVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.req=id; if(vid&&_ownLoad(id,vid,startOf(a,b),false,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} return; } return raw.cueVideoById.apply(raw,arguments); };
+  f.loadVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.force=''; OWN.req=id; _ownWaitEnd(); _ownCantHide(); if(vid&&_ownLoad(id,vid,startOf(a,b),true,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} _ownSkip(); return; } return raw.loadVideoById.apply(raw,arguments); };
+  f.cueVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.force=''; OWN.req=id; _ownWaitEnd(); _ownCantHide(); if(vid&&_ownLoad(id,vid,startOf(a,b),false,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} return; } return raw.cueVideoById.apply(raw,arguments); };
   f.playVideo=function(){ if(OWN.active){ _ownPlay(); return; } if(_ownOnly(OWN.req)) return; return raw.playVideo(); };
   f.pauseVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.pauseVideo(); };
   f.stopVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.stopVideo(); };
@@ -7900,6 +7961,7 @@ function playSchedule(c,p){
 // ★ Safari対策：ユーザータップのコールチェーン内で直接呼ぶ
 function playManual(pIdx){
   clearEndTimer();isManual=true;isOff=false;userWantsPlay=true;
+  try{ OWN.force=CYCLE[pIdx].ytId; }catch(_){}   // 押した番組は、前に読めなかった印があってももう一度試す
   showEnded(false);
   var pos=nowPos();var c=pos?pos.c:0;
   vC=c;vP=pIdx;
@@ -7910,6 +7972,7 @@ function playManual(pIdx){
 
 function gotoOffAir(){
   try{statsSessionEnd();}catch(_){}
+  try{ _ownCantHide(); _ownWaitEnd(); }catch(_){}
   clearEndTimer();closeExpand();
   isOff=true;isManual=false;userWantsPlay=false;
   pauseVideo();
@@ -7927,6 +7990,45 @@ function gotoOffAir(){
   if(pb){pb.classList.add('no-transition');pb.style.width='100%';requestAnimationFrame(function(){pb.classList.remove('no-transition');});}
   document.querySelectorAll('.prow').forEach(function(r){r.classList.remove('active');});
 }
+
+// ══ つけっぱなしの端末も、新しい版を読み直す（2026-10-24）══
+// テレビは 10/22 に読み込んだ 3.90 のまま2日間読み直さず、本番を直しても届いていなかった。
+// 30分ごと（画面をつけ直した時も）に自分のページの版番号を読み、違っていれば
+// 見ている人の邪魔にならない時だけ読み直す。番組を見ている間は決して読み直さない。
+//   ・放送終了の画面で、1分間だれも触っていない時 → 読み直したあとも放送終了の画面に戻す
+//   ・起動画面のまま、裏に回っている時か、10分間だれも触っていない時
+// 同じ版への読み直しは30分に1回まで（記憶された古いページが出ても、繰り返し読み直さない）
+var _verMine='', _verNew='', _verLastCheck=0, _verLastTouch=Date.now();
+['pointerdown','keydown','touchstart','wheel'].forEach(function(ev){
+  try{ document.addEventListener(ev,function(){ _verLastTouch=Date.now(); },{passive:true,capture:true}); }catch(_){}
+});
+function _verRead(h){ var m=/class="ps-version">\s*([^<]*?)\s*</.exec(h||''); return m?m[1]:''; }
+function _verCheck(force){
+  if(!force&&Date.now()-_verLastCheck<30*60*1000) return;
+  _verLastCheck=Date.now();
+  if(!_verMine){ var el=document.querySelector('.ps-version'); _verMine=el?el.textContent.trim():''; }
+  if(!_verMine) return;
+  try{ fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'})
+    .then(function(r){ return r.ok?r.text():''; })
+    .then(function(h){ var v=_verRead(h); if(v&&v!==_verMine){ _verNew=v; _verTry(); } })
+    .catch(function(){}); }catch(_){}
+}
+function _verTry(){
+  if(!_verNew) return;
+  var idle=Date.now()-_verLastTouch, off=false;
+  if(hasPoweredOn&&isOff&&idle>=60*1000) off=true;
+  else if(!(!hasPoweredOn&&(document.hidden||idle>=10*60*1000))) return;
+  try{
+    var last=JSON.parse(localStorage.getItem('shiso_verup_last')||'null');
+    if(last&&last.v===_verNew&&Date.now()-last.t<30*60*1000) return;
+    localStorage.setItem('shiso_verup_last',JSON.stringify({v:_verNew,t:Date.now()}));
+    if(off) localStorage.setItem('shiso_verup_off',String(Date.now()));
+  }catch(_){ return; }   // 覚えておけない端末では読み直さない（繰り返し読み直す恐れがあるため）
+  try{ console.log('新しい版を読み直す',_verMine,'→',_verNew); }catch(_){}
+  location.reload();
+}
+setInterval(function(){ _verCheck(false); _verTry(); },60*1000);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden&&Date.now()-_verLastCheck>10*60*1000) _verCheck(true); });
 
 // 復旧用: 再生が始まらず固まった場合（特にPCのbfキャッシュ復元時の黒画面）に
 // 現在の番組を正しい位置で再ロードする
@@ -8308,7 +8410,8 @@ function periodicCheck(){
     //   「見ている人」なので切らない（以前は一時停止するとその場で放送終了の画面になった）
     if(!isOff){
       var stx=-99; try{ stx=ytPlayer.getPlayerState(); }catch(_){}
-      if(stx!==1 && stx!==2 && stx!==3){ gotoOffAir(); } // 再生・一時停止・バッファ中でなければ終了画面へ
+      // 通信が戻るのを待っている間（OWN.waitNet）も「見ている人」なので切らない
+      if(stx!==1 && stx!==2 && stx!==3 && !OWN.waitNet){ gotoOffAir(); } // 再生・一時停止・バッファ中でなければ終了画面へ
     }
     return;
   }
@@ -8654,6 +8757,12 @@ function init(){
       var _rt=parseInt(localStorage.getItem('shiso_resume_t')||'0',10);
       localStorage.removeItem('shiso_resume_t');
       if(isTvPcMode() && _rt && (Date.now()-_rt) < 30*60*1000) _resume=true;
+    }catch(_){}
+    // 放送終了の画面で新しい版を読み直した直後（_verTry）：放送終了の画面に戻す
+    try{
+      var _vu=parseInt(localStorage.getItem('shiso_verup_off')||'0',10);
+      localStorage.removeItem('shiso_verup_off');
+      if(_vu && (Date.now()-_vu) < 3*60*1000) _resume=true;
     }catch(_){}
     if(_resume){
       var _resumeWait=function(){
