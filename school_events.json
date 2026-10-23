@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-22T21:26:05+09:00",
+ "updated": "2026-10-23T13:45:48+09:00",
  "items": [
   {
    "tag": "学校",
@@ -10,6 +10,16 @@
    "when": "2026-10-31",
    "place": "山崎小学校",
    "no": "syamasaki-es1031"
+  },
+  {
+   "tag": "学校",
+   "title": "千種小学校 周辺学校のようす 【千中ニュース】文化祭練習",
+   "url": "https://city-shiso-chikusa-es.edumap.jp/event",
+   "src": "千種小学校",
+   "ts": null,
+   "when": "2026-10-23",
+   "place": "千種小学校",
+   "no": "schikusa-es1023"
   },
   {
    "tag": "学校",
