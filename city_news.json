@@ -1,27 +1,7 @@
 {
- "updated": "2026-10-23T23:26:52+09:00",
+ "updated": "2026-10-24T03:43:05+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "10/23 福祉施設製品販売会 市役所で",
-   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/shogaifukushi/oshirase/1461754625544.html",
-   "date": "10月23日",
-   "ts": "2026-10-23T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-10-23",
-   "place": "宍粟市役所1階市民ロビー"
-  },
-  {
-   "tag": "学校",
-   "title": "10/23 千種小学校 周辺学校のようす 【千中ニュース】文化祭練習",
-   "url": "https://city-shiso-chikusa-es.edumap.jp/event",
-   "date": "10月23日",
-   "ts": "2026-10-23T00:00:00+09:00",
-   "src": "千種小学校",
-   "when": "2026-10-23",
-   "place": "千種小学校"
-  },
   {
    "tag": "催し",
    "title": "10/24 兵庫県保育大会",
@@ -120,6 +100,26 @@
    "src": "山崎文化会館",
    "when": "2026-11-03",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "11/3 いちのみやふるさとまつり 11月3日開催",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyashiminkyokumachizukurisuishinka/ibento/news/7608.html",
+   "date": "11月3日",
+   "ts": "2026-11-03T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-11-03",
+   "place": "スポニックパーク一宮"
+  },
+  {
+   "tag": "学校",
+   "title": "11/9 山崎西中学校 オープンスクール",
+   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
+   "date": "11月9日",
+   "ts": "2026-11-09T00:00:00+09:00",
+   "src": "山崎西中学校",
+   "when": "2026-11-09",
+   "place": "山崎西中学校"
   }
  ]
 }
