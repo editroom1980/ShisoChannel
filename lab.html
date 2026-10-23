@@ -2292,7 +2292,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.41-lab（ダウンロード版の中を見分ける）</div>
+    <div class="ps-version">version 4.42-lab（試験用の仕組みを公開サイトで止める）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4713,7 +4713,7 @@ function attachNewsSwipe(el){
   el.addEventListener('click',function(){
     if(_newsTapSuppress || isTapBlocked()) return;
     var L=newsDisplayList(); var n=L[cityNewsIndex];
-    if(n && n.url){
+    if(n && n.url && /^https?:\/\//i.test(n.url)){   // 行き先は http/https だけ（取り込み元に javascript: 等を仕込まれても動かさない。2026-10-24）
       // TV/PCはページ内の窓で開く（放送を離れない・動画は一時停止→もどるで再開）
       // ★テレビ用アプリは、外のサイトをアプリが「別の層」で開く（相手を選ばない）。
       //   ページ側は止めずにそのまま進める＝学校の行事ページ等もどこでも開ける
@@ -6483,12 +6483,14 @@ function schedSig(d){
 // 番組表は常にFirestoreが正。コード側に固定番組表は持たない。
 // 検証用（lab.html だけ）：?testprog=名前|秒|題名,… で、YouTube の無い番組（動画保管庫だけ）の番組表を作って流す。
 // 管理アプリで本当に入れた時と同じ形（ytId 無し・vid と題名あり）で確かめるため。Firestore の番組表は読まない
+// ★題名は公開サイトでは動画の名前（vid）に固定する。好きな文を題名に出せると、リンク1本で
+//   しそチャンNETの画面に偽の知らせを出せてしまう（2026-10-24 セキュリティ調査）。手元の試験サーバーでは今までどおり
 function _testProgs(){
   try{
     if(!/lab\.html/.test(location.pathname)) return null;
     var m=location.search.match(/[?&]testprog=([^&]+)/); if(!m) return null;
     var cyc=decodeURIComponent(m[1]).split(',').map(function(x){ var a=x.split('|');
-      return {ytId:'',vid:a[0],sec:parseFloat(a[1]),title:a[2]||a[0],cat:'検証'}; });
+      return {ytId:'',vid:a[0],sec:parseFloat(a[1]),title:(_stOnPublicHost()?'':a[2])||a[0],cat:'検証'}; });
     var d={airStart:6,airEnd:24,cycle:cyc};
     return validSchedule(d)===''?d:null;
   }catch(_){ return null; }
@@ -6941,11 +6943,15 @@ var OWN={
 };
 // 試験用（labで確かめる時だけ）：?vbase=http://…/ で置き場を、?vmap=ytId:vid,…（*:vid で全番組）で番組との対応を差し替える。
 // ?owndebug=1 で画面の左下に状態を出し、自前の動画は消音で流す（試験の音を出さないため）
+// ★vbase・vmap は手元の試験サーバーで開いた時だけ効く。公開サイト（shisochan.net）では無視する
+//   （2026-10-24 セキュリティ調査：リンク1本で、しそチャンNETの画面のまま外のサーバーの動画を流せた）
 (function(){
   try{
     var q=location.search;
-    var mb=q.match(/[?&]vbase=([^&]+)/); if(mb){ var b=decodeURIComponent(mb[1]); if(/^https?:\/\/[^\s"'<>]+\/$/.test(b)) OWN.base=b; }
-    var mm=q.match(/[?&]vmap=([^&]+)/); if(mm){ OWN.testMap=decodeURIComponent(mm[1]); }
+    if(!_stOnPublicHost()){
+      var mb=q.match(/[?&]vbase=([^&]+)/); if(mb){ var b=decodeURIComponent(mb[1]); if(/^https?:\/\/[^\s"'<>]+\/$/.test(b)) OWN.base=b; }
+      var mm=q.match(/[?&]vmap=([^&]+)/); if(mm){ OWN.testMap=decodeURIComponent(mm[1]); }
+    }
     if(/[?&]owndebug=1/.test(q)) OWN.debug=true;
   }catch(_){}
 })();

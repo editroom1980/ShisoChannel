@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="しそチャン管理">
 <link rel="apple-touch-icon" href="icon-kanri-180.png">
 <title>しそチャンNET 管理</title>
+<script>/* 他のサイトの枠の中に入れられたら、中身を出さない（ボタンを押させる罠を防ぐ。GitHub Pagesでは見出しで止められないため） */
+if(window.top!==window.self){document.documentElement.style.display='none';try{window.top.location.replace(window.self.location.href);}catch(_){}}</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap');
 /* ── アプリ本体（index.html）と同じ色・書体。管理アプリだけの色は作らない ── */
@@ -390,11 +392,11 @@ function fsVal(v){
   if('doubleValue' in v)return v.doubleValue;
   if('booleanValue' in v)return v.booleanValue;
   if('nullValue' in v)return null;
-  if('mapValue' in v){var o={},f=(v.mapValue&&v.mapValue.fields)||{};for(var k in f)o[k]=fsVal(f[k]);return o;}
+  if('mapValue' in v){var o={},f=(v.mapValue&&v.mapValue.fields)||{};for(var k in f)if(k!=='__proto__')o[k]=fsVal(f[k]);return o;}   // __proto__ は捨てる（外から書ける記録で土台を書き換えさせない）
   if('arrayValue' in v){var a=(v.arrayValue&&v.arrayValue.values)||[];return a.map(fsVal);}
   return null;
 }
-function fields(doc){var d={},f=(doc&&doc.fields)||{};for(var k in f)d[k]=fsVal(f[k]);return d;}
+function fields(doc){var d={},f=(doc&&doc.fields)||{};for(var k in f)if(k!=='__proto__')d[k]=fsVal(f[k]);return d;}
 
 // ── ログイン（Firebase Authentication・メール/パスワード）。1時間で切れる札は自動で取り直す ──
 function showLogin(){el('login').hidden=false;el('login').scrollIntoView({block:'start'});setTimeout(function(){try{el(el('em').value?'pw':'em').focus();}catch(_){}},50);}
@@ -1421,6 +1423,9 @@ function regFunnelHtml(reg){
   h+='</table></div><div class="note" style="margin-top:8px">よく通る画面（到達5以上）で半分以上が消えている行は赤。そこが次に直すべき場所です。</div>';
   return card('登 録 案 内',h);
 }
+// 計測の記録は誰でも書き込める（ログイン不要）。数字の欄に文字を仕込まれても画面に入らないよう、
+// 数字でないものは必ず0にしてから足す（2026-10-24 セキュリティ調査：文字のまま画面に入れていた）
+function num(x){return (typeof x==='number'&&isFinite(x))?x:0;}
 function render(kind,days,list,devices){
   devices=devices||[];
   var exclDev=devices.filter(function(d){return !!d.excl;}).length;
@@ -1430,10 +1435,10 @@ function render(kind,days,list,devices){
   var prog={},ban={},hours={},reg={},anyData=false;
   list.forEach(function(d){
     if(!d)return;anyData=true;
-    var p=d.programs||{};for(var id in p){prog[id]=prog[id]||{v:0,s:0};prog[id].v+=(p[id].v||0);prog[id].s+=(p[id].s||0);}
-    var b=d.banners||{};for(var nm in b){ban[nm]=ban[nm]||{imp:0,clk:0};ban[nm].imp+=(b[nm].imp||0);ban[nm].clk+=(b[nm].clk||0);}
-    var h=d.hours||{};for(var hk in h){hours[hk]=(hours[hk]||0)+(h[hk]||0);}
-    var g=d.reg||{};for(var rk in g){reg[rk]=(reg[rk]||0)+(g[rk]||0);}
+    var p=d.programs||{};for(var id in p){var pi=p[id]||{};prog[id]=prog[id]||{v:0,s:0};prog[id].v+=num(pi.v);prog[id].s+=num(pi.s);}
+    var b=d.banners||{};for(var nm in b){var bi=b[nm]||{};ban[nm]=ban[nm]||{imp:0,clk:0};ban[nm].imp+=num(bi.imp);ban[nm].clk+=num(bi.clk);}
+    var h=d.hours||{};for(var hk in h){hours[hk]=(hours[hk]||0)+num(h[hk]);}
+    var g=d.reg||{};for(var rk in g){reg[rk]=(reg[rk]||0)+num(g[rk]);}
   });
   var label=(kind==='7d')?('直近7日 '+days[days.length-1]+' 〜 '+days[0]):days[0];
   var devNote='<div class="note" style="margin-top:8px">累計ユニーク端末（これまでにアプリを使った端末）：<b>'+totalDev+'</b>台'+(exclDev>0?('　制作側の端末 '+exclDev+' 台は含みません'):'')
@@ -1535,6 +1540,17 @@ function selfTest(){
   t('切り替えの秒数は3〜120の整数だけ通る',validInterval(7)&&validInterval(120)&&!validInterval(2)&&!validInterval(121)&&!validInterval(7.5)&&!validInterval('7'));
   var rt=fsVal(fsEnc({a:1,b:'x',c:true,d:null,e:[1,'y'],f:{g:2}}));
   t('Firestore の型付き値の往復',rt.a===1&&rt.b==='x'&&rt.c===true&&rt.d===null&&rt.e[1]==='y'&&rt.f.g===2);
+  // 計測の記録は誰でも書ける＝数字の欄に命令を仕込まれても画面に入らない（2026-10-24）
+  var _rp=el('report').innerHTML, _bad='<img src=x data-xss=1>';
+  render('day',['2026-10-24'],[{programs:{a:{v:_bad,s:_bad},b:{v:2,s:60}},banners:{c:{imp:_bad,clk:1}},hours:{'9':_bad,'10':3},reg:{at_start:_bad,ok:1}}],[]);
+  var _inj=el('report').querySelectorAll('[data-xss]').length, _txt=el('report').textContent;
+  t('レポート：数字の欄に命令を仕込まれても画面に入らない（文字は0として数える）',_inj===0&&_txt.indexOf('img src')<0);
+  render('day',['2026-10-24'],[{programs:{b:{v:2,s:60}},hours:{'10':3},reg:{}}],[]);
+  var _kv={}; [].forEach.call(el('report').querySelectorAll('.kpi'),function(k){var l=k.querySelector('.l'),n=k.querySelector('.n'); if(l&&n)_kv[l.textContent]=n.textContent;});
+  t('レポート：ふつうの数字はそのまま出る（総視聴数2）',_kv['総視聴数(30秒以上)']==='2');
+  el('report').innerHTML=_rp;
+  var _pf=fsVal(JSON.parse('{"mapValue":{"fields":{"__proto__":{"mapValue":{"fields":{"polluted":{"stringValue":"x"}}}},"ok":{"integerValue":"1"}}}}'));   // 届く形（JSON）で作る
+  t('記録の読み取り：__proto__ という欄は捨てる（土台を書き換えさせない）',({}).polluted===undefined&&_pf.polluted===undefined&&_pf.ok===1);
   el('selftest').hidden=false;el('selftestOut').textContent=out.join('\n')+'\n\n'+(ng?('★ 不合格 '+ng+' 件'):'◯ 自己検査：全部合格（'+out.length+'項目）');
   return ng===0;
 }

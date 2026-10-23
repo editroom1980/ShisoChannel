@@ -284,7 +284,10 @@ def main():
             表示 = '%d月%d日' % (d.month, d.day)
             ts = it['ts']
             題 = it['title']
-        欄 = {'tag': it['tag'], 'title': 題, 'url': it['url'],
+        url = it.get('url') or ''
+        if not re.match(r'^https?://', url, re.I):   # 行き先は http/https だけ（取り込み元に javascript: 等が入っても通さない。2026-10-24）
+            url = ''
+        欄 = {'tag': it['tag'], 'title': 題, 'url': url,
               'date': 表示, 'ts': ts, 'src': it.get('src', '宍粟市公式サイト')}
         if it.get('when'):
             欄['when'] = it['when']                 # 開催日（アプリで「開催」と出せる）
