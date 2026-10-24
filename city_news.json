@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-24T09:01:05+09:00",
+ "updated": "2026-10-24T13:32:34+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
   {
@@ -11,16 +11,6 @@
    "src": "山崎文化会館",
    "when": "2026-10-24",
    "place": "山崎文化会館"
-  },
-  {
-   "tag": "イベント",
-   "title": "10/24 いちのぴあで「えほんのじかん」",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyasyogaigakushujimusho/ibento/14037.html",
-   "date": "10月24日",
-   "ts": "2026-10-24T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-10-24",
-   "place": "いちのぴあ 会議室1"
   },
   {
    "tag": "催し",
@@ -120,6 +110,16 @@
    "src": "山崎西中学校",
    "when": "2026-11-09",
    "place": "山崎西中学校"
+  },
+  {
+   "tag": "学校",
+   "title": "11/9 一宮南中学校 オープンスクール",
+   "url": "https://city-shiso-ichinomiyaminami-jhs.edumap.jp/event",
+   "date": "11月9日",
+   "ts": "2026-11-09T00:00:00+09:00",
+   "src": "一宮南中学校",
+   "when": "2026-11-09",
+   "place": "一宮南中学校"
   }
  ]
 }
