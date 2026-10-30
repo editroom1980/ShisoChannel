@@ -1,17 +1,7 @@
 {
- "updated": "2026-10-30T11:38:13+09:00",
+ "updated": "2026-10-30T17:58:55+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "10/30 食育講演会 参加者募集 申込は10月22日まで",
-   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/hokenfukushi/ibento/1534400435675.html",
-   "date": "10月30日",
-   "ts": "2026-10-30T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-10-30",
-   "place": "宍粟市役所4階会議室"
-  },
   {
    "tag": "学校",
    "title": "10/31 山崎小学校 ささの子発表会",
@@ -93,15 +83,6 @@
   },
   {
    "tag": "イベント",
-   "title": "11/14 丸太卓球大会 参加者募集 10月30日まで",
-   "url": "http://www.city.shiso.lg.jp/soshiki/machizukuri-bu/shiminnkyoudou/tantojoho/supotu/boshu/8426.html",
-   "date": "11月14日",
-   "ts": "2026-11-14T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-11-14"
-  },
-  {
-   "tag": "イベント",
    "title": "11/17 最新デジタル活用と実践的な事業展開を学ぶ 起業準備セミナー 受講生を募集",
    "url": "https://www.city.shiso.lg.jp/soshiki/shichokoshitsu/tiikisouseika/ibennto/20261014.html",
    "date": "11月17日",
@@ -119,6 +100,26 @@
    "src": "山崎文化会館",
    "when": "2026-11-18",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "催し",
+   "title": "11/19 宍粟市やまさき文化大学",
+   "url": "http://www.yamabun.org/%e5%ae%8d%e7%b2%9f%e5%b8%82%e3%82%84%e3%81%be%e3%81%95%e3%81%8d%e6%96%87%e5%8c%96%e5%a4%a7%e5%ad%a6-12/",
+   "date": "11月19日",
+   "ts": "2026-11-19T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-11-19",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "11/21 移動図書館ささゆり号が一宮に",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyasyogaigakushujimusho/ibento/idotosyokan.html",
+   "date": "11月21日",
+   "ts": "2026-11-21T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-11-21",
+   "place": "宍粟市一宮町内"
   }
  ]
 }
