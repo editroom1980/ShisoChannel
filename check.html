@@ -2296,7 +2296,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.45-lab（登録案内を作り直し）</div>
+    <div class="ps-version">version 4.46-lab（登録案内の絵をそろえた）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3870,22 +3870,22 @@ var _rbBtn=function(x,y){ return '<circle cx="'+x+'" cy="'+y+'" r="20" fill="#ff
 var _rbAddr='<rect x="60" y="11" width="220" height="42" rx="21" fill="#fff"/>'+
   '<text x="170" y="37" text-anchor="middle" font-size="15" font-weight="600" fill="#1a2520">shisochan.net</text>';
 var _rbBack='<path d="M37 24l-8 8 8 8" fill="none" stroke="#9aa7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
-var _rbTabs='<rect x="298" y="25" width="12" height="12" rx="3" fill="none" stroke="#1a2520" stroke-width="1.9"/>'+
-  '<path d="M303 22h8a3 3 0 0 1 3 3v8" fill="none" stroke="#1a2520" stroke-width="1.9" stroke-linecap="round"/>';
+var _rbTabs='<rect x="298" y="27.5" width="12" height="12" rx="3" fill="none" stroke="#1a2520" stroke-width="1.9"/>'+
+  '<path d="M303 24.5h8a3 3 0 0 1 3 3v8" fill="none" stroke="#1a2520" stroke-width="1.9" stroke-linecap="round"/>';
 var _rbLines=function(x,c){ return '<path d="M'+(x-9)+' 26h18M'+(x-9)+' 32h18M'+(x-9)+' 38h11" fill="none" stroke="'+c+'" stroke-width="2.3" stroke-linecap="round"/>'; };
-var _rbShare=function(x){ return '<path d="M'+x+' 20v14M'+(x-4.5)+' 24.5 '+x+' 20l4.5 4.5M'+(x-4)+' 29h-3v13h14V29h-3" fill="none" stroke="#1a2520" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'; };
+var _rbShare=function(x){ return '<path d="M'+x+' 21v14M'+(x-4.5)+' 25.5 '+x+' 21l4.5 4.5M'+(x-4)+' 30h-3v13h14V30h-3" fill="none" stroke="#1a2520" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'; };
 var REG_BAR={
- lines: regBarSvg(_rbBtn(34,32)+_rbBack+_rbAddr+_rbRing(84,32)+_rbLines(84,'#1a2520')+_rbBtn(304,32)+_rbTabs),
- dots:  regBarSvg(_rbBtn(34,32)+_rbBack+_rbAddr+'<rect x="76" y="23" width="16" height="10" rx="2.5" fill="none" stroke="#9aa7a0" stroke-width="2"/><path d="M76 38h16M76 43h10" fill="none" stroke="#9aa7a0" stroke-width="2" stroke-linecap="round"/>'+_rbRing(304,32)+
-        '<circle cx="295" cy="32" r="2.6" fill="#1a2520"/><circle cx="304" cy="32" r="2.6" fill="#1a2520"/><circle cx="313" cy="32" r="2.6" fill="#1a2520"/>'),
- share: regBarSvg('<path d="M45 24l-8 8 8 8M95 24l8 8-8 8" fill="none" stroke="#9aa7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'+
+ lines: regBarSvg(_rbBtn(34,32)+_rbBack+_rbAddr+_rbRing(84,32)+_rbLines(84,'#1a2520')+_rbBtn(306,32)+_rbTabs),
+ dots:  regBarSvg(_rbBtn(34,32)+_rbBack+_rbAddr+'<rect x="76" y="22" width="16" height="10" rx="2.5" fill="none" stroke="#9aa7a0" stroke-width="2"/><path d="M76 37h16M76 42h10" fill="none" stroke="#9aa7a0" stroke-width="2" stroke-linecap="round"/>'+_rbRing(306,32)+
+        '<circle cx="297" cy="32" r="2.6" fill="#1a2520"/><circle cx="306" cy="32" r="2.6" fill="#1a2520"/><circle cx="315" cy="32" r="2.6" fill="#1a2520"/>'),
+ share: regBarSvg('<path d="M38 24l-8 8 8 8M98 24l8 8-8 8" fill="none" stroke="#9aa7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'+
         _rbRing(170,32)+_rbShare(170)+
-        '<path d="M236 24v15c4-3 8-3 11-1 3-2 7-2 11 1V24c-4-3-8-3-11-1-3-2-7-2-11 1zM247 23v15" fill="none" stroke="#9aa7a0" stroke-width="1.9" stroke-linejoin="round"/>'+
+        '<path d="M227 26v15c4-3 8-3 11-1 3-2 7-2 11 1V26c-4-3-8-3-11-1-3-2-7-2-11 1zM238 25v15" fill="none" stroke="#9aa7a0" stroke-width="1.9" stroke-linejoin="round"/>'+
         _rbTabs),
  chrome:regBarSvg('<rect x="14" y="11" width="212" height="42" rx="21" fill="#fff"/>'+
         '<text x="120" y="37" text-anchor="middle" font-size="15" font-weight="600" fill="#1a2520">shisochan.net</text>'+
-        '<path d="M254 25v14M247 32h14" stroke="#9aa7a0" stroke-width="2.2" stroke-linecap="round"/>'+
-        _rbRing(302,32)+'<circle cx="302" cy="24" r="2.6" fill="#1a2520"/><circle cx="302" cy="32" r="2.6" fill="#1a2520"/><circle cx="302" cy="40" r="2.6" fill="#1a2520"/>')
+        '<path d="M256 25v14M249 32h14" stroke="#9aa7a0" stroke-width="2.2" stroke-linecap="round"/>'+
+        _rbRing(306,32)+'<circle cx="306" cy="24" r="2.6" fill="#1a2520"/><circle cx="306" cy="32" r="2.6" fill="#1a2520"/><circle cx="306" cy="40" r="2.6" fill="#1a2520"/>')
 };
 var _regArwAns='';   // 利用者が確かめた／選んだマークの場所（'ul'〜'dr'の6か所）
 var _regArwPick={};  // 既定の場所を固定で持つ手順カードに対する、利用者の選び直し
