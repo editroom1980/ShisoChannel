@@ -1721,9 +1721,18 @@ html.tvpc body{overflow:hidden;}
   padding:14px 16px;word-break:normal;line-break:strict;}
 #reg-strip.on{display:block;}
 #rs-head{display:flex;gap:12px;align-items:center;}
-#rs-icon{flex:0 0 auto;width:62px;height:62px;border-radius:16px;background:#f2f4f3;color:#1a2520;
-  display:flex;align-items:center;justify-content:center;}
-#rs-icon svg{width:42px;height:42px;display:block;}
+#rs-icon{flex:0 0 auto;width:44px;height:44px;border-radius:11px;overflow:hidden;display:flex;}
+#rs-icon.round{border-radius:50%;}
+#rs-icon img{width:100%;height:100%;display:block;object-fit:cover;}
+/* 押すボタンの場所の絵。手順の下に置く＝端末のメニューが開いても手順の行は隠れない
+   （iOS 27 のメニューは画面の下3分の2を覆う。2026-10-31 実測） */
+#rs-bar{margin-top:12px;}
+#rs-bar-cap{font-size:15px;font-weight:700;color:#41504a;text-align:center;line-height:1.4;margin-bottom:6px;}
+#rs-bar-pic svg{display:block;width:100%;max-width:340px;height:auto;margin:0 auto;}
+#rs-bar-pic text,#reg-btns .pic text{font-family:inherit;}
+/* 絵を選ぶ画面のボタン：絵だけを押す */
+#reg-btns .reg-btn.pic{padding:6px;background:#fff;border:2px solid #d9e1dc;}
+#reg-btns .reg-btn.pic svg{display:block;width:100%;height:auto;}
 #rs-ttl{flex:1 1 auto;min-width:0;font-size:17px;font-weight:700;color:var(--green);
   letter-spacing:.5px;line-height:1.4;}
 #rs-close{flex:0 0 auto;border:0;background:#ececec;color:#41504a;width:42px;height:42px;
@@ -1752,7 +1761,7 @@ html.tvpc body{overflow:hidden;}
    なお縦線でつなぐ案は、GOV.UKが利用者テストの末に混乱を招くとして廃止している */
 /* ★丸の大きさとすき間は「ここ1か所」だけに書く。補足の字下げはそこから計算する。
    同じ数を2か所に書くと必ずずれる（2026-08-14実測：tight2で10px、tight3/4・narrow2で2pxずれていた） */
-#reg-strip,#reg-box{--rs-n:30px;--rs-gap:12px;--rs-gapv:22px;--rs-pady:9px;--rs-padx:11px;}
+#reg-strip,#reg-box{--rs-n:30px;--rs-gap:12px;--rs-gapv:10px;--rs-pady:7px;--rs-padx:11px;}
 .rs-step{display:flex;gap:var(--rs-gap);align-items:flex-start;margin-top:0;}
 .rs-n{flex:0 0 auto;width:var(--rs-n);height:var(--rs-n);border-radius:50%;background:var(--green);color:#fff;
   font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
@@ -1783,10 +1792,8 @@ html.tvpc body{overflow:hidden;}
   background:#fff;border-radius:.34em;}
 .rs-mk svg{width:1.25em;height:1.25em;display:block;}
 #rs-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:13px;}
-#rs-fix{border:0;background:none;color:#41504a;text-decoration:underline;text-underline-offset:3px;
-  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;padding:8px 2px;
-  white-space:nowrap;-webkit-tap-highlight-color:transparent;}
-#rs-help{border:0;background:var(--gold);color:#fff;border-radius:11px;padding:12px 20px;
+/* 手順の邪魔をしない控えめな色にする。主役は手順の行 */
+#rs-help{flex:1 1 auto;border:0;background:#eef1ef;color:#2d5c3e;border-radius:11px;padding:11px 20px;
   font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
   -webkit-tap-highlight-color:transparent;}
 /* 画面が狭い/低い時だけ詰める（実測して入らない時のみ regStripFit が付ける）。
@@ -1890,13 +1897,10 @@ html.tvpc body{overflow:hidden;}
 #reg-strip.tight4 .rs-sub{font-size:11px;line-height:1.22;margin-top:1px;}
 #reg-strip.tight4 #rs-foot{margin-top:3px;}
 #reg-strip.tight4 #rs-help{padding:4px 10px;font-size:12px;}
-#reg-strip.tight4 #rs-fix{font-size:11px;}
 #reg-strip.tight4 .rs-key{padding:0 3px;border-width:1px;border-radius:5px;}
 #reg-strip.tight .rs-key{padding:1px 7px;}
 #reg-strip.tight2 .rs-key{padding:0 5px;border-width:1.5px;border-radius:7px;}
 #reg-strip.tight3 .rs-key{padding:0 4px;border-width:1.5px;border-radius:6px;}
-#reg-strip.tight2 #rs-fix{font-size:12.5px;}
-#reg-strip.tight3 #rs-fix{font-size:12px;}
 /* ── 呼び戻し用の「？」。ホーム画面から開くようになれば出ない（2026-08-12承認） ── */
 #reg-fab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
   z-index:2147483646;display:none;width:46px;height:46px;border-radius:50%;
@@ -2292,7 +2296,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.44-lab（裏に回ったら止める）</div>
+    <div class="ps-version">version 4.45-lab（登録案内を作り直し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2621,7 +2625,8 @@ html.tvapp #lnk-reg{display:none;}
     <button id="rs-close" title="とじる">×</button>
   </div>
   <div id="rs-txt"></div>
-  <div id="rs-foot"><button id="rs-fix">矢印の場所を直す</button><button id="rs-help">困った時</button></div>
+  <div id="rs-bar"><div id="rs-bar-cap"></div><div id="rs-bar-pic"></div></div>
+  <div id="rs-foot"><button id="rs-help">うまくいかない時</button></div>
 </div>
 <button id="reg-fab" title="ホーム画面への追加案内"><span class="rf-q">？</span><span class="rf-big"><span id="rf-ic"></span><span class="rf-tx"><span class="rf-t">ホーム画面に追加しませんか？</span><span class="rf-s">普通のアプリとして使えます</span></span></span></button>
 
@@ -3146,7 +3151,7 @@ function tourAskIfFirst(){
       //   古い指示のまま進めると必ず詰まるので、最初からやり直してもらう（2026-08-13指示）
       if(_regOri && _regOri!==regOri()){
         _regArwAns=''; _regArwPick={};
-        try{ regShow('start'); }catch(_){}
+        try{ regShow('route'); }catch(_){}
       }else{
         try{ regArwShow(_regArwNow); regFit(); regStripFit(); }catch(_){}
       }
@@ -3170,11 +3175,6 @@ function tourAskIfFirst(){
     var sc=REG[_regAt]; regShow((sc&&sc.tr)||'start'); });
   var rx=document.getElementById('rs-close');
   if(rx) rx.addEventListener('click', function(ev){ ev.stopPropagation(); regEnd(); });
-  // 「矢印の場所を直す」→ 6か所ピッカーへ（選んだら、いまの手順カードに戻る）
-  var rfx=document.getElementById('rs-fix');
-  if(rfx) rfx.addEventListener('click', function(ev){ ev.stopPropagation();
-    if(typeof isTapBlocked==='function' && isTapBlocked()) return;
-    _regPickFrom=_regAt; _regPickGo=_regAt; regShow('whereMark'); });
   // 呼び戻し用の「？」。ホーム画面から開くようになれば regFabSync が出さない
   var rf=document.getElementById('reg-fab');
   if(rf) rf.addEventListener('click', function(ev){ ev.stopPropagation();
@@ -3465,45 +3465,15 @@ var REG={
         b:[{l:'ブラウザで開く',go:'@escape',p:1},{l:'とじる',go:null}]},
 
  // ── iPhone・iPad（中央の窓で選ぶ → 上の帯でやる）─────────
- iChrome:{t:'このマークを探します', ic:'share', arw:'ur',
-        d:['矢印の先にありますか。','まだ押さないでください。'],
-        b:[{l:'見つかった',go:'sChromeI',p:1},
-           {l:'ちがう場所にあった',go:'@where:sChromeI'},
-           {l:'見つからない',go:'iSafari'}]},
- // ★Chrome公式ヘルプで確認（2026-08-13）。Safariと道筋が違う。
- //   Chromeのメニュー(⋯)に「共有」は上の方に無く、Safariの手順では詰まる。
- //   正しくは アドレスバーの右の共有 →「ホーム画面に追加」→「追加」
- sChromeI:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
-        s:[{n:1,t:'この{share}を押す'},
-           {sub:'アドレスバーの右にあります'},
-           {n:2,t:'「ホーム画面に追加」を探して押す'},
-           {sub:'見当たらない時は「表示を増やす」'},
-           {sub:'または一覧を下へたどります'},
-           {n:3,t:'「追加」を押す'}]},
- iShare:{t:'このマークを探します', ic:'share', arw:'@apple',
-        d:['矢印の先にありますか。','まだ押さないでください。'],
-        b:[{l:'見つかった',go:'sShare',p:1},
-           {l:'ちがう場所にあった',go:'@where:sShare'},
-           {l:'見つからない',go:'iDots'},
-           {l:'LINEやXの中で見ている',go:'inApp'}]},
- iDots:{t:'このマークを探します', ic:'dots', arw:'dr',
-        d:['矢印の先にありますか。','まだ押さないでください。'],
-        b:[{l:'見つかった',go:'sDots',p:1},
-           {l:'ちがう場所にあった',go:'@where:sDots'},
-           {l:'見つからない',go:'iSafari'}]},
- // ★iOS26のSafariは初期設定「コンパクト」＝道具の列に共有が無く「…」が入口（2026-08-13調査：
- //   設定→Safari→タブで3種類から選べる）。変えている人は「どこにも無い」→共有の確認へ回す
- iDots26:{t:'このマークを探します', ic:'dots', arw:'dr',
-        d:['矢印の先にありますか。','まだ押さないでください。'],
-        b:[{l:'見つかった',go:'sDots',p:1},
-           {l:'ちがう場所にあった',go:'@where:sDots'},
-           {l:'見つからない',go:'iShare2'}]},
- iShare2:{t:'このマークを探します', ic:'share', arw:'@apple',
-        d:['矢印の先にありますか。','まだ押さないでください。'],
-        b:[{l:'見つかった',go:'sShare',p:1},
-           {l:'ちがう場所にあった',go:'@where:sShare'},
-           {l:'見つからない',go:'iSafari'},
-           {l:'LINEやXの中で見ている',go:'inApp'}]},
+ // ★2026-10-31 作り直し：「マークを探す→見つかった」の確認をやめ、押したらすぐ手順のカードを出す。
+ //   手順が合わない人は、画面の下の絵を見比べて選ぶだけにする（iWhich）
+ iWhich:{t:'画面の下はどれに近いですか', pics:1,
+        d:['いちばん近い絵を','押してください。'],
+        b:[{bar:'lines',l:'下に≡がある画面',go:'sLines'},
+           {bar:'dots',l:'下に…がある画面',go:'sDots'},
+           {bar:'share',l:'下に共有マークがある画面',go:'sShare'},
+           {l:'どれでもない',go:'iSafari'},
+           {l:'手順にもどる',go:'@back',p:1}]},
  // ── 6か所ピッカー：マークの場所を選ぶと、矢印がそこへ動く ──
  //   ブラウザの道具の列はページの外＝位置はJSから見えないうえ、利用者の設定でも変わる。
  //   だから最後は本人に選んでもらう＝どの端末・どの設定でも必ず正しい場所を指せる（2026-08-13承認）
@@ -3514,7 +3484,12 @@ var REG={
            {l:'もどる',go:'@pickback'}]},
  iEdit:{t:'一覧に見当たらない時',
         d:['一覧の一番下にある','「アクションを編集」を押すと','足すことができます。'],
-        b:[{l:'とじる',go:null,p:1},{l:'見つからない',go:'iSafari'}]},
+        b:[{l:'手順にもどる',go:'@back',p:1},{l:'見つからない',go:'iSafari'}]},
+ // ★iOS 27 の公式の手順にある（既定はオン。実物の iOS 27 で確認 2026-10-31）。
+ //   オフのまま追加すると、アイコンから開いてもSafariの画面になる
+ iWebApp:{t:'開くとアドレス欄が出る時',
+        d:['追加の画面にある','「ウェブアプリとして開く」を','オンにして、追加し直します。'],
+        b:[{l:'手順にもどる',go:'@back',p:1},{l:'アイコンが見つからない',go:'findIconI'}]},
  // ★「古い機種ではSafari以外は不可」と書いていたが誤り。iOS 16.4(2023年3月)以降は
  //   ChromeなどでもiPhoneのホーム画面に追加できる。ただし古いiOSやアプリ内では出ないので
  //   「できないことがある」に改めた（2026-08-12訂正）
@@ -3562,13 +3537,14 @@ var REG={
  // ── つまずいた時（帯の「困った時」から）─────────────
  troubleI:{t:'うまくいかない時',
         d:['よくあるつまずきです。','あてはまる物を選んでください。'],
-        b:[{l:'一覧に見つからない',go:'iEdit'},{l:'マークが見つからない',go:'iDots'},
-           {l:'アイコンが出ない',go:'findIconI'},{l:'別の方法で見る',go:'altBookmark'},
-           {l:'手順にもどる',go:'@back',p:1}]},
+        b:[{l:'押すマークが見つからない',go:'iWhich'},{l:'「ホーム画面に追加」が無い',go:'iEdit'},
+           {l:'アイコンが見つからない',go:'findIconI'},{l:'開くとアドレス欄が出る',go:'iWebApp'},
+           {l:'別の方法で見る',go:'altBookmark'},{l:'手順にもどる',go:'@back',p:1}]},
  troubleA:{t:'うまくいかない時',
         d:['よくあるつまずきです。','あてはまる物を選んでください。'],
         b:[{l:'「起動」と出ている',go:'alreadyIn'},{l:'項目が見つからない',go:'sOther'},
-           {l:'アイコンが出ない',go:'findIconA'},{l:'らくらく・かんたんスマホ',go:'rakuraku'},
+           {l:'矢印の場所がちがう',go:'@fix'},{l:'別のブラウザを使う',go:'aBrowser'},
+           {l:'アイコンが見つからない',go:'findIconA'},
            {l:'別の方法で見る',go:'altBookmark'},{l:'手順にもどる',go:'@back',p:1}]},
  // ★すでに入っている端末では、メニューが「ホーム画面に追加」から「(アプリ名)を起動」に変わる。
  //   ホーム画面からアイコンだけ消した人がこの状態になり、追加の項目を探して詰まる（2026-08-12 実機で確認）
@@ -3600,26 +3576,44 @@ var REG={
  //  n=番号つきの手順／sub=直前の手順にぶら下げる補足（見当たらない時・次に何が出るか）。
  //  補足は「その手順の直後」に置く＝つまずく場所で読める（2026-08-12指示）。
  //  文言は 2026-08-12 に iPhone/iPad(26.5)・Android 15 の実機で操作して確認したもの
- sShare:{strip:1, arw:'@ans', ic:'share', tr:'troubleI', h:'この順に押します',
-        s:[{n:1,t:'この{share}を押す'},
-           {n:2,t:'「ホーム画面に追加」を探して押す'},
-           {sub:'見当たらない時は「表示を増やす」'},
-           {sub:'または一覧を下へたどります'},
-           {sub:'→ 名前を決める画面が出ます'},
+ // ★Chrome公式ヘルプで確認（2026-08-13）。Safariと道筋が違う。
+ //   Chromeのメニュー(⋯)に「共有」は上の方に無く、Safariの手順では詰まる。
+ //   正しくは アドレスバーの右の共有 →「ホーム画面に追加」→「追加」
+ sChromeI:{strip:1, arw:'ur', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'{share}を押す'},
+           {sub:'アドレスバーの右にあります'},
+           {n:2,t:'「ホーム画面に追加」を押す'},
+           {sub:'無い時は「表示を増やす」を押す'},
+           {n:3,t:'「追加」を押す'}]},
+ // ★2026-10-31 iOS 27 の実物（iPhone 17e シミュレータ）で全部押して確かめた道筋。
+ //   入口は下の列の右端ではなく、アドレス欄の左の「≡」に変わった（右端はタブの切り替え）。
+ //   ≡ → 共有 → 表示を増やす → ホーム画面に追加 → 右上の「追加」→ ホーム画面へ戻る。
+ //   メニューは画面の下3分の2を覆うので、手順の行はカードの上の方に置く。
+ //   共有の画面が全画面に広がると見えなくなるが、そこから先は言葉のとおりに押すだけ
+ sLines:{strip:1, arw:'da', bar:'lines', cap:'画面の下の、金の丸のボタンです', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'{lines}を押す'},
+           {n:2,t:'{share}「共有」を押す'},
+           {n:3,t:'{more}「表示を増やす」を押す'},
+           {n:4,t:'{homeadd}「ホーム画面に追加」を押す'},
+           {n:5,t:'右上の「追加」を押す'}]},
+ // iOS 26 の既定（コンパクト）。入口は下の列の右端の「…」（2026-08-12 実測）
+ sDots:{strip:1, arw:'dr', bar:'dots', cap:'画面の下の、金の丸のボタンです', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'{dots}を押す'},
+           {n:2,t:'{share}「共有」を押す'},
+           {n:3,t:'{more}「表示を増やす」を押す'},
+           {n:4,t:'{homeadd}「ホーム画面に追加」を押す'},
+           {n:5,t:'右上の「追加」を押す'}]},
+ // 共有マークが直接ある画面：iOS 25以前／Safariの表示が「下」「上」／横向き／iPad
+ sShare:{strip:1, arw:'@apple', bar:'share', cap:'画面の下の、金の丸のボタンです', tr:'troubleI', h:'この順に押します',
+        s:[{n:1,t:'{share}を押す'},
+           {n:2,t:'{homeadd}「ホーム画面に追加」を押す'},
+           {sub:'無い時は{more}「表示を増やす」を押す'},
            {n:3,t:'右上の「追加」を押す'}]},
- sDots:{strip:1, arw:'@ans', ic:'dots', tr:'troubleI', h:'この順に押します',
-        s:[{n:1,t:'この{dots}を押す'},
-           {n:2,t:'「共有」を押す'},
-           {n:3,t:'「ホーム画面に追加」を探して押す'},
-           {sub:'見当たらない時は「表示を増やす」'},
-           {sub:'または一覧を下へたどります'},
-           {sub:'→ 名前を決める画面が出ます'},
-           {n:4,t:'右上の「追加」を押す'}]},
  // ★Chromeの表記は「アプリをインストール」か「ホーム画面に追加」の2通り（サイトにより自動で変わる）
  // ★2026-08-14 Androidエミュレータ(Pixel 7/Android 14)で実測：メニューは全11項目あり
  //   「インストール」は下から4番目。縦向きは全部見えるが、横向きは画面が低く
  //   下へたどらないと出ない。iOSと同じで「見当たらない時は」の一行が要る
- sChrome:{strip:1, arw:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
+ sChrome:{strip:1, arw:'ue', bar:'chrome', cap:'画面の上の、金の丸のボタンです', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右上の{menu}を押す'},
            {sub:'色のついた丸のこともあります'},
            {n:2,t:'「アプリをインストール」を押す'},
@@ -3628,7 +3622,7 @@ var REG={
            {n:3,t:'「インストール」を押す'},
            {sub:'→ もう一度たずねられたら「追加」'}]},
  // ★Edgeに「ホーム画面に追加」は無い。メニューをめくった先の「電話に追加」が正しい道（実機確認）
- sEdge:{strip:1, arw:'dr', ic:'bars', tr:'troubleA', h:'この順に押します',
+ sEdge:{strip:1, arw:'dr', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下の{bars}を押す'},
            {n:2,t:'「電話に追加」を探して押す'},
            {sub:'横にめくると出てきます'},
@@ -3641,7 +3635,7 @@ var REG={
  //   ・「その他」は上から5番目で、スクロールせずに見える（「下のほう」は不正確だった）
  //   ・「ホーム画面にアプリを追加」のすぐ上に「ショートカットに追加」がある。
  //     そちらはFirefoxの中だけの追加で、ホーム画面にアイコンは出ない
- sFire:{strip:1, arw:'ur', ic:'menu', tr:'troubleA', h:'この順に押します',
+ sFire:{strip:1, arw:'ur', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'{menu}を押す'},
            {sub:'画面の上か下にあります'},
            {n:2,t:'「その他」を押す'},
@@ -3652,7 +3646,7 @@ var REG={
  // ★2026-08-14 Androidエミュレータで実測（日本語・Samsungブラウザ）：
  //   道具の列は画面の下、メニューは右下92%。「ページを追加」→追加先の一覧→
  //   最後の確認は「追加」ではなく「ホーム画面に追加」だった（案内が違っていた）
- sSams:{strip:1, arw:'dr', ic:'menu', tr:'troubleA', h:'この順に押します',
+ sSams:{strip:1, arw:'dr', tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'右下の{bars}か{menu}を押す'},
            {n:2,t:'「ページを追加」を押す'},
            {sub:'→ 追加先をえらぶ画面が出ます'},
@@ -3661,7 +3655,7 @@ var REG={
  // ★らくらくスマホ(FCNT)。他機種と違い「共有」も「⋮」も出てこない。ドコモF-53E取説p.68の逐語
  //   「登録したブックマークをホーム画面の『よく使うブックマーク』カテゴリに貼り付けるかどうかの
  //     確認画面が表示されますので、［貼る］／［貼らない］を選択して設定できます」
- sRaku:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'この順に押します',
+ sRaku:{strip:1, arw:'uc', tr:'troubleR', h:'この順に押します',
         s:[{n:1,t:'上の{book}を押す（しおり）'},
            {sub:'画面の上、「検索」のとなり'},   // FCNT FAQ 20668 の逐語「「検索」ボタン右隣」
            {n:2,t:'「現在のページを登録」を押す'},
@@ -3670,7 +3664,7 @@ var REG={
            {n:4,t:'「貼る」を押す'},
            {sub:'「よく使うブックマーク」に入ります'}]},
  // 「貼る」を押しそびれた人向けの後追い手順（取説p.68・FCNT FAQ 20668）
- sRaku2:{strip:1, arw:'uc', ic:'book', tr:'troubleR', h:'あとから貼る場合',
+ sRaku2:{strip:1, arw:'uc', tr:'troubleR', h:'あとから貼る場合',
         s:[{n:1,t:'上の{book}を押す'},
            {n:2,t:'「メニュー」を押す'},
            {n:3,t:'「ホーム画面に貼る」を押す'},
@@ -3680,7 +3674,7 @@ var REG={
  // ★かんたんスマホ(京セラ/Y!mobile)。ブラウザはYahoo!。Y!mobile公式マニュアル 07-01 の逐語
  //   マークの形はY!mobileのマニュアル画像（kantan-sumaho-3_icon_190）で「⋮」と確認済み。
  //   位置はマニュアルに記載が無いため断定しない
- sYahoo:{strip:1, ic:'menu', tr:'troubleA', h:'この順に押します',
+ sYahoo:{strip:1, tr:'troubleA', h:'この順に押します',
         s:[{n:1,t:'{menu}を押す'},
            {sub:'画面の下か右上にあります'},
            {n:2,t:'「ホーム画面に追加」を押す'},
@@ -3696,7 +3690,7 @@ var REG={
  // ★アプリ内ブラウザからの開き直し。言葉はアプリごとに少し違うため幅を持たせる
  // ★位置はアプリで違う。LINEのAndroid版は右上、iPhone版とXは画面の下（各社の案内で確認）。
  //   「右下などの」と決めつけていたので両方を書くよう改めた（2026-08-12訂正）
- sInApp:{strip:1, ic:'dots', tr:'troubleIn', h:'ブラウザで開き直す',
+ sInApp:{strip:1, tr:'troubleIn', h:'ブラウザで開き直す',
         s:[{n:1,t:'右下か右上の{dots}か{bars}を押す'},
            {n:2,t:'「ブラウザで開く」を押す'},
            {sub:'「Safariで開く」でも同じ'},
@@ -3706,12 +3700,21 @@ var REG={
 
 // 探してもらうマークの絵。iOSの共有・iOS26の「…」・Androidの「⋮」・Edgeの「≡」
 var REG_ICON={
+ // iOS 27 の入口（アドレス欄の左）。実物は長・長・短の3本線
+ lines:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">'+
+       '<path d="M4 7h16M4 12h16M4 17h10"/></svg>',
+ // 共有の画面の「表示を増やす」
+ more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">'+
+      '<path d="M5.5 9.5 12 16l6.5-6.5"/></svg>',
+ // 「ホーム画面に追加」の印（四角の中に＋）
+ homeadd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">'+
+         '<rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>',
  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+
        '<path d="M12 3v11"/><path d="M8.2 6.8 12 3l3.8 3.8"/>'+
        '<path d="M7 10H5.6A1.6 1.6 0 0 0 4 11.6v7.8A1.6 1.6 0 0 0 5.6 21h12.8a1.6 1.6 0 0 0 1.6-1.6v-7.8A1.6 1.6 0 0 0 18.4 10H17"/></svg>',
- dots:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">'+
-      '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="12" r="1.15" fill="currentColor" stroke="none"/>'+
-      '<circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.15" fill="currentColor" stroke="none"/></svg>',
+ // iOS 26 の入口。実物は丸い枠の無い3つの点（2026-10-31 iOS 26.5 で確認）
+ dots:'<svg viewBox="0 0 24 24" fill="currentColor">'+
+      '<circle cx="5.5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18.5" cy="12" r="2"/></svg>',
  menu:'<svg viewBox="0 0 24 24" fill="currentColor">'+
       '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>',
  bars:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">'+
@@ -3726,6 +3729,12 @@ function regEls(){
     btns:document.getElementById('reg-btns'), icon:document.getElementById('reg-icon')};
 }
 // いま見ているのがiPhone/iPadの「Safari」か。Chrome等でもアプリ内でもなければSafari
+// ★Safariの本当の版。端末の情報の「iPhone OS」の数字は 18_7 で止められていて、iOS 27 でも
+//   18 と出る（2026-10-31 実物で確認）。正しい数字は「Version/27.0」の所にある
+function regSafariVer(){
+  var m=/Version\/(\d+)/.exec(navigator.userAgent);
+  return m?parseInt(m[1],10):0;
+}
 function regIsSafariIOS(){
   try{
     if(!regIsApple()) return false;
@@ -3749,16 +3758,22 @@ function regShow(key){
     else if(_regPrompt)       key='oneTap';
     else if(regIsApple()){
       // ★isIOSではなく専用判定。iPadで外れていた。iPhoneのChromeはSafariと道筋が違う。
-      //   iOS26のSafariは初期設定「コンパクト」＝道具の列に共有が無く「…」が入口（2026-08-13調査）。
-      //   設定で変えた人は iDots26 の「どこにも無い」→ 共有の確認(iShare2) で拾う
-      var _iu=navigator.userAgent, _im=/iPhone OS (\d+)_/.exec(_iu);
-      if(/CriOS\//.test(_iu))                 key='iChrome';
-      // ★iOS26の「…」は縦向きの道具の列にあるもの。横向きは道具が上に並び直して
-      //   共有マークが直接出る＝「…」は存在しない（2026-08-14 実機写真）。
-      //   横向きの人に無い物を探させていたので、向きで振り分ける
-      else if(_im && parseInt(_im[1],10)>=26 && innerWidth<=innerHeight) key='iDots26';
-      else                                    key='iShare';
+      // ★横向き・iPadは共有マークが直接ある（2026-08-14 実機写真・2026-10-31 iOS 27で確認）。
+      //   縦のiPhoneは Safari の版で入口が違う：27は≡、26は…、25以前は共有マーク
+      var _iu=navigator.userAgent, _sv=regSafariVer();
+      if(/CriOS\//.test(_iu))                         key='sChromeI';
+      else if(innerWidth>innerHeight || !/iPhone/.test(_iu)) key='sShare';
+      else if(_sv>=27)                                key='sLines';
+      else if(_sv>=26)                                key='sDots';
+      else                                            key='sShare';
     }
+    // ★Androidはブラウザを自動で見分ける＝「いま何で見ていますか」を聞かない。
+    //   見分けられない時と、見分けが外れた時（うまくいかない時→別のブラウザ）だけ選んでもらう
+    else if(/EdgA\//.test(navigator.userAgent))           key='sEdge';
+    else if(/Firefox\//.test(navigator.userAgent))        key='sFire';
+    else if(/SamsungBrowser\//.test(navigator.userAgent)) key='sSams';
+    else if(/YJApp|YJBrowser/.test(navigator.userAgent))  key='sYahoo';
+    else if(/Chrome\//.test(navigator.userAgent))         key='sChrome';
     else                      key='aBrowser';
   }
   var sc=REG[key]; if(!sc) return;
@@ -3796,6 +3811,7 @@ function regShow(key){
     e.icon.classList.remove('app'); e.icon.classList.remove('round');
   }
   e.box.classList.toggle('pick', !!sc.pick);
+  e.box.classList.toggle('pics', !!sc.pics);
   e.ttl.textContent=sc.t;
   tourLines(e.txt, sc.d);
   e.btns.textContent='';
@@ -3803,7 +3819,8 @@ function regShow(key){
     var el=document.createElement('button');
     el.className='reg-btn'+(b.p?' go':'');
     if(b.zone) el.setAttribute('data-zone', b.zone);
-    el.textContent=b.l;
+    if(b.bar && REG_BAR[b.bar]){ el.className+=' pic'; el.innerHTML=REG_BAR[b.bar]; el.setAttribute('aria-label',b.l); }
+    else el.textContent=b.l;
     el.addEventListener('click', function(ev){ ev.stopPropagation(); regPick(b); });
     e.btns.appendChild(el);
   });
@@ -3841,6 +3858,35 @@ function regMarkText(el, str){
     }else{ el.appendChild(document.createTextNode('{'+parts[i]+'}')); }  // 名前を間違えたら気づけるように
   }
 }
+// ── 押すボタンの場所の絵（2026-10-31）──
+//   実物の写真は版で変わるので使わない。形は iOS 26.5・27.0 と Android の Chrome の実物を見て描いた。
+//   金の丸＝押す所。文字を減らして、見比べるだけで分かるようにする
+function regBarSvg(body){
+  return '<svg viewBox="0 0 340 64" role="img" aria-hidden="true">'+
+    '<rect x="1" y="1" width="338" height="62" rx="18" fill="#e9eeeb"/>'+body+'</svg>';
+}
+var _rbRing=function(x,y){ return '<circle cx="'+x+'" cy="'+y+'" r="20" fill="#fff" stroke="#c8992a" stroke-width="3.5"/>'; };
+var _rbBtn=function(x,y){ return '<circle cx="'+x+'" cy="'+y+'" r="20" fill="#fff"/>'; };
+var _rbAddr='<rect x="60" y="11" width="220" height="42" rx="21" fill="#fff"/>'+
+  '<text x="170" y="37" text-anchor="middle" font-size="15" font-weight="600" fill="#1a2520">shisochan.net</text>';
+var _rbBack='<path d="M37 24l-8 8 8 8" fill="none" stroke="#9aa7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+var _rbTabs='<rect x="298" y="25" width="12" height="12" rx="3" fill="none" stroke="#1a2520" stroke-width="1.9"/>'+
+  '<path d="M303 22h8a3 3 0 0 1 3 3v8" fill="none" stroke="#1a2520" stroke-width="1.9" stroke-linecap="round"/>';
+var _rbLines=function(x,c){ return '<path d="M'+(x-9)+' 26h18M'+(x-9)+' 32h18M'+(x-9)+' 38h11" fill="none" stroke="'+c+'" stroke-width="2.3" stroke-linecap="round"/>'; };
+var _rbShare=function(x){ return '<path d="M'+x+' 20v14M'+(x-4.5)+' 24.5 '+x+' 20l4.5 4.5M'+(x-4)+' 29h-3v13h14V29h-3" fill="none" stroke="#1a2520" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'; };
+var REG_BAR={
+ lines: regBarSvg(_rbBtn(34,32)+_rbBack+_rbAddr+_rbRing(84,32)+_rbLines(84,'#1a2520')+_rbBtn(304,32)+_rbTabs),
+ dots:  regBarSvg(_rbBtn(34,32)+_rbBack+_rbAddr+'<rect x="76" y="23" width="16" height="10" rx="2.5" fill="none" stroke="#9aa7a0" stroke-width="2"/><path d="M76 38h16M76 43h10" fill="none" stroke="#9aa7a0" stroke-width="2" stroke-linecap="round"/>'+_rbRing(304,32)+
+        '<circle cx="295" cy="32" r="2.6" fill="#1a2520"/><circle cx="304" cy="32" r="2.6" fill="#1a2520"/><circle cx="313" cy="32" r="2.6" fill="#1a2520"/>'),
+ share: regBarSvg('<path d="M45 24l-8 8 8 8M95 24l8 8-8 8" fill="none" stroke="#9aa7a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'+
+        _rbRing(170,32)+_rbShare(170)+
+        '<path d="M236 24v15c4-3 8-3 11-1 3-2 7-2 11 1V24c-4-3-8-3-11-1-3-2-7-2-11 1zM247 23v15" fill="none" stroke="#9aa7a0" stroke-width="1.9" stroke-linejoin="round"/>'+
+        _rbTabs),
+ chrome:regBarSvg('<rect x="14" y="11" width="212" height="42" rx="21" fill="#fff"/>'+
+        '<text x="120" y="37" text-anchor="middle" font-size="15" font-weight="600" fill="#1a2520">shisochan.net</text>'+
+        '<path d="M254 25v14M247 32h14" stroke="#9aa7a0" stroke-width="2.2" stroke-linecap="round"/>'+
+        _rbRing(302,32)+'<circle cx="302" cy="24" r="2.6" fill="#1a2520"/><circle cx="302" cy="32" r="2.6" fill="#1a2520"/><circle cx="302" cy="40" r="2.6" fill="#1a2520"/>')
+};
 var _regArwAns='';   // 利用者が確かめた／選んだマークの場所（'ul'〜'dr'の6か所）
 var _regArwPick={};  // 既定の場所を固定で持つ手順カードに対する、利用者の選び直し
 var _regArwNow='';   // いま矢印が指している場所（寸法合わせと検査が読む）
@@ -3876,7 +3922,7 @@ function regArwShow(zone){
   zone=String(zone||'');
   var v=zone.charAt(0), h=zone.charAt(1);
   _regArwNow='';
-  if((v!=='u'&&v!=='d')||(h!=='l'&&h!=='c'&&h!=='r')){ a.className=''; return; }
+  if((v!=='u'&&v!=='d')||(h!=='l'&&h!=='c'&&h!=='r'&&h!=='a'&&h!=='e')){ a.className=''; return; }
   _regArwNow=zone;
   // ★とても低い画面（古いiPhone横向き=約230px）では矢印を小さくして場所を空ける。
   //   矢じり・端からの余白・揺れ10px の合計が regArwSpace() と一致するように書く
@@ -3885,7 +3931,9 @@ function regArwShow(zone){
   a.style.width=size+'px'; a.style.height=size+'px'; a.style.marginLeft=(-size/2)+'px';
   if(v==='d'){ a.style.bottom='calc(env(safe-area-inset-bottom) + '+inset+'px)'; a.style.top='auto'; }
   else       { a.style.top='calc(env(safe-area-inset-top) + '+inset+'px)'; a.style.bottom='auto'; }
-  var x= h==='l' ? innerWidth*0.13 : h==='c' ? innerWidth*0.5 : innerWidth*0.87;
+  // 'a'＝アドレス欄の左はし（iOS 27 の≡。実物の x 115/幅390 ＝ 29.5%）
+  // 'e'＝右端（Android の Chrome の⋮。実物は幅の93%）
+  var x= h==='l' ? innerWidth*0.13 : h==='a' ? innerWidth*0.295 : h==='c' ? innerWidth*0.5 : h==='e' ? innerWidth*0.93 : innerWidth*0.87;
   x=Math.max(30, Math.min(innerWidth-30, Math.round(x)));
   a.style.left=x+'px';
   a.innerHTML=REG_ARW_SVG[v];
@@ -3925,9 +3973,17 @@ function regStripShow(key){
   var st=document.getElementById('reg-strip'); if(!st) return;
   var e=regEls(); if(e.w) e.w.classList.remove('on');
   _regAt=key; _regStripLast=key;
-  var ic=document.getElementById('rs-icon');
-  if(sc.ic && REG_ICON[sc.ic]){ ic.innerHTML=REG_ICON[sc.ic]; ic.style.display='flex'; }
-  else { ic.textContent=''; ic.style.display='none'; }
+  // 見出しの絵は、これからホーム画面に増えるアイコンそのもの＝何が手に入るかが一目で分かる
+  var ic=document.getElementById('rs-icon'), _ap=regIsApple(), _pc=regIsPc();
+  var _src=_ap?'icon-180.png?v=245':(_pc?'icon-192.png?v=245':'icon-mask-v2.png');
+  ic.innerHTML='<img src="'+_src+'" alt="">';
+  ic.classList.toggle('round', !_ap && !_pc);
+  // 押すボタンの場所の絵。縦向きのスマホだけ（横向きは高さが無く、道具の列の形も違う）
+  var _bw=document.getElementById('rs-bar'), _bar=sc.bar && REG_BAR[sc.bar] && innerWidth<=innerHeight && !(/iPad/.test(navigator.userAgent)) && !(_ap && !/iPhone/.test(navigator.userAgent));
+  document.getElementById('rs-bar-pic').innerHTML=_bar?REG_BAR[sc.bar]:'';
+  document.getElementById('rs-bar-cap').textContent=_bar?(sc.cap||''):'';
+  _bw.setAttribute('data-want', _bar?'1':'0');
+  _bw.style.display=_bar?'block':'none';
   document.getElementById('rs-ttl').textContent=sc.h||'この順に押していきます';
   var tx=document.getElementById('rs-txt'); tx.textContent='';
   var item=null;
@@ -3949,8 +4005,6 @@ function regStripShow(key){
     var _z=regArwZoneOf(key, sc);
     regArwShow(_z);
     document.getElementById('reg-dim').className='on';
-    var _fx=document.getElementById('rs-fix');
-    if(_fx) _fx.textContent = _z ? '矢印の場所を直す' : '矢印で場所を示す';
   }catch(_){}
   regStripFit();
   try{ regFabSync(); }catch(_){}
@@ -3965,12 +4019,16 @@ function regStripFitTo(床, 横避け){
   st.classList.remove('narrow'); st.classList.remove('narrow2'); st.classList.remove('snug');
   try{ regStripRows(st); }catch(_){}
   st.style.maxHeight=''; st.style.overflowY='';   // 前回の保険を外してから測る
+  var _bw=document.getElementById('rs-bar');
+  if(_bw) _bw.style.display=_bw.getAttribute('data-want')==='1'?'block':'none';
   var top=st.getBoundingClientRect().top;
   // ★カードは使える高さを全部使ってよい（2026-08-14指示「大きくなってもいい」）。
   //   以前は画面の6割で抑えていたが、そのぶん字が小さくなって読みにくくなっていた。
   //   押してほしいマークは、上向きなら上端(top)、下向きなら床(regFloor)で既に避けている。
   //   端末のシートが開けばどのみちカードは隠れるので、遠慮する意味がない
   var limit = 床-top-10;
+  // ★絵は手順そのものではないので、入らない時は字を小さくする前に絵を畳む
+  if(_bw && st.getBoundingClientRect().height>limit) _bw.style.display='none';
   if(st.getBoundingClientRect().height>limit) st.classList.add('tight');
   // 幅はあるが高さが足りない（横向き等）時は2列にして高さを半分にする。
   // ★横に避けている時(1)は幅が細い＝2列だと必ず折り返すので1列のまま縦に使う。
@@ -4155,6 +4213,7 @@ function regPick(b){
     regShow('whereMark'); return;
   }
   if(b.go==='@pickback'){ regShow(_regPickFrom||_regStripLast||'route'); return; }
+  if(b.go==='@fix'){ _regPickFrom=_regAt; _regPickGo=_regStripLast; regShow('whereMark'); return; }  // 矢印の場所を選び直す
   if(b.go==='@prompt'){ regDoPrompt(); return; }
   // 「受け取る」：通知の許可は、押したこの時（指の操作の中）で聞く必要がある＝ntfEnable の最初で聞く
   if(b.go==='@notify'){ ntfEnable().then(function(r){ regShow(r==='ok'?'ntfOk':(r==='denied'?'ntfNg':'ntfErr')); try{ renderOpts(); }catch(_){} }); return; }
