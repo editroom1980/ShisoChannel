@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-01T04:57:42+09:00",
+ "updated": "2026-11-01T18:43:53+09:00",
  "items": [
   {
    "tag": "学校",
@@ -30,6 +30,26 @@
    "when": "2027-01-16",
    "place": "",
    "no": "t116西播中学校新人駅伝競走大会"
+  },
+  {
+   "tag": "学校",
+   "title": "一宮南中学校 オープンスクール",
+   "url": "https://city-shiso-ichinomiyaminami-jhs.edumap.jp/event",
+   "src": "一宮南中学校",
+   "ts": null,
+   "when": "2026-11-09",
+   "place": "一宮南中学校",
+   "no": "sichinomiyaminami-jhs119"
+  },
+  {
+   "tag": "学校",
+   "title": "一宮南中学校 校内書き初め大会",
+   "url": "https://city-shiso-ichinomiyaminami-jhs.edumap.jp/event",
+   "src": "一宮南中学校",
+   "ts": null,
+   "when": "2027-01-14",
+   "place": "一宮南中学校",
+   "no": "sichinomiyaminami-jhs114"
   }
  ]
 }
