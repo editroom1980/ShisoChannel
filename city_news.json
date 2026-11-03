@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-03T15:43:46+09:00",
+ "updated": "2026-11-03T23:40:01+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
   {
@@ -11,16 +11,6 @@
    "src": "山崎文化会館",
    "when": "2026-11-03",
    "place": "山崎文化会館"
-  },
-  {
-   "tag": "イベント",
-   "title": "11/3 いちのみやふるさとまつり 11月3日開催",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/ichinomiyashiminkyoku/ichinomiyashiminkyokumachizukurisuishinka/ibento/news/7608.html",
-   "date": "11月3日",
-   "ts": "2026-11-03T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-11-03",
-   "place": "スポニックパーク一宮"
   },
   {
    "tag": "学校",
@@ -120,6 +110,16 @@
    "ts": "2026-12-03T00:00:00+09:00",
    "src": "山崎文化会館",
    "when": "2026-12-03",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "催し",
+   "title": "12/6 (完売御礼)Harmony宍粟特別公演元タカラジェンヌたちの響演2026",
+   "url": "http://www.yamabun.org/harmony%e5%ae%8d%e7%b2%9f%e7%89%b9%e5%88%a5%e5%85%ac%e6%bc%94%e5%85%83%e3%82%bf%e3%82%ab%e3%83%a9%e3%82%b8%e3%82%a7%e3%83%b3%e3%83%8c%e3%81%9f%e3%81%a1%e3%81%ae%e9%9f%bf%e6%bc%942026/",
+   "date": "12月6日",
+   "ts": "2026-12-06T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-12-06",
    "place": "山崎文化会館"
   }
  ]
