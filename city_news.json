@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-06T12:24:53+09:00",
+ "updated": "2026-11-06T20:29:47+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
   {
@@ -14,16 +14,6 @@
   },
   {
    "tag": "学校",
-   "title": "11/9 山崎西中学校 オープンスクール",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "11月9日",
-   "ts": "2026-11-09T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-11-09",
-   "place": "山崎西中学校"
-  },
-  {
-   "tag": "学校",
    "title": "11/9 一宮南中学校 オープンスクール",
    "url": "https://city-shiso-ichinomiyaminami-jhs.edumap.jp/event",
    "date": "11月9日",
@@ -31,16 +21,6 @@
    "src": "一宮南中学校",
    "when": "2026-11-09",
    "place": "一宮南中学校"
-  },
-  {
-   "tag": "学校",
-   "title": "11/13 山崎西中学校 文化祭リハーサル",
-   "url": "https://city-shiso-yamasakinishi-jhs.edumap.jp/event",
-   "date": "11月13日",
-   "ts": "2026-11-13T00:00:00+09:00",
-   "src": "山崎西中学校",
-   "when": "2026-11-13",
-   "place": "山崎西中学校"
   },
   {
    "tag": "催し",
@@ -51,6 +31,16 @@
    "src": "山崎文化会館",
    "when": "2026-11-14",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "11/15 ちくさ図書館「こどものじかん」 11月15日開催",
+   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/ibento/1462515406500.html",
+   "date": "11月15日",
+   "ts": "2026-11-15T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-11-15",
+   "place": "ちくさ図書館"
   },
   {
    "tag": "イベント",
@@ -120,6 +110,16 @@
    "ts": "2026-12-03T00:00:00+09:00",
    "src": "山崎文化会館",
    "when": "2026-12-03",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "催し",
+   "title": "12/6 (完売御礼)Harmony宍粟特別公演元タカラジェンヌたちの響演2026",
+   "url": "http://www.yamabun.org/harmony%e5%ae%8d%e7%b2%9f%e7%89%b9%e5%88%a5%e5%85%ac%e6%bc%94%e5%85%83%e3%82%bf%e3%82%ab%e3%83%a9%e3%82%b8%e3%82%a7%e3%83%b3%e3%83%8c%e3%81%9f%e3%81%a1%e3%81%ae%e9%9f%bf%e6%bc%942026/",
+   "date": "12月6日",
+   "ts": "2026-12-06T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2026-12-06",
    "place": "山崎文化会館"
   }
  ]
