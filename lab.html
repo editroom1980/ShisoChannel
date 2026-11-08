@@ -629,21 +629,22 @@ body.ori-p .news-item{flex-direction:row;align-items:center;gap:7px;}body.ori-p 
   .pname{font-size:12px;line-height:1.35;}
   }
 
-/* iPhone縦向き: 番組表を横向き同様「1画面固定＋内側スクロール」に（iPhone限定・iPad/PC非影響） */
+/* iPhone・Androidのスマホ縦向き: 番組表を横向き同様「1画面固定＋内側スクロール」に（iPad/PC/TV非影響）
+   ★Android は 2026-11-08 に追加（lab 4.47）。それまではページ全体が動き、動画がバナーの下へ潜っていた（実機の写真で確認） */
 /* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
-body.iphone-mode.ori-p{
+body.iphone-mode.ori-p, body.droid-fit.ori-p{
     height:100vh;
     /* --vpH: 表示領域の高さが凍った時だけ、JSが端末実寸法から算出した正しい高さを入れる。通常は未設定＝100dvh */
     height:var(--vpH, 100dvh);
     min-height:0;
     overflow:hidden;
-  }body.iphone-mode.ori-p .page{
+  }body.iphone-mode.ori-p .page, body.droid-fit.ori-p .page{
     grid-template-rows:auto 1fr auto;
     height:calc(100vh - var(--hdr-h, 84px));
     height:calc(var(--vpH, 100dvh) - var(--hdr-h, 84px));
     overflow:hidden;
     padding-bottom:6px;
-  }body.iphone-mode.ori-p .sidebar{
+  }body.iphone-mode.ori-p .sidebar, body.droid-fit.ori-p .sidebar{
     position:static;
     height:100%;
     min-height:0;
@@ -2296,7 +2297,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.46-lab（登録案内の絵をそろえた）</div>
+    <div class="ps-version">version 4.47-lab（Androidの縦向きも1画面に固定）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -8669,6 +8670,8 @@ function init(){
   }
   // iPhone判定でiphone-modeクラスを付与（全画面時の丸角対策）
   if(isIOS){ document.body.classList.add('iphone-mode'); }
+  // Android のスマホも縦向きは1画面に固定する（droid-fit。CSSは ori-p と組み合わせた時だけ効く＝横・タブレット・テレビは今までどおり）
+  if(!isIOS && /Android/.test(navigator.userAgent)){ document.body.classList.add('droid-fit'); }
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   applyBadgeMode();
