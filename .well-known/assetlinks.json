@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "net.shisochan.app",
       "sha256_cert_fingerprints": [
-        "42:27:F8:30:5B:53:03:FE:22:4D:92:64:48:73:E5:A0:9E:AA:C3:26:9B:86:78:6E:F8:9D:5B:ED:0A:BD:44:9D"
+        "42:27:F8:30:5B:53:03:FE:22:4D:92:64:48:73:E5:A0:9E:AA:C3:26:9B:86:78:6E:F8:9D:5B:ED:0A:BD:44:9D",
+        "BE:36:16:53:5D:3D:89:B0:0F:2D:61:F3:DE:C5:72:96:A1:E6:86:6B:8B:28:49:FA:DC:9A:AB:29:D7:EC:72:F8"
       ]
     }
   }
