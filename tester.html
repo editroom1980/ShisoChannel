@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1e3a28">
+<meta name="color-scheme" content="only light">
+<title>テストに参加する | しそチャンNET</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap');
+:root{
+  color-scheme: only light;
+  --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;
+  --gold:#c8992a;--gold2:#e8b84a;--ink:#1a2520;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+html{background:var(--forest);}
+body{
+  background:var(--forest);color:#fff;
+  font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;
+  font-size:19px;line-height:1.75;font-weight:500;
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(16px,env(safe-area-inset-left));
+}
+.wrap{max-width:560px;margin:0 auto;}
+.nb{white-space:nowrap;}   /* 段落の終わりのひと続きは改行しない＝最後の行が2〜3文字だけにならない（絶対ルール10） */
+.logo{font-weight:900;font-size:26px;letter-spacing:.06em;}
+.logo em{font-style:normal;color:var(--gold2);}
+h1{font-size:28px;font-weight:900;line-height:1.4;margin:14px 0 10px;}
+.lead{font-size:18px;color:rgba(255,255,255,.85);margin-bottom:22px;}
+.only{background:var(--gold2);color:var(--ink);border-radius:12px;padding:14px 16px;font-weight:700;margin-bottom:28px;}
+
+/* 手順のカード：1枚に1つのこと */
+.step{background:#fff;color:var(--ink);border-radius:16px;padding:20px 18px 22px;margin-bottom:22px;}
+.step .no{display:inline-block;background:var(--green);color:#fff;font-weight:900;font-size:18px;border-radius:999px;padding:4px 16px;margin-bottom:10px;}
+.step h2{font-size:23px;font-weight:900;line-height:1.45;margin-bottom:10px;}
+.step p{margin-bottom:14px;}
+.btn{display:block;text-align:center;text-decoration:none;background:var(--green2);color:#fff;
+  font-weight:900;font-size:22px;border-radius:14px;padding:18px 12px;margin:6px 0 16px;
+  box-shadow:0 4px 0 #24502f;-webkit-tap-highlight-color:transparent;}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #24502f;}
+.shot{border:3px dashed #b9c8be;border-radius:12px;padding:26px 12px;text-align:center;color:#6a7f71;font-size:16px;background:#f3f7f4;}
+.shot b{color:var(--ink);}
+.then{font-size:17px;color:#41584a;}
+.done{background:rgba(255,255,255,.08);border-left:6px solid var(--gold2);border-radius:0 12px 12px 0;padding:16px 16px;margin-top:6px;}
+.done h2{font-size:23px;font-weight:900;color:var(--gold2);margin-bottom:6px;}
+
+.key{display:inline-block;border:3px solid var(--gold);border-radius:8px;padding:0 8px;font-weight:900;color:var(--ink);background:#fff8e6;white-space:nowrap;}
+/* 段階：1＝グループに入るだけ（審査待ち）、2＝3手順そろう。body の class で切り替える */
+body.phase1 .p2{display:none;}
+body:not(.phase1) .p1{display:none;}
+
+/* iPhone で開いた時 */
+.ios{display:none;}
+body.is-ios .ios{display:block;}
+body.is-ios .android{display:none;}
+body.is-ios .lead{display:none;}
+.ios .box{background:#fff;color:var(--ink);border-radius:16px;padding:22px 18px;}
+.ios h2{font-size:23px;font-weight:900;margin-bottom:10px;}
+.foot{margin-top:30px;font-size:15px;color:rgba(255,255,255,.6);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">しそチャン<em>NET</em></div>
+  <h1>アプリの<span class="nb">テストに参加する</span></h1>
+  <p class="lead p2"><span class="nb">ボタンを上から順に</span><span class="nb">3回押すだけで</span><span class="nb">参加できます。</span></p>
+  <p class="lead p1"><span class="nb">まずは、ボタンを</span><span class="nb">1回押して</span><span class="nb">仲間に入ってください。</span></p>
+
+  <!-- iPhone で開いた人には、ここだけを見せる -->
+  <div class="ios">
+    <div class="box">
+      <h2><span class="nb">iPhone では</span><span class="nb">参加できません</span></h2>
+      <p><span class="nb">このテストは</span><span class="nb">Android のスマホだけが</span><span class="nb">対象です。</span><br><span class="nb">お気持ちだけ、</span><span class="nb">ありがとうございます。</span></p>
+    </div>
+  </div>
+
+  <div class="android">
+    <div class="only">Android のスマホの方が<span class="nb">対象です。</span></div>
+
+    <section class="step">
+      <span class="no">手順 1</span>
+      <h2>仲間に入る</h2>
+      <a class="btn" id="go1" href="#">① 仲間に入る</a>
+      <p class="then"><span class="nb">開いた画面で、</span><span class="nb"><span class="key">グループに参加</span> を押します。</span></p>
+      <p class="then" style="margin-top:14px"><span class="nb">押したら、</span><span class="nb">このページに戻ってきます。</span></p>
+    </section>
+
+    <section class="step p1">
+      <span class="no">手順 2・3</span>
+      <h2><span class="nb">準備ができたら、</span><span class="nb">メールでお知らせします</span></h2>
+      <p><span class="nb">グループに入るときに使った</span><span class="nb">Gmail に届きます。</span></p>
+      <p style="margin-bottom:0"><span class="nb">届いたメールのボタンを</span><span class="nb">押すだけで、</span><span class="nb">続きができます。</span></p>
+    </section>
+
+    <section class="step p2">
+      <span class="no">手順 2</span>
+      <h2>テストに参加する</h2>
+      <a class="btn" id="go2" href="#">② テストに参加する</a>
+      <p class="then"><span class="nb">開いた画面で、</span><span class="nb"><span class="key">テスターになる</span> を押します。</span></p>
+      <p class="then" style="margin-top:14px"><span class="nb">「あなたはテスターです」と出たら、</span><span class="nb">このページに戻ってきます。</span></p>
+    </section>
+
+    <section class="step p2">
+      <span class="no">手順 3</span>
+      <h2>アプリを入れる</h2>
+      <a class="btn" id="go3" href="#">③ アプリを入れる</a>
+      <p class="then"><span class="nb">Play ストアが開いたら、</span><span class="nb"><span class="key">インストール</span> を押します。</span></p>
+    </section>
+
+    <div class="done p2">
+      <h2>これで完了です</h2>
+      <p><span class="nb">14日間、アプリを</span><span class="nb">消さずに置いて</span><span class="nb">おいてください。</span><br><span class="nb">ときどき開いて</span><span class="nb">番組を見ていただけると</span><span class="nb">助かります。</span></p>
+    </div>
+  </div>
+
+  <p class="foot">しそチャンNET ／ 運営：<span class="nb">EDIT ROOM（山内 一輝）</span><br>お問い合わせ：info@shisochan.net</p>
+</div>
+<script>
+// 段階：1＝クローズドテストの審査待ち（グループに入るだけ）／2＝審査が通って3手順そろう
+var PHASE=2;
+// 行き先
+var LINKS={
+  group:'https://groups.google.com/g/shisochan-tester',   // ① Google グループの参加ページ（2026-11-03 作成）
+  optin:'https://play.google.com/apps/testing/net.shisochan.app',   // ② テスターになる
+  store:'https://play.google.com/store/apps/details?id=net.shisochan.app'   // ③ Play ストア
+};
+(function(){
+  var ua=navigator.userAgent||'';
+  var ios=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios) document.body.classList.add('is-ios');
+  if(PHASE===1) document.body.classList.add('phase1');
+  var m={go1:LINKS.group,go2:LINKS.optin,go3:LINKS.store};
+  for(var k in m){ var a=document.getElementById(k); if(a&&m[k]) a.href=m[k]; }
+})();
+</script>
+</body>
+</html>
