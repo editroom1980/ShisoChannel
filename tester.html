@@ -50,6 +50,20 @@ h1{font-size:28px;font-weight:900;line-height:1.4;margin:14px 0 10px;}
 body.phase1 .p2{display:none;}
 body:not(.phase1) .p1{display:none;}
 
+.need{background:#fff;color:var(--ink);border-radius:16px;padding:18px 18px 16px;margin-bottom:22px;}
+.need h2{font-size:20px;font-weight:900;margin-bottom:8px;color:var(--green);}
+.need ul{list-style:none;}
+.need li{position:relative;padding-left:26px;margin-bottom:6px;}
+.need li::before{content:'';position:absolute;left:4px;top:.62em;width:12px;height:12px;border-radius:50%;background:var(--green2);}
+.pic{display:block;width:100%;height:auto;border-radius:10px;border:1px solid #d6e0d8;margin:4px 0 14px;}
+.tip{background:#f3f7f4;border-radius:10px;padding:12px 14px;font-size:16px;color:#41584a;margin:4px 0 14px;}
+.tip b{color:var(--ink);}
+.sub{font-size:17px;font-weight:900;color:var(--ink);margin:10px 0 6px;}
+.inapp{display:none;background:#fff8e6;color:var(--ink);border:3px solid var(--gold);border-radius:16px;padding:18px;margin-bottom:22px;}
+body.is-inapp .inapp{display:block;}
+.inapp h2{font-size:21px;font-weight:900;margin-bottom:8px;}
+.inapp .btn{margin:10px 0 12px;}
+
 /* iPhone で開いた時 */
 .ios{display:none;}
 body.is-ios .ios{display:block;}
@@ -64,7 +78,7 @@ body.is-ios .lead{display:none;}
 <div class="wrap">
   <div class="logo">しそチャン<em>NET</em></div>
   <h1>アプリの<span class="nb">テストに参加する</span></h1>
-  <p class="lead p2"><span class="nb">ボタンを上から順に</span><span class="nb">3回押すだけで</span><span class="nb">参加できます。</span></p>
+  <p class="lead p2"><span class="nb">上から順に、</span><span class="nb">3つの手順で</span><span class="nb">参加できます。</span></p>
   <p class="lead p1"><span class="nb">まずは、ボタンを</span><span class="nb">1回押して</span><span class="nb">仲間に入ってください。</span></p>
 
   <!-- iPhone で開いた人には、ここだけを見せる -->
@@ -78,12 +92,36 @@ body.is-ios .lead{display:none;}
   <div class="android">
     <div class="only">Android のスマホの方が<span class="nb">対象です。</span></div>
 
+    <div class="inapp">
+      <h2><span class="nb">このままでは</span><span class="nb">参加できません</span></h2>
+      <p><span class="nb">Instagram などのアプリの中で</span><span class="nb">開いています。</span><span class="nb">Chrome で開き直してください。</span></p>
+      <a class="btn" id="goChrome" href="#">Chrome で開き直す</a>
+      <p class="then"><span class="nb">開かないときは、</span><span class="nb">右上の <span class="key">︙</span> を押し、</span><span class="nb"><span class="key">Chrome で開く</span> を押します。</span></p>
+    </div>
+
+    <div class="need">
+      <h2>はじめに用意するもの</h2>
+      <ul>
+        <li><span class="nb">Android のスマホ</span><span class="nb">（Android 7 以上）</span></li>
+        <li><span class="nb">Google アカウント</span><span class="nb">（Gmail のアドレス）</span></li>
+        <li><span class="nb">スマホの Chrome で、</span><span class="nb">そのアカウントに</span><span class="nb">ログインしておく</span></li>
+      </ul>
+      <p class="then" style="margin-top:6px"><span class="nb">①〜③は、</span><span class="nb">同じアカウントで</span><span class="nb">進めてください。</span></p>
+    </div>
+
     <section class="step">
       <span class="no">手順 1</span>
       <h2>仲間に入る</h2>
       <a class="btn" id="go1" href="#">① 仲間に入る</a>
-      <p class="then"><span class="nb">開いた画面で、</span><span class="nb"><span class="key">グループに参加</span> を押します。</span></p>
-      <p class="then" style="margin-top:14px"><span class="nb">押したら、</span><span class="nb">このページに戻ってきます。</span></p>
+      <p class="sub">1. 左上を押す</p>
+      <p class="then"><span class="nb">開いた画面の左上の</span><span class="nb"><span class="key">グループに参加</span> を押します。</span></p>
+      <img class="pic" src="tester-1a.jpg" alt="グループの画面。左上のグループに参加を押す" width="720" height="506">
+      <div class="tip"><b><span class="nb">右上が「ログイン」のとき</span></b><br><span class="nb">「ログイン」を押し、</span><span class="nb">自分のアカウントの</span><span class="nb">「◯◯として続行」を押します。</span><span class="nb">別の画面になったら、</span><span class="nb">このページに戻って</span><span class="nb">①を押し直します。</span></div>
+      <p class="sub">2. もう一度押す</p>
+      <p class="then"><span class="nb">出てきた窓の右下の</span><span class="nb"><span class="key">グループに参加</span> を、</span><span class="nb">もう一度押します。</span></p>
+      <img class="pic" src="tester-1b.jpg" alt="参加の窓。右下のグループに参加を押す" width="720" height="693">
+      <div class="tip"><span class="nb">「アクセスする権限がありません」と</span><span class="nb">出たままですが、</span><span class="nb">左上の「グループに参加」が</span><span class="nb">消えていれば、</span><span class="nb">参加できています。</span></div>
+      <p class="then"><span class="nb">このページに戻ってきます。</span></p>
     </section>
 
     <section class="step p1">
@@ -97,8 +135,13 @@ body.is-ios .lead{display:none;}
       <span class="no">手順 2</span>
       <h2>テストに参加する</h2>
       <a class="btn" id="go2" href="#">② テストに参加する</a>
-      <p class="then"><span class="nb">開いた画面で、</span><span class="nb"><span class="key">テスターになる</span> を押します。</span></p>
-      <p class="then" style="margin-top:14px"><span class="nb">「あなたはテスターです」と出たら、</span><span class="nb">このページに戻ってきます。</span></p>
+      <p class="then"><span class="nb">英語の画面が開きます。</span><span class="nb">青い <span class="key">Become a tester</span></span><span class="nb">（テスターになる）を押します。</span></p>
+      <img class="pic" src="tester-2a.jpg" alt="英語のテストの画面。青いBecome a testerを押す" width="720" height="673">
+      <div class="tip"><span class="nb">画面の下の「日本語」を押すと、</span><span class="nb">日本語で読めます。</span></div>
+      <p class="then"><span class="nb">「You are a tester.」</span><span class="nb">（あなたはテスターです）と</span><span class="nb">出たら完了です。</span></p>
+      <img class="pic" src="tester-2b.jpg" alt="You are a tester と出た画面" width="720" height="146">
+      <div class="tip"><b><span class="nb">「App not available」と</span><span class="nb">出たとき</span></b><br><span class="nb">①がまだ済んでいません。</span><span class="nb">①からやり直してください。</span></div>
+      <p class="then"><span class="nb">このページに戻ってきます。</span></p>
     </section>
 
     <section class="step p2">
@@ -106,11 +149,13 @@ body.is-ios .lead{display:none;}
       <h2>アプリを入れる</h2>
       <a class="btn" id="go3" href="#">③ アプリを入れる</a>
       <p class="then"><span class="nb">Play ストアが開いたら、</span><span class="nb"><span class="key">インストール</span> を押します。</span></p>
+      <div class="tip"><b>見つからないとき</b><br><span class="nb">②のあと、</span><span class="nb">ストアに出るまで</span><span class="nb">時間がかかることがあります。</span><span class="nb">しばらく待ってから、</span><span class="nb">もう一度③を押してください。</span></div>
     </section>
 
     <div class="done p2">
       <h2>これで完了です</h2>
       <p><span class="nb">14日間、アプリを</span><span class="nb">消さずに置いて</span><span class="nb">おいてください。</span><br><span class="nb">ときどき開いて</span><span class="nb">番組を見ていただけると</span><span class="nb">助かります。</span></p>
+      <p class="then" style="color:rgba(255,255,255,.75);margin-top:8px"><span class="nb">グループから、</span><span class="nb">お知らせのメールが</span><span class="nb">届くことがあります。</span></p>
     </div>
   </div>
 
@@ -129,6 +174,14 @@ var LINKS={
   var ua=navigator.userAgent||'';
   var ios=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(ios) document.body.classList.add('is-ios');
+  // アプリの中のブラウザ（Instagram・Facebook・LINE など）は Google にログインしておらず、①で詰まる
+  var inapp=/Instagram|FBAN|FBAV|FB_IAB|Line\/|; wv\)/.test(ua);
+  if(!ios && inapp){
+    document.body.classList.add('is-inapp');
+    var c=document.getElementById('goChrome');
+    if(c) c.href= /Line\//.test(ua) ? location.href.split('#')[0]+(location.search?'&':'?')+'openExternalBrowser=1'
+                                    : 'intent://'+location.host+location.pathname+'#Intent;scheme=https;package=com.android.chrome;end';
+  }
   if(PHASE===1) document.body.classList.add('phase1');
   var m={go1:LINKS.group,go2:LINKS.optin,go3:LINKS.store};
   for(var k in m){ var a=document.getElementById(k); if(a&&m[k]) a.href=m[k]; }
