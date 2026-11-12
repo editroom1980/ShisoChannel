@@ -5,19 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#1e3a28">
-<meta name="color-scheme" content="only light">
+<!-- 明るい表示と暗い表示の両方を、このページ自身が持つ。
+     持っていないと、Galaxy の標準のブラウザなどが勝手に色を反転させ、ボタンが見づらくなる（2026-11-12） -->
+<meta name="color-scheme" content="light dark">
 <title>テストに参加する | しそチャンNET</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap');
 :root{
-  color-scheme: only light;
-  --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;
-  --gold:#c8992a;--gold2:#e8b84a;--ink:#1a2520;
+  color-scheme: light dark;
+  --bg:#1e3a28;          /* ページの地 */
+  --head:#ffffff;        /* 地の上の字 */
+  --headsub:rgba(255,255,255,.85);
+  --card:#ffffff;        /* 手順のカード */
+  --ink:#1a2520;         /* カードの字 */
+  --sub:#41584a;         /* カードの補足の字 */
+  --tip:#f3f7f4;         /* 補足の面 */
+  --line:#d6e0d8;
+  --no:#2d5c3e;          /* 手順の番号 */
+  --btn:#2f7a4b; --btnsh:#1f5534; --btnink:#ffffff;
+  --gold:#c8992a; --gold2:#e8b84a; --keybg:#fff8e6;
+  --only:#e8b84a; --onlyink:#1a2520;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1c14; --head:#f2f5f2; --headsub:rgba(242,245,242,.82);
+    --card:#1b2a21; --ink:#eef3ef; --sub:#b9c8be; --tip:#24362b; --line:#34493c;
+    --no:#3d7a54; --btn:#3a8c58; --btnsh:#245c39; --btnink:#ffffff;
+    --keybg:#2f2814; --only:#e8b84a; --onlyink:#1a2520;
+  }
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
-html{background:var(--forest);}
+html{background:var(--bg);}
 body{
-  background:var(--forest);color:#fff;
+  background:var(--bg);color:var(--head);
   font-family:'Zen Kaku Gothic New','Noto Sans JP',sans-serif;
   font-size:19px;line-height:1.75;font-weight:500;
   padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(16px,env(safe-area-inset-left));
@@ -27,59 +47,48 @@ body{
 .logo{font-weight:900;font-size:26px;letter-spacing:.06em;}
 .logo em{font-style:normal;color:var(--gold2);}
 h1{font-size:28px;font-weight:900;line-height:1.4;margin:14px 0 10px;}
-.lead{font-size:18px;color:rgba(255,255,255,.85);margin-bottom:22px;}
-.only{background:var(--gold2);color:var(--ink);border-radius:12px;padding:14px 16px;font-weight:700;margin-bottom:28px;}
+.lead{font-size:18px;color:var(--headsub);margin-bottom:20px;}
+.only{background:var(--only);color:var(--onlyink);border-radius:12px;padding:14px 16px;font-weight:700;margin-bottom:24px;}
 
 /* 手順のカード：1枚に1つのこと */
-.step{background:#fff;color:var(--ink);border-radius:16px;padding:20px 18px 22px;margin-bottom:22px;}
-.step .no{display:inline-block;background:var(--green);color:#fff;font-weight:900;font-size:18px;border-radius:999px;padding:4px 16px;margin-bottom:10px;}
+.step{background:var(--card);color:var(--ink);border-radius:16px;padding:20px 18px 22px;margin-bottom:22px;}
+.step .no{display:inline-block;background:var(--no);color:#fff;font-weight:900;font-size:18px;border-radius:999px;padding:4px 16px;margin-bottom:10px;}
 .step h2{font-size:23px;font-weight:900;line-height:1.45;margin-bottom:10px;}
-.step p{margin-bottom:14px;}
-.btn{display:block;text-align:center;text-decoration:none;background:var(--green2);color:#fff;
-  font-weight:900;font-size:22px;border-radius:14px;padding:18px 12px;margin:6px 0 16px;
-  box-shadow:0 4px 0 #24502f;-webkit-tap-highlight-color:transparent;}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #24502f;}
-.shot{border:3px dashed #b9c8be;border-radius:12px;padding:26px 12px;text-align:center;color:#6a7f71;font-size:16px;background:#f3f7f4;}
-.shot b{color:var(--ink);}
-.then{font-size:17px;color:#41584a;}
-.done{background:rgba(255,255,255,.08);border-left:6px solid var(--gold2);border-radius:0 12px 12px 0;padding:16px 16px;margin-top:6px;}
-.done h2{font-size:23px;font-weight:900;color:var(--gold2);margin-bottom:6px;}
-
-.key{display:inline-block;border:3px solid var(--gold);border-radius:8px;padding:0 8px;font-weight:900;color:var(--ink);background:#fff8e6;white-space:nowrap;}
-/* 段階：1＝グループに入るだけ（審査待ち）、2＝3手順そろう。body の class で切り替える */
-body.phase1 .p2{display:none;}
-body:not(.phase1) .p1{display:none;}
-
-.need{background:#fff;color:var(--ink);border-radius:16px;padding:18px 18px 16px;margin-bottom:22px;}
-.need h2{font-size:20px;font-weight:900;margin-bottom:8px;color:var(--green);}
-.need ul{list-style:none;}
-.need li{position:relative;padding-left:26px;margin-bottom:6px;}
-.need li::before{content:'';position:absolute;left:4px;top:.62em;width:12px;height:12px;border-radius:50%;background:var(--green2);}
-.pic{display:block;width:100%;height:auto;border-radius:10px;border:1px solid #d6e0d8;margin:4px 0 14px;}
-.tip{background:#f3f7f4;border-radius:10px;padding:12px 14px;font-size:16px;color:#41584a;margin:4px 0 14px;}
+.step p{margin-bottom:12px;}
+.btn{display:block;text-align:center;text-decoration:none;background:var(--btn);color:var(--btnink);
+  font-weight:900;font-size:22px;line-height:1.4;border-radius:14px;padding:18px 12px;margin:6px 0 16px;
+  box-shadow:0 4px 0 var(--btnsh);-webkit-tap-highlight-color:transparent;}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--btnsh);}
+.then{font-size:17px;color:var(--sub);}
+.key{display:inline-block;border:3px solid var(--gold);border-radius:8px;padding:0 8px;font-weight:900;color:var(--ink);background:var(--keybg);white-space:nowrap;}
+.plane{width:1em;height:1em;vertical-align:-.12em;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;}
+.pic{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);margin:4px 0 14px;}
+.tip{background:var(--tip);border-radius:10px;padding:12px 14px;font-size:16px;color:var(--sub);margin:4px 0 12px;}
 .tip b{color:var(--ink);}
-.sub{font-size:17px;font-weight:900;color:var(--ink);margin:10px 0 6px;}
-.inapp{display:none;background:#fff8e6;color:var(--ink);border:3px solid var(--gold);border-radius:16px;padding:18px;margin-bottom:22px;}
+.addr{display:grid;gap:8px;justify-items:start;margin-top:8px;}
+.addr code{white-space:nowrap;font-family:inherit;font-weight:700;font-size:17px;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:8px;padding:6px 10px;user-select:all;-webkit-user-select:all;}
+.copy{flex:none;font:inherit;font-size:16px;font-weight:700;color:var(--ink);background:var(--card);border:2px solid var(--gold);border-radius:8px;padding:6px 12px;}
+.done{background:var(--card);color:var(--ink);border-left:8px solid var(--gold2);border-radius:12px;padding:16px 16px 6px;margin-top:6px;}
+.done h2{font-size:23px;font-weight:900;margin-bottom:6px;}
+.done p{margin-bottom:10px;}
+.inapp{display:none;}
 body.is-inapp .inapp{display:block;}
-.inapp h2{font-size:21px;font-weight:900;margin-bottom:8px;}
-.inapp .btn{margin:10px 0 12px;}
 
 /* iPhone で開いた時 */
 .ios{display:none;}
 body.is-ios .ios{display:block;}
 body.is-ios .android{display:none;}
 body.is-ios .lead{display:none;}
-.ios .box{background:#fff;color:var(--ink);border-radius:16px;padding:22px 18px;}
+.ios .box{background:var(--card);color:var(--ink);border-radius:16px;padding:22px 18px;}
 .ios h2{font-size:23px;font-weight:900;margin-bottom:10px;}
-.foot{margin-top:30px;font-size:15px;color:rgba(255,255,255,.6);}
+.foot{margin-top:30px;font-size:15px;color:var(--headsub);opacity:.75;}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="logo">しそチャン<em>NET</em></div>
   <h1>アプリの<span class="nb">テストに参加する</span></h1>
-  <p class="lead p2"><span class="nb">上から順に、</span><span class="nb">3つの手順で</span><span class="nb">参加できます。</span></p>
-  <p class="lead p1"><span class="nb">まずは、ボタンを</span><span class="nb">1回押して</span><span class="nb">仲間に入ってください。</span></p>
+  <p class="lead"><span class="nb">メールを1通送って、</span><span class="nb">届いたメールの</span><span class="nb">ボタンを押すだけです。</span></p>
 
   <!-- iPhone で開いた人には、ここだけを見せる -->
   <div class="ios">
@@ -90,101 +99,76 @@ body.is-ios .lead{display:none;}
   </div>
 
   <div class="android">
-    <div class="only">Android のスマホの方が<span class="nb">対象です。</span></div>
-
-    <div class="inapp">
-      <h2><span class="nb">このままでは</span><span class="nb">参加できません</span></h2>
-      <p><span class="nb">Instagram などのアプリの中で</span><span class="nb">開いています。</span><span class="nb">Chrome で開き直してください。</span></p>
-      <a class="btn" id="goChrome" href="#">Chrome で開き直す</a>
-      <p class="then"><span class="nb">開かないときは、</span><span class="nb">右上の <span class="key">︙</span> を押し、</span><span class="nb"><span class="key">Chrome で開く</span> を押します。</span></p>
-    </div>
-
-    <div class="need">
-      <h2>はじめに用意するもの</h2>
-      <ul>
-        <li><span class="nb">Android のスマホ</span><span class="nb">（Android 7 以上）</span></li>
-        <li><span class="nb">Google アカウント</span><span class="nb">（Gmail のアドレス）</span></li>
-        <li><span class="nb">スマホの Chrome で、</span><span class="nb">そのアカウントに</span><span class="nb">ログインしておく</span></li>
-      </ul>
-      <p class="then" style="margin-top:6px"><span class="nb">①〜③は、</span><span class="nb">同じアカウントで</span><span class="nb">進めてください。</span></p>
-    </div>
+    <div class="only"><span class="nb">Android のスマホで、</span><span class="nb">Gmail を使っている方が</span><span class="nb">対象です。</span></div>
 
     <section class="step">
       <span class="no">手順 1</span>
-      <h2>仲間に入る</h2>
-      <a class="btn" id="go1" href="#">① 仲間に入る</a>
-      <p class="sub">1. 左上を押す</p>
-      <p class="then"><span class="nb">開いた画面の左上の</span><span class="nb"><span class="key">グループに参加</span> を押します。</span></p>
-      <img class="pic" src="tester-1a.jpg" alt="グループの画面。左上のグループに参加を押す" width="720" height="506">
-      <div class="tip"><b><span class="nb">右上が「ログイン」のとき</span></b><br><span class="nb">「ログイン」を押し、</span><span class="nb">自分のアカウントの</span><span class="nb">「◯◯として続行」を押します。</span><span class="nb">別の画面になったら、</span><span class="nb">このページに戻って</span><span class="nb">①を押し直します。</span></div>
-      <p class="sub">2. もう一度押す</p>
-      <p class="then"><span class="nb">出てきた窓の右下の</span><span class="nb"><span class="key">グループに参加</span> を、</span><span class="nb">もう一度押します。</span></p>
-      <img class="pic" src="tester-1b.jpg" alt="参加の窓。右下のグループに参加を押す" width="720" height="693">
-      <div class="tip"><span class="nb">「アクセスする権限がありません」と</span><span class="nb">出たままですが、</span><span class="nb">左上の「グループに参加」が</span><span class="nb">消えていれば、</span><span class="nb">参加できています。</span></div>
-      <p class="then"><span class="nb">このページに戻ってきます。</span></p>
+      <h2><span class="nb">申し込みの</span><span class="nb">メールを送る</span></h2>
+      <a class="btn" id="mail" href="#">申し込みのメールを作る</a>
+      <p class="then"><span class="nb">メールの画面が開きます。</span><span class="nb">文はもう入っているので、</span><span class="nb">そのまま右上の</span><span class="nb"><span class="key"><svg class="plane" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10.1 15 12 3.4 13.9z"/></svg> 紙飛行機の印</span> を</span><span class="nb">押して送ります。</span></p>
+      <div class="tip"><span class="nb">いただいたアドレスは、</span><span class="nb">テストの登録にだけ使います。</span></div>
+      <div class="tip"><b>メールの画面が開かないとき</b><br><span class="nb">下のアドレスに、</span><span class="nb">スマホの Gmail から</span><span class="nb">「テスター参加」と</span><span class="nb">送ってください。</span>
+        <span class="addr"><code id="addr">info@shisochan.net</code><button class="copy" id="copy" type="button">写す</button></span>
+        <span class="inapp"><br><span class="nb">Instagram などの中で</span><span class="nb">開いているときは、</span><span class="nb">右上の <span class="key">︙</span> から</span><span class="nb">ブラウザで開き直すと、</span><span class="nb">開くことがあります。</span></span>
+      </div>
     </section>
 
-    <section class="step p1">
-      <span class="no">手順 2・3</span>
-      <h2><span class="nb">準備ができたら、</span><span class="nb">メールでお知らせします</span></h2>
-      <p><span class="nb">グループに入るときに使った</span><span class="nb">Gmail に届きます。</span></p>
-      <p style="margin-bottom:0"><span class="nb">届いたメールのボタンを</span><span class="nb">押すだけで、</span><span class="nb">続きができます。</span></p>
-    </section>
-
-    <section class="step p2">
+    <section class="step">
       <span class="no">手順 2</span>
-      <h2>テストに参加する</h2>
-      <a class="btn" id="go2" href="#">② テストに参加する</a>
-      <p class="then"><span class="nb">英語の画面が開きます。</span><span class="nb">青い <span class="key">Become a tester</span></span><span class="nb">（テスターになる）を押します。</span></p>
-      <img class="pic" src="tester-2a.jpg" alt="英語のテストの画面。青いBecome a testerを押す" width="720" height="673">
-      <div class="tip"><span class="nb">画面の下の「日本語」を押すと、</span><span class="nb">日本語で読めます。</span></div>
-      <p class="then"><span class="nb">「You are a tester.」</span><span class="nb">（あなたはテスターです）と</span><span class="nb">出たら完了です。</span></p>
-      <img class="pic" src="tester-2b.jpg" alt="You are a tester と出た画面" width="720" height="146">
-      <div class="tip"><b><span class="nb">「App not available」と</span><span class="nb">出たとき</span></b><br><span class="nb">①がまだ済んでいません。</span><span class="nb">①からやり直してください。</span></div>
-      <p class="then"><span class="nb">このページに戻ってきます。</span></p>
+      <h2><span class="nb">届いたメールから</span><span class="nb">テスターになる</span></h2>
+      <p class="then"><span class="nb">1日以内に、</span><span class="nb">しそチャンNETから</span><span class="nb">返信が届きます。</span><span class="nb">中のリンクを</span><span class="nb">押してください。</span></p>
+      <div class="tip"><span class="nb">返信が見つからないときは、</span><span class="nb">迷惑メールの中も</span><span class="nb">見てください。</span></div>
+      <p class="then"><span class="nb">英語の画面が開きます。</span><span class="nb">下のほうにある、</span><span class="nb">青い <span class="key">Become a tester</span> を</span><span class="nb">押します。</span></p>
+      <picture>
+        <source srcset="tester-b1-dark.jpg" media="(prefers-color-scheme: dark)">
+        <img class="pic" src="tester-b1.jpg" alt="英語の画面。青いBecome a testerを押す" width="720" height="278">
+      </picture>
+      <div class="tip"><span class="nb">画面が黒っぽい色で</span><span class="nb">出ることもあります。</span><span class="nb">ボタンの場所は同じです。</span></div>
     </section>
 
-    <section class="step p2">
+    <section class="step">
       <span class="no">手順 3</span>
       <h2>アプリを入れる</h2>
-      <a class="btn" id="go3" href="#">③ アプリを入れる</a>
+      <p class="then"><span class="nb">「You are a tester.」と</span><span class="nb">出たら、その下の</span><span class="nb">青い字の</span><span class="nb"><span class="key">download it on Google Play</span></span> <span class="nb">を押します。</span></p>
+      <picture>
+        <source srcset="tester-b2-dark.jpg" media="(prefers-color-scheme: dark)">
+        <img class="pic" src="tester-b2.jpg" alt="You are a testerの画面。青い字のdownload it on Google Playを押す" width="720" height="325">
+      </picture>
       <p class="then"><span class="nb">Play ストアが開いたら、</span><span class="nb"><span class="key">インストール</span> を押します。</span></p>
-      <div class="tip"><b>見つからないとき</b><br><span class="nb">②のあと、</span><span class="nb">ストアに出るまで</span><span class="nb">時間がかかることがあります。</span><span class="nb">しばらく待ってから、</span><span class="nb">もう一度③を押してください。</span></div>
+      <div class="tip"><b>見つからないとき</b><br><span class="nb">ストアに出るまで、</span><span class="nb">時間がかかることがあります。</span><span class="nb">しばらく待ってから、</span><span class="nb">もう一度押してください。</span></div>
     </section>
 
-    <div class="done p2">
+    <div class="done">
       <h2>これで完了です</h2>
-      <p><span class="nb">14日間、アプリを</span><span class="nb">消さずに置いて</span><span class="nb">おいてください。</span><br><span class="nb">ときどき開いて</span><span class="nb">番組を見ていただけると</span><span class="nb">助かります。</span></p>
-      <p class="then" style="color:rgba(255,255,255,.75);margin-top:8px"><span class="nb">グループから、</span><span class="nb">お知らせのメールが</span><span class="nb">届くことがあります。</span></p>
+      <p><span class="nb">14日間、アプリを</span><span class="nb">消さずに置いて</span><span class="nb">おいてください。</span><span class="nb">ときどき開いて</span><span class="nb">番組を見ていただけると</span><span class="nb">助かります。</span></p>
+      <p class="then"><span class="nb">アイコンが見えないときは、</span><span class="nb">画面を下から上へ</span><span class="nb">払い上げると、</span><span class="nb">アプリの一覧にあります。</span></p>
+      <p class="then"><span class="nb">英語の画面の</span><span class="nb">「Leave the program」は、</span><span class="nb">テストをやめるボタンです。</span><span class="nb">押さないでください。</span></p>
     </div>
   </div>
 
   <p class="foot">しそチャンNET ／ 運営：<span class="nb">EDIT ROOM（山内 一輝）</span><br>お問い合わせ：info@shisochan.net</p>
 </div>
 <script>
-// 段階：1＝クローズドテストの審査待ち（グループに入るだけ）／2＝審査が通って3手順そろう
-var PHASE=2;
-// 行き先
-var LINKS={
-  group:'https://groups.google.com/g/shisochan-tester?hl=ja',   // ① Google グループの参加ページ（2026-11-03 作成）
-  optin:'https://play.google.com/apps/testing/net.shisochan.app?hl=ja',   // ② テスターになる
-  store:'https://play.google.com/store/apps/details?id=net.shisochan.app&hl=ja'   // ③ Play ストア
+// 申し込みのメール：差出人のアドレスがそのまま届くので、相手はアドレスを調べたり打ったりしなくてよい
+var MAIL={
+  to:'info@shisochan.net',
+  subject:'しそチャンNET テスター参加',
+  body:'しそチャンNETのテストに参加します。\n（このまま送信してください）'
 };
 (function(){
   var ua=navigator.userAgent||'';
   var ios=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(ios) document.body.classList.add('is-ios');
-  // アプリの中のブラウザ（Instagram・Facebook・LINE など）は Google にログインしておらず、①で詰まる
-  var inapp=/Instagram|FBAN|FBAV|FB_IAB|Line\/|; wv\)/.test(ua);
-  if(!ios && inapp){
-    document.body.classList.add('is-inapp');
-    var c=document.getElementById('goChrome');
-    if(c) c.href= /Line\//.test(ua) ? location.href.split('#')[0]+(location.search?'&':'?')+'openExternalBrowser=1'
-                                    : 'intent://'+location.host+location.pathname+'#Intent;scheme=https;package=com.android.chrome;end';
-  }
-  if(PHASE===1) document.body.classList.add('phase1');
-  var m={go1:LINKS.group,go2:LINKS.optin,go3:LINKS.store};
-  for(var k in m){ var a=document.getElementById(k); if(a&&m[k]) a.href=m[k]; }
+  if(!ios && /Instagram|FBAN|FBAV|FB_IAB|Line\/|; wv\)/.test(ua)) document.body.classList.add('is-inapp');
+  var m=document.getElementById('mail');
+  if(m) m.href='mailto:'+MAIL.to+'?subject='+encodeURIComponent(MAIL.subject)+'&body='+encodeURIComponent(MAIL.body);
+  // アドレスを写す。写せない時は、アドレスを選んだ状態にする
+  var c=document.getElementById('copy'), a=document.getElementById('addr');
+  if(c&&a) c.addEventListener('click',function(){
+    function sel(){ var r=document.createRange(); r.selectNodeContents(a); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+    function ok(){ c.textContent='写しました'; setTimeout(function(){c.textContent='写す';},2000); }
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(MAIL.to).then(ok,sel); } else { sel(); }
+  });
 })();
 </script>
 </body>
