@@ -1,17 +1,7 @@
 {
- "updated": "2026-11-15T07:57:24+09:00",
+ "updated": "2026-11-15T11:38:03+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "11/15 ちくさ図書館「こどものじかん」 11月15日開催",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/chikusashiminkyoku/chikusashogaigakushujimusho/ibento/1462515406500.html",
-   "date": "11月15日",
-   "ts": "2026-11-15T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-11-15",
-   "place": "ちくさ図書館"
-  },
   {
    "tag": "イベント",
    "title": "11/17 最新デジタル活用と実践的な事業展開を学ぶ 起業準備セミナー 受講生を募集",
@@ -120,6 +110,15 @@
    "src": "山崎文化会館",
    "when": "2026-12-13",
    "place": "山崎文化会館"
+  },
+  {
+   "tag": "イベント",
+   "title": "12/13 若者フォーラムin宍粟",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/ibent/9125.html",
+   "date": "12月13日",
+   "ts": "2026-12-13T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-12-13"
   }
  ]
 }
