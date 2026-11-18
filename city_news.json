@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-18T04:49:27+09:00",
+ "updated": "2026-11-18T11:24:40+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
   {
@@ -51,6 +51,15 @@
    "src": "宍粟市公式サイト",
    "when": "2026-11-27",
    "place": "宍粟市役所1階市民ロビー"
+  },
+  {
+   "tag": "イベント",
+   "title": "11/27 市役所で献血を実施",
+   "url": "https://www.city.shiso.lg.jp/soshiki/kenkofukushi/hokenfukushi/osirase/13061.html",
+   "date": "11月27日",
+   "ts": "2026-11-27T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-11-27"
   },
   {
    "tag": "イベント",
@@ -110,15 +119,6 @@
    "src": "山崎文化会館",
    "when": "2026-12-13",
    "place": "山崎文化会館"
-  },
-  {
-   "tag": "イベント",
-   "title": "12/13 若者フォーラムin宍粟",
-   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/ibent/9125.html",
-   "date": "12月13日",
-   "ts": "2026-12-13T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-12-13"
   }
  ]
 }
