@@ -1,17 +1,7 @@
 {
- "updated": "2026-11-18T19:43:45+09:00",
+ "updated": "2026-11-19T04:04:04+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "催し",
-   "title": "11/18 芸術鑑賞会",
-   "url": "http://www.yamabun.org/%e8%8a%b8%e8%a1%93%e9%91%91%e8%b3%9e%e4%bc%9a-2/",
-   "date": "11月18日",
-   "ts": "2026-11-18T00:00:00+09:00",
-   "src": "山崎文化会館",
-   "when": "2026-11-18",
-   "place": "山崎文化会館"
-  },
   {
    "tag": "催し",
    "title": "11/19 宍粟市やまさき文化大学",
@@ -118,6 +108,16 @@
    "ts": "2026-12-13T00:00:00+09:00",
    "src": "宍粟市公式サイト",
    "when": "2026-12-13"
+  },
+  {
+   "tag": "イベント",
+   "title": "12/16 在宅ワーク入門セミナー 受講生を募集",
+   "url": "https://www.city.shiso.lg.jp/soshiki/machizukuri-bu/jinkensuisin/tantojoho/danzyokyoudousankaku/20261216womenworkingseminar.html",
+   "date": "12月16日",
+   "ts": "2026-12-16T00:00:00+09:00",
+   "src": "宍粟市公式サイト",
+   "when": "2026-12-16",
+   "place": "オンライン開催（ZOOM)"
   }
  ]
 }
