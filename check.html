@@ -2297,7 +2297,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.48-lab（番組の間のCM）</div>
+    <div class="ps-version">version 4.50-lab（番組が終わったら必ずCM）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -6978,6 +6978,7 @@ var CMS=[];           // CMの設定（形を確かめた物）
 var CM_PLAN=null;     // その日の流れ。null＝今までの計算
 var CM_PLAN_KEY='';   // 組んだ時の材料の印（日付＋CMの設定）。番組表が変わったら _buildOffsets が消す
 var CUR_CM=null;      // いま流しているCM（流れの区切り）
+var CM_AFTER_MANUAL=false;   // 番組表から選んで見ていた番組のあとのCMか（CMのあとは放送へ戻る）
 var _cmSig='';
 function _cmDay(){ return CMPLAN.dayOf(new Date(Date.now()+_clockOff*1000)); }
 function cmPlan(){
@@ -6987,14 +6988,14 @@ function cmPlan(){
   return CM_PLAN;
 }
 function _cmProgSeg(pl,c,p){ var g=pl.seg; for(var i=0;i<g.length;i++){ if(g[i].k==='p'&&g[i].c===c&&g[i].p===p) return g[i]; } return null; }
-// 流れの中で、区切り sg の次の区切り
-function _cmNextSeg(pl,sg){ var g=pl.seg; for(var i=0;i<g.length-1;i++){ if(g[i]===sg) return g[i+1]; } return null; }
+// 流れの中で、区切り sg の次の区切り。★区切りは始まりの時刻と種類で見分ける（流れが組み直されても同じ枠を見つける）
+function _cmNextSeg(pl,sg){ var g=pl.seg; for(var i=0;i<g.length-1;i++){ if(g[i].k===sg.k&&Math.abs(g[i].st-sg.st)<0.001) return g[i+1]; } return null; }
 // CMを流す（その時刻に合った位置から）
 function playCm(sg){
-  clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;
+  clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;CM_AFTER_MANUAL=false;
   CUR_CM=sg; vC=sg.c; vP=sg.p;
-  var sec=Math.max(0,Math.floor(nowS()-sg.st));
-  if(sec>sg.len-1) sec=0;
+  var sec=Math.floor(nowS()-sg.st);
+  if(!(sec>=0&&sec<=sg.len-1)) sec=0;   // 時計がCMの枠の外（早送りで早く終わった・止めていて遅れた）なら頭から
   loadVideo('cm~'+sg.vid,sec,'CMを読み込んでいます...');
   var vt=document.getElementById('viewing-title'), vc=document.getElementById('viewing-cat');
   if(vt) vt.textContent=sg.sponsor||sg.title||'CM';
@@ -8091,12 +8092,22 @@ function onEnded(){
     var pc=nowPos(), pl=cmPlan();
     if(!pc){ var we=isExpanded; if(we)closeExpand(); setTimeout(gotoOffAir,we?300:0); return; }
     isManual=false;
-    if(pc.cm===cmSg&&pl){ var nx=_cmNextSeg(pl,cmSg); if(nx&&nx.k==='p'){ _playProgTop(nx.c,nx.p); return; } }   // CMが枠より早く終わった
+    // ★時計がまだCMの枠の終わりより前＝CMが早く終わった（早送りで番組を早く終えた時など）。
+    //   いまの時刻の番組（＝早送りした番組やCMの枠）へ戻さず、CMのあとの番組を頭から流す（2026-11-21 実機で発覚）
+    var aftMan=CM_AFTER_MANUAL; CM_AFTER_MANUAL=false;
+    if(!aftMan&&pl&&nowS()<cmSg.st+cmSg.len-1){ var nx=_cmNextSeg(pl,cmSg); if(nx&&nx.k==='p'){ _playProgTop(nx.c,nx.p); return; } }
+    // 放送へ戻る。戻る時刻がちょうど別のCMの枠なら、CMを2本続けず、その次の番組へ
+    if(pc.cm&&pl){ var nx3=_cmNextSeg(pl,pc.cm); if(nx3&&nx3.k==='p'){ _playProgTop(nx3.c,nx3.p); return; } }
     playSchedule(pc.c,pc.p);
     return;
   }
-  var ended=vP; // 今終わった番組
+  var ended=vP, endedC=vC; // 今終わった番組
   var pos=nowPos();
+  // ★番組が終わったら、流れの中でその番組の直後にあるCMを流す（2026-11-21 依頼者「番組が終わってもCMが流れない」）。
+  //   時計より早く終わった（早送り）・遅れて終わった（止めていた）・ちょうど、のどれでも流す。
+  //   止めていて時計が先へ進んでいても、CMを飛ばして次の番組へ合流しない
+  if(pos){ var plE=cmPlan(), sgE=plE?_cmProgSeg(plE,endedC,ended):null, cmE=(plE&&sgE)?_cmNextSeg(plE,sgE):null;
+    if(cmE&&cmE.k==='c'){ var wasManual=isManual; isManual=false; playCm(cmE); CM_AFTER_MANUAL=wasManual; return; } }
   if(!pos){
     var wasExp=isExpanded;
     if(wasExp)closeExpand();
