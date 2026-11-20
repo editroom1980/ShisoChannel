@@ -1,4 +1,25 @@
 {
- "updated": "2026-11-20T16:10:38+09:00",
- "items": []
+ "updated": "2026-11-21T07:40:08+09:00",
+ "items": [
+  {
+   "tag": "学校",
+   "title": "西播中学校新人駅伝競走大会",
+   "url": "https://city-shiso-yamasakiminami-jhs.edumap.jp/event",
+   "src": "山崎南中学校",
+   "ts": null,
+   "when": "2027-01-16",
+   "place": "",
+   "no": "t116西播中学校新人駅伝競走大会"
+  },
+  {
+   "tag": "学校",
+   "title": "一宮南中学校 校内書き初め大会",
+   "url": "https://city-shiso-ichinomiyaminami-jhs.edumap.jp/event",
+   "src": "一宮南中学校",
+   "ts": null,
+   "when": "2027-01-14",
+   "place": "一宮南中学校",
+   "no": "sichinomiyaminami-jhs114"
+  }
+ ]
 }
