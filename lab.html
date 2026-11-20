@@ -2297,7 +2297,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.47-lab（Androidの縦向きも1画面に固定）</div>
+    <div class="ps-version">version 4.48-lab（番組の間のCM）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2662,6 +2662,7 @@ html.tvapp #lnk-reg{display:none;}
   
 </div>
 
+<script src="cmplan.js?v=20261121"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ══ テレビ用アプリ（ShisochanTV）の判定 ══
@@ -6456,7 +6457,7 @@ function progKey(p){ return (p&&p.ytId)?p.ytId:((p&&_ownVidOk(p.vid))?'own~'+p.v
 function _normCycle(cycle){ for(var i=0;i<cycle.length;i++){ var p=cycle[i]; if(p&&!p.ytId) p.ytId=progKey(p); } return cycle; }
 function plen(p){ return (typeof p.sec==='number'&&p.sec>0)?p.sec:p.dur*60; }
 var CO=[],TOT=0;
-function _buildOffsets(){ CO=[];TOT=0;for(var i=0;i<CYCLE.length;i++){CO.push(TOT);TOT+=plen(CYCLE[i]);} }
+function _buildOffsets(){ CO=[];TOT=0;for(var i=0;i<CYCLE.length;i++){CO.push(TOT);TOT+=plen(CYCLE[i]);} CM_PLAN_KEY=''; }
 _buildOffsets();
 
 // ══════════════════════════════════════════════
@@ -6732,6 +6733,7 @@ function _stCommitSecs(){
 // ── フック用の公開関数（各既存関数から1行で呼ばれる）──
 function statsSessionStart(ytId){
   if(!_stCanRecord())return;
+  if(typeof ytId==='string'&&ytId.indexOf('cm~')===0){ statsSessionEnd(); return; }   // ★CMは番組の視聴に数えない（2026-11-21）
   if(_stSes.id===ytId)return; // forceResync等の同一番組再ロードはセッション継続
   statsSessionEnd();
   _stSes={id:ytId,playing:false,t0:0,acc:0,sent:0,counted:false};
@@ -6813,7 +6815,36 @@ function statsBuildCommit(q,day,devId,pingNeeded){
   }
   return writes.length?{writes:writes}:null;
 }
+// ★CMの流れた回数（2026-11-21）。番組の計測とは別の控え・別の便で送る。
+//   stats_daily/{日}.cms.{CMの名前} に足す。Firestore の規則に cms が足されるまでは弾かれるが、
+//   別の便なので番組の計測は消えない。弾かれた分は控えに残り、次の送信で届く
+var _stCmKEY='shisochan_stats_cm_v1';
+function _stCmQ(){ var q=null; try{ q=JSON.parse(localStorage.getItem(_stCmKEY)||'null'); }catch(_){} return (q&&typeof q==='object'&&!Array.isArray(q))?q:{}; }
+function statsCmPlayed(id){
+  if(!_stCanRecord()||typeof id!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return;
+  var q=_stCmQ(), day=_stDay(); q[day]=q[day]||{}; q[day][id]=(q[day][id]||0)+1;
+  try{ localStorage.setItem(_stCmKEY,JSON.stringify(q)); }catch(_){}
+}
+var _stCmFlushing=false;
+function statsCmFlush(useBeacon){
+  if(!_stCanRecord()||_stCmFlushing||_stCheck) return;
+  var q=_stCmQ(), days=Object.keys(q); if(!days.length) return;
+  var docBase='projects/'+FIREBASE.projectId+'/databases/(default)/documents/', writes=[];
+  days.forEach(function(day){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+    var tf=[]; for(var k in q[day]){ var n=+q[day][k]; if(n>0&&/^[A-Za-z0-9_-]{1,64}$/.test(k)) tf.push({fieldPath:'cms.'+_stFP(k),increment:{integerValue:String(Math.floor(n))}}); }
+    if(tf.length) writes.push({update:{name:docBase+'stats_daily/'+day,fields:{d:{stringValue:day}}},updateMask:{fieldPaths:['d']},updateTransforms:tf});
+  });
+  if(!writes.length){ try{ localStorage.removeItem(_stCmKEY); }catch(_){} return; }
+  var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents:commit?key='+encodeURIComponent(FIREBASE.apiKey);
+  function done(){ try{ var now=_stCmQ(); days.forEach(function(day){ var a=q[day]||{}, b=now[day]||{}; for(var k in a){ b[k]=(b[k]||0)-a[k]; if(!(b[k]>0)) delete b[k]; } if(Object.keys(b).length) now[day]=b; else delete now[day]; }); localStorage.setItem(_stCmKEY,JSON.stringify(now)); }catch(_){} }
+  _stCmFlushing=true;
+  fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({writes:writes}),keepalive:!!useBeacon})
+  .then(function(r){ _stCmFlushing=false; if(r.ok) done(); })
+  .catch(function(){ _stCmFlushing=false; });
+}
 function statsFlush(useBeacon){
+  try{ statsCmFlush(useBeacon); }catch(_){}
   if(!_stCanRecord()||_stFlushing)return;
   try{
     // 再生中でも計時を止めずに現時点までを確定（スナップショット）
@@ -6929,11 +6960,78 @@ var inAir=function(){var n=nowS();return n>=S*3600&&n<E*3600;};
 function nowPos(){
   if(!CYCLE.length||!(TOT>0))return null; // 番組表未取得（読み込み中）は現在番組なし扱い
   if(!inAir())return null;
+  // ★CMの入る日（2026-11-21）：その日の流れ（番組→CM→番組…）から決める。CMの枠なら cm に区切りを入れて返す
+  var pl=cmPlan();
+  if(pl){ var si=CMPLAN.segAt(pl,nowS()); if(si>=0){ var sg=pl.seg[si]; return sg.k==='c'?{c:sg.c,p:sg.p,cm:sg}:{c:sg.c,p:sg.p}; } }
   var off=nowS()-S*3600, c=Math.floor(off/TOT), w=off-c*TOT, p=0;
   for(var i=CYCLE.length-1;i>=0;i--){if(CO[i]<=w){p=i;break;}}
   return{c:c,p:p};
 }
-var smOf=function(c,p){return S*3600+c*TOT+CO[p];};   // その回の番組が始まった時刻（秒）
+var smOf=function(c,p){ var pl=cmPlan(); if(pl){ var sg=_cmProgSeg(pl,c,p); if(sg) return sg.st; } return S*3600+c*TOT+CO[p];};   // その回の番組が始まった時刻（秒）
+
+// ══ 番組の間のCM（2026-11-21 依頼者「どのCMをどこに入れるか、1日に何回流すか、頻度は…設定できるように」「番組表には入れない」）══
+//   ・設定は管理アプリの「CM」（Firestore の broadcast/cms）。流れの組み立ては cmplan.js（管理アプリと同じ物）
+//   ・その日にCMが1本も入らない時（設定が無い・期間の外・読めない）は CM_PLAN が null ＝ 上の今までの計算のまま。放送は1秒も変わらない
+//   ・CMの時間も流れに含めるので、CMのあとの番組は頭から始まる。途中から見始めた人には、その時刻のCMから流れる
+//   ・CMは自前の動画（動画保管庫）で流す。YouTubeの予備は無いので、読めなければ飛ばして次の番組へ
+var CMS=[];           // CMの設定（形を確かめた物）
+var CM_PLAN=null;     // その日の流れ。null＝今までの計算
+var CM_PLAN_KEY='';   // 組んだ時の材料の印（日付＋CMの設定）。番組表が変わったら _buildOffsets が消す
+var CUR_CM=null;      // いま流しているCM（流れの区切り）
+var _cmSig='';
+function _cmDay(){ return CMPLAN.dayOf(new Date(Date.now()+_clockOff*1000)); }
+function cmPlan(){
+  if(typeof CMPLAN==='undefined'||!CMS.length||!CYCLE.length){ CM_PLAN=null; return null; }
+  var key=_cmDay()+'|'+_cmSig;
+  if(key!==CM_PLAN_KEY){ CM_PLAN_KEY=key; try{ CM_PLAN=CMPLAN.build(CYCLE,S,E,CMS,_cmDay()); }catch(e){ CM_PLAN=null; } }
+  return CM_PLAN;
+}
+function _cmProgSeg(pl,c,p){ var g=pl.seg; for(var i=0;i<g.length;i++){ if(g[i].k==='p'&&g[i].c===c&&g[i].p===p) return g[i]; } return null; }
+// 流れの中で、区切り sg の次の区切り
+function _cmNextSeg(pl,sg){ var g=pl.seg; for(var i=0;i<g.length-1;i++){ if(g[i]===sg) return g[i+1]; } return null; }
+// CMを流す（その時刻に合った位置から）
+function playCm(sg){
+  clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;
+  CUR_CM=sg; vC=sg.c; vP=sg.p;
+  var sec=Math.max(0,Math.floor(nowS()-sg.st));
+  if(sec>sg.len-1) sec=0;
+  loadVideo('cm~'+sg.vid,sec,'CMを読み込んでいます...');
+  var vt=document.getElementById('viewing-title'), vc=document.getElementById('viewing-cat');
+  if(vt) vt.textContent=sg.sponsor||sg.title||'CM';
+  if(vc) vc.textContent='CM';
+  hlSB(sg.c,sg.p); refreshLive();
+}
+// 番組を頭から流す（CMのあと・番組が枠より早く終わった時）
+function _playProgTop(c,p){
+  CUR_CM=null; vC=c; vP=p;
+  loadVideo(CYCLE[p].ytId,0,'次の番組を読み込んでいます...');
+  setViewUI(c,p); refreshLive();
+}
+// CMの設定を読む（スポンサー一覧と同じ形：端末の控え→最新を取りに行く）
+var _cmKEY='shisochan_cms_cache_v1';
+function applyCmList(list){
+  var ok=(typeof CMPLAN!=='undefined'&&Array.isArray(list))?list.filter(function(c){ return CMPLAN.cmOk(c); }):[];
+  var sig=JSON.stringify(ok); if(sig===_cmSig) return;
+  _cmSig=sig; CMS=ok; CM_PLAN_KEY='';
+  try{ _ownMap(CYCLE); }catch(_){}
+}
+function loadRemoteCms(){
+  if(typeof CMPLAN==='undefined'||!FIREBASE.projectId||!FIREBASE.apiKey) return;
+  var cached=null; try{ cached=JSON.parse(localStorage.getItem(_cmKEY)||'null'); }catch(_){}
+  if(cached&&Array.isArray(cached.list)) applyCmList(cached.list);
+  // 試験用（手元の試験サーバーで開いた時だけ）：?cmsrc=URL で設定を差し替える。公開サイトでは効かない
+  var src=null; try{ if(!_stOnPublicHost()){ var m=/[?&]cmsrc=([^&]+)/.exec(location.search); if(m) src=decodeURIComponent(m[1]); } }catch(_){}
+  var url=src||('https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/cms?key='+encodeURIComponent(FIREBASE.apiKey));
+  fetch(url,{cache:'no-store'}).then(function(r){
+    if(!src&&(r.status===404||r.status===403)) return null;   // まだ無い・読めない＝CMなし
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+  }).then(function(doc){
+    var list=[];
+    if(doc){ if(src) list=doc.list||[]; else { var d={},f=doc.fields||{}; for(var k in f) if(k!=='__proto__') d[k]=fsVal(f[k]); list=d.list||[]; } }
+    try{ localStorage.setItem(_cmKEY,JSON.stringify({list:list})); }catch(_){}
+    applyCmList(list);   // 流れが変わっても、いま流している物は最後まで流す（強制切替しない）
+  }).catch(function(e){ console.warn('[CM] 設定が読めないので控えのまま続ける('+e.message+')'); });
+}
 var esOf=function(c,p){return Math.max(0,Math.floor(nowS()-smOf(c,p)));};
 
 // ── 状態管理 ──
@@ -7021,6 +7119,7 @@ function _ownVidOk(s){ return typeof s==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(
 function _ownMap(cycle){
   var m={}, i;
   for(i=0;i<cycle.length;i++){ var p=cycle[i]; if(p&&p.ytId&&_ownVidOk(p.vid)) m[p.ytId]=p.vid; }
+  try{ (CMS||[]).forEach(function(c){ if(c&&_ownVidOk(c.vid)) m['cm~'+c.vid]=c.vid; }); }catch(_){}   // ★CM（2026-11-21）
   if(OWN.testMap){
     OWN.testMap.split(',').forEach(function(kv){
       var a=kv.split(':'); if(a.length!==2||!_ownVidOk(a[1])) return;
@@ -7161,7 +7260,7 @@ function _ownLoad(ytId,vid,start,auto,raw){
   return true;
 }
 // 自前の動画が読めなかった：その動画にしばらく印を付け、同じ番組をYouTubeで同じ位置から流し直す
-function _ownOnly(id){ return typeof id==='string'&&id.indexOf('own~')===0; }
+function _ownOnly(id){ return typeof id==='string'&&(id.indexOf('own~')===0||id.indexOf('cm~')===0); }   // cm~＝CM（YouTubeの予備なし・2026-11-21）
 // ★2026-10-24 印は時間で消す。以前は「ページを開き直すまで消えない」作りで、通信が一度切れると
 //   自前の動画が全部使えなくなり、番組表から押しても「本日の放送は終了しました」になった（ユーザー実機・手元で再現）。
 //   印は3分で消え、通信が戻った時・画面をつけ直した時にも消す
@@ -7985,6 +8084,17 @@ function onEnded(){
   // まずスピナーで画面を覆う（YouTubeのエンドスクリーン＝サムネイルを隠す）
   showSpinner(true,'切り替え中...');
   clearEndTimer();
+  // ★CMが終わった時（2026-11-21）：最後まで流れたら回数を数え、次の番組へ
+  if(CUR_CM){
+    var cmSg=CUR_CM; CUR_CM=null;
+    try{ if(_isGenuineEnd()) statsCmPlayed(cmSg.id); }catch(_){}
+    var pc=nowPos(), pl=cmPlan();
+    if(!pc){ var we=isExpanded; if(we)closeExpand(); setTimeout(gotoOffAir,we?300:0); return; }
+    isManual=false;
+    if(pc.cm===cmSg&&pl){ var nx=_cmNextSeg(pl,cmSg); if(nx&&nx.k==='p'){ _playProgTop(nx.c,nx.p); return; } }   // CMが枠より早く終わった
+    playSchedule(pc.c,pc.p);
+    return;
+  }
   var ended=vP; // 今終わった番組
   var pos=nowPos();
   if(!pos){
@@ -7995,7 +8105,10 @@ function onEnded(){
   }
   isManual=false;
   // 動画が尺より短く、終了時点でまだ同じ番組のスロット内に戻ってくる場合はループ防止で次の番組を頭から
-  if(pos.p===ended && CYCLE.length>1){
+  if(pos.p===ended && !pos.cm && CYCLE.length>1){
+    // ★CMの入る日は、流れの次がCMならCMを頭から（2026-11-21）
+    var pl2=cmPlan(), ps2=pl2?_cmProgSeg(pl2,pos.c,pos.p):null, nx2=(pl2&&ps2)?_cmNextSeg(pl2,ps2):null;
+    if(nx2&&nx2.k==='c'){ playCm(nx2); return; }
     var np=(ended+1)%CYCLE.length;
     vC=pos.c;vP=np;
     loadVideo(CYCLE[np].ytId,0,'次の番組を読み込んでいます...');
@@ -8010,6 +8123,9 @@ function onEnded(){
 //  再生モード
 // ══════════════════════════════════════════════
 function playSchedule(c,p){
+  var _cp=null; try{ _cp=nowPos(); }catch(_){}
+  if(_cp&&_cp.cm&&_cp.c===c&&_cp.p===p){ playCm(_cp.cm); return; }   // ★いまはCMの枠（2026-11-21）
+  CUR_CM=null;
   clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;
   vC=c;vP=p;
   var sec=esOf(c,p);
@@ -8020,6 +8136,7 @@ function playSchedule(c,p){
 
 // ★ Safari対策：ユーザータップのコールチェーン内で直接呼ぶ
 function playManual(pIdx){
+  CUR_CM=null;
   clearEndTimer();isManual=true;isOff=false;userWantsPlay=true;
   try{ OWN.force=CYCLE[pIdx].ytId; }catch(_){}   // 押した番組は、前に読めなかった印があってももう一度試す
   showEnded(false);
@@ -8724,6 +8841,7 @@ function init(){
   setTimeout(setHdrVar,300); setTimeout(setHdrVar,1200);
   loadRemoteSchedule(); // Firestoreから番組表を取得（未設定なら何もしない）
   loadRemoteSponsors(); // スポンサー一覧も同じく（無ければ内蔵の一覧のまま）
+  try{ loadRemoteCms(); setInterval(function(){ try{ loadRemoteCms(); }catch(_){} },3600000); }catch(_){}   // ★CMの設定（2026-11-21）
   statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),powerOn);
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
