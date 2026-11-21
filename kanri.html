@@ -1552,6 +1552,11 @@ function loadTitles(){
     if(x.ok&&x.j.documents){x.j.documents.forEach(function(doc){var id=doc.name.split('/').pop();var f=fields(doc);if(f.title)TITLES[id]=f.title;});}
   }).catch(function(){}).then(function(){
     (sched.cycle||[]).forEach(function(p){if(p.ytId&&p.title)TITLES[ytIdFrom(p.ytId)]=p.title;});
+    // ★動画保管庫だけの番組（見分け名 own~動画の名前）も番組名を引く（2026-11-21 依頼者「番組名が表示されるのが普通だろ」）。
+    //   計測の記録は30秒以上見られた時だけ題名が入るため、見られていない番組は ID のまま出ていた
+    (sched.cycle||[]).forEach(function(p){var k=progKeyK(p);if(k&&p.title&&!TITLES[k])TITLES[k]=p.title;});
+    // 番組表から外した動画も、動画保管庫の目録の題名で出す
+    (VAULT.list||[]).forEach(function(v){var k='own~'+v.vid;if(v.title&&!TITLES[k])TITLES[k]=v.title;});
   });
 }
 function getDay(ds){
