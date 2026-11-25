@@ -332,6 +332,14 @@ details summary{cursor:pointer;}
   <div class="card">
     <h2>Ｃ Ｍ <span class="sub" id="cmInfo">読み込み中…</span></h2>
     <div class="cb"><div id="cmStatus" class="status wait">読み込み中…</div></div>
+    <div class="cb">
+      <div class="row" style="flex-wrap:wrap;gap:10px 16px">
+        <label class="l" style="margin:0">CMの間隔（端末ごと）</label>
+        <span>別の番組を選んだ時 <input type="number" id="cmGapPick" min="1" max="1440" inputmode="numeric" style="width:72px"> 分</span>
+        <span>続けて見ている時 <input type="number" id="cmGapRun" min="1" max="1440" inputmode="numeric" style="width:72px"> 分</span>
+      </div>
+      <p class="note" style="margin-top:6px">検証版（lab 4.51〜）は、CMを番組の頭に流します。「放送開始」では流しません。番組表から別の番組を選んだ時と、続けて見ていて次の番組へ移る時に、前のCMからこの時間がたっていれば1本流します（その日はじめては必ず）。CMが複数ある時は、その端末で流れた回数の少ないものから順に流します。</p>
+    </div>
     <div id="cms"></div>
     <div class="cb">
       <div class="actions">
@@ -341,11 +349,11 @@ details summary{cursor:pointer;}
         <button class="gold small" id="btnCmWrite" disabled hidden>アプリに反映する</button>
       </div>
       <div id="cmVaultBox" hidden></div>
-      <p class="note" style="margin-top:8px">CMは番組と番組の間に流れます（番組表には出ません）。1回の休みに流すのは1本で、条件に合うCMが複数ある時は順番に替わります。CMの動画は「番組表」の「⬆ 動画保管庫に入れる」で入れてから、ここで足してください。</p>
+      <p class="note" style="margin-top:8px">本番（3.98）は、まだCMを番組と番組の間に流します（番組表には出ません）。「番組◯本ごと」「1日の上限」と下の「その日の流れ」は、本番だけが使います。1回の休みに流すのは1本で、条件に合うCMが複数ある時は順番に替わります。CMの動画は「番組表」の「⬆ 動画保管庫に入れる」で入れてから、ここで足してください。</p>
     </div>
   </div>
   <div class="card">
-    <h2>そ の 日 の 流 れ <span class="sub">いま編集中の設定で計算</span></h2>
+    <h2>そ の 日 の 流 れ <span class="sub">本番（3.98）の流れ・いま編集中の設定で計算</span></h2>
     <div class="cb">
       <div class="row"><div style="width:160px"><input type="date" id="cmDay"></div><span class="note" id="cmPlanSum"></span></div>
       <div class="tbl"><table class="cmplan" id="cmPlanList"></table></div>
@@ -384,7 +392,7 @@ details summary{cursor:pointer;}
 <div id="bar" hidden><div class="t" id="barT"></div><button class="gold" id="barBtn">書き込む</button></div>
 <div id="toast"></div>
 
-<script src="cmplan.js?v=20261121"></script>
+<script src="cmplan.js?v=20261125"></script>
 <script>
 'use strict';
 // ══════════════════════════════════════════════════════════════════════
@@ -991,11 +999,13 @@ var BUILTIN_SPONSORS=[
 //  ・流れの組み立ては cmplan.js（アプリと同じ物）。下の「その日の流れ」もそれで計算する＝アプリと必ず一致する
 //  ・名前（id）は回数の集計の鍵なので、作ったあとは変えない
 // ══════════════════════════════════════════════════════════════════════
-var cmSt={v:0,list:[]}, cmOK=true, cmLoadedSig='[]', cmExists=false;
+var cmSt={v:0,list:[],gapPick:60,gapRun:120}, cmOK=true, cmLoadedSig='', cmExists=false;
 function cmPayloadList(list){return (list||[]).map(function(c){
   return {id:c.id,title:c.title||'',sponsor:c.sponsor||'',vid:c.vid,sec:+c.sec||0,on:c.on!==false,from:c.from||'',to:c.to||'',
           tFrom:c.tFrom||'',tTo:c.tTo||'',every:Math.max(1,Math.floor(+c.every||1)),max:Math.max(0,Math.floor(+c.max||0)),after:(c.after||[]).slice()};});}
-function cmSig(){return JSON.stringify(cmPayloadList(cmSt.list));}
+function cmSig(){return JSON.stringify([cmPayloadList(cmSt.list),cmSt.gapPick,cmSt.gapRun]);}
+// CMの間隔（分）。1〜1440の整数（アプリは CMPLAN.gaps で同じ範囲だけを受け取る）
+function validGap(n){return typeof n==='number'&&n===Math.floor(n)&&n>=1&&n<=1440;}
 // 形の検査（アプリ側は CMPLAN.cmOk で、形の崩れたCMを流さない）
 function validCms(list){
   if(!Array.isArray(list))return '一覧の形が不正';
@@ -1024,14 +1034,17 @@ function loadCms(){
   return fetch(DOCBASE+'broadcast/cms?key='+encodeURIComponent(FIREBASE.apiKey),{cache:'no-store'})
   .then(function(r){ if(r.status===404||r.status===403){cmExists=false;cmSt._why=r.status;return null;} if(!r.ok)throw new Error('HTTP '+r.status); return r.json(); })
   .then(function(doc){
-    if(doc){ var d=fields(doc); cmExists=true; cmSt={v:d.v||0,list:(d.list||[]).map(function(c){ var o=cmPayloadList([c])[0]; o._open=false; return o; })};
+    if(doc){ var d=fields(doc), gp=CMPLAN.gaps(d); cmExists=true; cmSt={v:d.v||0,gapPick:gp.pick,gapRun:gp.run,list:(d.list||[]).map(function(c){ var o=cmPayloadList([c])[0]; o._open=false; return o; })};
       el('cmInfo').textContent='版 '+cmSt.v+'　更新 '+jst(doc.updateTime); }
-    else{ cmSt={v:0,list:[],_why:cmSt._why}; el('cmInfo').textContent=(cmSt._why===403?'Firestoreの規則に cms が足されていません（読めない）':'まだ設定がありません'); }
-    cmLoadedSig=cmExists?cmSig():JSON.stringify([]);
+    else{ cmSt={v:0,list:[],gapPick:CMPLAN.GAP_PICK,gapRun:CMPLAN.GAP_RUN,_why:cmSt._why}; el('cmInfo').textContent=(cmSt._why===403?'Firestoreの規則に cms が足されていません（読めない）':'まだ設定がありません'); }
+    cmLoadedSig=cmExists?cmSig():JSON.stringify([[],CMPLAN.GAP_PICK,CMPLAN.GAP_RUN]);
+    el('cmGapPick').value=cmSt.gapPick; el('cmGapRun').value=cmSt.gapRun;
     renderCms();
   }).catch(function(e){el('cmStatus').className='status bad';el('cmStatus').textContent='設定が読めません：'+e.message;});
 }
 function readCmFromForm(){
+  var gp=el('cmGapPick'), gr=el('cmGapRun');
+  if(gp&&gp.value!==''){ cmSt.gapPick=+gp.value; } if(gr&&gr.value!==''){ cmSt.gapRun=+gr.value; }
   document.querySelectorAll('#cms .spon').forEach(function(row,i){
     var c=cmSt.list[i];if(!c)return;
     function v(k){var x=row.querySelector('[data-k='+k+']');return x?x.value:'';}
@@ -1054,7 +1067,7 @@ function cmRow(c,i,today){
     +(c.max>0?'<span class="tag">1日'+c.max+'回まで</span>':'')
     +(cmTimeText(c)?'<span class="tag">'+esc(cmTimeText(c))+'</span>':'')
     +((c.from||c.to)?'<span class="tag">'+esc(c.from||'…')+' 〜 '+esc(c.to||'…')+'</span>':'')
-    +(c.after&&c.after.length?'<span class="tag">決まった番組のあとだけ（'+c.after.length+'本）</span>':'');
+    +(c.after&&c.after.length?'<span class="tag">決まった番組だけ（'+c.after.length+'本）</span>':'');
   var vopt='<option value="">（選ぶ）</option>';
   (VAULT.list||[]).forEach(function(v){vopt+='<option value="'+esc(v.vid)+'"'+(v.vid===c.vid?' selected':'')+'>'+esc(v.title)+'（'+esc(lenText(v.sec))+'）</option>';});
   if(c.vid&&!vaultFind(c.vid))vopt+='<option value="'+esc(c.vid)+'" selected>'+esc(c.vid)+'（動画保管庫の一覧に無い）</option>';
@@ -1072,9 +1085,9 @@ function cmRow(c,i,today){
     +'<div><label class="l">流す期間の終了（空欄＝いつまでも）</label><input type="date" data-k="to" value="'+esc(c.to)+'"></div>'
     +'<div><label class="l">流す時間帯の始まり（空欄＝放送開始から）</label><input type="time" data-k="tFrom" value="'+esc(c.tFrom)+'"></div>'
     +'<div><label class="l">流す時間帯の終わり（空欄＝放送終了まで）</label><input type="time" data-k="tTo" value="'+esc(c.tTo)+'"></div>'
-    +'<div><label class="l">頻度：番組 ◯ 本ごと（1＝毎回）</label><input type="number" data-k="every" min="1" max="20" inputmode="numeric" value="'+esc(c.every||1)+'"></div>'
-    +'<div><label class="l">1日の上限（0＝上限なし）</label><input type="number" data-k="max" min="0" max="500" inputmode="numeric" value="'+esc(c.max||0)+'"></div>'
-    +'<div class="w"><label class="l">入れる場所：チェックした番組のあとだけ（どれもチェックしない＝どの番組のあとでも）</label><div class="cmafter">'+(after||'<span class="note">番組表を読み込み中…</span>')+'</div></div>'
+    +'<div><label class="l">頻度：番組 ◯ 本ごと（1＝毎回・本番だけ）</label><input type="number" data-k="every" min="1" max="20" inputmode="numeric" value="'+esc(c.every||1)+'"></div>'
+    +'<div><label class="l">1日の上限（0＝上限なし・本番だけ）</label><input type="number" data-k="max" min="0" max="500" inputmode="numeric" value="'+esc(c.max||0)+'"></div>'
+    +'<div class="w"><label class="l">入れる場所：チェックした番組の前だけ（検証版）／あとだけ（本番）。どれもチェックしない＝どの番組でも</label><div class="cmafter">'+(after||'<span class="note">番組表を読み込み中…</span>')+'</div></div>'
     +'<div class="w"><label class="sw"><input type="checkbox" data-k="on"'+(c.on!==false?' checked':'')+'>アプリで流す</label></div>'
     +'<div class="w note">名前 '+esc(c.id)+'（回数の集計の鍵・変更不可）</div>'
     +'</div><div class="actions"><button class="danger small" data-op="del">一覧から外す</button><span class="sp"></span><button class="g small" data-op="close">閉じる</button></div></div></div>';
@@ -1105,7 +1118,7 @@ function renderCms(){
 function checkCm(){
   if(!el('cms'))return;
   readCmFromForm();
-  var err=validCms(cmSt.list), changed=cmSig()!==cmLoadedSig;
+  var err=validCms(cmSt.list)||(!validGap(cmSt.gapPick)?'CMの間隔（別の番組を選んだ時）は1〜1440分の整数':'')||(!validGap(cmSt.gapRun)?'CMの間隔（続けて見ている時）は1〜1440分の整数':''), changed=cmSig()!==cmLoadedSig;
   cmOK=!err;
   var st=el('cmStatus');
   if(err){st.className='status bad';st.textContent='✖ '+err;}
@@ -1148,12 +1161,13 @@ function renderCmVault(){
 el('btnCmAdd').onclick=function(){var b=el('cmVaultBox');b.hidden=!b.hidden;el('btnCmAdd').textContent=b.hidden?'＋ 動画保管庫からCMを足す':'閉じる';if(!b.hidden)renderCmVault();};
 el('btnCmReload').onclick=function(){if(cmSig()!==cmLoadedSig&&!confirm('編集中の内容を捨てて読み直しますか？'))return;loadCms();};
 el('btnCmWrite').onclick=function(){
-  readCmFromForm(); var err=validCms(cmSt.list); if(err){toast('✖ '+err);return;}
+  readCmFromForm(); var err=validCms(cmSt.list)||(!(validGap(cmSt.gapPick)&&validGap(cmSt.gapRun))?'CMの間隔は1〜1440分の整数':''); if(err){toast('✖ '+err);return;}
   if(!confirm('CMの設定をアプリに反映します（CM '+cmSt.list.length+'本）。よろしいですか？'))return;
-  var out={v:(cmSt.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),list:cmPayloadList(cmSt.list)};
+  var out={v:(cmSt.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),gapPick:cmSt.gapPick,gapRun:cmSt.gapRun,list:cmPayloadList(cmSt.list)};
   writeDoc('broadcast/cms',out).then(function(){toast('✔ 反映しました（版 '+out.v+'）');loadCms();}).catch(function(e){toast('✖ 反映できません：'+e.message);});
 };
 el('cmDay').addEventListener('change',renderCmPlan);
+['cmGapPick','cmGapRun'].forEach(function(k){ el(k).addEventListener('input',checkCm); });
 
 function sponPayloadList(list){return (list||[]).map(function(s){return {name:s.name,url:s.url||'',img:s.img,on:s.on!==false,from:s.from||'',to:s.to||''};});}
 function sponSig(s){return JSON.stringify([sponPayloadList(s.list),s.interval]);}
@@ -1783,6 +1797,12 @@ function selfTest(){
   var _cy=[{ytId:'a',sec:600},{ytId:'',vid:'b',sec:600}];
   var _p1=CMPLAN.build(_cy,6,24,[_cg],'2026-11-21'), _p2=CMPLAN.build(_cy,6,24,[_cc({max:3})],'2026-11-21'), _p3=CMPLAN.build(_cy,6,24,[_cc({after:['own~b']})],'2026-11-21');
   t('CM：流れの組み立て（毎回・上限3回・決まった番組のあとだけ）',_p1&&_p1.cms.sansho>50&&_p2.cms.sansho===3&&_p3.seg.filter(function(g){return g.k==='c';}).every(function(g){return g.p===1;}));
+  // ★番組の頭のCM（2026-11-25）：間隔の検査・選び方（アプリと同じ cmplan.js）
+  t('CMの間隔：1〜1440の整数だけ通る',validGap(60)&&validGap(1)&&validGap(1440)&&!validGap(0)&&!validGap(1441)&&!validGap(1.5)&&!validGap(NaN));
+  var _gg=CMPLAN.gaps({}), _t0=new Date('2026-11-25T10:00:00').getTime();
+  t('CMの間隔：設定が無ければ 60分・120分、選ぶ時は60分で入る・続けて見る時は120分で入る',_gg.pick===60&&_gg.run===120&&!CMPLAN.headDue({last:_t0},_t0+59*60000,'pick',_gg)&&CMPLAN.headDue({last:_t0},_t0+60*60000,'pick',_gg)&&!CMPLAN.headDue({last:_t0},_t0+119*60000,'run',_gg)&&CMPLAN.headDue({last:_t0},_t0+120*60000,'run',_gg));
+  var _ca=_cc({id:'a'}),_cb2=_cc({id:'b'}),_dv={n:{a:1},t:{a:5}};
+  t('番組の頭のCM：流れた回数の少ない方を選ぶ・決まった番組の前だけ',CMPLAN.pickHead([_ca,_cb2],'2026-11-25',36000,'x',_dv).id==='b'&&CMPLAN.pickHead([_cc({after:['own~b']})],'2026-11-25',36000,'x',{})===null);
   render('day',['2026-11-21'],[{programs:{b:{v:2,s:60}},cms:{sansho:_bad,oasis:4}}],[]);
   var _ct=el('report').textContent;
   t('レポート：CMの回数が出て、数字の欄に命令を仕込まれても画面に入らない',_ct.indexOf('Ｃ Ｍ 別')>=0&&el('report').querySelectorAll('[data-xss]').length===0&&_ct.indexOf('img src')<0);

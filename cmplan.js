@@ -92,5 +92,43 @@
     function p2(x) { return (x < 10 ? '0' : '') + x; }
     return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
   }
-  g.CMPLAN = { build: build, segAt: segAt, keyOf: keyOf, plenOf: plenOf, hm: hm, cmOk: cmOk, dayOf: dayOf };
+  // ══ 番組の頭のCM（2026-11-25 依頼者「CM→番組の頭にする」「放送開始を押した後はCMを入れずに…」「満遍なくCMが流れるように」）══
+  //   検証版 lab 4.51〜が使う。本番 3.98 は上の build（番組の間のCM）を使う。本番へ移すまで、上は消さない
+  //   ・CMは端末ごとに決める。「放送開始」では流さない。番組表から別の番組を選んだ時と、続けて見ていて次の番組へ移る時に、
+  //     前のCMから決まった時間（gapPick／gapRun 分）がたっていれば、その番組の前に1本流す。日付が変わったら数え直す
+  //   ・条件：on・流す期間（from/to）・時間帯（tFrom/tTo、いまの時刻）・after（＝この番組の前だけ。空ならどの番組の前でも）
+  //   ・every（番組◯本ごと）・max（1日の上限）は使わない（本番 3.98 のために設定には残す）
+  var GAP_PICK = 60, GAP_RUN = 120;
+  function gapMin(v, def) { var n = Math.floor(+v); return (n >= 1 && n <= 1440) ? n : def; }
+  function gaps(doc) { doc = doc || {}; return { pick: gapMin(doc.gapPick, GAP_PICK), run: gapMin(doc.gapRun, GAP_RUN) }; }
+  // 流せるCMの候補（いまの日付・時刻・これから流す番組で絞る）
+  function headCands(cms, day, t, key) {
+    return (cms || []).filter(function (c) {
+      return cmOk(c) && inDays(c, day) && inTime(c, t) && !(c.after && c.after.length && c.after.indexOf(key) < 0);
+    });
+  }
+  // 候補から1本を選ぶ。dev＝その端末の控え {n:{CMの名前:流れた回数}, t:{CMの名前:最後に流れた時(ミリ秒)}, seed:端末ごとの数}
+  //   ①流れた回数が少ない物 → ②前に流れてから長くたった物 → ③それも同じ（どれもまだ）なら端末ごとの数で選ぶ
+  //   ③で端末ごとに1本目がばらけるので、端末の数が多いほど全体でもほぼ同じ回数ずつになる
+  function pickHead(cms, day, t, key, dev) {
+    var c = headCands(cms, day, t, key); if (!c.length) return null;
+    dev = dev || {}; var n = dev.n || {}, lt = dev.t || {};
+    var best = [], bn = Infinity, bt = Infinity;
+    for (var i = 0; i < c.length; i++) {
+      var ni = n[c[i].id] || 0, ti = lt[c[i].id] || 0;
+      if (ni < bn || (ni === bn && ti < bt)) { best = [c[i]]; bn = ni; bt = ti; }
+      else if (ni === bn && ti === bt) best.push(c[i]);
+    }
+    var sd = Math.abs(Math.floor(+dev.seed || 0));
+    return best[sd % best.length];
+  }
+  // いまCMを入れてよいか。kind＝'pick'（番組表から選んだ）か 'run'（続けて見ていて次の番組へ）。nowMs＝いまの時刻（ミリ秒）
+  function headDue(dev, nowMs, kind, gp) {
+    if (!dev || !(dev.last > 0)) return true;
+    if (dayOf(new Date(dev.last)) !== dayOf(new Date(nowMs))) return true;   // その日はじめて
+    var m = kind === 'pick' ? gp.pick : gp.run;
+    return nowMs - dev.last >= m * 60000;
+  }
+  g.CMPLAN = { build: build, segAt: segAt, keyOf: keyOf, plenOf: plenOf, hm: hm, cmOk: cmOk, dayOf: dayOf,
+    inDays: inDays, inTime: inTime, gaps: gaps, headCands: headCands, pickHead: pickHead, headDue: headDue, GAP_PICK: GAP_PICK, GAP_RUN: GAP_RUN };
 })(typeof window !== 'undefined' ? window : globalThis);
