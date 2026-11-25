@@ -2265,7 +2265,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 3.98</div>
+    <div class="ps-version">version 3.99</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2617,7 +2617,7 @@ html.tvapp #lnk-reg{display:none;}
   
 </div>
 
-<script src="cmplan.js?v=20261121"></script>
+<script src="cmplan.js?v=20261125b"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ══ テレビ用アプリ（ShisochanTV）の判定 ══
@@ -6288,7 +6288,7 @@ function progKey(p){ return (p&&p.ytId)?p.ytId:((p&&_ownVidOk(p.vid))?'own~'+p.v
 function _normCycle(cycle){ for(var i=0;i<cycle.length;i++){ var p=cycle[i]; if(p&&!p.ytId) p.ytId=progKey(p); } return cycle; }
 function plen(p){ return (typeof p.sec==='number'&&p.sec>0)?p.sec:p.dur*60; }
 var CO=[],TOT=0;
-function _buildOffsets(){ CO=[];TOT=0;for(var i=0;i<CYCLE.length;i++){CO.push(TOT);TOT+=plen(CYCLE[i]);} CM_PLAN_KEY=''; }
+function _buildOffsets(){ CO=[];TOT=0;for(var i=0;i<CYCLE.length;i++){CO.push(TOT);TOT+=plen(CYCLE[i]);} }
 _buildOffsets();
 
 // ══════════════════════════════════════════════
@@ -6790,66 +6790,89 @@ var inAir=function(){var n=nowS();return n>=S*3600&&n<E*3600;};
 function nowPos(){
   if(!CYCLE.length||!(TOT>0))return null; // 番組表未取得（読み込み中）は現在番組なし扱い
   if(!inAir())return null;
-  // ★CMの入る日（2026-11-21）：その日の流れ（番組→CM→番組…）から決める。CMの枠なら cm に区切りを入れて返す
-  var pl=cmPlan();
-  if(pl){ var si=CMPLAN.segAt(pl,nowS()); if(si>=0){ var sg=pl.seg[si]; return sg.k==='c'?{c:sg.c,p:sg.p,cm:sg}:{c:sg.c,p:sg.p}; } }
   var off=nowS()-S*3600, c=Math.floor(off/TOT), w=off-c*TOT, p=0;
   for(var i=CYCLE.length-1;i>=0;i--){if(CO[i]<=w){p=i;break;}}
   return{c:c,p:p};
 }
-var smOf=function(c,p){ var pl=cmPlan(); if(pl){ var sg=_cmProgSeg(pl,c,p); if(sg) return sg.st; } return S*3600+c*TOT+CO[p];};   // その回の番組が始まった時刻（秒）
+var smOf=function(c,p){return S*3600+c*TOT+CO[p];};   // その回の番組が始まった時刻（秒）。CMは番組表の時刻に入れない（2026-11-25）
 
-// ══ 番組の間のCM（2026-11-21 依頼者「どのCMをどこに入れるか、1日に何回流すか、頻度は…設定できるように」「番組表には入れない」）══
-//   ・設定は管理アプリの「CM」（Firestore の broadcast/cms）。流れの組み立ては cmplan.js（管理アプリと同じ物）
-//   ・その日にCMが1本も入らない時（設定が無い・期間の外・読めない）は CM_PLAN が null ＝ 上の今までの計算のまま。放送は1秒も変わらない
-//   ・CMの時間も流れに含めるので、CMのあとの番組は頭から始まる。途中から見始めた人には、その時刻のCMから流れる
-//   ・CMは自前の動画（動画保管庫）で流す。YouTubeの予備は無いので、読めなければ飛ばして次の番組へ
+// ══ 番組の頭のCM（2026-11-25 依頼者「CM→番組の頭にする」「その端末ごとに」「放送開始を押した後はCMを入れずに、その時間の放送番組をそのまま流せ。
+//    次に別の番組をクリックするか、そのまま見続けて次の番組に映ったタイミングで冒頭にCMを挟む」「できる限り満遍なくCMが流れるように」）══
+//   ・設定は管理アプリの「CM」（Firestore の broadcast/cms）。選び方と間隔の計算は cmplan.js（管理アプリと同じ物）
+//   ・番組表の時刻にCMは入れない。CMは端末ごとに、番組の前にだけ流す
+//   ・「放送開始」・通知から開いた時は流さない。番組表から別の番組を選んだ時（gapPick 分）と、
+//     続けて見ていて次の番組へ移る時（gapRun 分）に、前のCMからその時間がたっていれば1本流す。その日はじめては必ず
+//   ・CMのあとは番組を頭から流す。CMの分だけ放送の時計より遅れて見続けるので、そのあとの番組も頭から流す（_cmLag）
+//   ・CMは自前の動画（動画保管庫）で流す。YouTubeの予備は無いので、読めなければ飛ばして番組へ
 var CMS=[];           // CMの設定（形を確かめた物）
-var CM_PLAN=null;     // その日の流れ。null＝今までの計算
-var CM_PLAN_KEY='';   // 組んだ時の材料の印（日付＋CMの設定）。番組表が変わったら _buildOffsets が消す
-var CUR_CM=null;      // いま流しているCM（流れの区切り）
-var CM_AFTER_MANUAL=false;   // 番組表から選んで見ていた番組のあとのCMか（CMのあとは放送へ戻る）
+var CM_GAP={pick:30,run:30};   // CMの間隔（分）。管理アプリの設定で上書き。決まりの値は cmplan.js の GAP_PICK/GAP_RUN
+var CUR_CM=null;      // いま流しているCM
+var CM_NEXT=null;     // CMのあとに流す番組 {how:'manual'|'top'|'live', c, p}
+var _cmLag=0;         // CMのせいで放送の時計より遅れている秒（続けて見ている間だけ。放送へ戻ったら0）
 var _cmSig='';
-function _cmDay(){ return CMPLAN.dayOf(new Date(Date.now()+_clockOff*1000)); }
-function cmPlan(){
-  if(typeof CMPLAN==='undefined'||!CMS.length||!CYCLE.length){ CM_PLAN=null; return null; }
-  var key=_cmDay()+'|'+_cmSig;
-  if(key!==CM_PLAN_KEY){ CM_PLAN_KEY=key; try{ CM_PLAN=CMPLAN.build(CYCLE,S,E,CMS,_cmDay()); }catch(e){ CM_PLAN=null; } }
-  return CM_PLAN;
+var _cmDevKEY='shisochan_cm_dev_v1';   // その端末の控え {last:最後のCMの時(ミリ秒), n:{名前:回数}, t:{名前:最後の時}, seed}
+function _cmNowMs(){ return Date.now()+_clockOff*1000; }
+function _cmDay(){ return CMPLAN.dayOf(new Date(_cmNowMs())); }
+function _cmDev(){
+  var d=null; try{ d=JSON.parse(localStorage.getItem(_cmDevKEY)||'null'); }catch(_){}
+  if(!d||typeof d!=='object'||Array.isArray(d)) d={};
+  if(!d.n||typeof d.n!=='object') d.n={}; if(!d.t||typeof d.t!=='object') d.t={};
+  if(!(d.seed>=0)){ d.seed=Math.floor(Math.random()*1e6); _cmDevSave(d); }
+  return d;
 }
-function _cmProgSeg(pl,c,p){ var g=pl.seg; for(var i=0;i<g.length;i++){ if(g[i].k==='p'&&g[i].c===c&&g[i].p===p) return g[i]; } return null; }
-// 流れの中で、区切り sg の次の区切り。★区切りは始まりの時刻と種類で見分ける（流れが組み直されても同じ枠を見つける）
-function _cmNextSeg(pl,sg){ var g=pl.seg; for(var i=0;i<g.length-1;i++){ if(g[i].k===sg.k&&Math.abs(g[i].st-sg.st)<0.001) return g[i+1]; } return null; }
-// CMを流す（その時刻に合った位置から）
-function playCm(sg){
-  clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;CM_AFTER_MANUAL=false;
-  CUR_CM=sg; vC=sg.c; vP=sg.p;
-  var sec=Math.floor(nowS()-sg.st);
-  if(!(sec>=0&&sec<=sg.len-1)) sec=0;   // 時計がCMの枠の外（早送りで早く終わった・止めていて遅れた）なら頭から
-  loadVideo('cm~'+sg.vid,sec,'CMを読み込んでいます...');
+function _cmDevSave(d){ try{ localStorage.setItem(_cmDevKEY,JSON.stringify(d)); }catch(_){} }
+// 番組 p の前にCMを流すなら流して true。kind＝'pick'（番組表から選んだ）／'run'（続けて見ていて次の番組へ）
+function cmBefore(kind,next){
+  if(typeof CMPLAN==='undefined'||!CMS.length||!CYCLE[next.p]) return false;
+  var dev=_cmDev(), now=_cmNowMs();
+  if(!CMPLAN.headDue(dev,now,kind,CM_GAP)) return false;
+  var cm=CMPLAN.pickHead(CMS,_cmDay(),nowS(),CMPLAN.keyOf(CYCLE[next.p]),dev);
+  if(!cm) return false;
+  dev.last=now; dev.n[cm.id]=(dev.n[cm.id]||0)+1; dev.t[cm.id]=now;
+  for(var k in dev.n){ if(!CMS.some(function(c){ return c.id===k; })){ delete dev.n[k]; delete dev.t[k]; } }   // 消えたCMの控えは捨てる
+  _cmDevSave(dev);
+  playCm(cm,next);
+  return true;
+}
+// CMを頭から流す。題名の欄にスポンサー名か題名、分類の欄に「CM」
+function playCm(cm,next){
+  clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;
+  CUR_CM=cm; CM_NEXT=next; vC=next.c; vP=next.p;
+  loadVideo('cm~'+cm.vid,0,'CMを読み込んでいます...');
   var vt=document.getElementById('viewing-title'), vc=document.getElementById('viewing-cat');
-  if(vt) vt.textContent=sg.sponsor||sg.title||'CM';
+  if(vt) vt.textContent=cm.sponsor||cm.title||'CM';
   if(vc) vc.textContent='CM';
-  hlSB(sg.c,sg.p); refreshLive();
+  hlSB(next.c,next.p); refreshLive();
 }
-// 番組を頭から流す（CMのあと・番組が枠より早く終わった時）
+// CMのあと・遅れて続けて見ている時：番組を頭から流し、時計からの遅れを覚える
 function _playProgTop(c,p){
-  CUR_CM=null; vC=c; vP=p;
+  CUR_CM=null; CM_NEXT=null; clearEndTimer(); isManual=false; isOff=false; userWantsPlay=true; vC=c; vP=p;
+  _cmLag=Math.max(0,nowS()-smOf(c,p));
   loadVideo(CYCLE[p].ytId,0,'次の番組を読み込んでいます...');
   setViewUI(c,p); refreshLive();
 }
+// 番組表から押した時（★ここだけが「別の番組を選んだ」。通知から開いた時は playManual を直に呼ぶ＝CMなし）
+function playPick(pIdx){
+  var pos=nowPos(), c=pos?pos.c:0;
+  CUR_CM=null; CM_NEXT=null; _cmLag=0;
+  try{ OWN.force=CYCLE[pIdx].ytId; }catch(_){}
+  showEnded(false);
+  if(cmBefore('pick',{how:'manual',c:c,p:pIdx})) return;
+  playManual(pIdx);
+}
 // CMの設定を読む（スポンサー一覧と同じ形：端末の控え→最新を取りに行く）
 var _cmKEY='shisochan_cms_cache_v1';
-function applyCmList(list){
+function applyCmList(list,doc){
   var ok=(typeof CMPLAN!=='undefined'&&Array.isArray(list))?list.filter(function(c){ return CMPLAN.cmOk(c); }):[];
+  try{ CM_GAP=CMPLAN.gaps(doc||{}); }catch(_){}
   var sig=JSON.stringify(ok); if(sig===_cmSig) return;
-  _cmSig=sig; CMS=ok; CM_PLAN_KEY='';
+  _cmSig=sig; CMS=ok;
   try{ _ownMap(CYCLE); }catch(_){}
 }
 function loadRemoteCms(){
   if(typeof CMPLAN==='undefined'||!FIREBASE.projectId||!FIREBASE.apiKey) return;
   var cached=null; try{ cached=JSON.parse(localStorage.getItem(_cmKEY)||'null'); }catch(_){}
-  if(cached&&Array.isArray(cached.list)) applyCmList(cached.list);
+  if(cached&&Array.isArray(cached.list)) applyCmList(cached.list,cached);
   // 試験用（手元の試験サーバーで開いた時だけ）：?cmsrc=URL で設定を差し替える。公開サイトでは効かない
   var src=null; try{ if(!_stOnPublicHost()){ var m=/[?&]cmsrc=([^&]+)/.exec(location.search); if(m) src=decodeURIComponent(m[1]); } }catch(_){}
   var url=src||('https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/cms?key='+encodeURIComponent(FIREBASE.apiKey));
@@ -6857,10 +6880,11 @@ function loadRemoteCms(){
     if(!src&&(r.status===404||r.status===403)) return null;   // まだ無い・読めない＝CMなし
     if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
   }).then(function(doc){
-    var list=[];
-    if(doc){ if(src) list=doc.list||[]; else { var d={},f=doc.fields||{}; for(var k in f) if(k!=='__proto__') d[k]=fsVal(f[k]); list=d.list||[]; } }
-    try{ localStorage.setItem(_cmKEY,JSON.stringify({list:list})); }catch(_){}
-    applyCmList(list);   // 流れが変わっても、いま流している物は最後まで流す（強制切替しない）
+    var list=[], d={};
+    if(doc){ if(src) d=doc; else { var f=doc.fields||{}; for(var k in f) if(k!=='__proto__') d[k]=fsVal(f[k]); } list=d.list||[]; }
+    var gp={gapPick:d.gapPick,gapRun:d.gapRun};
+    try{ localStorage.setItem(_cmKEY,JSON.stringify({list:list,gapPick:gp.gapPick,gapRun:gp.gapRun})); }catch(_){}
+    applyCmList(list,gp);   // 流れが変わっても、いま流している物は最後まで流す（強制切替しない）
   }).catch(function(e){ console.warn('[CM] 設定が読めないので控えのまま続ける('+e.message+')'); });
 }
 var esOf=function(c,p){return Math.max(0,Math.floor(nowS()-smOf(c,p)));};
@@ -7123,6 +7147,7 @@ function _ownWaitAgain(){
     if(OWN.waitNet!==w) return;          // 待っている間に別の番組が選ばれた
     if(!ok){ w.timer=setTimeout(_ownWaitAgain,5000); return; }
     OWN.waitNet=null; _ownClearMarks();
+    if(CUR_CM){ try{ onEnded(); }catch(_){} return; }   // ★CMの途中だった＝CMは飛ばして、CMのあとに決めておいた番組へ（2026-11-25）
     // 放送の流れの中なら、いま放送中の番組へ。24時を過ぎていたり番組表から選んだ番組なら、同じ番組を続きから
     var pos=null; try{ pos=(!isManual&&!isOff)?nowPos():null; }catch(_){}
     if(pos){ playSchedule(pos.c,pos.p); return; }
@@ -7915,29 +7940,19 @@ function onEnded(){
   // まずスピナーで画面を覆う（YouTubeのエンドスクリーン＝サムネイルを隠す）
   showSpinner(true,'切り替え中...');
   clearEndTimer();
-  // ★CMが終わった時（2026-11-21）：最後まで流れたら回数を数え、次の番組へ
+  // ★CMが終わった時（2026-11-25）：最後まで流れたら回数を数え、CMの前に決めておいた番組へ
   if(CUR_CM){
-    var cmSg=CUR_CM; CUR_CM=null;
-    try{ if(_isGenuineEnd()) statsCmPlayed(cmSg.id); }catch(_){}
-    var pc=nowPos(), pl=cmPlan();
+    var cmD=CUR_CM, nx=CM_NEXT||{how:'live'}; CUR_CM=null; CM_NEXT=null;
+    try{ if(_isGenuineEnd()) statsCmPlayed(cmD.id); }catch(_){}
+    if(nx.how==='manual'){ playManual(nx.p); return; }   // 番組表から選んだ番組を頭から
+    var pc=nowPos();
     if(!pc){ var we=isExpanded; if(we)closeExpand(); setTimeout(gotoOffAir,we?300:0); return; }
-    isManual=false;
-    // ★時計がまだCMの枠の終わりより前＝CMが早く終わった（早送りで番組を早く終えた時など）。
-    //   いまの時刻の番組（＝早送りした番組やCMの枠）へ戻さず、CMのあとの番組を頭から流す（2026-11-21 実機で発覚）
-    var aftMan=CM_AFTER_MANUAL; CM_AFTER_MANUAL=false;
-    if(!aftMan&&pl&&nowS()<cmSg.st+cmSg.len-1){ var nx=_cmNextSeg(pl,cmSg); if(nx&&nx.k==='p'){ _playProgTop(nx.c,nx.p); return; } }
-    // 放送へ戻る。戻る時刻がちょうど別のCMの枠なら、CMを2本続けず、その次の番組へ
-    if(pc.cm&&pl){ var nx3=_cmNextSeg(pl,pc.cm); if(nx3&&nx3.k==='p'){ _playProgTop(nx3.c,nx3.p); return; } }
-    playSchedule(pc.c,pc.p);
-    return;
+    if(nx.how==='top'&&pc.c===nx.c&&pc.p===nx.p){ _playProgTop(nx.c,nx.p); return; }   // 次の番組を頭から（時計より遅れて見続ける）
+    if(nx.how==='top'&&nx.next1){ _playProgTop(nx.c,nx.p); return; }                  // 尺より短い番組のあと（今までも頭から）
+    _cmLag=0; playSchedule(pc.c,pc.p); return;                                        // 放送へ戻る（その時刻の位置から）
   }
-  var ended=vP, endedC=vC; // 今終わった番組
+  var ended=vP, endedC=vC, wasManual=isManual; // 今終わった番組
   var pos=nowPos();
-  // ★番組が終わったら、流れの中でその番組の直後にあるCMを流す（2026-11-21 依頼者「番組が終わってもCMが流れない」）。
-  //   時計より早く終わった（早送り）・遅れて終わった（止めていた）・ちょうど、のどれでも流す。
-  //   止めていて時計が先へ進んでいても、CMを飛ばして次の番組へ合流しない
-  if(pos){ var plE=cmPlan(), sgE=plE?_cmProgSeg(plE,endedC,ended):null, cmE=(plE&&sgE)?_cmNextSeg(plE,sgE):null;
-    if(cmE&&cmE.k==='c'){ var wasManual=isManual; isManual=false; playCm(cmE); CM_AFTER_MANUAL=wasManual; return; } }
   if(!pos){
     var wasExp=isExpanded;
     if(wasExp)closeExpand();
@@ -7946,16 +7961,22 @@ function onEnded(){
   }
   isManual=false;
   // 動画が尺より短く、終了時点でまだ同じ番組のスロット内に戻ってくる場合はループ防止で次の番組を頭から
-  if(pos.p===ended && !pos.cm && CYCLE.length>1){
-    // ★CMの入る日は、流れの次がCMならCMを頭から（2026-11-21）
-    var pl2=cmPlan(), ps2=pl2?_cmProgSeg(pl2,pos.c,pos.p):null, nx2=(pl2&&ps2)?_cmNextSeg(pl2,ps2):null;
-    if(nx2&&nx2.k==='c'){ playCm(nx2); return; }
+  if(pos.p===ended && CYCLE.length>1){
     var np=(ended+1)%CYCLE.length;
+    if(cmBefore('run',{how:'top',c:pos.c,p:np,next1:true})) return;   // ★その前にCM（2026-11-25）
     vC=pos.c;vP=np;
     loadVideo(CYCLE[np].ytId,0,'次の番組を読み込んでいます...');
     setViewUI(pos.c,np);refreshLive();
     return;
   }
+  // ★CMのせいで時計より遅れて見続けている時（2026-11-25）：次の番組の頭を欠かさず、頭から流す。
+  //   遅れがCMの分（＋読み込みの分30秒）を超えていたら（止めていた等）、今までどおり放送へ戻る
+  //   natural＝続けて見ていて、時計どおり（または遅れの分だけ）次の番組へ移るところ。CMを入れるなら、CMのあとは頭から
+  var natural=(!wasManual && pos.p===(ended+1)%CYCLE.length && esOf(pos.c,pos.p)<=Math.min(_cmLag+30,600));
+  var follow=(natural && _cmLag>0);
+  if(!follow) _cmLag=0;
+  if(cmBefore('run',{how:natural?'top':'live',c:pos.c,p:pos.p})) return;   // ★その前にCM（2026-11-25）
+  if(follow){ _playProgTop(pos.c,pos.p); return; }
   // 通常/シーク後：終了時点で放送中の番組を、現在時刻に合った位置（途中からでも）で再生
   playSchedule(pos.c,pos.p);
 }
@@ -7964,9 +7985,7 @@ function onEnded(){
 //  再生モード
 // ══════════════════════════════════════════════
 function playSchedule(c,p){
-  var _cp=null; try{ _cp=nowPos(); }catch(_){}
-  if(_cp&&_cp.cm&&_cp.c===c&&_cp.p===p){ playCm(_cp.cm); return; }   // ★いまはCMの枠（2026-11-21）
-  CUR_CM=null;
+  CUR_CM=null; CM_NEXT=null; _cmLag=0;
   clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;
   vC=c;vP=p;
   var sec=esOf(c,p);
@@ -7977,7 +7996,7 @@ function playSchedule(c,p){
 
 // ★ Safari対策：ユーザータップのコールチェーン内で直接呼ぶ
 function playManual(pIdx){
-  CUR_CM=null;
+  CUR_CM=null; CM_NEXT=null; _cmLag=0;
   clearEndTimer();isManual=true;isOff=false;userWantsPlay=true;
   try{ OWN.force=CYCLE[pIdx].ytId; }catch(_){}   // 押した番組は、前に読めなかった印があってももう一度試す
   showEnded(false);
@@ -8052,6 +8071,7 @@ document.addEventListener('visibilitychange',function(){ if(!document.hidden&&Da
 // 現在の番組を正しい位置で再ロードする
 function forceResync(){
   if(isOff || !userWantsPlay) return;
+  if(CUR_CM){ try{ onEnded(); }catch(_){} return; }   // ★CMの途中＝CMのあとに決めておいた番組へ（2026-11-25）
   if(isManual){
     if(typeof vCurrentId!=='undefined' && vCurrentId){
       loadVideo(vCurrentId, (typeof vCurrentSec!=='undefined'?vCurrentSec:0)||0, '読み込み中...');
@@ -8091,7 +8111,7 @@ function refreshLive(){
   document.getElementById('bdot').className='bdot';
   // タイトルは番組ロード時(setViewUI)が「再生中の番組」を設定済み。ここでは上書きしない。
   // LIVE表示：再生中の番組(vP)が現在放送中の番組(p)と一致していれば live、ずれていれば見逃し再生中(g)。
-  var atLive=(!isManual && vP===p);
+  var atLive=(!isManual && (vP===p || (CUR_CM!==null&&!(CM_NEXT&&CM_NEXT.how==='manual')) || (_cmLag>0 && (function(){ var o=nowS()-_cmLag-S*3600; if(!(o>=0)) return false; var w=o-Math.floor(o/TOT)*TOT, q=0; for(var i=CYCLE.length-1;i>=0;i--){ if(CO[i]<=w){ q=i; break; } } return q===vP; })())));
   setLiveBtn(atLive?'live':'manual');
 }
 function hlSB(c,p){
@@ -8302,7 +8322,7 @@ function renderSB(){
         '<div class="pname">'+escHtml(prog.title)+'</div>'+
         '<div class="pmeta"><span class="pcat">'+escHtml(prog.cat)+'</span>'+
         '<span class="pdur">/ '+lenText(plen(prog))+'</span></div>';
-      addTap(pinfo,function(){playManual(pIdx);});
+      addTap(pinfo,function(){playPick(pIdx);});   // ★番組表から選んだ時はCMの判断を通す（2026-11-25）
 
       row.appendChild(pinfo);
       list.appendChild(row);

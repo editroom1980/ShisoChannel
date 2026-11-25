@@ -338,7 +338,7 @@ details summary{cursor:pointer;}
         <span>別の番組を選んだ時 <input type="number" id="cmGapPick" min="1" max="1440" inputmode="numeric" style="width:72px"> 分</span>
         <span>続けて見ている時 <input type="number" id="cmGapRun" min="1" max="1440" inputmode="numeric" style="width:72px"> 分</span>
       </div>
-      <p class="note" style="margin-top:6px">検証版（lab 4.51〜）は、CMを番組の頭に流します。「放送開始」では流しません。番組表から別の番組を選んだ時と、続けて見ていて次の番組へ移る時に、前のCMからこの時間がたっていれば1本流します（その日はじめては必ず）。CMが複数ある時は、その端末で流れた回数の少ないものから順に流します。</p>
+      <p class="note" style="margin-top:6px">CMは番組の頭に流します（番組表には出ません）。「放送開始」では流しません。番組表から別の番組を選んだ時と、続けて見ていて次の番組へ移る時に、前のCMからこの時間がたっていれば1本流します（その日はじめては必ず）。CMが複数ある時は、その端末で流れた回数の少ないものから順に流します。</p>
     </div>
     <div id="cms"></div>
     <div class="cb">
@@ -349,14 +349,7 @@ details summary{cursor:pointer;}
         <button class="gold small" id="btnCmWrite" disabled hidden>アプリに反映する</button>
       </div>
       <div id="cmVaultBox" hidden></div>
-      <p class="note" style="margin-top:8px">本番（3.98）は、まだCMを番組と番組の間に流します（番組表には出ません）。「番組◯本ごと」「1日の上限」と下の「その日の流れ」は、本番だけが使います。1回の休みに流すのは1本で、条件に合うCMが複数ある時は順番に替わります。CMの動画は「番組表」の「⬆ 動画保管庫に入れる」で入れてから、ここで足してください。</p>
-    </div>
-  </div>
-  <div class="card">
-    <h2>そ の 日 の 流 れ <span class="sub">本番（3.98）の流れ・いま編集中の設定で計算</span></h2>
-    <div class="cb">
-      <div class="row"><div style="width:160px"><input type="date" id="cmDay"></div><span class="note" id="cmPlanSum"></span></div>
-      <div class="tbl"><table class="cmplan" id="cmPlanList"></table></div>
+      <p class="note" style="margin-top:8px">CMの動画は「番組表」の「⬆ 動画保管庫に入れる」で入れてから、ここで足してください。</p>
     </div>
   </div>
 </section>
@@ -515,7 +508,7 @@ function showTab(k){
   curTab=k;
   document.querySelectorAll('#tabs button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===k);});
   ['sched','spon','cm','rep','acct'].forEach(function(t){el('tab-'+t).hidden=(t!==k);});
-  if(k==='cm') renderCmPlan();
+  if(k==='cm'&&cmLoadedSig) renderCms();
   lsSet('kanri_tab',k);
   updateBar();
   if(k==='rep'&&ID_TOKEN&&!el('report').innerHTML)pick('today');
@@ -1026,6 +1019,7 @@ function validCms(list){
     var ev=+c.every; if(!(ev===Math.floor(ev)&&ev>=1&&ev<=20))return n+'頻度は「番組1〜20本ごと」';
     var mx=+c.max; if(!(mx===Math.floor(mx)&&mx>=0&&mx<=500))return n+'1日の上限は0〜500（0＝上限なし）';
     if(!Array.isArray(c.after))return n+'入れる場所の形が不正';
+    if(c._mode==='sel'&&!c.after.length)return n+'「選んだ番組の前だけ」の時は、番組を1本以上選んでください';
   }
   return '';
 }
@@ -1050,24 +1044,25 @@ function readCmFromForm(){
     function v(k){var x=row.querySelector('[data-k='+k+']');return x?x.value:'';}
     c.title=v('title').trim(); c.sponsor=v('sponsor').trim();
     c.from=v('from'); c.to=v('to'); c.tFrom=v('tFrom'); c.tTo=v('tTo');
-    c.every=parseInt(v('every'),10); if(isNaN(c.every))c.every=1;
-    c.max=parseInt(v('max'),10); if(isNaN(c.max))c.max=0;
     var on=row.querySelector('[data-k=on]'); if(on)c.on=on.checked;
     var sel=row.querySelector('[data-k=vid]'); if(sel&&sel.value&&sel.value!==c.vid){ var vv=vaultFind(sel.value); c.vid=sel.value; c.sec=vv?vv.sec:0; }
-    c.after=[]; row.querySelectorAll('[data-k=after]:checked').forEach(function(x){c.after.push(x.value);});
+    var md=row.querySelector('[data-k=mode]:checked'); if(md)c._mode=md.value;
+    if(cmMode(c)==='all'){ c.after=[]; }
+    else if(row.querySelector('[data-k=after]')){ c.after=[]; row.querySelectorAll('[data-k=after]:checked').forEach(function(x){c.after.push(x.value);}); }
   });
 }
+// CMを入れる番組：'all'＝すべての番組の前／'sel'＝選んだ番組の前だけ。保存するのは after（選んだ番組の見分け名）だけ。
+//   選んだ番組が0本の after は「すべて」と同じ意味になるので、「選んだ番組だけ」で0本の時は反映させない（validCms）
+function cmMode(c){ return c._mode||((c.after&&c.after.length)?'sel':'all'); }
 function cmTimeText(c){return (c.tFrom||c.tTo)?((c.tFrom||'放送開始')+'〜'+(c.tTo||'放送終了')):'';}
 function cmRow(c,i,today){
   var act=c.on!==false&&(!c.from||c.from<=today)&&(!c.to||today<=c.to);
   var progs=sched.cycle||[];
   var meta=(c.on===false?'<span class="offtag">流さない</span>':(act?'<span class="on">流す</span>':'<span class="offtag">期間外</span>'))
     +'<span class="tag">'+esc(lenText(c.sec))+'</span>'
-    +'<span class="tag">番組'+(c.every||1)+'本ごと</span>'
-    +(c.max>0?'<span class="tag">1日'+c.max+'回まで</span>':'')
     +(cmTimeText(c)?'<span class="tag">'+esc(cmTimeText(c))+'</span>':'')
     +((c.from||c.to)?'<span class="tag">'+esc(c.from||'…')+' 〜 '+esc(c.to||'…')+'</span>':'')
-    +(c.after&&c.after.length?'<span class="tag">決まった番組だけ（'+c.after.length+'本）</span>':'');
+    +'<span class="tag">'+(cmMode(c)==='sel'?'選んだ番組の前だけ（'+(c.after||[]).length+'本）':'すべての番組の前')+'</span>';
   var vopt='<option value="">（選ぶ）</option>';
   (VAULT.list||[]).forEach(function(v){vopt+='<option value="'+esc(v.vid)+'"'+(v.vid===c.vid?' selected':'')+'>'+esc(v.title)+'（'+esc(lenText(v.sec))+'）</option>';});
   if(c.vid&&!vaultFind(c.vid))vopt+='<option value="'+esc(c.vid)+'" selected>'+esc(c.vid)+'（動画保管庫の一覧に無い）</option>';
@@ -1085,9 +1080,10 @@ function cmRow(c,i,today){
     +'<div><label class="l">流す期間の終了（空欄＝いつまでも）</label><input type="date" data-k="to" value="'+esc(c.to)+'"></div>'
     +'<div><label class="l">流す時間帯の始まり（空欄＝放送開始から）</label><input type="time" data-k="tFrom" value="'+esc(c.tFrom)+'"></div>'
     +'<div><label class="l">流す時間帯の終わり（空欄＝放送終了まで）</label><input type="time" data-k="tTo" value="'+esc(c.tTo)+'"></div>'
-    +'<div><label class="l">頻度：番組 ◯ 本ごと（1＝毎回・本番だけ）</label><input type="number" data-k="every" min="1" max="20" inputmode="numeric" value="'+esc(c.every||1)+'"></div>'
-    +'<div><label class="l">1日の上限（0＝上限なし・本番だけ）</label><input type="number" data-k="max" min="0" max="500" inputmode="numeric" value="'+esc(c.max||0)+'"></div>'
-    +'<div class="w"><label class="l">入れる場所：チェックした番組の前だけ（検証版）／あとだけ（本番）。どれもチェックしない＝どの番組でも</label><div class="cmafter">'+(after||'<span class="note">番組表を読み込み中…</span>')+'</div></div>'
+    +'<div class="w"><label class="l">CMを入れる番組</label>'
+    +'<div class="cmafter"><label><input type="radio" name="cmmode'+i+'" data-k="mode" value="all"'+(cmMode(c)==='all'?' checked':'')+'>すべての番組の前</label>'
+    +'<label><input type="radio" name="cmmode'+i+'" data-k="mode" value="sel"'+(cmMode(c)==='sel'?' checked':'')+'>選んだ番組の前だけ</label></div>'
+    +(cmMode(c)==='sel'?'<div class="cmafter" style="margin-top:6px">'+(after||'<span class="note">番組表を読み込み中…</span>')+'</div>':'')+'</div>'
     +'<div class="w"><label class="sw"><input type="checkbox" data-k="on"'+(c.on!==false?' checked':'')+'>アプリで流す</label></div>'
     +'<div class="w note">名前 '+esc(c.id)+'（回数の集計の鍵・変更不可）</div>'
     +'</div><div class="actions"><button class="danger small" data-op="del">一覧から外す</button><span class="sp"></span><button class="g small" data-op="close">閉じる</button></div></div></div>';
@@ -1111,7 +1107,7 @@ function renderCms(){
   el('cms').querySelectorAll('input,select').forEach(function(inp){
     inp.addEventListener('click',function(e){e.stopPropagation();});
     inp.addEventListener('input',checkCm);
-    inp.addEventListener('change',function(){ readCmFromForm(); if(inp.matches('[data-k=on],[data-k=from],[data-k=to],[data-k=vid],[data-k=every],[data-k=max],[data-k=tFrom],[data-k=tTo],[data-k=after]'))renderCms(); });
+    inp.addEventListener('change',function(){ readCmFromForm(); if(inp.matches('[data-k=on],[data-k=from],[data-k=to],[data-k=vid],[data-k=tFrom],[data-k=tTo],[data-k=after],[data-k=mode]'))renderCms(); });
   });
   checkCm();
 }
@@ -1126,24 +1122,6 @@ function checkCm(){
   else{st.className='status good';st.textContent='✔ 形は正しい。反映すると、アプリを開き直した時・1時間ごとの読み直しで届きます';}
   el('btnCmWrite').hidden=!changed; el('btnCmWrite').disabled=!(ID_TOKEN&&cmOK&&changed);
   barState.cm={changed:changed,ok:cmOK,label:err||('CM '+cmSt.list.length+'本の設定')}; updateBar();
-  renderCmPlan();
-}
-// その日の流れ（いま編集中の設定で、アプリと同じ cmplan.js で計算）
-function renderCmPlan(){
-  if(!el('cmPlanList')||typeof CMPLAN==='undefined')return;
-  var day=el('cmDay').value||dayStr(new Date());
-  if(!sched.cycle||!sched.cycle.length){el('cmPlanSum').textContent='番組表を読み込み中…';el('cmPlanList').innerHTML='';return;}
-  var pl=CMPLAN.build(sched.cycle,sched.airStart,sched.airEnd,cmPayloadList(cmSt.list),day);
-  if(!pl){el('cmPlanSum').textContent='この日はCMが入りません（今までどおり番組だけが流れます）';el('cmPlanList').innerHTML='';return;}
-  var nm={}; cmSt.list.forEach(function(c){nm[c.id]=c.sponsor||c.title;});
-  var sum=Object.keys(pl.cms).map(function(id){return (nm[id]||id)+' '+pl.cms[id]+'回';}).join('・');
-  el('cmPlanSum').textContent='この日のCM：'+sum;
-  var h='';
-  pl.seg.forEach(function(g){
-    if(g.k==='c') h+='<tr class="c"><td class="t">'+hms(g.st)+'</td><td class="k">CM</td><td>'+esc(nm[g.id]||g.id)+'（'+esc(lenText(g.len))+'）</td></tr>';
-    else h+='<tr><td class="t">'+hms(g.st)+'</td><td class="k">番組</td><td>'+esc((sched.cycle[g.p]||{}).title||'')+'</td></tr>';
-  });
-  el('cmPlanList').innerHTML=h;
 }
 function cmNewId(vid){var b=String(vid).replace(/[^A-Za-z0-9_-]/g,'').slice(0,48)||'cm', id=b, n=2; while(cmSt.list.some(function(c){return c.id===id;})){id=b+'_'+n;n++;} return id;}
 function renderCmVault(){
@@ -1166,7 +1144,6 @@ el('btnCmWrite').onclick=function(){
   var out={v:(cmSt.v||0)+1,updated:new Date().toISOString().slice(0,16).replace('T',' '),gapPick:cmSt.gapPick,gapRun:cmSt.gapRun,list:cmPayloadList(cmSt.list)};
   writeDoc('broadcast/cms',out).then(function(){toast('✔ 反映しました（版 '+out.v+'）');loadCms();}).catch(function(e){toast('✖ 反映できません：'+e.message);});
 };
-el('cmDay').addEventListener('change',renderCmPlan);
 ['cmGapPick','cmGapRun'].forEach(function(k){ el(k).addEventListener('input',checkCm); });
 
 function sponPayloadList(list){return (list||[]).map(function(s){return {name:s.name,url:s.url||'',img:s.img,on:s.on!==false,from:s.from||'',to:s.to||''};});}
@@ -1802,6 +1779,7 @@ function selfTest(){
   var _gg=CMPLAN.gaps({}), _t0=new Date('2026-11-25T10:00:00').getTime();
   t('CMの間隔：設定が無ければ どちらも30分、29分では入らず30分で入る',_gg.pick===30&&_gg.run===30&&!CMPLAN.headDue({last:_t0},_t0+29*60000,'pick',_gg)&&CMPLAN.headDue({last:_t0},_t0+30*60000,'pick',_gg)&&!CMPLAN.headDue({last:_t0},_t0+29*60000,'run',_gg)&&CMPLAN.headDue({last:_t0},_t0+30*60000,'run',_gg)&&CMPLAN.gaps({gapPick:60,gapRun:120}).run===120);
   var _ca=_cc({id:'a'}),_cb2=_cc({id:'b'}),_dv={n:{a:1},t:{a:5}};
+  t('入れる番組：「選んだ番組の前だけ」で0本なら落ちる・1本なら通る・「すべて」は0本で通る・印（_mode）は保存しない',validCms([_cc({_mode:'sel',after:[]})])!==''&&validCms([_cc({_mode:'sel',after:['own~b']})])===''&&validCms([_cc({_mode:'all',after:[]})])===''&&JSON.stringify(cmPayloadList([_cc({_mode:'sel',after:['x']})])).indexOf('_mode')<0&&cmMode({after:['x']})==='sel'&&cmMode({after:[]})==='all');
   t('番組の頭のCM：流れた回数の少ない方を選ぶ・決まった番組の前だけ',CMPLAN.pickHead([_ca,_cb2],'2026-11-25',36000,'x',_dv).id==='b'&&CMPLAN.pickHead([_cc({after:['own~b']})],'2026-11-25',36000,'x',{})===null);
   render('day',['2026-11-21'],[{programs:{b:{v:2,s:60}},cms:{sansho:_bad,oasis:4}}],[]);
   var _ct=el('report').textContent;
@@ -1818,8 +1796,7 @@ function selfTest(){
   el('dpick').value=dayStr(new Date());
   showTab(lsGet('kanri_tab')||'sched');
   if(ghToken()){el('ghStat').textContent='✔ 鍵はこの端末に保存済み（「つながるか試す」で確認できます）';el('ghSub').textContent='保存済み ✔ ▾';}
-  el('cmDay').value=dayStr(new Date());
-  loadSchedule().then(function(){ renderCmPlan(); return loadSponsors(); }); loadVault(); loadCms();
+  loadSchedule().then(function(){ if(cmLoadedSig) renderCms(); return loadSponsors(); }); loadVault(); loadCms();
   if(a&&a.r){REFRESH=a.r;EMAIL=a.e||'';refreshToken().then(function(){el('authstat').textContent='✔ ログイン状態を復元しました';el('authstat').className='ok';if(curTab==='rep')pick('today');}).catch(function(){REFRESH='';setWho();});}
   else setWho();
   if(/[?&]selftest=1/.test(location.search))selfTest();
