@@ -392,7 +392,7 @@ details summary{cursor:pointer;}
 <div id="bar" hidden><div class="t" id="barT"></div><button class="gold" id="barBtn">書き込む</button></div>
 <div id="toast"></div>
 
-<script src="cmplan.js?v=20261125"></script>
+<script src="cmplan.js?v=20261125b"></script>
 <script>
 'use strict';
 // ══════════════════════════════════════════════════════════════════════
@@ -999,7 +999,7 @@ var BUILTIN_SPONSORS=[
 //  ・流れの組み立ては cmplan.js（アプリと同じ物）。下の「その日の流れ」もそれで計算する＝アプリと必ず一致する
 //  ・名前（id）は回数の集計の鍵なので、作ったあとは変えない
 // ══════════════════════════════════════════════════════════════════════
-var cmSt={v:0,list:[],gapPick:60,gapRun:120}, cmOK=true, cmLoadedSig='', cmExists=false;
+var cmSt={v:0,list:[],gapPick:30,gapRun:30}, cmOK=true, cmLoadedSig='', cmExists=false;
 function cmPayloadList(list){return (list||[]).map(function(c){
   return {id:c.id,title:c.title||'',sponsor:c.sponsor||'',vid:c.vid,sec:+c.sec||0,on:c.on!==false,from:c.from||'',to:c.to||'',
           tFrom:c.tFrom||'',tTo:c.tTo||'',every:Math.max(1,Math.floor(+c.every||1)),max:Math.max(0,Math.floor(+c.max||0)),after:(c.after||[]).slice()};});}
@@ -1800,7 +1800,7 @@ function selfTest(){
   // ★番組の頭のCM（2026-11-25）：間隔の検査・選び方（アプリと同じ cmplan.js）
   t('CMの間隔：1〜1440の整数だけ通る',validGap(60)&&validGap(1)&&validGap(1440)&&!validGap(0)&&!validGap(1441)&&!validGap(1.5)&&!validGap(NaN));
   var _gg=CMPLAN.gaps({}), _t0=new Date('2026-11-25T10:00:00').getTime();
-  t('CMの間隔：設定が無ければ 60分・120分、選ぶ時は60分で入る・続けて見る時は120分で入る',_gg.pick===60&&_gg.run===120&&!CMPLAN.headDue({last:_t0},_t0+59*60000,'pick',_gg)&&CMPLAN.headDue({last:_t0},_t0+60*60000,'pick',_gg)&&!CMPLAN.headDue({last:_t0},_t0+119*60000,'run',_gg)&&CMPLAN.headDue({last:_t0},_t0+120*60000,'run',_gg));
+  t('CMの間隔：設定が無ければ どちらも30分、29分では入らず30分で入る',_gg.pick===30&&_gg.run===30&&!CMPLAN.headDue({last:_t0},_t0+29*60000,'pick',_gg)&&CMPLAN.headDue({last:_t0},_t0+30*60000,'pick',_gg)&&!CMPLAN.headDue({last:_t0},_t0+29*60000,'run',_gg)&&CMPLAN.headDue({last:_t0},_t0+30*60000,'run',_gg)&&CMPLAN.gaps({gapPick:60,gapRun:120}).run===120);
   var _ca=_cc({id:'a'}),_cb2=_cc({id:'b'}),_dv={n:{a:1},t:{a:5}};
   t('番組の頭のCM：流れた回数の少ない方を選ぶ・決まった番組の前だけ',CMPLAN.pickHead([_ca,_cb2],'2026-11-25',36000,'x',_dv).id==='b'&&CMPLAN.pickHead([_cc({after:['own~b']})],'2026-11-25',36000,'x',{})===null);
   render('day',['2026-11-21'],[{programs:{b:{v:2,s:60}},cms:{sansho:_bad,oasis:4}}],[]);

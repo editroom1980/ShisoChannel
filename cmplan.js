@@ -98,7 +98,7 @@
   //     前のCMから決まった時間（gapPick／gapRun 分）がたっていれば、その番組の前に1本流す。日付が変わったら数え直す
   //   ・条件：on・流す期間（from/to）・時間帯（tFrom/tTo、いまの時刻）・after（＝この番組の前だけ。空ならどの番組の前でも）
   //   ・every（番組◯本ごと）・max（1日の上限）は使わない（本番 3.98 のために設定には残す）
-  var GAP_PICK = 60, GAP_RUN = 120;
+  var GAP_PICK = 30, GAP_RUN = 30;   // 2026-11-25 依頼者「CMが流れるタイミングの制限は全て30分にしろ」
   function gapMin(v, def) { var n = Math.floor(+v); return (n >= 1 && n <= 1440) ? n : def; }
   function gaps(doc) { doc = doc || {}; return { pick: gapMin(doc.gapPick, GAP_PICK), run: gapMin(doc.gapRun, GAP_RUN) }; }
   // 流せるCMの候補（いまの日付・時刻・これから流す番組で絞る）
