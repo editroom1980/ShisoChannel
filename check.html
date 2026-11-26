@@ -2307,7 +2307,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.57-lab（CMの残り時間の点線）</div>
+    <div class="ps-version">version 4.58-lab（窓から戻ると流れない直し・帯の色）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4679,6 +4679,11 @@ function appFsNative(on){
   try{ if(IS_STOREAPP==='ios'&&window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.scFullscreen) webkit.messageHandlers.scFullscreen.postMessage(!!on); }catch(_){}
 }
 appFsNative(false);   // 全画面のまま読み直された時に、アプリ側を元に戻す
+// ・上下の帯（時計の所・ホームバーの所）はアプリ側が塗っている（ページの外）。設定で色を変えたら、アプリ側にも同じ色を伝える
+//   （以前は緑のままだった。2026-11-26 実機）。アプリ側は色を覚え、次に開いた時も最初からその色で塗る
+function appThemeNative(hex){
+  try{ if(IS_STOREAPP==='ios'&&window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.scTheme&&/^#[0-9a-fA-F]{6}$/.test(hex)) webkit.messageHandlers.scTheme.postMessage(hex); }catch(_){}
+}
 
 // ══════════════════════════════════════════════
 //  スポンサー定義（仮データ・将来スプレッドシート化）
@@ -6009,6 +6014,7 @@ function applyBg(id, save){
   de.style.setProperty('--green3', c.g3);
   de.style.setProperty('--green4', c.g4);
   de.style.setProperty('--green5', c.g5);
+  try{ appThemeNative(c.bg); }catch(_){}   // ダウンロード版 iPhone の上下の帯（アプリ側が塗る）。全画面中はアプリ側が黒のまま持っておく
   if(!isExpanded){                      // 全画面中は帯を黒のままにする
     try{ setThemeColor(c.bg); }catch(_){}
 
@@ -6265,9 +6271,36 @@ function tvWrapSettings(){
 // ・止める前から止まっていた時（自分で一時停止した・放送時間の外）は、閉じても流さない
 // ・userWantsPlay（見たいかどうか）は変えない。止めたのはこちらの都合なので
 var _holdPlay=false, _holdTour=false, _holdWin=false;
+// ★2026-11-26（lab 4.58）実機：お知らせの窓から戻ると、番組もその後のCMも、再生を押しても流れなくなった（ボタンが全部効かない）。
+//   止めの印（窓・使い方）は「閉じた」の合図1つだけで外していたので、合図が1つ欠けると止めたまま戻らない作りだった。
+//   シミュレータ（iOS 26.5・27.0）では窓をどう閉じても合図は届き、実機でどの合図が欠けたかは記録が無く確定できない。
+//   そこで合図を1つだけ信じるのをやめ、次のどれか1つで外す：
+//   ・窓：部品の合図（browserFinished）／アプリ側の合図（画面が表に戻った＝_scAppShown・AppDelegate.swift）／ページに指が触れた
+//     （窓は画面全体を覆う＝ページに指が届くのは窓が閉じている時だけ）
+//   ・使い方：使い方の箱（#tour）が画面に出ていない（印でなく画面で見る）
+//   ・裏に回っている（document.hidden）：アプリ側の合図か、ページに指が触れたら「表にある」とみなす（次に裏へ回るまで）
+var _visProof=false;
+function pageHidden(){ try{ return !!document.hidden&&!_visProof; }catch(_){ return false; } }
+function tourShown(){ try{ var w=document.getElementById('tour'); return !!(w&&w.classList.contains('on')); }catch(_){ return false; } }
+// 画面に出ていない止めの印を外す。go＝続きを流してよいか（指が触れた時は、押した物の動きに任せて流さない）
+function holdHeal(go){
+  if(_holdWin) _holdWin=false;
+  if(_holdTour&&!tourShown()) _holdTour=false;
+  if(go){ holdRelease(); return; }
+  if(_holdPlay&&!playHeld()) _holdPlay=false;
+}
+(function(){
+  // ページに指が触れた＝ページは表にあり、窓は閉じている。押した物（再生・番組・LIVE）がそのまま効くように、残った印をここで外す
+  function proof(){ try{ if(document.hidden&&!_visProof){ _visProof=true; _uiTimersStart(); } }catch(_){} }   // 見た目の時計（シークバー・CMの残り秒数）も動かし直す
+  function touched(){ proof(); holdHeal(false); }
+  try{ document.addEventListener('touchstart',touched,{capture:true,passive:true}); }catch(_){}
+  try{ document.addEventListener('mousedown',touched,true); }catch(_){}
+  // アプリ側（ダウンロード版 iPhone）から：画面が表に出た（アプリの中の窓が閉じた時も含む）
+  window._scAppShown=function(){ proof(); holdHeal(true); };
+})();
 // スマホ・テレビで裏に回っている間は流さない（パソコンは今までどおり裏でも流す。pauseInBackground と同じ分け方）
 function bgHeld(){
-  try{ if(!document.hidden) return false; return IS_TVAPP||(navigator.maxTouchPoints||0)>0||/iP(hone|ad|od)|Android/.test(navigator.userAgent); }catch(_){ return false; }
+  try{ if(!pageHidden()) return false; return IS_TVAPP||(navigator.maxTouchPoints||0)>0||/iP(hone|ad|od)|Android/.test(navigator.userAgent); }catch(_){ return false; }
 }
 function playHeld(){
   if(!_holdPlay) return false;
@@ -6314,6 +6347,7 @@ function closeSettings(){
 // 起動時：保存された色を復元（未保存なら深緑のまま＝従来と完全に同一）
 (function initBg(){
   try{ var v=localStorage.getItem(BG_KEY); if(v) applyBg(v,false); }catch(_){}
+  try{ appThemeNative(_bgNow.bg); }catch(_){}   // 色を選んでいない時も伝える（アプリ側が前の色を覚えていても今の色にそろう）
   try{ loadOpts(); }catch(_){}
 })();
 
@@ -7408,7 +7442,7 @@ function _ownWaitAgain(){
   clearTimeout(w.timer);
   // ★裏に回っている・自分で止めている・設定などで止めている間は読み直さない（裏で音が出るのを防ぐ）。
   //   表に戻った時（visibilitychange）・止めを外した時の5秒ごとの見直しで、あらためて読み直す
-  try{ if(document.hidden||!userWantsPlay||playHeld()){ w.timer=setTimeout(_ownWaitAgain,5000); return; } }catch(_){}
+  try{ if(pageHidden()||!userWantsPlay||playHeld()){ w.timer=setTimeout(_ownWaitAgain,5000); return; } }catch(_){}
   _ownProbe(function(ok){
     if(OWN.waitNet!==w) return;          // 待っている間に別の番組が選ばれた
     if(!ok){ w.timer=setTimeout(_ownWaitAgain,5000); return; }
@@ -9220,12 +9254,12 @@ function init(){
   var _rsT=[];
   function resumeIfWanted(){
     _rsT.forEach(clearTimeout); _rsT=[];   // ★先に取り消す（止め中に前の予約が残ると、設定の裏で読み直していた）
-    try{ if(playHeld()||document.hidden) return; }catch(_){}
+    try{ if(playHeld()||pageHidden()) return; }catch(_){}
     if(!(ytPlayer && ytReady && !isOff && userWantsPlay)) return;
     try{ if(ytPlayer.getPlayerState()!==1) ytPlayer.playVideo(); }catch(_){}
     // iOSは一度で再生されないことがあるため少し遅延して再試行
     _rsT[0]=setTimeout(function(){
-      if(playHeld()||document.hidden) return;
+      if(playHeld()||pageHidden()) return;
       if(!(ytPlayer && ytReady && !isOff && userWantsPlay)) return;
       var st=-99; try{ st=ytPlayer.getPlayerState(); }catch(_){}
       if(st!==1){ try{ ytPlayer.playVideo(); }catch(_){} }
@@ -9233,7 +9267,7 @@ function init(){
     // PCのbfキャッシュ復元で黒画面のまま固まる場合の復旧:
     // 一定時間後も再生(1)でもバッファリング(3)でもなければ現在番組を再ロード
     _rsT[1]=setTimeout(function(){
-      if(playHeld()||document.hidden) return;
+      if(playHeld()||pageHidden()) return;
       if(!(ytPlayer && ytReady && !isOff && userWantsPlay)) return;
       var st=-99; try{ st=ytPlayer.getPlayerState(); }catch(_){}
       if(st!==1 && st!==3){ forceResync(); }
@@ -9241,9 +9275,10 @@ function init(){
   }
   window._scBgPause=pauseInBackground; window._scBgResume=resumeIfWanted;   // アプリの中の窓を開く時・閉じた時に使う（appOpenOutside）
   document.addEventListener('visibilitychange',function(){
+    _visProof=false;   // 本物の合図が来たら、指で触れた時の「表にある」の上書きは捨てる
     if(!document.hidden) resumeIfWanted(); else pauseInBackground();
   });
-  window.addEventListener('pagehide',function(){ pauseInBackground(); });
+  window.addEventListener('pagehide',function(){ _visProof=false; pauseInBackground(); });
   window.addEventListener('pageshow',function(e){ resumeIfWanted(); });
   window.addEventListener('focus',function(){ resumeIfWanted(); });
   // Now Playingセッション抑制（Dynamic Islandインジケーター非表示の試み）
