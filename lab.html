@@ -2329,7 +2329,7 @@ html.tvapp #lnk-reg{display:none;}
   <div class="ps-main" id="ps-main">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.66-lab（まばたきと口）</div>
+    <div class="ps-version">version 4.67-lab（まばたきをどの設定でも）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3367,14 +3367,14 @@ function psLayout(){
 // ★3人のまばたきと口（2026-11-27 lab 4.66 指示「この案で作れ」）
 //   ・まばたき：1人ずつばらばらに3〜6秒に1回。開き→半目（40ms）→閉じ（50ms）→半目（40ms）→開き＝約0.15秒
 //   ・口：10〜15秒に1回、1人ずつ（前と同じ人は続けない）約1秒閉じて、また開く
-//   ・動くのは放送開始の画面が出ている間だけ。放送が始まった・アプリが裏に回った・「動きを減らす」の設定の時は止めて、目も口も開いた形に戻す
+//   ・動くのは放送開始の画面が出ている間だけ。放送が始まった・アプリが裏に回った時は止めて、目も口も開いた形に戻す
+//   ・「視差効果を減らす（動きを減らす）」の設定でも止めない（2026-11-27 指示「それでも動くようにしろ」。4.66 は止めていて、実機で動かなかった）
 //   ・点滅や体の動きは入れない（目と口だけ）
 var _psAnim={on:false,t:[],last:-1};
 function psAnimOk(){
   try{
     var ps=document.getElementById('power-screen'); if(!ps||getComputedStyle(ps).display==='none') return false;
     if(document.hidden) return false;
-    if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
     return !!document.querySelector('#ps-chara .ps-c');
   }catch(_){ return false; }
 }
@@ -3404,9 +3404,12 @@ function psAnimStart(){
   [].forEach.call(document.querySelectorAll('#ps-chara .ps-c'),function(c){ _psAt(_psRand(800,4000),function(){ _psBlink(c); }); });
   _psAt(_psRand(6000,10000),_psMouth);
 }
-// 1秒ごとに見張る：動いてよい時に始め、だめになったら止める（裏に回った時は、見た目の時計ごと止まり、戻ると続きから）
+// 1秒ごとに見張る：動いてよい時に始め、だめになったら止める。
+// ★見張りは画面の時計の仕組み（uiInterval）に乗せない（2026-11-27 lab 4.67）：あちらは裏に回ると止まり、表に戻った知らせで動き直す作りで、
+//   知らせが欠けると止まったままになる。見張りは自分で1秒ごとに回し、ページを読んだ時点ですぐ始める
 function psAnimWatch(){ var ok=psAnimOk(); if(ok&&!_psAnim.on) psAnimStart(); else if(!ok&&_psAnim.on) psAnimStop(); }
-document.addEventListener('visibilitychange',function(){ if(document.hidden) psAnimStop(); });
+document.addEventListener('visibilitychange',function(){ if(document.hidden) psAnimStop(); else psAnimWatch(); });
+setInterval(function(){ try{ psAnimWatch(); }catch(_){} },1000);
 
 // ★まだ見ていない新番組（番組表の「新」と同じ数え方）。0本の日は箱ごと出さない。4本以上は3本と「ほか◯本」
 function psNewRender(){
@@ -9368,7 +9371,7 @@ function init(){
   try{ psFit(); }catch(_){}      // 起動画面が画面に収まるように詰める（実測）
   // 3人の絵は読み込みが終わってから寸法が決まるので、そのたびに置き直す
   try{ [].forEach.call(document.querySelectorAll('#ps-chara img.b'),function(im){ im.addEventListener('load',function(){ try{ psFit(); }catch(_){} }); }); }catch(_){}
-  uiInterval(psAnimWatch,1000);   // ★3人のまばたきと口（放送開始の画面の間だけ・2026-11-27 lab 4.66）
+  try{ psAnimWatch(); }catch(_){}   // ★3人のまばたきと口：読んだ時点ですぐ始める（見張りは独立して1秒ごと・2026-11-27 lab 4.67）
   try{ psTipInit(); }catch(_){}  // 起動画面の説明（初回起動時のみ）
   uiInterval(psTipRepoint,300);  // 枠が対象からずれていたら測り直す（冪等）
   try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ psTipRepoint(); }); }catch(_){}
