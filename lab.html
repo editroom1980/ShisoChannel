@@ -2329,7 +2329,7 @@ html.tvapp #lnk-reg{display:none;}
   <div class="ps-main" id="ps-main">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.70-lab（CMのあいだのバナー）</div>
+    <div class="ps-version">version 4.71-lab（総点検の直し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3330,6 +3330,7 @@ function psLayout(){
   main.style.zoom='1'; side.style.zoom='1'; ps.style.gap=''; side.style.paddingTop='0px';
   if(nw) nw.style.display=hasNew?'':'none';
   var sa=_cmSafe(), W=innerWidth-sa.l-sa.r, H=innerHeight-sa.t-sa.b;
+  if(!(W>0&&H>0)) return;   // ★画面の幅か高さが0の瞬間（隠れている・復帰の途中）は並べ直さない。倍率が0になり列が消えたまま残る（lab 4.71）
   var land=innerWidth>innerHeight*1.15;
   if(land) ps.classList.add('land');
   var imgs=[].slice.call(ch.querySelectorAll('.ps-c'));
@@ -6696,7 +6697,7 @@ function attachSponsorSwipe(el){
     if(x0===null)return;
     var dx=e.changedTouches[0].clientX-x0;
     if(moved&&Math.abs(dx)>40){
-      _swipeSuppressClick=true;
+      _swipeSuppressClick=true; setTimeout(function(){ _swipeSuppressClick=false; },400);   // ★めくった直後のクリックだけを捨てる。残ると次の1回の押下が効かなかった（lab 4.71）
       if(dx<0) nextSponsor(); else prevSponsor();
     }
     x0=null;
@@ -8799,7 +8800,8 @@ function ntfMaybeInvite(){
     else if(Notification.permission!=='default'||nvGet('sc_ntf_asked')) return;
     var w=document.getElementById('reg'); if(w&&w.classList.contains('on')) return;
     nvSet('sc_ntf_asked',true);
-    setTimeout(function(){ try{ regShow('ntfAsk'); }catch(_){} },1500);
+    // ★CMが流れている間は出さず、終わってから出す（2026-11-27 lab 4.71）：番組が終わって次の番組のCMが始まると、案内がCMの上に出た。最大2分待つ
+    (function show(n){ setTimeout(function(){ try{ if(CUR_CM&&n<120){ show(n+1); return; } regShow('ntfAsk'); }catch(_){} }, n?1000:1500); })(0);
   }catch(_){}
 }
 // 通知を押して開いた時（?prog=番組の見分け名）：放送開始を押したら、その番組を頭から流す
@@ -9406,7 +9408,7 @@ function init(){
   try{ psAnimWatch(); }catch(_){}   // ★3人のまばたきと口：読んだ時点ですぐ始める（見張りは独立して1秒ごと・2026-11-27 lab 4.67）
   try{ psTipInit(); }catch(_){}  // 起動画面の説明（初回起動時のみ）
   uiInterval(psTipRepoint,300);  // 枠が対象からずれていたら測り直す（冪等）
-  try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ psTipRepoint(); }); }catch(_){}
+  try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ psTipRepoint(); try{ psFit(); }catch(_){} }); }catch(_){}   // ★書体が届いたら放送開始の画面も並べ直す（代わりの書体で測ったままにしない・lab 4.71）
   setInterval(periodicCheck,10000);   // 番組の切り替えの要。裏に回っても止めない
   // シークバーと再生アイコンの追従。0.1秒ごとにYouTubeへ状態を聞いていたが、
   // 目で見て違いが出ない範囲で0.25秒に緩めた（問い合わせ回数が毎秒10回→4回）
