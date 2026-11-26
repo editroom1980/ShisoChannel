@@ -2329,7 +2329,7 @@ html.tvapp #lnk-reg{display:none;}
   <div class="ps-main" id="ps-main">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.71-lab（総点検の直し）</div>
+    <div class="ps-version">version 4.72-lab（CM中の通信切れ）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -8981,10 +8981,15 @@ function seekBlocked(){ return cmLock()||isOff; }
 //   CMのあいだは操作を受け付けないので、CMが読み込み中・バッファ中のまま止まると、何も押せないまま出られなかった。
 //   表に出ていて・止めていない・通信待ちでない時に、20秒続けて「流れていない（止まっているのでもない）」なら、CMを終えて番組へ進む
 //   （止まっている＝状態2は、再生ボタンで流せるので数えない）
-var _cmStall=0;
+var _cmStall=0, _cmNetWait=0;
+// ★CMの途中で通信が切れた時（2026-11-27 lab 4.72 依頼者「90秒で」）：CMのあいだは何も押せないので、つながるまで出口が無かった。
+//   表に出ていて・止めていない間に「通信待ち」が90秒続いたら、CMをあきらめて次へ進む（onEnded＝選んだ番組か放送へ）。
+//   その先の番組も通信待ちになることはあるが、CMの鍵は外れているので番組表・LIVE・設定は押せる
 setInterval(function(){
   try{ cmBannerSync(); }catch(_){}   // ★CMのバナー：CMが終われば1秒以内に切り替えを再開（lab 4.70）
-  if(!CUR_CM){ _cmStall=0; return; }
+  if(!CUR_CM){ _cmStall=0; _cmNetWait=0; return; }
+  try{ if(OWN.waitNet&&!playHeld()&&!pageHidden()){ _cmStall=0; if(++_cmNetWait>=90){ _cmNetWait=0; try{ console.warn('[CM] 通信待ちが90秒続いたのでCMをあきらめる'); }catch(_){} _ownWaitEnd(); onEnded(); } return; } }catch(_){ return; }
+  _cmNetWait=0;
   try{ if(playHeld()||pageHidden()||OWN.waitNet){ _cmStall=0; return; } }catch(_){ return; }
   var st=-9; try{ st=ytPlayer.getPlayerState(); }catch(_){}
   if(st===1||st===2){ _cmStall=0; return; }
