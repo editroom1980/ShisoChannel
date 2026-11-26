@@ -1910,6 +1910,8 @@ html.tvpc body{overflow:hidden;}
   align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.35);
   -webkit-tap-highlight-color:transparent;}
 #reg-fab.on{display:flex;}
+/* 全画面のあいだは出さない。毎秒の見直し（regFabSync）より先に消す＝全画面にして1秒以内は「？」が縮小ボタンの上に乗って指を横取りしていた（2026-11-26 シミュレータで実測） */
+body.fs-open #reg-fab{display:none;}
 /* ★「？」の位置に出す誘い（2026-08-14指示）。中央に割り込む窓はもう自動では出さない。
    お知らせや番組表には被ってよい＝目立たせることを優先する。
    同じ物の大小2つの形なので、押す場所も出す条件も1か所で決まる（ずれようがない） */
@@ -2297,7 +2299,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.53-lab（アプリの通知）</div>
+    <div class="ps-version">version 4.54-lab（アプリの全画面と窓）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -4638,6 +4640,27 @@ function setResumeFlag(){
     else localStorage.removeItem('shiso_resume_t');
   }catch(_){}
 }
+// ══ ダウンロード版（iPhone）だけの扱い（2026-11-26 指示）══
+// ・外のサイト（お知らせ・投稿フォーム・バナー）は、アプリを離れて Safari へ行かず、アプリの中の窓で開く
+//   （Capacitor の公式の部品 @capacitor/browser＝iPhone の SFSafariViewController。下からせり上がり「完了」で閉じる）。
+//   窓はページの上に重なるだけでページは移らない＝続きを流す印（setResumeFlag）は付けない。
+//   窓の裏で音が鳴り続けないよう番組を止め、閉じたら見ていた時だけ続きを流す（アプリが裏に回る時と同じ処理）
+// ・開けなかった時は今までどおりページごと移る（Safari が開く）
+function appOpenOutside(url){
+  var B=null; try{ B=(IS_STOREAPP==='ios'&&window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Browser)||null; }catch(_){}
+  if(!B||!url) return false;
+  try{ if(window._scBgPause) window._scBgPause(); }catch(_){}
+  if(!appOpenOutside._on){ appOpenOutside._on=1;
+    try{ B.addListener('browserFinished',function(){ try{ if(window._scBgResume) window._scBgResume(); }catch(_){} }); }catch(_){} }
+  try{ B.open({url:url}).catch(function(){ setResumeFlag(); location.href=url; }); }catch(_){ return false; }
+  return true;
+}
+// ・全画面のあいだだけ、アプリ側で時計の帯・ホームバーの所を確保するのをやめて黒にしてもらう（AppDelegate.swift の MainViewController）。
+//   確保したまま全画面にすると、帯が緑で残り、指の位置もボタンから帯の高さ（62pt）ずれて縮小が押せない（シミュレータで実測）
+function appFsNative(on){
+  try{ if(IS_STOREAPP==='ios'&&window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.scFullscreen) webkit.messageHandlers.scFullscreen.postMessage(!!on); }catch(_){}
+}
+appFsNative(false);   // 全画面のまま読み直された時に、アプリ側を元に戻す
 
 // ══════════════════════════════════════════════
 //  スポンサー定義（仮データ・将来スプレッドシート化）
@@ -4789,6 +4812,7 @@ function attachNewsSwipe(el){
       //   ブラウザが「この接続は安全ではありません」と出すが、続ければ見られる。
       //   警告はブラウザ自身が出すものでページ側からは消せない（消せる仕組みは無い）。
       //   根本の解決は行き先のサイトがhttpsに対応することだけ（山崎文化会館は未対応）
+      if(appOpenOutside(n.url)) return;   // ダウンロード版はアプリの中の窓で開く
       setResumeFlag();  // 従来経路にも復帰フラグ（今まではお知らせだけ未設定だった＝TVで電源画面に戻る原因）
       location.href=n.url;
     }
@@ -6164,6 +6188,7 @@ function openForm(key){
     var eu=url+(url.indexOf('?')>=0?'&':'?')+'embedded=true';
     if(openSiteViewer(eu)) return;
   }
+  if(appOpenOutside(url)) return;   // ダウンロード版はアプリの中の窓で開く
   setResumeFlag();
   location.href=url;
 }
@@ -6396,6 +6421,7 @@ function openSponsorLink(){
     if(isTvPcMode() && !IS_TVAPP && canEmbed(s.url) && openSiteViewer(s.url)) return;
     // テレビ用アプリ：戻った時（ページ読み直し後）にバナーへ焦点を戻すための覚え書き
     if(IS_TVAPP){ try{ sessionStorage.setItem('_tvRet', (_tvCur&&_tvCur.id)||''); }catch(_){} }
+    if(appOpenOutside(s.url)) return;   // ダウンロード版はアプリの中の窓で開く
     setResumeFlag();
     location.href=s.url;
   }
@@ -7622,6 +7648,7 @@ function openExpand(){
   //   よって「全画面中だけcover ON」が唯一の正解。通常時はcover無し=映像ズレは起きない(v1.79-83時代の実機で実証済み)。
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
     if(vp) vp.setAttribute('content', vpContent(', viewport-fit=cover')); })();
+  appFsNative(true);   // ダウンロード版：アプリ側の帯の確保をやめて黒に
   setThemeColor('#000000');
   if(!wrap._touchHandler){
     wrap._touchHandler=function(){if(isExpanded)showFsUi();};
@@ -7944,6 +7971,7 @@ function closeExpand(){
   // ★coverを外して通常表示へ（帯は即・元の緑に戻る=シミュレータ実証済み。通常時cover無し=映像ズレ無し）
   (function(){ var vp=document.querySelector('meta[name="viewport"]');
     if(vp) vp.setAttribute('content', vpContent('')); })();
+  appFsNative(false);  // ダウンロード版：アプリ側の帯を元に戻す
   // 全画面バナー・映像の表示状態を復元（座標固定/フェード用のインライン指定を全て解除）
   (function(){ var sp=document.getElementById('fs-sponsor');
     if(sp){ sp.style.transition=''; sp.style.opacity=''; sp.style.top=''; sp.style.left=''; sp.style.transform=''; }
@@ -9008,6 +9036,7 @@ function init(){
       if(st!==1 && st!==3){ forceResync(); }
     },900);
   }
+  window._scBgPause=pauseInBackground; window._scBgResume=resumeIfWanted;   // アプリの中の窓を開く時・閉じた時に使う（appOpenOutside）
   document.addEventListener('visibilitychange',function(){
     if(!document.hidden) resumeIfWanted(); else pauseInBackground();
   });
