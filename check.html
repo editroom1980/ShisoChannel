@@ -2307,7 +2307,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.58-lab（窓から戻ると流れない直し・帯の色）</div>
+    <div class="ps-version">version 4.59-lab（全画面のバナーから戻ると流れない直し）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -9558,6 +9558,10 @@ init();
     // fs-ctrl-bar内のクリックは無視（全画面コントロールバー）
     var fsBar = document.getElementById('fs-ctrl-bar');
     if(fsBar && fsBar.contains(e.target)) return;
+    // ★全画面のバナー・枠の中のボタン（再読み込み等）は、それ自身の処理に任せる（2026-11-26 lab 4.59）。
+    //   以前はバナーを押すとここで先に一時停止が走り、「見たい」の印も消えたので、
+    //   バナーの窓から戻っても続きが流れなかった（実機・シミュレータで再現）
+    try{ var own=e.target&&e.target.closest?e.target.closest('#fs-sponsor,button,a,[onclick]'):null; if(own&&own!==wrap&&wrap.contains(own)) return; }catch(_){}
 
     var bRect = blockTop.getBoundingClientRect();
     // チャンネルボタン領域（yt-block-top）内のクリックは完全ブロック
