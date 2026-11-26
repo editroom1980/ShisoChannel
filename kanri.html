@@ -994,7 +994,7 @@ var BUILTIN_SPONSORS=[
 // ══════════════════════════════════════════════════════════════════════
 var cmSt={v:0,list:[],gapPick:30,gapRun:30}, cmOK=true, cmLoadedSig='', cmExists=false;
 function cmPayloadList(list){return (list||[]).map(function(c){
-  return {id:c.id,title:c.title||'',sponsor:c.sponsor||'',vid:c.vid,sec:+c.sec||0,on:c.on!==false,from:c.from||'',to:c.to||'',
+  return {id:c.id,title:c.title||'',sponsor:c.sponsor||'',banner:c.banner||'',vid:c.vid,sec:+c.sec||0,on:c.on!==false,from:c.from||'',to:c.to||'',
           tFrom:c.tFrom||'',tTo:c.tTo||'',every:Math.max(1,Math.floor(+c.every||1)),max:Math.max(0,Math.floor(+c.max||0)),after:(c.after||[]).slice()};});}
 function cmSig(){return JSON.stringify([cmPayloadList(cmSt.list),cmSt.gapPick,cmSt.gapRun]);}
 // CMの間隔（分）。1〜1440の整数（アプリは CMPLAN.gaps で同じ範囲だけを受け取る）
@@ -1010,6 +1010,7 @@ function validCms(list){
     if(typeof c.vid!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(c.vid))return n+'動画が選ばれていない';
     if(!(typeof c.sec==='number'&&c.sec>0&&c.sec<=600))return n+'動画の長さが読めない（動画保管庫を確かめてください）';
     if(!(c.title||c.sponsor))return n+'題名かスポンサー名を入れてください';
+    if(typeof c.banner!=='string'||c.banner.length>100)return n+'バナーの形が不正';
     if(c.from&&!/^\d{4}-\d{2}-\d{2}$/.test(c.from))return n+'開始日の形が不正';
     if(c.to&&!/^\d{4}-\d{2}-\d{2}$/.test(c.to))return n+'終了日の形が不正';
     if(c.from&&c.to&&c.from>c.to)return n+'開始日が終了日より後';
@@ -1042,7 +1043,7 @@ function readCmFromForm(){
   document.querySelectorAll('#cms .spon').forEach(function(row,i){
     var c=cmSt.list[i];if(!c)return;
     function v(k){var x=row.querySelector('[data-k='+k+']');return x?x.value:'';}
-    c.title=v('title').trim(); c.sponsor=v('sponsor').trim();
+    c.title=v('title').trim(); c.sponsor=v('sponsor').trim(); c.banner=v('banner');
     c.from=v('from'); c.to=v('to'); c.tFrom=v('tFrom'); c.tTo=v('tTo');
     var on=row.querySelector('[data-k=on]'); if(on)c.on=on.checked;
     var sel=row.querySelector('[data-k=vid]'); if(sel&&sel.value&&sel.value!==c.vid){ var vv=vaultFind(sel.value); c.vid=sel.value; c.sec=vv?vv.sec:0; }
@@ -1066,6 +1067,12 @@ function cmRow(c,i,today){
   var vopt='<option value="">（選ぶ）</option>';
   (VAULT.list||[]).forEach(function(v){vopt+='<option value="'+esc(v.vid)+'"'+(v.vid===c.vid?' selected':'')+'>'+esc(v.title)+'（'+esc(lenText(v.sec))+'）</option>';});
   if(c.vid&&!vaultFind(c.vid))vopt+='<option value="'+esc(c.vid)+'" selected>'+esc(c.vid)+'（動画保管庫の一覧に無い）</option>';
+  // ★CMのあいだ出し続けるバナー（2026-11-27 依頼者「CMの間はそのCMに対応したバナーがずっと表示されるようにしろ」）。
+  //   バナーの一覧の名前で結ぶ。一覧に無い・出していないバナーの時は、アプリは今までどおり切り替える
+  var bopt='<option value="">（なし：今までどおり切り替える）</option>', bfound=!c.banner;
+  ((typeof spon!=='undefined'&&spon&&spon.list)||[]).forEach(function(b){ if(!b.name)return; var sel=(b.name===c.banner); if(sel)bfound=true;
+    bopt+='<option value="'+esc(b.name)+'"'+(sel?' selected':'')+'>'+esc(b.name)+(b.on===false?'（今は出していない）':'')+'</option>'; });
+  if(!bfound)bopt+='<option value="'+esc(c.banner)+'" selected>'+esc(c.banner)+'（バナーの一覧に無い）</option>';
   var after='';
   progs.forEach(function(p){var k=progKeyK(p); if(!k)return; after+='<label><input type="checkbox" data-k="after" value="'+esc(k)+'"'+((c.after||[]).indexOf(k)>=0?' checked':'')+'>'+esc(p.title)+'</label>';});
   return '<div class="spon'+(act?'':' off')+(c._open?' open':'')+'" data-i="'+i+'">'
@@ -1075,6 +1082,7 @@ function cmRow(c,i,today){
     +'<div class="ed"'+(c._open?'':' hidden')+'><div class="f">'
     +'<div><label class="l">スポンサー名（流している間、題名の欄に出る）</label><input type="text" data-k="sponsor" value="'+esc(c.sponsor)+'"></div>'
     +'<div><label class="l">CMの題名（管理用）</label><input type="text" data-k="title" value="'+esc(c.title)+'"></div>'
+    +'<div class="w"><label class="l">CMのあいだ出し続けるバナー</label><select data-k="banner">'+bopt+'</select></div>'
     +'<div class="w"><label class="l">動画（動画保管庫）</label><select data-k="vid">'+vopt+'</select></div>'
     +'<div><label class="l">流す期間の開始（空欄＝いつでも）</label><input type="date" data-k="from" value="'+esc(c.from)+'"></div>'
     +'<div><label class="l">流す期間の終了（空欄＝いつまでも）</label><input type="date" data-k="to" value="'+esc(c.to)+'"></div>'
@@ -1195,6 +1203,7 @@ function loadSponsors(){
     }
     sponLoadedSig=sponExists?sponSig(spon):'';
     renderSpons();
+    if(cmLoadedSig){ try{ readCmFromForm(); renderCms(); }catch(_){} }   // CMの「バナー」の選択肢を一覧に合わせる
     loadExistingBanners().then(applySponsorPrefill);
   }).catch(function(e){el('sponStatus').className='status bad';el('sponStatus').textContent='一覧が読めません：'+e.message;});
 }

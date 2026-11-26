@@ -2329,7 +2329,7 @@ html.tvapp #lnk-reg{display:none;}
   <div class="ps-main" id="ps-main">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.67-lab（まばたきをどの設定でも）</div>
+    <div class="ps-version">version 4.70-lab（CMのあいだのバナー）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -6659,13 +6659,27 @@ function openSponsorLink(){
 }
 
 // 次／前のスポンサーへ
-function nextSponsor(){ sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); resetSponsorTimer(); }
-function prevSponsor(){ sponsorIndex=(sponsorIndex-1+SPONSORS.length)%SPONSORS.length; updateSponsorDisplay(); resetSponsorTimer(); }
+function nextSponsor(){ if(_cmBnOn) return; sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); resetSponsorTimer(); }
+function prevSponsor(){ if(_cmBnOn) return; sponsorIndex=(sponsorIndex-1+SPONSORS.length)%SPONSORS.length; updateSponsorDisplay(); resetSponsorTimer(); }
 
 // 10秒ごとに自動切り替え（手動操作でリセット）
-function rotateSponsor(){ sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); }
+function rotateSponsor(){ if(_cmBnOn) return; sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); }
 var SPONSOR_MS=7000;   // 切り替えの間隔。管理アプリ（broadcast/sponsors の interval 秒）で変えられる（2026-09-06）
 function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,SPONSOR_MS); }  // 7秒ごと（2026-08-10指示）
+// ★CMのあいだは、そのCMのバナーを出し続ける（2026-11-27 lab 4.70 依頼者「CMの間はそのCMに対応したバナーがずっと表示されるようにしろ」）
+//   ・どのバナーかは管理アプリのCMの「CMのあいだ出し続けるバナー」（CMの設定の banner＝バナーの一覧の名前）
+//   ・CMのあいだは7秒ごとの切り替えと指でめくる操作を止める。押した時の行き先は今までどおり
+//   ・CMが終わったら（どの終わり方でも CUR_CM が消える）、そのバナーから切り替えを再開する
+//   ・バナーを選んでいない・一覧に無い（出していない・期間外）時は今までどおり切り替える
+var _cmBnOn=false;
+function cmBannerSync(){
+  var want=-1;
+  if(CUR_CM&&CUR_CM.banner){ for(var i=0;i<SPONSORS.length;i++){ if(SPONSORS[i].name===CUR_CM.banner){ want=i; break; } } }
+  if(want>=0){
+    if(!_cmBnOn){ _cmBnOn=true; if(_sponsorTimer){ clearInterval(_sponsorTimer); _sponsorTimer=null; } }
+    if(sponsorIndex!==want){ sponsorIndex=want; updateSponsorDisplay(); }
+  }else if(_cmBnOn){ _cmBnOn=false; resetSponsorTimer(); }
+}
 
 // フリック（スワイプ）で手動切り替え。タップはクリックで開く
 function attachSponsorSwipe(el){
@@ -6761,7 +6775,11 @@ function validSchedule(d){
 
 // 検証済みデータを適用して番組表を再構築（放送中なら現在番組に同期し直す）
 function applySchedule(d){
+  // ★CMのあとに流す番組は番号で持っているので、番組表が差し替わったら名札（ytId）で引き直す（2026-11-27 lab 4.69）。
+  //   並びが変わると選んでいない番組が流れた。見つからなければ -1＝CMのあとは放送へ戻る（onEnded）
+  var _cmNextId=null; try{ if(CM_NEXT&&CYCLE[CM_NEXT.p]) _cmNextId=CYCLE[CM_NEXT.p].ytId; }catch(_){}
   CYCLE=_normCycle(d.cycle);
+  if(_cmNextId){ var _ni=-1; for(var _i=0;_i<CYCLE.length;_i++){ if(CYCLE[_i].ytId===_cmNextId){ _ni=_i; break; } } CM_NEXT.p=_ni; }
   try{ _ownMap(CYCLE); }catch(_){}   // ★自前の動画の対応表（ytId→vid）を作る（2026-10-02）
   if(d.airStart!=null)S=d.airStart;
   if(d.airEnd!=null)E=d.airEnd;
@@ -7276,6 +7294,7 @@ function cmBefore(kind,next){
 function playCm(cm,next){
   clearEndTimer();isManual=false;isOff=false;userWantsPlay=true;
   CUR_CM=cm; CM_NEXT=next; vC=next.c; vP=next.p;
+  try{ cmBannerSync(); }catch(_){}   // ★そのCMのバナーにすぐ切り替える（lab 4.70）
   loadVideo('cm~'+cm.vid,0,'CMを読み込んでいます...');
   try{ cmCountStart(); }catch(_){}   // CMの残り秒数を右下に出す
   var vt=document.getElementById('viewing-title'), vc=document.getElementById('viewing-cat');
@@ -7372,6 +7391,9 @@ function _ytOnState(st){
   }
   // 設定か使い方のあいだに流れ出したら止める（読み込みの続きで自動で流れた時）。表示の更新は上で済ませてから
   if(st===1&&(playHeld()||bgHeld())){ try{ ytPlayer.pauseVideo(); }catch(_){} }
+  // ★放送終了の画面が出ている間に流れ出したら止める（2026-11-27 lab 4.69）：番組を見たあと放送終了の画面に戻ると、読み込んだ番組が残っていて、
+  //   ▶などで「本日の放送は終了しました」の裏で流れた。流す処理はどれも先に isOff を外すので、ここで isOff のまま流れる＝裏で流れている
+  if(st===1&&isOff){ try{ ytPlayer.pauseVideo(); }catch(_){} }
 }
 // ══════════════════════════════════════════════
 //  自前の動画（2026-10-02・lab 4.36）
@@ -8391,6 +8413,7 @@ function loadVideo(ytId,sec,msg){
     ytPlayer.loadVideoById({videoId:ytId,startSeconds:sec,suggestedQuality:'hd1080'});
     try{ fitPlayer(); }catch(_){}
     setTimeout(function(){
+      if(isOff) return;   // ★その0.5秒の間に放送終了の画面へ移っていたら流さない（lab 4.69）
       try{if(ytPlayer.getPlayerState()!==1)ytPlayer.playVideo();}catch(_){}
     },500);
     setTimeout(killCaptions,300); setTimeout(killCaptions,1200); // 動画ロード毎に字幕を無効化
@@ -8407,7 +8430,7 @@ function pauseVideo(){
 
 // ── 動画終了 ──
 function onEnded(){
-  try{ ntfMaybeInvite(); }catch(_){}   // 番組を1本見終わった＝新番組のお知らせを聞くよい頃合い（1回だけ）
+  if(!CUR_CM){ try{ ntfMaybeInvite(); }catch(_){} }   // ★CMが終わった時は出さない（選んだ番組の頭にかぶさる・lab 4.69）。番組を1本見終わった＝新番組のお知らせを聞くよい頃合い（1回だけ）
   // まずスピナーで画面を覆う（YouTubeのエンドスクリーン＝サムネイルを隠す）
   showSpinner(true,'切り替え中...');
   clearEndTimer();
@@ -8527,6 +8550,8 @@ function _verTry(){
   if(!_verNew) return;
   var idle=Date.now()-_verLastTouch, off=false;
   if(hasPoweredOn&&isOff&&idle>=60*1000) off=true;
+  // ★放送開始の10分前からは、放送終了の画面での読み直しをしない（lab 4.69）：読み直しが6時をまたぐと、人が押していないのに放送開始が走る
+  if(off){ var _toS=S*3600-nowS(); if(_toS>=0&&_toS<10*60) return; }
   else if(!(!hasPoweredOn&&(document.hidden||idle>=10*60*1000))) return;
   try{
     var last=JSON.parse(localStorage.getItem('shiso_verup_last')||'null');
@@ -8581,7 +8606,9 @@ function setViewUI(c,p){
 }
 function refreshLive(){
   if(isOff)return;
-  var pos=nowPos();if(!pos){if(!isManual)gotoOffAir();return;}
+  // ★CMを流している間は放送終了へ移らない（2026-11-27 lab 4.68）：放送時間外に番組表を押すと、CMを流す処理の最後でここへ来て
+  //   放送終了の処理がCMの印を消していた＝画面は「放送は終了しました」のまま音だけ流れ、CMの鍵も外れて別の番組を選べた。CMの後は onEnded が選んだ番組へ進む
+  var pos=nowPos();if(!pos){if(!isManual&&!CUR_CM)gotoOffAir();return;}
   var c=pos.c,p=pos.p;lC=c;lP=p;
   document.getElementById('onair-badge').classList.remove('off');
   document.getElementById('bdot').className='bdot';
@@ -8914,7 +8941,7 @@ function updateSeekBar(){
     var dur=ytPlayer.getDuration();
     var cur=ytPlayer.getCurrentTime();
     if(dur>0 && !seekInProgress){
-      var pct=Math.min(100,Math.max(0,(cur/dur)*100));
+      var pct=isOff?100:Math.min(100,Math.max(0,(cur/dur)*100));   // ★放送終了の画面は100%のまま（残っている番組の位置で上書きしない・lab 4.69）
       var pb=document.getElementById('p-bar');
       if(pb)pb.style.width=pct+'%';
       var pbfs=document.getElementById('p-bar-fs');
@@ -8946,12 +8973,15 @@ function _seekVisual(ratio){
 //   受け付けない：送り・戻し・シーク・再生と一時停止（映像を押すのも）・番組表・LIVE。長さはCMそのものの長さで決まる（数字は持たない）
 //   受け付ける：音量・消音・全画面・設定（設定を開くとCMも止まり、閉じると止めた所から続く＝飛ばしにならない）
 function cmLock(){ return !!CUR_CM; }
+// ★位置を動かさない時（2026-11-27 lab 4.69）：CMのあいだと、放送終了の画面のあいだ。放送終了の画面で棒や30秒を押すと、残っていた番組の位置が動いて棒が途中を指し、iPhoneでは読み直しで一瞬流れた
+function seekBlocked(){ return cmLock()||isOff; }
 // ★CMが進まないまま詰まった時の見張り（2026-11-26 lab 4.60 総点検）
 //   CMのあいだは操作を受け付けないので、CMが読み込み中・バッファ中のまま止まると、何も押せないまま出られなかった。
 //   表に出ていて・止めていない・通信待ちでない時に、20秒続けて「流れていない（止まっているのでもない）」なら、CMを終えて番組へ進む
 //   （止まっている＝状態2は、再生ボタンで流せるので数えない）
 var _cmStall=0;
 setInterval(function(){
+  try{ cmBannerSync(); }catch(_){}   // ★CMのバナー：CMが終われば1秒以内に切り替えを再開（lab 4.70）
   if(!CUR_CM){ _cmStall=0; return; }
   try{ if(playHeld()||pageHidden()||OWN.waitNet){ _cmStall=0; return; } }catch(_){ return; }
   var st=-9; try{ st=ytPlayer.getPlayerState(); }catch(_){}
@@ -9051,7 +9081,7 @@ function cmCountStop(){
 }
 // 30秒 相対シーク（ボタン用）
 function seekRel(delta){
-  if(cmLock()) return;
+  if(seekBlocked()) return;
   if(!ytPlayer||!ytReady)return;
   var cur=0,dur=0;try{cur=ytPlayer.getCurrentTime()||0;dur=ytPlayer.getDuration()||0;}catch(_){}
   if(dur<=0)return;
@@ -9065,7 +9095,7 @@ function seekRel(delta){
 function attachSeekDrag(barEl,commit){
   if(!barEl||barEl._seekBound)return; barEl._seekBound=true;
   barEl.addEventListener('touchstart',function(e){
-    if(cmLock()){ e.stopPropagation(); return; }   // CMの途中は動かさない
+    if(seekBlocked()){ e.stopPropagation(); return; }   // CMの途中・放送終了の画面は動かさない
     barEl._dragging=true; e.stopPropagation();
     if(isExpanded&&typeof resetFsUiTimer==='function')resetFsUiTimer();
     if(e.touches[0])_seekVisual(_seekRatioAt(barEl,e.touches[0].clientX));
@@ -9083,7 +9113,7 @@ function attachSeekDrag(barEl,commit){
     if(cx!=null)commit(cx);
     setTimeout(function(){seekInProgress=false;},450);
   },{passive:false});
-  barEl.addEventListener('click',function(e){e.stopPropagation();if(cmLock())return;commit(e.clientX);}); // PCマウス
+  barEl.addEventListener('click',function(e){e.stopPropagation();if(seekBlocked())return;commit(e.clientX);}); // PCマウス
 }
 
 function periodicCheck(){
@@ -9094,7 +9124,8 @@ function periodicCheck(){
     // 放送時間外(24時以降)。今の番組を見ている人には最後まで流し、終了時(onEnded→pos=null)にoff-airへ。
     // ★2026-10-22 1周の長さを自由にしたので、24時をまたぐ番組が出る。一時停止中(2)も
     //   「見ている人」なので切らない（以前は一時停止するとその場で放送終了の画面になった）
-    if(!isOff){
+    // ★CMを流している間（読み込み中を含む）も「見ている人」なので切らない。終わりは onEnded、詰まりはCMの見張り（20秒）に任せる（2026-11-27 lab 4.68）
+    if(!isOff && !CUR_CM){
       var stx=-99; try{ stx=ytPlayer.getPlayerState(); }catch(_){}
       // 通信が戻るのを待っている間（OWN.waitNet）も「見ている人」なので切らない
       if(stx!==1 && stx!==2 && stx!==3 && !OWN.waitNet){ gotoOffAir(); } // 再生・一時停止・バッファ中でなければ終了画面へ
@@ -9107,7 +9138,7 @@ function periodicCheck(){
   // ★番組境界の変化では強制切替しない：今の動画を最後まで再生し、終了時にonEndedがライブへ復帰させる。
   if(wasOff){
     // ★設定・使い方を開いたまま6時になった時は、裏で流さず閉じた時に流す（2026-11-26 lab 4.60 総点検）
-    try{ var _sp=document.getElementById('settings-panel'); if((_sp&&_sp.classList.contains('open'))||tourShown()) _holdPlay=true; }catch(_){}
+    try{ var _sp=document.getElementById('settings-panel'); if((_sp&&_sp.classList.contains('open'))||tourShown()||_holdWin) _holdPlay=true; }catch(_){}   // ★お知らせの窓を開いたままの時も（lab 4.69）
     playSchedule(pos.c,pos.p);
   }
 }
@@ -9197,6 +9228,7 @@ var vCurrentSec=0; // 現在の開始秒数
 
 function togglePlayPause(){
   if(!ytPlayer)return;
+  if(isOff) return;   // ★放送終了の画面では流さない（番組表から選んで見る）。押しても裏で前の番組が流れないように（2026-11-27 lab 4.69）
   // CMのあいだは止めない。ただし止まっているCM（iPhoneが裏から戻した時に止めた等）を流すのは受け付ける（流せずに詰まらないように）
   if(cmLock()){ var cst=-9; try{ cst=ytPlayer.getPlayerState(); }catch(_){} if(cst===1||cst===3) return; }
   var playing=false;
@@ -9680,7 +9712,7 @@ function init(){
   }
   // fs-seek-bg のシーク（doFsSeekはif文の外で定義→iOS対応）
   var doFsSeek=function(clientX,barEl){
-    if(cmLock()) return;
+    if(seekBlocked()) return;
     if(!window.ytPlayer)return;
     var rect=barEl.getBoundingClientRect();
     var ratio=Math.min(1,Math.max(0,(clientX-rect.left)/rect.width));
@@ -9791,7 +9823,7 @@ init();
     if(!barBg) return;
 
     function doSeek(clientX){
-      if(cmLock()) return;
+      if(seekBlocked()) return;
       if(!window.ytPlayer) return;
       var rect = barBg.getBoundingClientRect();
       var ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
