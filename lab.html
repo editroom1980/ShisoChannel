@@ -2297,7 +2297,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.52-lab（CMの間隔は30分）</div>
+    <div class="ps-version">version 4.53-lab（アプリの通知）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -8385,11 +8385,42 @@ function clearNewProg(id){
 // ・使えるのは、iPhone/iPad はホーム画面から開いた時だけ（Safariのタブでは仕組みが無い）。テレビには無い
 var NTF={api:'https://vault.shisochan.net', pub:'BOAI4P1dqzSexXhiHgMeuMaWxP2G07Z5BfJTjqvsgJ46RRp2R-hhDxHh3B869VWVvKoPymJadUuxo4lsAzg_P1c', lab:/lab\.html/.test(location.pathname)};
 NTF.sw=NTF.lab?'sw-lab.js':'sw.js'; NTF.scope=NTF.lab?'./lab':'./';
-function ntfSupported(){ try{ return !IS_TVAPP&&('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window); }catch(_){ return false; } }
-function ntfOn(){ try{ return ntfSupported()&&Notification.permission==='granted'&&nvGet('sc_ntf_on')===true; }catch(_){ return false; } }
+// ══ ダウンロード版（iPhone）の中の通知（2026-11-25）══
+// アプリの中（WKWebView）には Web の通知の仕組み（Service Worker・PushManager）が無い。
+// そのため、アプリの通知（Apple の APNs）で受け取る。端末の番号（トークン）は受付係の /push/apns に預ける。
+// 送るのは今までどおり管理アプリの「新番組を通知する」（受付係が Web の宛先とアプリの宛先の両方に送る）。
+// 使う部品は Capacitor の公式の通知部品（@capacitor/push-notifications）。アプリが Capacitor の窓口をページに差し込む
+function _ntfApp(){ try{ return (IS_STOREAPP==='ios'&&window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.PushNotifications)||null; }catch(_){ return null; } }
+// 端末の番号をもらう（許可が済んでいる時だけ呼ぶ）。20秒で返事が無ければあきらめる
+function _ntfAppToken(P){
+  return new Promise(function(ok,ng){
+    var hs=[],done=false;
+    function fin(f,v){ if(done) return; done=true; hs.forEach(function(h){ try{ h.remove(); }catch(_){} }); f(v); }
+    Promise.all([
+      P.addListener('registration',function(t){ fin(ok,t&&t.value); }),
+      P.addListener('registrationError',function(e){ fin(ng,new Error((e&&e.error)||'番号をもらえない')); })
+    ]).then(function(a){ hs=a; if(done) a.forEach(function(h){ try{ h.remove(); }catch(_){} }); return P.register(); })
+      .catch(function(e){ fin(ng,e); });
+    setTimeout(function(){ fin(ng,new Error('番号の返事が無い')); },20000);
+  });
+}
+function _ntfAppSend(tok){
+  return fetch(NTF.api+'/push/apns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:tok,lab:NTF.lab})})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); nvSet('sc_apns_tok',tok); });
+}
+function ntfSupported(){ try{ if(_ntfApp()) return true; return !IS_TVAPP&&('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window); }catch(_){ return false; } }
+function ntfOn(){ try{ if(_ntfApp()) return nvGet('sc_ntf_on')===true; return ntfSupported()&&Notification.permission==='granted'&&nvGet('sc_ntf_on')===true; }catch(_){ return false; } }
 function _ntfKey(){ var s=NTF.pub.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var b=atob(s),u=new Uint8Array(b.length); for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i); return u; }
 // 受け取りを始める。★許可を聞く呼び出しは必ず最初（押した操作の中でないと iPhone は聞いてくれない）
 function ntfEnable(){
+  var P=_ntfApp();
+  if(P) return P.requestPermissions().then(function(st){
+    if(!st||st.receive!=='granted') return 'denied';
+    return _ntfAppToken(P).then(function(tok){
+      try{ console.log('[お知らせ] 端末の番号をもらった（'+String(tok).length+'文字）'); }catch(_){}
+      return _ntfAppSend(tok);
+    }).then(function(){ nvSet('sc_ntf_on',true); return 'ok'; });
+  }).catch(function(e){ try{ console.warn('[お知らせ] '+((e&&e.message)||e)); }catch(_){} return 'error'; });
   if(!ntfSupported()) return Promise.resolve('unsupported');
   var pr=null; try{ pr=Notification.requestPermission(); }catch(_){}
   return Promise.resolve(pr).then(function(p){
@@ -8406,6 +8437,11 @@ function ntfEnable(){
 // 受け取りを止める（宛先も受付係から消す）
 function ntfDisable(){
   nvSet('sc_ntf_on',false);
+  if(_ntfApp()){
+    var tok=nvGet('sc_apns_tok'); nvSet('sc_apns_tok','');
+    if(!tok) return Promise.resolve();
+    return fetch(NTF.api+'/push/apns-unsub',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:tok})}).catch(function(){});
+  }
   try{ if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){}); }catch(_){}
   if(!ntfSupported()) return Promise.resolve();
   return navigator.serviceWorker.getRegistration(location.href).then(function(reg){
@@ -8426,7 +8462,8 @@ function ntfBadgeSync(){
 function ntfMaybeInvite(){
   try{
     if(!ntfSupported()||!regHome()) return;
-    if(Notification.permission!=='default'||nvGet('sc_ntf_asked')) return;
+    if(_ntfApp()){ if(nvGet('sc_ntf_asked')||ntfOn()) return; }   // アプリの中には Notification が無い
+    else if(Notification.permission!=='default'||nvGet('sc_ntf_asked')) return;
     var w=document.getElementById('reg'); if(w&&w.classList.contains('on')) return;
     nvSet('sc_ntf_asked',true);
     setTimeout(function(){ try{ regShow('ntfAsk'); }catch(_){} },1500);
@@ -8441,6 +8478,29 @@ function ntfTakeProg(){
   for(var i=0;i<CYCLE.length;i++){ if(CYCLE[i]&&CYCLE[i].ytId===k) return i; }
   return -1;
 }
+// アプリの中：通知を押した時と、開くたびの確かめ
+(function(){
+  var P=_ntfApp(); if(!P) return;
+  try{
+    // 通知を押した：放送中ならその番組を頭から。まだ放送開始の前なら、放送開始を押した時に流す（ntfTakeProg）
+    P.addListener('pushNotificationActionPerformed',function(a){
+      var k=a&&a.notification&&a.notification.data&&a.notification.data.prog; if(!k) return;
+      k=String(k); try{ console.log('[お知らせ] 通知が押された prog='+k+' 放送中='+hasPoweredOn); }catch(_){}
+      if(hasPoweredOn&&CYCLE.length){ for(var i=0;i<CYCLE.length;i++){ if(CYCLE[i]&&CYCLE[i].ytId===k){ playManual(i); return; } } }
+      NTF_PROG=k;
+    });
+  }catch(_){}
+  try{
+    P.checkPermissions().then(function(st){
+      // 端末の設定で通知が切られていたら、こちらの印も消す
+      if(!st||st.receive!=='granted'){ if(nvGet('sc_ntf_on')===true){ nvSet('sc_ntf_on',false); try{ renderOpts(); }catch(_){} } return; }
+      // 受け取る設定の時は、開くたびに番号を確かめる（Apple の勧め：番号は変わることがある）。変わった時だけ預け直す
+      if(nvGet('sc_ntf_on')!==true) return;
+      _ntfAppToken(P).then(function(tok){ if(tok&&tok!==nvGet('sc_apns_tok')) return _ntfAppSend(tok); })
+        .catch(function(e){ try{ console.warn('[お知らせ] '+((e&&e.message)||e)); }catch(_){} });
+    }).catch(function(){});
+  }catch(_){}
+})();
 // 印だけを今の状態に合わせる。番組表を丸ごと描き直さない
 //（再生中に描き直すと、見ている位置が飛ぶ）
 function renderNewMarks(){
