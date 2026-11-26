@@ -70,6 +70,27 @@ body{background:var(--forest);color:var(--text);font-family:'Zen Kaku Gothic New
 .ps-btn:active{opacity:0.85;}
 .ps-btn.loading{opacity:0.55;pointer-events:none;cursor:default;letter-spacing:2px;}
 .ps-hint{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;}
+/* ★放送開始の画面に足した物（2026-11-26 lab 4.62 指示「案A」）：上にまだ見ていない新番組、ボタンの下に音量、下の余白に3人。
+   今の並び（ロゴ〜説明）の大きさ・色・順は変えない。置き場所と出し入れは psLayout が実寸で決める */
+.ps-new{width:354px;box-sizing:border-box;background:rgba(0,0,0,0.22);border:1px solid rgba(232,184,74,0.35);border-radius:10px;padding:10px 14px 8px;display:flex;flex-direction:column;gap:4px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+.ps-new-h{font-size:12px;font-weight:700;color:var(--gold2);letter-spacing:0.12em;}
+.ps-new-it{display:flex;align-items:center;gap:8px;font-size:14px;line-height:26px;color:var(--white);min-width:0;}
+.ps-new-it span:last-child{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0;}
+.ps-new-tag{flex:none;font-size:11px;font-weight:700;color:var(--forest);background:var(--gold2);border-radius:3px;padding:0 5px;line-height:18px;}
+.ps-new-more{font-size:12px;color:rgba(255,255,255,0.6);padding-left:30px;line-height:20px;}
+/* 並び（2026-11-27 lab 4.64）：縦は「ロゴ〜説明」→「新番組」→「3人」を上から。横（.land）は左に「ロゴ〜説明」、右に「新番組」と「3人」 */
+.ps-main{display:flex;flex-direction:column;align-items:center;gap:20px;}   /* 列の中の間隔は見本の20で固定（全体の倍率は zoom で掛かる） */
+.ps-side{display:flex;flex-direction:column;align-items:center;gap:14px;}
+#power-screen.land{flex-direction:row;justify-content:center;}
+.ps-chara{position:relative;flex:none;pointer-events:none;display:none;}
+/* 3人は1人ずつ「土台の絵＋目＋口」を重ねる（2026-11-27 lab 4.66）。目と口は data-eye（o 開き・h 半目・c 閉じ）と data-mouth（o 開き・c 閉じ）で切り替える */
+.ps-c{position:absolute;bottom:0;}
+.ps-c img{position:absolute;display:block;}
+.ps-c img.b{left:0;top:0;width:100%;height:100%;}
+.ps-c img.l{display:none;}
+.ps-c[data-eye="o"] .e-o,.ps-c[data-eye="h"] .e-h,.ps-c[data-eye="c"] .e-c,.ps-c[data-mouth="o"] .m-o,.ps-c[data-mouth="c"] .m-c{display:block;}
+#power-screen.tight .ps-new{padding:6px 12px 5px;gap:2px;}
+#power-screen.tight .ps-new-it{font-size:13px;line-height:22px;}
 /* ★横向きなど画面が低い時だけ、実測ではみ出した場合に詰める（psFit が付ける）。
    @media(height)は使わない＝iOSがアプリ内ブラウザ復帰時に判定を凍らせるため。
    並び順が大事：tight → tight2 の順に書く（同じ強さなので後勝ち）。
@@ -2305,9 +2326,10 @@ html.tvapp #lnk-reg{display:none;}
 
 <!-- 電源画面 -->
 <div id="power-screen">
+  <div class="ps-main" id="ps-main">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.59-lab（全画面のバナーから戻ると流れない直し）</div>
+    <div class="ps-version">version 4.66-lab（まばたきと口）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2316,7 +2338,12 @@ html.tvapp #lnk-reg{display:none;}
     <div class="ps-clock" id="ps-clock">00:00:00</div>
   </div>
   <button class="ps-btn" id="ps-btn">▶ 放送開始</button>
-  <div class="ps-hint">ボタンを押すと現在放送中の番組が自動で始まります</div>
+  <div class="ps-hint" id="ps-hint">ボタンを押すと現在放送中の番組が自動で始まります</div>
+  </div>
+  <div class="ps-side" id="ps-side">
+  <div class="ps-new" id="ps-new" style="display:none" aria-label="まだ見ていない新番組"></div>
+  <div class="ps-chara" id="ps-chara" aria-hidden="true"><div class="ps-c" data-w="325" data-h="631" data-eye="o" data-mouth="o"><img class="b" src="ps_c3_okamoto_base_20261127.webp" alt="" decoding="async"><img class="l e-o" src="ps_c3_okamoto_eo_20261127.webp" alt="" decoding="async" style="left:15.6923%;top:22.8209%;width:43.0769%;height:11.252%"><img class="l e-h" src="ps_c3_okamoto_eh_20261127.webp" alt="" decoding="async" style="left:16.0%;top:27.0998%;width:42.4615%;height:6.8146%"><img class="l e-c" src="ps_c3_okamoto_ec_20261127.webp" alt="" decoding="async" style="left:16.3077%;top:29.6355%;width:41.5385%;height:3.3281%"><img class="l m-o" src="ps_c3_okamoto_mo_20261127.webp" alt="" decoding="async" style="left:20.3077%;top:37.401%;width:36.0%;height:13.7876%"><img class="l m-c" src="ps_c3_okamoto_mc_20261127.webp" alt="" decoding="async" style="left:20.6154%;top:40.0951%;width:34.4615%;height:5.2298%"></div><div class="ps-c" data-w="302" data-h="640" data-eye="o" data-mouth="o"><img class="b" src="ps_c3_kato_base_20261127.webp" alt="" decoding="async"><img class="l e-o" src="ps_c3_kato_eo_20261127.webp" alt="" decoding="async" style="left:6.2914%;top:27.3438%;width:55.298%;height:10.3125%"><img class="l e-h" src="ps_c3_kato_eh_20261127.webp" alt="" decoding="async" style="left:6.6225%;top:31.4063%;width:54.6358%;height:6.25%"><img class="l e-c" src="ps_c3_kato_ec_20261127.webp" alt="" decoding="async" style="left:6.6225%;top:33.4375%;width:53.9735%;height:2.6562%"><img class="l m-o" src="ps_c3_kato_mo_20261127.webp" alt="" decoding="async" style="left:9.9338%;top:40.3125%;width:52.3179%;height:8.9062%"><img class="l m-c" src="ps_c3_kato_mc_20261127.webp" alt="" decoding="async" style="left:10.596%;top:42.6562%;width:50.3311%;height:3.125%"></div><div class="ps-c" data-w="350" data-h="675" data-eye="o" data-mouth="o"><img class="b" src="ps_c3_kikuchi_base_20261127.webp" alt="" decoding="async"><img class="l e-o" src="ps_c3_kikuchi_eo_20261127.webp" alt="" decoding="async" style="left:10.8434%;top:28.0811%;width:51.2048%;height:8.8924%"><img class="l e-h" src="ps_c3_kikuchi_eh_20261127.webp" alt="" decoding="async" style="left:10.8434%;top:31.9813%;width:50.9036%;height:5.7722%"><img class="l e-c" src="ps_c3_kikuchi_ec_20261127.webp" alt="" decoding="async" style="left:11.4458%;top:33.3853%;width:49.6988%;height:2.0281%"><img class="l m-o" src="ps_c3_kikuchi_mo_20261127.webp" alt="" decoding="async" style="left:17.7711%;top:40.4056%;width:40.6627%;height:11.0764%"><img class="l m-c" src="ps_c3_kikuchi_mc_20261127.webp" alt="" decoding="async" style="left:18.3735%;top:42.7457%;width:39.4578%;height:4.5242%"></div></div>
+  </div>
 </div>
 
 <!-- メイン -->
@@ -3283,14 +3310,115 @@ function psFit(){
     var ps=document.getElementById('power-screen'), b=document.getElementById('ps-btn');
     if(!ps||!b) return;
     if(getComputedStyle(ps).display==='none') return;
-    ps.classList.remove('tight'); ps.classList.remove('tight2');   // 前の詰めを外してから測る
-    function はみ出す(){
-      var r=b.getBoundingClientRect();
-      return (ps.scrollHeight>ps.clientHeight+1) || r.top<2 || r.bottom>innerHeight-2;
-    }
-    if(はみ出す()) ps.classList.add('tight');
-    if(はみ出す()) ps.classList.add('tight2');
+    psLayout();
   }catch(_){}
+}
+// ★放送開始の画面の並べ方（2026-11-27 lab 4.65 指示「どの媒体でも比率を同じくらいに」）
+//   ・1つの見本（ロゴ〜放送開始の列・新番組の箱・3人）を決め、画面の大きさに合わせて丸ごと同じ倍率で拡大・縮小する（CSS の zoom）。
+//     以前は字の大きさが決まっていて、テレビ・パソコンでは3人だけ大きく、ほかが小さく見えた
+//   ・縦：上から「列」「新番組」「3人」。横：左に「列」、右に「新番組」と「3人」。3人の大きさは縦横とも同じ見本の値
+//   ・3人の大きさは、倍率の計算に新番組の箱の場所をいつも入れておくことで、箱があってもなくても同じ
+//   ・上下に画面の6%、左右に4%の余白。縦で倍率が0.7を下回る小さい画面では、新番組の箱（と取っておく場所）を外して大きさを保つ
+//   ・3人は左から岡本・加藤・菊地。足の下端をそろえ、顎の高さが合うよう菊地は元の絵の1.053倍（帽子の分だけ少し背が高い）
+var PS_REF=641, PS_GAP=0.04, PS_V_TATE=150, PS_BOX=151, PS_KMIN=0.7, PS_KMAX=2.4;
+function psLayout(){
+  var ps=document.getElementById('power-screen'), main=document.getElementById('ps-main'), side=document.getElementById('ps-side');
+  var nw=document.getElementById('ps-new'), ch=document.getElementById('ps-chara');
+  if(!ps||!main||!side||!ch) return;
+  var hasNew=!!(nw&&nw.childNodes.length);
+  ps.classList.remove('tight'); ps.classList.remove('tight2'); ps.classList.remove('land');
+  main.style.zoom='1'; side.style.zoom='1'; ps.style.gap=''; side.style.paddingTop='0px';
+  if(nw) nw.style.display=hasNew?'':'none';
+  var sa=_cmSafe(), W=innerWidth-sa.l-sa.r, H=innerHeight-sa.t-sa.b;
+  var land=innerWidth>innerHeight*1.15;
+  if(land) ps.classList.add('land');
+  var imgs=[].slice.call(ch.querySelectorAll('.ps-c'));
+  var PERV=imgs.reduce(function(t,im){ return t+(+im.getAttribute('data-w')||300)/PS_REF; },0)+PS_GAP*2;   // 背1あたりの3人の幅
+  var mW=main.offsetWidth, mH=main.offsetHeight;   // 見本（倍率1）の列の大きさ
+  var reserve=true;   // 新番組の箱の場所を取っておくか
+  // 箱の場所はいつも一番高い形（3本＋「ほか◯本」＝151）で取っておく＝本数が変わっても3人の大きさと位置は変わらない
+  var boxPart=function(){ return reserve?PS_BOX+14:0; };
+  var V, k, G;
+  function calc(){
+    if(land){
+      V=PS_V_TATE; G=48;   // 3人の大きさは縦と同じ見本の値＝文字と3人の比率はどの画面でも同じ
+      var sideH=boxPart()+V*1.053;
+      k=Math.min(W*0.92/(mW+G+Math.max(354, V*PERV)), H*0.88/Math.max(mH,sideH));
+    }else{
+      V=PS_V_TATE; G=20;
+      k=Math.min(W*0.92/Math.max(mW, 354, V*PERV), H*0.88/(mH+G+boxPart()+V));
+    }
+    k=Math.min(PS_KMAX,k);
+  }
+  calc();
+  if(k<PS_KMIN&&!land){ reserve=false; if(nw) nw.style.display='none'; calc(); }   // 小さい画面：新番組の箱を外して大きさを保つ
+  // 3人（倍率1の寸法で置き、外側の zoom でまとめて拡大・縮小する）
+  var x=0, gap=V*PS_GAP, maxH=0;
+  imgs.forEach(function(im,i){
+    var h=V*(+im.getAttribute('data-h')||PS_REF)/PS_REF, w=V*(+im.getAttribute('data-w')||300)/PS_REF;
+    im.style.height=h+'px'; im.style.width=w+'px'; im.style.left=x+'px';
+    x+=w+(i<imgs.length-1?gap:0); maxH=Math.max(maxH,h);
+  });
+  ch.style.display='block'; ch.style.width=Math.ceil(x)+'px'; ch.style.height=Math.ceil(maxH)+'px';
+  // 箱の本数が少ない・無い日は、余った分を詰めて全体を上下の真ん中に置く（3人の大きさは倍率の計算で箱の場所を入れてあるので変わらない）
+  main.style.zoom=String(k); side.style.zoom=String(k);
+  ps.style.gap=(G*k)+'px';
+}
+// ★3人のまばたきと口（2026-11-27 lab 4.66 指示「この案で作れ」）
+//   ・まばたき：1人ずつばらばらに3〜6秒に1回。開き→半目（40ms）→閉じ（50ms）→半目（40ms）→開き＝約0.15秒
+//   ・口：10〜15秒に1回、1人ずつ（前と同じ人は続けない）約1秒閉じて、また開く
+//   ・動くのは放送開始の画面が出ている間だけ。放送が始まった・アプリが裏に回った・「動きを減らす」の設定の時は止めて、目も口も開いた形に戻す
+//   ・点滅や体の動きは入れない（目と口だけ）
+var _psAnim={on:false,t:[],last:-1};
+function psAnimOk(){
+  try{
+    var ps=document.getElementById('power-screen'); if(!ps||getComputedStyle(ps).display==='none') return false;
+    if(document.hidden) return false;
+    if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    return !!document.querySelector('#ps-chara .ps-c');
+  }catch(_){ return false; }
+}
+function psAnimStop(){
+  _psAnim.t.forEach(clearTimeout); _psAnim.t=[]; _psAnim.on=false;
+  [].forEach.call(document.querySelectorAll('#ps-chara .ps-c'),function(c){ c.setAttribute('data-eye','o'); c.setAttribute('data-mouth','o'); });
+}
+function _psAt(ms,fn){ var id=setTimeout(function(){ var i=_psAnim.t.indexOf(id); if(i>=0) _psAnim.t.splice(i,1); if(!psAnimOk()){ psAnimStop(); return; } fn(); },ms); _psAnim.t.push(id); }
+function _psRand(a,b){ return a+Math.random()*(b-a); }
+function _psBlink(c){
+  c.setAttribute('data-eye','h');
+  _psAt(40,function(){ c.setAttribute('data-eye','c'); });
+  _psAt(90,function(){ c.setAttribute('data-eye','h'); });
+  _psAt(130,function(){ c.setAttribute('data-eye','o'); });
+  _psAt(130+_psRand(3000,6000),function(){ _psBlink(c); });
+}
+function _psMouth(){
+  var cs=document.querySelectorAll('#ps-chara .ps-c'); if(!cs.length) return;
+  var i=Math.floor(Math.random()*cs.length); if(cs.length>1&&i===_psAnim.last) i=(i+1)%cs.length; _psAnim.last=i;
+  var c=cs[i]; c.setAttribute('data-mouth','c');
+  _psAt(1000,function(){ c.setAttribute('data-mouth','o'); });
+  _psAt(_psRand(10000,15000),_psMouth);
+}
+function psAnimStart(){
+  if(_psAnim.on||!psAnimOk()) return;
+  _psAnim.on=true;
+  [].forEach.call(document.querySelectorAll('#ps-chara .ps-c'),function(c){ _psAt(_psRand(800,4000),function(){ _psBlink(c); }); });
+  _psAt(_psRand(6000,10000),_psMouth);
+}
+// 1秒ごとに見張る：動いてよい時に始め、だめになったら止める（裏に回った時は、見た目の時計ごと止まり、戻ると続きから）
+function psAnimWatch(){ var ok=psAnimOk(); if(ok&&!_psAnim.on) psAnimStart(); else if(!ok&&_psAnim.on) psAnimStop(); }
+document.addEventListener('visibilitychange',function(){ if(document.hidden) psAnimStop(); });
+
+// ★まだ見ていない新番組（番組表の「新」と同じ数え方）。0本の日は箱ごと出さない。4本以上は3本と「ほか◯本」
+function psNewRender(){
+  var nw=document.getElementById('ps-new'); if(!nw) return;
+  var list=[]; for(var i=0;i<CYCLE.length;i++){ var c=CYCLE[i]; if(c&&c.title&&isNewProg(c.ytId)) list.push(c.title); }
+  var h='';
+  if(list.length){
+    h='<div class="ps-new-h">まだ見ていない新番組</div>';
+    list.slice(0,3).forEach(function(t){ h+='<div class="ps-new-it"><span class="ps-new-tag">新</span><span>'+escHtml(t)+'</span></div>'; });
+    if(list.length>3) h+='<div class="ps-new-more">ほか'+(list.length-3)+'本</div>';
+  }
+  if(nw.innerHTML!==h){ nw.innerHTML=h; try{ psFit(); }catch(_){} }
 }
 function psTipInit(){
   try{ _psTipOn = !localStorage.getItem(FIRST_KEY); }catch(_){ _psTipOn=false; }
@@ -4667,10 +4795,14 @@ function setResumeFlag(){
 function appOpenOutside(url){
   var B=null; try{ B=(IS_STOREAPP==='ios'&&window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Browser)||null; }catch(_){}
   if(!B||!url) return false;
-  _holdWin=true; holdStart(false);   // 窓のあいだは止める（読み込み中の番組も流れ出さない）
+  // ★2度押し（2026-11-26 lab 4.60 総点検）：窓が上がりきる前の2回目は何もしない。
+  //   以前は2回目の open が部品に断られ（窓がもうある）、.catch で Safari へ飛んだうえ、止めの印も全部外れて戻っても流れなかった
+  if(appOpenOutside._busy&&Date.now()-appOpenOutside._busy<3000) return true;
+  appOpenOutside._busy=Date.now();
+  _holdWin=true; _holdWinAt=Date.now(); holdStart(false);   // 窓のあいだは止める（読み込み中の番組も流れ出さない）
   if(!appOpenOutside._on){ appOpenOutside._on=1;
-    try{ B.addListener('browserFinished',function(){ _holdWin=false; holdRelease(); }); }catch(_){} }
-  try{ B.open({url:url}).catch(function(){ _holdWin=false; _holdPlay=false; setResumeFlag(); location.href=url; }); }catch(_){ _holdWin=false; _holdPlay=false; return false; }
+    try{ B.addListener('browserFinished',function(){ appOpenOutside._busy=0; _holdWin=false; holdRelease(); }); }catch(_){} }
+  try{ B.open({url:url}).catch(function(){ appOpenOutside._busy=0; _holdWin=false; _holdPlay=false; setResumeFlag(); location.href=url; }); }catch(_){ appOpenOutside._busy=0; _holdWin=false; _holdPlay=false; return false; }
   return true;
 }
 // ・全画面のあいだだけ、アプリ側で時計の帯・ホームバーの所を確保するのをやめて黒にしてもらう（AppDelegate.swift の MainViewController）。
@@ -6270,7 +6402,7 @@ function tvWrapSettings(){
 //   （再生の入口 ytPlayer.playVideo で止める。流れ出してしまった時は _ytOnState で一時停止する）
 // ・止める前から止まっていた時（自分で一時停止した・放送時間の外）は、閉じても流さない
 // ・userWantsPlay（見たいかどうか）は変えない。止めたのはこちらの都合なので
-var _holdPlay=false, _holdTour=false, _holdWin=false;
+var _holdPlay=false, _holdTour=false, _holdWin=false, _holdWinAt=0;
 // ★2026-11-26（lab 4.58）実機：お知らせの窓から戻ると、番組もその後のCMも、再生を押しても流れなくなった（ボタンが全部効かない）。
 //   止めの印（窓・使い方）は「閉じた」の合図1つだけで外していたので、合図が1つ欠けると止めたまま戻らない作りだった。
 //   シミュレータ（iOS 26.5・27.0）では窓をどう閉じても合図は届き、実機でどの合図が欠けたかは記録が無く確定できない。
@@ -6284,6 +6416,8 @@ function pageHidden(){ try{ return !!document.hidden&&!_visProof; }catch(_){ ret
 function tourShown(){ try{ var w=document.getElementById('tour'); return !!(w&&w.classList.contains('on')); }catch(_){ return false; } }
 // 画面に出ていない止めの印を外す。go＝続きを流してよいか（指が触れた時は、押した物の動きに任せて流さない）
 function holdHeal(go){
+  // ★窓を開いてすぐ（上がりきる前の約1.5秒）の指の触れは、窓が閉じた証拠にならない（2026-11-26 lab 4.60 総点検：2度押し）
+  if(!go&&_holdWin&&Date.now()-_holdWinAt<1500) return;
   if(_holdWin) _holdWin=false;
   if(_holdTour&&!tourShown()) _holdTour=false;
   if(go){ holdRelease(); return; }
@@ -6296,7 +6430,7 @@ function holdHeal(go){
   try{ document.addEventListener('touchstart',touched,{capture:true,passive:true}); }catch(_){}
   try{ document.addEventListener('mousedown',touched,true); }catch(_){}
   // アプリ側（ダウンロード版 iPhone）から：画面が表に出た（アプリの中の窓が閉じた時も含む）
-  window._scAppShown=function(){ proof(); holdHeal(true); };
+  window._scAppShown=function(){ appOpenOutside._busy=0; proof(); holdHeal(true); };
 })();
 // スマホ・テレビで裏に回っている間は流さない（パソコンは今までどおり裏でも流す。pauseInBackground と同じ分け方）
 function bgHeld(){
@@ -6319,6 +6453,8 @@ function holdStart(force){
 }
 function holdRelease(){
   if(!_holdPlay||playHeld()) return;   // まだ設定か使い方の途中
+  // ★裏にいる間に合図が来た時は外さずに残す（表に戻った時の visibilitychange・_scAppShown でもう一度。2026-11-26 lab 4.60 総点検）
+  if(pageHidden()) return;
   _holdPlay=false;
   if(isOff||!userWantsPlay||!ytPlayer||!ytReady) return;
   // 戻った時と同じ処理で流す（iOSの再試行と、黒いまま固まった時の立ち直りつき）
@@ -6635,6 +6771,13 @@ function applySchedule(d){
   if(userWantsPlay&&!isManual&&!CUR_CM){var pos=nowPos();if(pos){
     var same=false; try{ same=(typeof vCurrentId!=='undefined'&&vCurrentId===CYCLE[pos.p].ytId&&ytPlayer&&ytReady&&[1,2,3,-1,5].indexOf(ytPlayer.getPlayerState())>=0); }catch(_){}
     if(!same){ isOff=false; playSchedule(pos.c,pos.p); }
+    // ★同じ番組のまま番組表の時刻・長さが直った時（2026-11-26 lab 4.61）：読み直さず（2重読み込みを避ける）、
+    //   放送の時計と15秒を超えてずれている時だけその位置へ送る。CMのあと遅れて続けて見ている間（_cmLag）は合わせない
+    else if(!_cmLag){ try{
+      var st=ytPlayer.getPlayerState();
+      if(st===1||st===2||st===3){ var want=esOf(pos.c,pos.p), cur=ytPlayer.getCurrentTime()||0;
+        if(Math.abs(want-cur)>15){ _lastSeekAt=Date.now(); ytPlayer.seekTo(want,true); vCurrentSec=want; } }
+    }catch(_){} }
   }}
 }
 
@@ -7199,8 +7342,9 @@ var spinnerTimer=null,endTimer=null;
 // ══════════════════════════════════════════════
 // ★YouTubeの状態の知らせ（1再生/2停止/3読込中/0終了/5準備/-1未開始）を受ける本体（2026-10-02に切り出した）。
 //   自前の動画（OWN）も同じ番号でここへ知らせる。中身は切り出す前と同じ
+var _shownSinceLoad=false;   // いまの番組（CM）が読み込まれてから一度でも映ったか（映像を押した時の扱いに使う）
 function _ytOnState(st){
-  if(st===1) _ownSkip.n=0;   // 再生が始まったら「続けて読めない」の数を戻す
+  if(st===1){ _ownSkip.n=0; _shownSinceLoad=true; }   // 再生が始まったら「続けて読めない」の数を戻す
   try{statsOnState(st);}catch(_){}
   if(st===1||st===5){ killCaptions(); } // 再生開始/キュー時に字幕を無効化
   // 再生開始でスピナー・終了画面を消す（バッファ中=3は消さない、実際に再生=1のみ）
@@ -7372,7 +7516,7 @@ function _ownLoad(ytId,vid,start,auto,raw){
   // 同じ動画を流している最中なら、位置を合わせるだけ（読み直さない）
   if(OWN.active&&OWN.vid===vid&&(OWN.hls||v.currentSrc)){
     try{ v.currentTime=start; }catch(_){}
-    if(auto) _ownPlay();
+    if(auto&&!(playHeld()||bgHeld())) _ownPlay();   // ★止め中・裏では流さない（2026-11-26 lab 4.60 総点検）
     return true;
   }
   try{ raw.pauseVideo(); }catch(_){}    // 裏のYouTubeは止める（見えない所で流さない＝YouTubeの規約）
@@ -7442,13 +7586,13 @@ function _ownWaitAgain(){
   clearTimeout(w.timer);
   // ★裏に回っている・自分で止めている・設定などで止めている間は読み直さない（裏で音が出るのを防ぐ）。
   //   表に戻った時（visibilitychange）・止めを外した時の5秒ごとの見直しで、あらためて読み直す
-  try{ if(pageHidden()||!userWantsPlay||playHeld()){ w.timer=setTimeout(_ownWaitAgain,5000); return; } }catch(_){}
+  try{ if(bgHeld()||!userWantsPlay||playHeld()){ w.timer=setTimeout(_ownWaitAgain,5000); return; } }catch(_){}   // ★パソコンは裏でも流す（bgHeld が端末を分ける。2026-11-26 lab 4.60 総点検）
   _ownProbe(function(ok){
     if(OWN.waitNet!==w) return;          // 待っている間に別の番組が選ばれた
     if(!ok){ w.timer=setTimeout(_ownWaitAgain,5000); return; }
     OWN.waitNet=null; _ownClearMarks();
     // ★CMの途中だった＝CMを止まった所から流し直す（2026-11-26：飛ばさない）
-    if(CUR_CM){ try{ ytPlayer.loadVideoById({videoId:w.id,startSeconds:Math.floor(w.t||0)}); }catch(_){} return; }
+    if(CUR_CM){ try{ ytPlayer.loadVideoById({videoId:w.id,startSeconds:Math.floor(w.t||0)}); }catch(_){} try{ cmCountStart(); }catch(_){} return; }
     // 放送の流れの中なら、いま放送中の番組へ。24時を過ぎていたり番組表から選んだ番組なら、同じ番組を続きから
     var pos=null; try{ pos=(!isManual&&!isOff)?nowPos():null; }catch(_){}
     if(pos){ playSchedule(pos.c,pos.p); return; }
@@ -7472,7 +7616,7 @@ document.addEventListener('visibilitychange',function(){ if(!document.hidden){ _
 //   何か1本でも再生が始まれば（_ytOnState の 1）数え直す
 function _ownSkip(){
   _ownSkip.n=(_ownSkip.n||0)+1;
-  if(_ownSkip.n>Math.max(3,CYCLE.length)){ try{ clearSpinnerTimer(); showSpinner(true,'番組を読み込めません。通信を確かめてください'); }catch(_){} return; }
+  if(_ownSkip.n>Math.max(3,CYCLE.length)){ CUR_CM=null; CM_NEXT=null; try{ cmCountStop(); }catch(_){} try{ clearSpinnerTimer(); showSpinner(true,'番組を読み込めません。通信を確かめてください'); }catch(_){} return; }   // ★CMの印を消す（残ると番組表・LIVEも押せない。2026-11-26 lab 4.60 総点検）
   var req=OWN.req;
   setTimeout(function(){ if(OWN.req!==req) return; try{ onEnded(); }catch(_){} },300);   // ★その間に別の番組が選ばれていたら、その選択を守る
 }
@@ -7558,6 +7702,9 @@ function onYouTubeIframeAPIReady(){
         if(OWN.active) return;
         try{ console.warn('[YouTube] 読めない code='+(e&&e.data)+' id='+vCurrentId); }catch(_){}
         if(isOff) return;
+        // ★5（再生の内部エラー）は一時的なことがあるので、同じ番組を同じ位置から1回だけ読み直す（2026-11-26 lab 4.60 総点検）。
+        //   動画が無い・埋め込み禁止（100・101・150）と2回目は、今までどおり飛ばす／知らせる
+        if(e&&e.data===5&&window._ytErrRetry!==vCurrentId){ window._ytErrRetry=vCurrentId; try{ ytPlayer.loadVideoById({videoId:vCurrentId,startSeconds:Math.floor(ytPlayer.getCurrentTime()||vCurrentSec||0)}); }catch(_){} return; }
         if(isManual){ try{ _ownCantPlay(); }catch(_){} return; }
         try{ _ownSkip(); }catch(_){}
       },
@@ -8214,6 +8361,7 @@ function maybeShowTelop(ytId){
 }
 
 function loadVideo(ytId,sec,msg){
+  _shownSinceLoad=false;
   try{statsSessionStart(ytId);}catch(_){}
   try{clearNewProg(ytId);}catch(_){}     // ★見た番組の「新」は消す（2026-09-15）
   try{maybeShowTelop(ytId);}catch(_){}
@@ -8264,6 +8412,7 @@ function onEnded(){
   if(CUR_CM){
     var cmD=CUR_CM, nx=CM_NEXT||{how:'live'}; CUR_CM=null; CM_NEXT=null;
     try{ if(_isGenuineEnd()) statsCmPlayed(cmD.id); }catch(_){}
+    if(!CYCLE[nx.p]) nx={how:'live'};   // ★CMの途中で番組表が差し替わり、その番組が無くなった（2026-11-26 lab 4.60 総点検）
     if(nx.how==='manual'){ playManual(nx.p); return; }   // 番組表から選んだ番組を頭から
     var pc=nowPos();
     if(!pc){ var we=isExpanded; if(we)closeExpand(); setTimeout(gotoOffAir,we?300:0); return; }
@@ -8328,6 +8477,7 @@ function playManual(pIdx){
 }
 
 function gotoOffAir(){
+  CUR_CM=null; CM_NEXT=null; try{ cmCountStop(); }catch(_){}   // ★CMの途中で24時になった時、CMの鍵を残さない（2026-11-26 lab 4.60 総点検）
   try{statsSessionEnd();}catch(_){}
   try{ _ownCantHide(); _ownWaitEnd(); }catch(_){}
   clearEndTimer();closeExpand();
@@ -8392,7 +8542,8 @@ document.addEventListener('visibilitychange',function(){ if(!document.hidden&&Da
 function forceResync(){
   if(isOff || !userWantsPlay) return;
   // ★CMの途中＝CMを続きから流し直す（2026-11-26：飛ばさない。以前は次の番組へ進めていた）
-  if(CUR_CM){ var cmT=0; try{ cmT=ytPlayer.getCurrentTime()||0; }catch(_){} loadVideo('cm~'+CUR_CM.vid, Math.floor(cmT), 'CMを読み込んでいます...'); return; }
+  // ★位置は CM 自身の位置だけを使う。自前の動画が止まっている時は裏の YouTube（前の番組）の秒を拾い、CM の長さを超えて飛ばされていた（2026-11-26 lab 4.60 総点検）
+  if(CUR_CM){ var cmT=0; try{ cmT=OWN.active?(OWN.v.currentTime||0):((OWN.waitNet&&OWN.waitNet.t)||0); }catch(_){} loadVideo('cm~'+CUR_CM.vid, Math.floor(cmT), 'CMを読み込んでいます...'); try{ cmCountStart(); }catch(_){} return; }
   if(isManual){
     if(typeof vCurrentId!=='undefined' && vCurrentId){
       loadVideo(vCurrentId, (typeof vCurrentSec!=='undefined'?vCurrentSec:0)||0, '読み込み中...');
@@ -8673,6 +8824,7 @@ function renderNewMarks(){
     else b.style.display='none';
   }
   try{ ntfBadgeSync(); }catch(_){}   // アイコンの数字も同じ数にそろえる
+  try{ psNewRender(); }catch(_){}   // 放送開始の画面の新番組の箱も同じ一覧にそろえる（2026-11-26 lab 4.62）
 }
 
 // ══════════════════════════════════════════════
@@ -8791,6 +8943,18 @@ function _seekVisual(ratio){
 //   受け付けない：送り・戻し・シーク・再生と一時停止（映像を押すのも）・番組表・LIVE。長さはCMそのものの長さで決まる（数字は持たない）
 //   受け付ける：音量・消音・全画面・設定（設定を開くとCMも止まり、閉じると止めた所から続く＝飛ばしにならない）
 function cmLock(){ return !!CUR_CM; }
+// ★CMが進まないまま詰まった時の見張り（2026-11-26 lab 4.60 総点検）
+//   CMのあいだは操作を受け付けないので、CMが読み込み中・バッファ中のまま止まると、何も押せないまま出られなかった。
+//   表に出ていて・止めていない・通信待ちでない時に、20秒続けて「流れていない（止まっているのでもない）」なら、CMを終えて番組へ進む
+//   （止まっている＝状態2は、再生ボタンで流せるので数えない）
+var _cmStall=0;
+setInterval(function(){
+  if(!CUR_CM){ _cmStall=0; return; }
+  try{ if(playHeld()||pageHidden()||OWN.waitNet){ _cmStall=0; return; } }catch(_){ return; }
+  var st=-9; try{ st=ytPlayer.getPlayerState(); }catch(_){}
+  if(st===1||st===2){ _cmStall=0; return; }
+  if(++_cmStall>=20){ _cmStall=0; try{ console.warn('[CM] 20秒進まないので番組へ進む'); }catch(_){} try{ onEnded(); }catch(_){} }
+},1000);
 // ── CMの残り秒数の札 ──
 // ・中身は輪と秒数。秒数＝CMの長さ−いまの位置（切り上げ）。長さはCMそのもの（15秒・30秒…）から取る＝数字を持たない
 // ・置き場所は、映像が実際に映っている四角（自前の動画は縦横比を保って枠に収まる＝object-fit:contain）を、
@@ -8938,7 +9102,11 @@ function periodicCheck(){
   refreshLive(); // LIVE表示・lC/lP更新（タイトルは再生中の番組のまま。番組境界では強制切替しない）
   // 放送終了状態→放送開始時刻(6時等)になったら自動再生で復帰。
   // ★番組境界の変化では強制切替しない：今の動画を最後まで再生し、終了時にonEndedがライブへ復帰させる。
-  if(wasOff){ playSchedule(pos.c,pos.p); }
+  if(wasOff){
+    // ★設定・使い方を開いたまま6時になった時は、裏で流さず閉じた時に流す（2026-11-26 lab 4.60 総点検）
+    try{ var _sp=document.getElementById('settings-panel'); if((_sp&&_sp.classList.contains('open'))||tourShown()) _holdPlay=true; }catch(_){}
+    playSchedule(pos.c,pos.p);
+  }
 }
 function updateClock(){
   applyBadgeMode();   // 日付が2027/1/1をまたいだ瞬間に表示を切り替える（変化時のみDOMを触る）
@@ -9196,7 +9364,11 @@ function init(){
   setTimeout(function(){ try{ tourAskIfFirst(); }catch(_){} }, 400);
   uiInterval(updateClock,1000);
   uiInterval(regFabSync,1000);   // 「？」と誘いの出し入れ（冪等）
+  try{ psNewRender(); }catch(_){}
   try{ psFit(); }catch(_){}      // 起動画面が画面に収まるように詰める（実測）
+  // 3人の絵は読み込みが終わってから寸法が決まるので、そのたびに置き直す
+  try{ [].forEach.call(document.querySelectorAll('#ps-chara img.b'),function(im){ im.addEventListener('load',function(){ try{ psFit(); }catch(_){} }); }); }catch(_){}
+  uiInterval(psAnimWatch,1000);   // ★3人のまばたきと口（放送開始の画面の間だけ・2026-11-27 lab 4.66）
   try{ psTipInit(); }catch(_){}  // 起動画面の説明（初回起動時のみ）
   uiInterval(psTipRepoint,300);  // 枠が対象からずれていたら測り直す（冪等）
   try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ psTipRepoint(); }); }catch(_){}
@@ -9215,6 +9387,16 @@ function init(){
   resetSponsorTimer();
   attachSponsorSwipe(document.getElementById('sponsor-banner'));
   attachSponsorSwipe(document.getElementById('fs-sponsor'));
+  // ★全画面のバナーは指を離した時に開く（2026-11-26 lab 4.61 指示「1回押して開くように」）。
+  //   iOS は触れた瞬間に全画面の操作の列が出ると、その1回目のクリックを出さず、2回押さないと開かなかった（シミュレータで確認）。
+  //   指が10px以上動いた時は、めくる操作（attachSponsorSwipe）として開かない。クリックは止めて2重に開かない
+  (function(){
+    var sp=document.getElementById('fs-sponsor'); if(!sp||IS_TVAPP||!('ontouchstart' in window)) return;
+    var x0=0,y0=0,mv=false;
+    sp.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; y0=e.touches[0].clientY; mv=false; },{passive:true});
+    sp.addEventListener('touchmove',function(e){ if(Math.abs(e.touches[0].clientX-x0)>10||Math.abs(e.touches[0].clientY-y0)>10) mv=true; },{passive:true});
+    sp.addEventListener('touchend',function(e){ if(mv) return; if(e.cancelable) e.preventDefault(); try{ openSponsorLink(); }catch(_){} },{passive:false});
+  })();
   attachNewsSwipe(document.getElementById('sb-news'));
   // 画面回転・リサイズ時にバナーを再描画（縦↔横でコンパクト版を切替）
   window.addEventListener('resize', updateSponsorDisplay);
@@ -9276,10 +9458,11 @@ function init(){
   window._scBgPause=pauseInBackground; window._scBgResume=resumeIfWanted;   // アプリの中の窓を開く時・閉じた時に使う（appOpenOutside）
   document.addEventListener('visibilitychange',function(){
     _visProof=false;   // 本物の合図が来たら、指で触れた時の「表にある」の上書きは捨てる
+    if(!document.hidden){ try{ if(_holdPlay&&!playHeld()) _holdPlay=false; }catch(_){} }   // 裏にいる間に残した止めの印を外す（holdRelease が裏で外さずに残した分）
     if(!document.hidden) resumeIfWanted(); else pauseInBackground();
   });
   window.addEventListener('pagehide',function(){ _visProof=false; pauseInBackground(); });
-  window.addEventListener('pageshow',function(e){ resumeIfWanted(); });
+  window.addEventListener('pageshow',function(e){ try{ appThemeNative(_bgNow.bg); }catch(_){} resumeIfWanted(); });   // ★ヘルプ・規約（帯は緑）から戻った時に帯の色を戻す（2026-11-26 lab 4.60 総点検）
   window.addEventListener('focus',function(){ resumeIfWanted(); });
   // Now Playingセッション抑制（Dynamic Islandインジケーター非表示の試み）
   if('mediaSession' in navigator){
@@ -9574,6 +9757,11 @@ init();
     // それ以外はYT Playerでクリックをシミュレート（再生/一時停止）
     // ★再生ボタンと同じ処理にする（以前は一時停止しても「見たい」の印が残り、戻った時に勝手に流れ出した・2026-11-26）
     if(window.ytPlayer && window.ytPlayer.getPlayerState) {
+      // ★読み込み中（まだ一度も映っていない）に映像を押しても止めない（2026-11-26 lab 4.61）。
+      //   待ちきれずに押した指で「見たい」が消え、読み込みが終わっても止まったままになっていた。
+      //   一度映ったあとの途中のつかえ（再生ボタンは一時停止の形）は、今までどおり押すと止まる
+      var _st=-9; try{ _st=window.ytPlayer.getPlayerState(); }catch(_){}
+      if(_st===3&&!_shownSinceLoad) return;
       try{ togglePlayPause(); }catch(_){}
     }
   }, true);

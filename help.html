@@ -201,6 +201,12 @@ hr{margin:18px 0;}
   .cols{column-count:3;}
 }
 </style>
+<script>
+/* ダウンロード版（iPhone）の中で開いた時だけ：このページの地は緑なので、アプリ側の上下の帯も緑にしてもらう（2026-11-26）。
+   本体のページで色を変えていても、ここだけ帯が選んだ色のまま残らないように。本体に戻ると本体が今の色を伝え直す */
+(function(){ function t(){ try{ if(/ShisochanApp\//.test(navigator.userAgent)&&window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.scTheme) webkit.messageHandlers.scTheme.postMessage('#1e3a28'); }catch(_){} }
+  t(); window.addEventListener('pageshow',t); })();
+</script>
 </head>
 <body>
 
