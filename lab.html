@@ -2299,7 +2299,7 @@ html.tvapp #lnk-reg{display:none;}
 <div id="power-screen">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.54-lab（アプリの全画面と窓）</div>
+    <div class="ps-version">version 4.55-lab（設定と使い方のあいだは止める）</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -3083,6 +3083,7 @@ function tourNext(){
   if(e.next && e.next.disabled) return;
   if(_tourMode===2){
     // ★powerOnは押した流れの中で直接呼ぶ（iOSは操作から離れると再生を始めないため）
+    holdStart(true);   // 使い方のあいだは止めておき、閉じたら流す（2026-11-26 指示）
     try{ powerOn(); }catch(_){}
     e.next.disabled=true;                      // 画面が出るまでの二重押しを止める
     setTimeout(function(){
@@ -3114,10 +3115,12 @@ function tourEnd(){
   _tourMode=0; _tourPos=-1;
   try{ window.scrollTo(0, _tourScroll0); }catch(_){}   // ツアーで動かした分を元に戻す
   tourMarkSeen();
+  _holdTour=false; holdRelease();   // 使い方を閉じたら続きを流す
 }
 function tourMarkSeen(){ try{ localStorage.setItem(TOUR_KEY,'done'); }catch(_){} }
 function tourStart(){
   tourMarkSeen();
+  _holdTour=true;   // 使い方のあいだは止めたまま（設定を閉じても流さない）
   try{ closeSettings(); }catch(_){}
   try{ _tourScroll0=window.scrollY||0; }catch(_){ _tourScroll0=0; }
   // 設定画面が閉じ切ってから測る（閉じる途中の座標を拾わないため）
@@ -6236,6 +6239,33 @@ function tvWrapSettings(){
     }
   }catch(_){}
 }
+// ══ 設定と使い方のあいだは番組を止める（2026-11-26 指示）══
+// ・設定を開いた時に流れていたら止める。設定を閉じたら続きを流す
+// ・設定から使い方に進んだら、使い方を閉じる（とじる・スキップ）まで止めたまま。閉じたら続きを流す
+// ・最初の起動の使い方は、放送開始の画面の「次へ」で放送が始まる。使い方のあいだは止め、閉じたら流す
+// ・止めている間は、自動で流し直す処理（放送開始の後の再試行・読み込み後の再生など）も効かせない
+//   （再生の入口 ytPlayer.playVideo で止める。流れ出してしまった時は _ytOnState で一時停止する）
+// ・止める前から止まっていた時（自分で一時停止した・放送時間の外）は、閉じても流さない
+// ・userWantsPlay（見たいかどうか）は変えない。止めたのはこちらの都合なので
+var _holdPlay=false, _holdTour=false;
+function playHeld(){
+  if(!_holdPlay) return false;
+  if(_holdTour) return true;
+  try{ var sp=document.getElementById('settings-panel'); if(sp&&sp.classList.contains('open')) return true; }catch(_){}
+  return false;
+}
+function holdStart(force){
+  var playing=false;
+  try{ if(ytPlayer&&ytReady){ var st=ytPlayer.getPlayerState(); playing=(st===1||st===3); } }catch(_){}
+  if(playing||force) _holdPlay=true;
+  if(_holdPlay&&playing){ try{ ytPlayer.pauseVideo(); }catch(_){} }
+}
+function holdRelease(){
+  if(!_holdPlay||playHeld()) return;   // まだ設定か使い方の途中
+  _holdPlay=false;
+  if(isOff||!userWantsPlay||!ytPlayer||!ytReady) return;
+  try{ ytPlayer.playVideo(); }catch(_){}
+}
 function openSettings(){
   if(isTapBlocked()) return;
   var p=document.getElementById('settings-panel');
@@ -6245,6 +6275,7 @@ function openSettings(){
   renderOpts();
   renderForms();
   p.classList.add('open');
+  holdStart(false);   // 流れていたら止める
 }
 function closeSettings(){
   var p=document.getElementById('settings-panel');
@@ -6252,6 +6283,7 @@ function closeSettings(){
   // 閉じた直後にレイアウトを測り直す（背景色を変えても寸法は変わらないが念のため揃える）
   try{ setHdrVar(); }catch(_){}
   try{ fitPlayer(); }catch(_){}
+  holdRelease();   // 止めたのがこちらなら続きを流す（使い方に進む時は _holdTour が立っているので流さない）
 }
 // 起動時：保存された色を復元（未保存なら深緑のまま＝従来と完全に同一）
 (function initBg(){
@@ -7125,6 +7157,8 @@ function _ytOnState(st){
   if('mediaSession' in navigator){
     navigator.mediaSession.playbackState='none';
   }
+  // 設定か使い方のあいだに流れ出したら止める（読み込みの続きで自動で流れた時）。表示の更新は上で済ませてから
+  if(st===1&&playHeld()){ try{ ytPlayer.pauseVideo(); }catch(_){} }
 }
 // ══════════════════════════════════════════════
 //  自前の動画（2026-10-02・lab 4.36）
@@ -7402,7 +7436,7 @@ function _ownWrap(raw){
   // OWN.req＝いま選ばれている番組。YouTube の無い番組の間は、再生の指示を裏のYouTube（前の番組）へ渡さない
   f.loadVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.force=''; OWN.req=id; _ownWaitEnd(); _ownCantHide(); if(vid&&_ownLoad(id,vid,startOf(a,b),true,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} _ownSkip(); return; } return raw.loadVideoById.apply(raw,arguments); };
   f.cueVideoById=function(a,b){ var id=idOf(a), vid=vidFor(id); OWN.force=''; OWN.req=id; _ownWaitEnd(); _ownCantHide(); if(vid&&_ownLoad(id,vid,startOf(a,b),false,raw)) return; _ownOff(); if(_ownOnly(id)){ try{ raw.pauseVideo(); }catch(_){} return; } return raw.cueVideoById.apply(raw,arguments); };
-  f.playVideo=function(){ if(OWN.active){ _ownPlay(); return; } if(_ownOnly(OWN.req)) return; return raw.playVideo(); };
+  f.playVideo=function(){ if(playHeld()) return; if(OWN.active){ _ownPlay(); return; } if(_ownOnly(OWN.req)) return; return raw.playVideo(); };
   f.pauseVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.pauseVideo(); };
   f.stopVideo=function(){ if(OWN.active){ try{ OWN.v.pause(); }catch(_){} return; } return raw.stopVideo(); };
   f.seekTo=function(s,ah){ if(OWN.active){ try{ OWN.v.currentTime=Math.max(0,+s||0); }catch(_){} return; } if(_ownOnly(OWN.req)) return; return raw.seekTo(s,ah); };
