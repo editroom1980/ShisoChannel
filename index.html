@@ -2687,7 +2687,7 @@ var BG_KEY='shisochan_bg';
   <!-- ★新デザイン A案（2026-11-27 lab 4.74）：列は見本と同じ並び（ロゴ・版・試験放送中・日付・時計・金の丸・説明）。間隔は CSS の .ps-main の gap と各部品の余白で決める -->
   <div class="ps-main" id="ps-main">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.04</div>
+    <div class="ps-version">version 4.05</div>
     <div class="ps-test-badge">試験放送中</div>
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
@@ -3090,20 +3090,26 @@ var IS_STOREAPP=(function(){
 //   scapp（受け口の名前）と scc（今の色）を付ける。受け口が無い＝古いアプリ（1.0.0）・ブラウザでは何もしない
 var SC_DROID=(function(){ try{
   if(IS_STOREAPP!=='android') return null;
-  var q=new URLSearchParams(location.search), s=q.get('scapp'), c=q.get('scc');
-  if(s&&/^shisochan(test)?$/.test(s)){ sessionStorage.setItem('sc_scheme',s); if(c&&/^[0-9a-fA-F]{6}$/.test(c)) sessionStorage.setItem('sc_appc',c.toLowerCase()); }
+  var q=new URLSearchParams(location.search), s=q.get('scapp'), c=q.get('scc'), m=q.get('scm');
+  if(s&&/^shisochan(test)?$/.test(s)){ sessionStorage.setItem('sc_scheme',s); if(c&&/^[0-9a-fA-F]{6}$/.test(c)) sessionStorage.setItem('sc_appc',c.toLowerCase());
+    if(m==='imm'||m==='std') sessionStorage.setItem('sc_appm',m); }   // ★lab 4.79：アプリ 1.0.2 からは今の表示の形も届く（1.0.1 は届かない＝形は頼まない）
   var sc=sessionStorage.getItem('sc_scheme'); if(!sc||!/^shisochan(test)?$/.test(sc)) return null;
-  return {scheme:sc, color:sessionStorage.getItem('sc_appc')||''};
+  return {scheme:sc, color:sessionStorage.getItem('sc_appc')||'', mode:sessionStorage.getItem('sc_appm')||''};
 }catch(_){ return null; } })();
 // アプリの色が今の色と違えば、アプリに知らせて開き直してもらう（指で押した流れの中でだけ呼ぶ＝Chrome は指の操作なしの受け渡しを止める）。
 //   開き直すとページは読み直しになるので、見ていた時は scres=1 を付けて続きから流す
+// ★lab 4.79：アプリ 1.0.2 の「表示の形」。横向きは時計の帯・下の帯・カメラ側の帯を隠した形（imm）、縦は今までどおり（std）
+//   （依頼者「横画面の時の上の余白がなおってない」→「アプリを更新して消す」・「全画面云々のポップアップもうざすぎる 出ないようにしろ」2026-11-28）。
+//   ページから全画面を頼む（requestFullscreen）と Chrome が「全画面表示を終了するには…」を毎回出すので、アプリに開き直してもらって帯を隠す。
+//   1.0.1 以前のアプリ・ブラウザでは形を頼まない（'' を返す）
+function droidWantMode(){ try{ if(!SC_DROID||!SC_DROID.mode) return ''; return isLandscapeNow()?'imm':'std'; }catch(_){ return ''; } }
 function droidApplyColor(hex, wantPlay){
   try{
     if(!SC_DROID||!/^#[0-9a-fA-F]{6}$/.test(hex||'')) return false;
-    var h=hex.slice(1).toLowerCase(); if(SC_DROID.color===h) return false;
+    var h=hex.slice(1).toLowerCase(), wm=droidWantMode(); if(SC_DROID.color===h && (!wm||wm===SC_DROID.mode)) return false;
     var u=new URL(location.href); u.searchParams.delete('scapp'); u.searchParams.delete('scc'); u.searchParams.delete('scres');
     if(wantPlay) u.searchParams.set('scres','1');
-    location.href=SC_DROID.scheme+'://color?c='+h+'&u='+encodeURIComponent(u.toString());
+    location.href=SC_DROID.scheme+'://color?c='+h+(wm?'&m='+wm:'')+'&u='+encodeURIComponent(u.toString());
     return true;
   }catch(_){ return false; }
 }
@@ -8269,15 +8275,27 @@ function onYouTubeIframeAPIReady(){
 }
 
 // ★段4（lab 4.76）：Android の指で触る端末（テレビのアプリは除く）は、全画面を本物の全画面にする
-function _droidRealFs(){
-  try{ return !IS_TVAPP && /Android/i.test(navigator.userAgent) && (('ontouchstart' in window)||navigator.maxTouchPoints>0); }catch(_){ return false; }
-}
+// ★lab 4.79：やめた。Android でページから全画面を頼むと、Chrome が「全画面表示を終了するには…」を毎回出す
+//   （依頼者「全画面云々のポップアップもうざすぎる 出ないようにしろ」2026-11-28）。全画面のボタンは 4.75 までと同じ見かけの全画面に戻す。
+//   帯を隠すのはアプリ 1.0.2 の表示の形（droidWantMode）が受け持つ
+function _droidRealFs(){ return false; }
 // ★lab 4.78：4.77 で足した「横向きは画面を触ると本物の全画面に入る」を外した。
 //   入るたびに Chrome が「全画面表示を終了するには…」を出し、横向きで触るたびに出ていた（依頼者「うざいポップアップ」2026-11-27）。
 //   承知を得ていたのは全画面のボタンを押した時だけ（決まったことの記録 75行）。本物の全画面は全画面のボタンの時だけにする（4.76 の形）。
 //   代わりに横向きの普段の画面では、Android が描く時計の帯（上）・下の帯・カメラ側の黒い帯が残る。
 //   ホーム画面に追加した lab（Chrome のアプリ）でページの外の帯を消す手段は、本物の全画面だけ（moto g06 で viewport-fit=cover を試して変わらないことを確認）
 function _droidFsEl(){ return document.fullscreenElement||document.webkitFullscreenElement||null; }
+// ★lab 4.79：アプリ 1.0.2 で、向きと表示の形がずれていたら、画面を触った指でアプリに開き直してもらう
+//   （Chrome は指の操作の中でしかアプリへ渡さない＝向きを変えただけでは頼めない）。見ていた時は続きから流す。
+//   放送開始のボタンは自分で色・形・再生をまとめて頼むので、ここでは除く
+['touchend','click'].forEach(function(ev){ document.addEventListener(ev,function(e){
+  try{
+    if(!SC_DROID||!SC_DROID.mode) return;
+    if(e.target&&e.target.closest&&e.target.closest('#ps-btn')) return;
+    var wm=droidWantMode(); if(!wm||wm===SC_DROID.mode) return;
+    droidApplyColor(_bgNow.bg, hasPoweredOn&&userWantsPlay);
+  }catch(_){}
+},true); });
 // 全画面のままホーム画面などへ出ると、本物の全画面だけが解けて拡大の印が残る（moto で ex:true・fs:false を記録）→ 戻った時に拡大も閉じる。
 //   resize では判定しない（全画面のボタンを押してから本物の全画面になるまでの間に resize が来ると、開いた拡大を閉じてしまう）
 document.addEventListener('visibilitychange',function(){
@@ -10103,7 +10121,7 @@ function init(){
   (function(){
     var _resume=false;
     // ★Android 1.0.1 の色の係で開き直した時（scres=1）は続きから流す。印は URL から外す（読み直しで繰り返さない・lab 4.73）
-    try{ var _q=new URLSearchParams(location.search); if(_q.has('scres')||_q.has('scapp')||_q.has('scc')){ if(_q.get('scres')==='1'&&SC_DROID) _resume=true; _q.delete('scres'); _q.delete('scapp'); _q.delete('scc'); var _qs=_q.toString(); history.replaceState(history.state,'',location.pathname+(_qs?'?'+_qs:'')+location.hash); } }catch(_){}
+    try{ var _q=new URLSearchParams(location.search); if(_q.has('scres')||_q.has('scapp')||_q.has('scc')||_q.has('scm')){ if(_q.get('scres')==='1'&&SC_DROID) _resume=true; _q.delete('scres'); _q.delete('scapp'); _q.delete('scc'); _q.delete('scm'); var _qs=_q.toString(); history.replaceState(history.state,'',location.pathname+(_qs?'?'+_qs:'')+location.hash); } }catch(_){}
     try{
       if(sessionStorage.getItem('shiso_resume')==='1') _resume=true;
       sessionStorage.removeItem('shiso_resume');
