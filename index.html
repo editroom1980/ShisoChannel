@@ -2297,7 +2297,7 @@ html.tvapp #lnk-reg{display:none;}
   <div class="ps-main" id="ps-main">
   <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.02</div>
+    <div class="ps-version">version 4.03</div>
     <div class="ps-test-badge">試験放送中</div>
   </div>
   <div style="height:18px"></div>
@@ -2683,6 +2683,28 @@ var IS_STOREAPP=(function(){
   }catch(_){}
   return '';
 })();
+// ★ダウンロード版 Android 1.0.1 の「色の係」（2026-11-27 lab 4.73 依頼者「時計などを今の状態で表示させ、画面下の色もちゃんと変えるようにしろ。外のサイトの色もアプリで設定した色にしろ」）
+//   下の帯と外のサイトの枠の色はアプリが開く時に決める（ページからは変えられない）。アプリは起動のたびに URL に
+//   scapp（受け口の名前）と scc（今の色）を付ける。受け口が無い＝古いアプリ（1.0.0）・ブラウザでは何もしない
+var SC_DROID=(function(){ try{
+  if(IS_STOREAPP!=='android') return null;
+  var q=new URLSearchParams(location.search), s=q.get('scapp'), c=q.get('scc');
+  if(s&&/^shisochan(test)?$/.test(s)){ sessionStorage.setItem('sc_scheme',s); if(c&&/^[0-9a-fA-F]{6}$/.test(c)) sessionStorage.setItem('sc_appc',c.toLowerCase()); }
+  var sc=sessionStorage.getItem('sc_scheme'); if(!sc||!/^shisochan(test)?$/.test(sc)) return null;
+  return {scheme:sc, color:sessionStorage.getItem('sc_appc')||''};
+}catch(_){ return null; } })();
+// アプリの色が今の色と違えば、アプリに知らせて開き直してもらう（指で押した流れの中でだけ呼ぶ＝Chrome は指の操作なしの受け渡しを止める）。
+//   開き直すとページは読み直しになるので、見ていた時は scres=1 を付けて続きから流す
+function droidApplyColor(hex, wantPlay){
+  try{
+    if(!SC_DROID||!/^#[0-9a-fA-F]{6}$/.test(hex||'')) return false;
+    var h=hex.slice(1).toLowerCase(); if(SC_DROID.color===h) return false;
+    var u=new URL(location.href); u.searchParams.delete('scapp'); u.searchParams.delete('scc'); u.searchParams.delete('scres');
+    if(wantPlay) u.searchParams.set('scres','1');
+    location.href=SC_DROID.scheme+'://color?c='+h+'&u='+encodeURIComponent(u.toString());
+    return true;
+  }catch(_){ return false; }
+}
 // 画面の寸法指定（meta viewport の中身）は必ずこの関数を通す。
 // テレビ用アプリはCSSの幅を1280に固定＝テレビブラウザの実測(1280x720)と同じ環境。
 // 数字を持つのはここ1か所だけ（アプリ側には倍率を書かない＝2か所に書くと必ずずれる）
@@ -4711,6 +4733,8 @@ function setResumeFlag(){
 //   窓の裏で音が鳴り続けないよう番組を止め、閉じたら見ていた時だけ続きを流す（アプリが裏に回る時と同じ処理）
 // ・開けなかった時は今までどおりページごと移る（Safari が開く）
 function appOpenOutside(url){
+  // ★ダウンロード版 Android 1.0.1：アプリが設定の色の枠で開く（lab 4.73）。開くとページは裏に回り、閉じると続きが流れる（今までの裏に回る処理のまま）
+  try{ if(SC_DROID&&url&&/^https?:\/\//.test(url)){ location.href=SC_DROID.scheme+'://open?u='+encodeURIComponent(url); return true; } }catch(_){}
   var B=null; try{ B=(IS_STOREAPP==='ios'&&window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Browser)||null; }catch(_){}
   if(!B||!url) return false;
   // ★2度押し（2026-11-26 lab 4.60 総点検）：窓が上がりきる前の2回目は何もしない。
@@ -6003,6 +6027,7 @@ function applyBg(id, save){
   de.style.setProperty('--green4', c.g4);
   de.style.setProperty('--green5', c.g5);
   try{ appThemeNative(c.bg); }catch(_){}   // ダウンロード版 iPhone の上下の帯（アプリ側が塗る）。全画面中はアプリ側が黒のまま持っておく
+  if(save!==false){ try{ localStorage.setItem(BG_KEY, c.id); }catch(_){} if(droidApplyColor(c.bg, hasPoweredOn&&userWantsPlay)) return; }   // ★Android 1.0.1：アプリの下の帯も設定の色に（開き直す・lab 4.73）
   if(!isExpanded){                      // 全画面中は帯を黒のままにする
     try{ setThemeColor(c.bg); }catch(_){}
 
@@ -9241,7 +9266,7 @@ function init(){
   loadRemoteSponsors(); // スポンサー一覧も同じく（無ければ内蔵の一覧のまま）
   try{ loadRemoteCms(); setInterval(function(){ try{ loadRemoteCms(); }catch(_){} },3600000); }catch(_){}   // ★CMの設定（2026-11-21）
   statsInit(); // 視聴計測（未設定なら何もしない）
-  addTap(document.getElementById('ps-btn'),powerOn);
+  addTap(document.getElementById('ps-btn'),function(){ if(droidApplyColor(_bgNow.bg, true)) return; powerOn(); });   // ★Android 1.0.1：アプリの色と設定の色がずれていたら、そろえてから流す（lab 4.73）
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
   (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
   setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
@@ -9362,6 +9387,8 @@ function init(){
   // （bfキャッシュが効けばpageshowで復元、効かない場合のフォールバック）
   (function(){
     var _resume=false;
+    // ★Android 1.0.1 の色の係で開き直した時（scres=1）は続きから流す。印は URL から外す（読み直しで繰り返さない・lab 4.73）
+    try{ var _q=new URLSearchParams(location.search); if(_q.has('scres')||_q.has('scapp')||_q.has('scc')){ if(_q.get('scres')==='1'&&SC_DROID) _resume=true; _q.delete('scres'); _q.delete('scapp'); _q.delete('scc'); var _qs=_q.toString(); history.replaceState(history.state,'',location.pathname+(_qs?'?'+_qs:'')+location.hash); } }catch(_){}
     try{
       if(sessionStorage.getItem('shiso_resume')==='1') _resume=true;
       sessionStorage.removeItem('shiso_resume');
