@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="しそチャンNET">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
 /* タイトル用フォント コーポレートロゴB（Corporate Logo Bold・OFLベース）。タイトル文字だけにサブセット済(約1KB) */
 @font-face{font-family:'CorpLogoB';src:url('corp-logo-b.woff2?v=1') format('woff2');font-weight:700;font-display:swap;}
 :root{
@@ -27,9 +27,6 @@
   color-scheme: only light;
   --forest:#1e3a28;--green:#2d5c3e;--green2:#3d7a54;--green3:#52a070;
   --green4:#a8d5b5;--green5:#e4f2e8;--gold:#c8992a;--gold2:#e8b84a;
-/* ★AIの窓は白ベース（2026-09-01のご指示）。帯だけ背景色から計算する */
-  --ai-bg:#fbfaf7;--ai-band:#2f5f42;--ai-ink:#1d2126;--ai-sub:#4c545c;
-  --ai-step:#2b3138;--ai-note:#6e4704;--ai-gold:#b8860b;--ai-listen:#1b5e20;
   --white:#fff;--off:#f6f8f6;--border:#d4e0d6;
   --text:#1a2520;--text2:#4a5e52;--text3:#8aa090;--red:#b83030;
   /* 全モード共通のバナー基準幅＝画面短辺−左右余白12px（＝縦の動画ウインドウ幅390・全間隔6px統一）。縦横問わず一定 */
@@ -39,6 +36,14 @@
   --hdrL:calc((100vmin - 12px) * 193.2 / 2277 + 12px);
   /* 番組表/お知らせの見出し帯：背景の深緑(--forest)と区別できる少し明るい緑 */
   --band:#2f5f42;
+  /* ★AIの窓だけが使う色（2026-08-29）。背景色を12色から選べるが、
+     明るい色（若草・黄土・桜鼠・藤・青鼠）を選ぶと窓の文字が読めなくなっていた。
+     実測：桜鼠のとき 一覧の見出し2.43／注記2.56／枠1.81（基準4.5・非文字3.0）。
+     ★選んだ色の**色みは残したまま**、窓の中だけ明るさを下げて読めるようにする。
+     値は applyBg() が計算して差し替える。ここは既定（深緑）の値 */
+  /* ★AIの窓は白ベース（2026-09-01のご指示）。帯だけ背景色から計算する */
+  --ai-bg:#fbfaf7;--ai-band:#2f5f42;--ai-ink:#1d2126;--ai-sub:#4c545c;
+  --ai-step:#2b3138;--ai-note:#6e4704;--ai-gold:#b8860b;--ai-listen:#1b5e20;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 /* テキスト選択・長押しメニューを無効化 */
@@ -160,6 +165,18 @@ body.onair-mode .h-right .onair-badge{display:flex;}
 .h-datetime{display:none;}
 .h-date{font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
 .h-time{font-size:22px;font-weight:300;color:rgba(255,255,255,0.85);letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1.1;}
+/* ★探すアイコン（2026-09-01・Google TVアプリのみ）。
+   ★歯車と同じ作りにする：高さ19pxを超えるとヘッダーが厚くなり、
+     バナーが下へ押し出される（実測15px・5pxのズレが記録に残っている） */
+.h-find{ display:none; }
+html.tvapp .h-find{
+  height:19px;line-height:0;position:relative;
+  display:flex;align-items:center;justify-content:flex-end;
+  background:none;border:none;padding:0;margin:0 10px 0 0;
+  color:rgba(255,255,255,0.85);cursor:pointer;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;font-family:inherit;
+}
+html.tvapp .h-find svg{ display:block; }
 .h-gear{
   /* ★高さは持たせない。ここで高さを作るとヘッダー1段目が厚くなり、
      縦向きで2段目のバナーが下へ押し出されてしまう（実測で15pxズレた）。
@@ -640,21 +657,25 @@ body.ori-p .news-item{flex-direction:row;align-items:center;gap:7px;}body.ori-p 
   .pname{font-size:12px;line-height:1.35;}
   }
 
-/* iPhone縦向き: 番組表を横向き同様「1画面固定＋内側スクロール」に（iPhone限定・iPad/PC非影響） */
+/* iPhone・Androidのスマホ縦向き: 番組表を横向き同様「1画面固定＋内側スクロール」に（iPad/PC/TV非影響）
+   ★Android は 2026-11-08 に追加（lab 4.47）。それまではページ全体が動き、動画がバナーの下へ潜っていた（実機の写真で確認） */
 /* 向きの切り替えは凍結しないJS判定(body.ori-p/.ori-l)で行う。iOSはアプリ内ブラウザ復帰時にCSSの向き判定を凍結させるため@media(orientation)は使わない */
-body.iphone-mode.ori-p{
+/* ★Android の縦向き：本文は画面ちょうど（1画面固定）なのに、ページ全体の高さが小数の切り上げで画面より1px大きく（874と873・moto g06 で実測）、
+   ページ全体が動いて端で伸び縮みした。ページ全体は動かさない（中の番組表は今までどおり内側で動く・lab 4.73） */
+html:has(> body.droid-fit.ori-p){ overflow:hidden; overscroll-behavior:none; }
+body.iphone-mode.ori-p, body.droid-fit.ori-p{
     height:100vh;
     /* --vpH: 表示領域の高さが凍った時だけ、JSが端末実寸法から算出した正しい高さを入れる。通常は未設定＝100dvh */
     height:var(--vpH, 100dvh);
     min-height:0;
     overflow:hidden;
-  }body.iphone-mode.ori-p .page{
+  }body.iphone-mode.ori-p .page, body.droid-fit.ori-p .page{
     grid-template-rows:auto 1fr auto;
     height:calc(100vh - var(--hdr-h, 84px));
     height:calc(var(--vpH, 100dvh) - var(--hdr-h, 84px));
     overflow:hidden;
     padding-bottom:6px;
-  }body.iphone-mode.ori-p .sidebar{
+  }body.iphone-mode.ori-p .sidebar, body.droid-fit.ori-p .sidebar{
     position:static;
     height:100%;
     min-height:0;
@@ -2063,6 +2084,12 @@ html.tvpc .h-right .onair-badge .bdot{
 html.tvpc .h-gear svg{
   width:2.8vw;height:2.8vw;
 }
+/* ★探すアイコンも歯車と同じ大きさにする（2026-09-01の実測）。
+   22px固定のままでは、テレビの実機で 30px しか無く、歯車の 41px より
+   12px小さかった。テレビは 2.8vw で拡大しているので、同じ指定を当てる */
+html.tvpc .h-find svg{
+  width:2.8vw;height:2.8vw;
+}
 /* ★動画エリア(player)は grid-template-areas で上下2行にまたがるため、
    お知らせ枠のぶんを引いてはいけない（引くと動画の下に余白が残る）。
    動画の高さ = 使える高さ - 上下padding32 - タイトルバー44 - 操作バー44 = -120px
@@ -2159,6 +2186,13 @@ html.tvpc body.text-2 .pcat,html.tvpc body.text-2 .pdur{font-size:15px;}
 html.tvpc body.text-2 .pnew,html.tvpc body.text-2 .sb-new{font-size:15px;}
 html.tvpc body.text-2 .news-tag{font-size:12px;padding:2px 8px;}
 html.tvpc body.text-2 .news-ttl{font-size:18px;line-height:1.3;min-height:calc(1.3em * 3);}
+/* LIVEの帯（動画の上の題名）も同じ段で（Phase C 第2弾・2026-09-06） */
+html.tvpc body.text-1 .viewing-bar .llbl{font-size:12px;}
+html.tvpc body.text-1 #viewing-title{font-size:18px;}
+html.tvpc body.text-1 .viewing-bar .cat-tag{font-size:12px;}
+html.tvpc body.text-2 .viewing-bar .llbl{font-size:13px;}
+html.tvpc body.text-2 #viewing-title{font-size:20px;}
+html.tvpc body.text-2 .viewing-bar .cat-tag{font-size:13px;}
 /* 設定画面（2026-08-11指示の配置）：スクロール不要で全項目を1画面に収める。
    左列＝アプリの使い方／背景の色／アプリについて
    右列＝表示と動作／投稿・お問い合わせ
@@ -2288,28 +2322,382 @@ html.tvapp *:focus{outline:none;}                /* 素の焦点枠と二重に�
 /* テレビにはホーム画面が無いので「ホーム画面に登録する」は出さない（2026-08-15指示）。
    消すのはテレビ用アプリだけ＝スマホ・PCの登録案内は今までどおり */
 html.tvapp #lnk-reg{display:none;}
+
+/* ══════════════════════════════════════════════════════════════════
+   新デザイン A案「リモコンのまる」1段目（2026-11-27 lab 4.74。依頼者「lab に入れる」）
+   見本：書類/しそチャンNET_運営/07_開発・仕様/新デザインA案_見本_2026-11-27（見本ページ/index.html）。
+   ・位置と大きさのうち、映像・バナー・#yt-block-* は変えない。縦の全画面も変えない
+   ・色・書体・窓の形はどの画面にも効く。帯と行の高さは縦のスマホ（body.ori-p）だけ。横とテレビの大きさは2段目で合わせる
+   ・動き・点滅は足さない（今ある「試験放送中」「LIVE」の点の点滅と3人のまばたきはそのまま）
+   ══════════════════════════════════════════════════════════════════ */
+:root{--paper:#fbf6ea;--ink:#1f2a24;--ink2:#57524a;--rule:#ebe2d0;--hl:#fdf0cf;
+  --shu:#c24a24;--yama:#e3a62f;--aomi:#24786d;--momo:#96514d;--wakaba:#4e7f3a;--rw:10px;}
+body{font-family:'Zen Maru Gothic','Zen Kaku Gothic New','Noto Sans JP',sans-serif;}
+
+/* ── 放送開始の画面（見本の倍率1の値。全体の大きさは psLayout の zoom で合わせる） ── */
+#power-screen .ps-main{gap:12px;}
+#power-screen .ps-logo-main{font-size:32px;line-height:1.2;}
+#power-screen .ps-version{font-size:11px;letter-spacing:1px;font-weight:600;margin-top:-8px;}
+#power-screen .ps-test-badge{font-size:15px;font-weight:700;border:2px solid var(--gold2);border-radius:99px;padding:2px 20px;letter-spacing:.12em;margin-top:0;}
+#power-screen .ps-date-str{font-size:21px;font-weight:500;color:rgba(255,255,255,.9);letter-spacing:0;margin:6px 0 0;line-height:1.2;}
+/* 時計：Zen Maru Gothic は数字ごとに幅が違い、幅をそろえる機能（tnum）も無い（書体のファイルで確認：1＝398・8＝509）。
+   そのままだと真ん中に置いた時計が毎秒左右に揺れるので、1字ずつ同じ幅の箱に入れる（箱は updateClock が作る） */
+#power-screen .ps-clock{font-size:60px;font-weight:500;line-height:1;letter-spacing:0;margin-top:-4px;color:#fff;}
+/*   箱の幅＝見本の1字の幅（字の幅＋見本の字間 .03em）の一番広い物：数字は 8 の .509＋.03＝.539em、コロンは .251＋.03＝.281em */
+#ps-clock i{display:inline-block;font-style:normal;width:.54em;text-align:center;}
+#ps-clock i.cc{width:.28em;}
+#power-screen .ps-btn{margin-top:4px;background:none;padding:0;border-radius:0;letter-spacing:0;color:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:11px;}
+.ps-go-c{width:116px;height:116px;border-radius:50%;background:var(--gold);color:var(--forest);display:grid;place-items:center;
+  box-shadow:0 0 0 5px rgba(232,184,74,.3),0 5px 0 0 #9f781c;}
+.ps-go-c svg{width:64px;height:64px;display:block;}
+.ps-go-l{font-size:17px;font-weight:900;letter-spacing:.3em;padding-left:.3em;color:var(--gold2);line-height:1.2;}
+#power-screen .ps-hint{font-size:11px;color:rgba(255,255,255,.78);letter-spacing:.02em;margin-top:-4px;}
+/* まだ見ていない新番組の箱（幅 354 は今のまま） */
+.ps-new{background:var(--paper);border:none;color:var(--ink);padding:9px 14px 10px;gap:5px;}
+.ps-new-h{font-size:12px;font-weight:900;color:var(--shu);letter-spacing:.1em;}
+.ps-new-it{gap:9px;font-size:14.5px;font-weight:500;line-height:24px;color:var(--ink);}
+.ps-new-tag{width:22px;height:22px;border-radius:50%;background:var(--shu);color:#fff;font-size:11px;font-weight:700;padding:0;line-height:22px;text-align:center;}
+.ps-new-more{color:var(--ink2);padding-left:31px;}
+/* 吹き出し：生成りの面・角16。しっぽは話す人の頭の上（left は psLayout が入れる） */
+.ps-talk{position:relative;width:354px;display:flex;flex-direction:column;align-items:center;padding-bottom:10px;margin-bottom:-10px;
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;}
+.ps-bub{background:var(--paper);color:var(--ink);border-radius:16px;padding:7px 16px 8px;font-size:14.5px;font-weight:700;line-height:1.45;text-align:center;max-width:354px;}
+.ps-bub b{color:var(--shu);font-size:17px;font-weight:900;margin:0 1px;}
+.ps-bub small{display:block;font-size:11px;font-weight:700;color:var(--aomi);letter-spacing:.08em;margin-bottom:1px;}
+.ps-bub .msg{display:block;white-space:nowrap;font-size:15px;line-height:1.4;}
+.ps-bub.two .msg{white-space:normal;}
+.ps-tail{position:absolute;top:calc(100% - 11px);left:50%;width:0;height:0;border-left:9.8px solid transparent;border-right:9.8px solid transparent;border-top:12px solid var(--paper);transform:translateX(-50%);}   /* 上の1pxは吹き出しの中に重ねる（接しただけだと縮小の時に継ぎ目の線が出る）。100%-11＝吹き出しの下の端（下の余白10）の1px上。縮小すると線の太さが整数の画素に丸められるので、下の端からでなく上の端から置く。吹き出しの下の端での幅は18のまま */
+
+/* ── 上の段（ロゴ・試験放送中・歯車）とバナー ── */
+.test-badge{border-width:1px;border-radius:99px;height:19px;padding:0 9px;letter-spacing:.06em;background:transparent;gap:5px;}
+.test-badge .tdot{width:5px;height:5px;}
+.h-gear svg{width:22px;height:22px;}
+.h-banner .sponsor-img{border-radius:var(--rw);}
+
+/* ── 番組の画面：窓は生成り・角10。札は色 ── */
+.viewing-bar{background:var(--paper);border-radius:var(--rw) var(--rw) 0 0;}
+.live-tap{height:18px;border-radius:99px;background:var(--shu);padding:0 8px;gap:5px;}
+.live-tap:has(.ldot.g){background:#a79e8c;}
+.live-tap .ldot{width:6px;height:6px;background:#fff;}
+.live-tap .llbl,.live-tap .llbl.r{color:#fff;font-size:10px;letter-spacing:.06em;}
+.viewing-bar .ldiv{display:none;}
+#viewing-title{color:var(--ink);font-weight:700;}
+.cat-tag,.pcat{display:inline-flex;align-items:center;justify-content:center;height:16px;border-radius:99px;padding:0 7px;
+  font-size:10px;font-weight:700;letter-spacing:0;border:none;margin-top:0;background:#ece3d0;color:var(--ink);white-space:nowrap;flex-shrink:0;}
+.cat-tag:empty{display:none;}
+.c-ev{background:var(--yama);color:var(--ink);}
+.c-va{background:var(--momo);color:#fff;}
+.c-in{background:var(--aomi);color:#fff;}
+.c-fu{background:var(--wakaba);color:#fff;}
+.custom-ctrl{background:var(--paper);border-radius:0 0 var(--rw) var(--rw);}
+.ctrl-btn,.custom-ctrl .expand-open-btn{border-radius:50%;background:var(--band);color:#fff;padding:0;}
+.ctrl-btn:hover,.ctrl-btn:active{background:var(--band);}
+.ctrl-btn svg,.custom-ctrl .expand-open-btn svg{width:16px;height:16px;}
+#ctrl-play svg{width:15px;height:15px;}
+.custom-ctrl .bar-bg{height:6px;background:#e2d8c4;}
+/* 位置の棒が丸2つ分（24px）より狭い時は白い丸を出さない（極端に細い画面で棒の幅が0になり、丸だけが消音のボタンに重なっていた。4.73 は棒ごと見えなかった） */
+.custom-ctrl .bar-bg{container-type:inline-size;}
+@container (max-width:24px){ .custom-ctrl .bar-fill::after{display:none;} }
+.custom-ctrl .bar-fill{background:var(--band);position:relative;}
+.custom-ctrl .bar-fill::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;border-radius:50%;background:#fff;
+  box-shadow:0 0 0 3px var(--band);transform:translateY(-50%);}
+/* 棒の幅が足りる時は、丸（白12＋縁3の18）を棒の中だけで動かす。端からはみ出すと、横向きは棒とボタンのすき間が 5px なので
+   番組の頭と終わりで縁が隣のボタンに重なっていた。塗りを丸の見た目の幅（18）より短くしない。上の丸の決まりより後ろに置く */
+@container (min-width:24px){ .custom-ctrl .bar-fill{min-width:18px;} .custom-ctrl .bar-fill::after{right:3px;} }
+.custom-ctrl .vol-slider{background:#e2d8c4;--thumb:14px;}
+.custom-ctrl .vol-slider::-webkit-slider-thumb{background:var(--band);}
+.sidebar,.newsbar{background:var(--paper);border-radius:var(--rw);box-shadow:none;}
+.sb-head{background:var(--band);justify-content:flex-start;gap:8px;}
+.sb-ttl{font-size:13px;font-weight:900;letter-spacing:3px;display:flex;align-items:center;gap:7px;margin-right:auto;}
+.sb-ttl::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold2);flex:none;}
+.sb-new{height:17px;border-radius:99px;background:var(--gold2);color:var(--forest);font-size:10.5px;padding:0 8px;margin-left:0;display:inline-flex;align-items:center;}
+#today-date{font-size:10px;font-weight:500;color:rgba(255,255,255,.9);font-variant-numeric:normal;}
+.prow{border-bottom:1px solid var(--rule);}
+.prow.active{background:var(--hl);}
+.pname,.prow.active .pname{color:var(--ink);font-weight:700;}
+.pmeta{gap:6px;}
+.pdur{color:var(--ink2);}
+.pnew{width:16px;height:16px;border-radius:50%;background:var(--shu);color:#fff;font-size:9.5px;padding:0;letter-spacing:0;
+  display:inline-flex;align-items:center;justify-content:center;}
+/* 放送中の行には頭に「放送中」の札（見本どおり。行の黄色と同じ意味を字でも示す） */
+.prow.active .pmeta::before{content:"放送中";display:inline-flex;align-items:center;height:16px;border-radius:99px;background:var(--shu);color:#fff;
+  font-size:9.5px;font-weight:700;padding:0 7px;flex:none;}
+.news-tag{border-radius:99px;}
+.news-tag.event{background:#f2e3c4;color:#6e4704;}
+.news-ttl{color:var(--ink);font-weight:700;}
+
+/* ── 縦のスマホの高さ（見本 A案3版：LIVE の帯 30・操作の列 30（丸26）・見出し 28・行 43・お知らせ 28＋34） ── */
+/*   題の帯は1行なら 30。11px まで縮めても入らない題だけ2行にして帯が伸びる（4.73 も長い題は2行で帯が伸びていた。題を「…」で切らない） */
+body.ori-p .viewing-bar{min-height:30px;padding:4px 10px;gap:8px;overflow:hidden;}
+body.ori-p #viewing-title{font-size:12.5px;line-height:1.3;min-width:0;word-break:keep-all;overflow-wrap:anywhere;}
+body.ori-p.text-2 #viewing-title{font-size:14px;}
+body.ori-p #viewing-title .pc{white-space:nowrap;}
+body.ori-p .custom-ctrl{height:30px;padding:0 10px;gap:6px;}
+body.ori-p .ctrl-btn,body.ori-p .custom-ctrl .expand-open-btn{min-width:26px;width:26px;height:26px;margin:0;}
+body.ori-p .custom-ctrl .bar-bg{margin:0 8px;}
+body.ori-p .custom-ctrl .vol-slider{width:44px;}
+body.ori-p .sb-head{height:28px;padding:0 12px;}
+body.ori-p .pinfo{padding:3px 10px 4px;gap:0;}   /* 題と札の行の間は .pmeta の margin-top 1px だけ（gap も足すと行が 44 になる。見本は 43） */
+body.ori-p .pname{display:block;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere;font-size:12px;line-height:16px;max-height:32px;}
+body.ori-p.text-1 .pname{font-size:14px;line-height:18px;max-height:36px;}
+body.ori-p.text-2 .pname{font-size:16px;line-height:21px;max-height:42px;}
+body.ori-p .pname .pc{white-space:nowrap;}
+body.ori-p .pmeta{height:16px;margin-top:1px;}
+body.ori-p .pcat{font-size:9.5px;}
+body.ori-p .pdur{font-size:11px;}
+body.ori-p.text-1 .pcat{font-size:10px;} body.ori-p.text-1 .pdur{font-size:11.5px;}
+body.ori-p.text-2 .pcat{font-size:11px;} body.ori-p.text-2 .pdur{font-size:13px;}
+/* お知らせ：見出し 28＋行 34。iPhone のホーム画面から開いた時は、下の線（ホームインジケーター）の分だけ下を空ける
+   （今までの 22px と同じ量＝安全域34−12。ブラウザで開いた時は安全域0なので空けない） */
+body.ori-p .news-body{min-height:34px;padding:0 10px max(0px, calc(env(safe-area-inset-bottom) - 12px));justify-content:center;}
+body.ori-p .news-item{gap:8px;}
+body.ori-p .news-tag{height:18px;display:inline-flex;align-items:center;padding:0 8px;font-size:10px;letter-spacing:.04em;}
+body.ori-p .news-ttl{font-size:12.5px;}
+body.ori-p.text-1 .news-ttl{font-size:13.5px;}
+body.ori-p.text-2 .news-ttl{font-size:15px;}
+
+/* ── 設定の画面（生成りの面・角12・左の端を 24 にそろえる） ──
+   色・角の丸み・線の色は全体に。大きさ（高さ・幅・余白・字の大きさと太さ・線の有無）は縦のスマホ（html.ori-p）だけ。
+   横向き・テレビ・iPad は段2まで 4.73 の大きさのまま（検品の指摘：横向きで選びのボタン 38→34・つまみ 48×28→46×26 などに変わっていた） */
+html.ori-p #settings-panel{padding-left:max(12px, env(safe-area-inset-left));padding-right:max(12px, env(safe-area-inset-right));}
+html.ori-p .set-head{height:44px;padding:0;border-bottom:none;}
+html.ori-p .set-ttl{font-size:16px;font-weight:900;letter-spacing:.3em;}
+/* ×の絵の右の端（24の枠の19の位置）を、下の面の右の端にそろえる＝箱を 13px 外へ出す */
+html.ori-p .set-close{margin-right:-13px;}
+html.ori-p .set-close svg{width:24px;height:24px;}
+html.ori-p .set-body{padding:0 0 12px;}
+.set-sec{background:var(--paper);color:var(--ink);border-radius:12px;}
+html.ori-p .set-sec{padding:8px 12px 10px;margin-bottom:6px;}
+html.ori-p .set-sec:first-child{padding-top:4px;padding-bottom:4px;}
+html.ori-p .set-hd{margin-bottom:7px;}
+.set-sec-ttl{border-radius:99px;background:var(--gold2);color:var(--ink);box-shadow:none;}
+html.ori-p .set-sec-ttl{height:24px;line-height:24px;padding:0 13px;font-size:12.5px;font-weight:900;letter-spacing:.12em;}
+.set-link{border-bottom-color:var(--rule);}
+.set-link-txt b{color:var(--ink);}
+html.ori-p .set-link-txt b{font-size:14px;font-weight:700;}
+.set-link-txt i{color:var(--ink2);}
+.set-link-arw{color:var(--ink2);}
+.set-link-lead .set-link-txt b{color:var(--shu);}
+html.ori-p .set-link-lead .set-link-txt b{font-size:15px;}
+.set-link.soon .set-link-txt b{color:var(--ink2);}
+html.ori-p .set-colors{gap:4px;}
+html.ori-p .set-color{gap:2px;}
+html.ori-p .set-color i{width:26px;height:26px;border-radius:50%;border:none;}
+html.ori-p .set-color.on i{border:none;box-shadow:0 0 0 2px var(--paper),0 0 0 4.5px var(--gold);}
+.set-color span{color:var(--ink2);}
+.set-color.on span{color:var(--ink);}
+.set-row{border-bottom-color:var(--rule);}
+.set-line b{color:var(--ink);}
+html.ori-p .set-line b{font-size:14px;font-weight:700;}
+.set-line i{color:var(--ink2);}
+/* 縦の画面で題の横に補足が入らない時は、補足を題の下の行へ送る（題を 14px・700 にした分、320 幅で「送り・戻しの秒数」の補足が切れたため。入る幅では横並びのまま） */
+html.ori-p .set-line{flex-wrap:wrap;row-gap:1px;}
+html.ori-p .set-line i{max-width:100%;}
+/* 縦の画面の切り替えの行は、見本どおり題の下に補足（題を 14px・700 にした分で「新番組のお知らせ」の補足が切れたため。:has は古い iPhone で効かないので行の名前で指定） */
+html.ori-p #row-aicap .set-line,html.ori-p #row-volsave .set-line,html.ori-p #row-ntf .set-line{flex-direction:column;align-items:flex-start;gap:1px;}
+html.ori-p #row-aicap .set-line i,html.ori-p #row-volsave .set-line i,html.ori-p #row-ntf .set-line i{white-space:normal;overflow:visible;text-overflow:clip;}
+.set-seg button{border-color:#ddd2bd;background:transparent;color:var(--ink);}
+html.ori-p .set-seg button{height:34px;padding:0;font-size:13.5px;font-weight:700;}
+.set-seg button{border-radius:99px;}
+.set-seg button.on{background:var(--gold);border-color:var(--gold);color:var(--ink);}
+.set-sw{background:#d9cfbd;}
+html.ori-p .set-sw{width:46px;height:26px;border-radius:13px;}
+html.ori-p .set-sw::after{top:3px;left:3px;width:20px;height:20px;}
+.set-sw::after{background:#fff;}
+.set-sw.on{background:var(--gold);}
+.set-about div{border-bottom-color:var(--rule);}
+.set-about span{color:var(--ink2);}
+.set-about b{color:var(--ink);}
+.set-link-reset{border-top-color:var(--rule);}
+.set-link-reset .set-link-txt b{color:var(--shu);}
+
+/* ══════════════════════════════════════════════════════════════════
+   新デザイン A案 2段目：横向きのスマホとテレビ（2026-11-27 lab 4.75。依頼者「その範囲で始める」）
+   ・見本の「横向きのスマホ・番組・A案」「テレビ・番組・A案」の値。大きな箱（バナー・映像・題の帯・操作の列・番組表・お知らせ）の位置と大きさは今のまま
+   ・横向きのスマホ（body.ori-l）は縦と同じ部品の大きさ（見出し 28・行 43・丸 26）。帯と操作の列は今の 34
+   ・テレビ（html.tvpc）は見本の値（見出し 40・行 59・札 20〜22・LIVE 26・位置の棒 8）。字の大きさは「文字の大きさ」の設定ごと（見本はテレビの既定の「大」）
+   ・歯車は絵の右の端を番組表の窓の右の端にそろえる。iPad（ori-tp・ori-tl）と縦の画面は変えない
+   ══════════════════════════════════════════════════════════════════ */
+/* ── 横向きのスマホ ── */
+body.ori-l .h-gear svg{width:22px;height:22px;}
+body.ori-l .h-gear{margin-right:-4px;}   /* 歯車の絵の右の端＝番組表の窓の右の端（852×393 で 4px 内側だった） */
+/* 操作の列は全画面（body.fs-open）の間は変えない（全画面は段4で扱う） */
+body.ori-l:not(.fs-open) .custom-ctrl{padding:0 10px;gap:6px;}
+body.ori-l:not(.fs-open) .ctrl-btn,body.ori-l:not(.fs-open) .custom-ctrl .expand-open-btn{min-width:26px;width:26px;height:26px;margin:0;}
+body.ori-l:not(.fs-open) .custom-ctrl .bar-bg{margin:0 8px;}
+body.ori-l:not(.fs-open) .custom-ctrl .vol-slider{width:44px;}
+body.ori-l .sb-head{height:28px;padding:0 12px;}
+body.ori-l .pinfo{padding:3px 10px 4px;gap:0;}
+body.ori-l .pname{display:block;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere;font-size:12px;line-height:16px;max-height:32px;}
+body.ori-l.text-1 .pname{font-size:14px;line-height:18px;max-height:36px;}
+body.ori-l.text-2 .pname{font-size:16px;line-height:21px;max-height:42px;}
+body.ori-l .pname .pc{white-space:nowrap;}
+body.ori-l .pmeta{height:16px;margin-top:1px;}
+body.ori-l .pcat{font-size:9.5px;}
+body.ori-l .pdur{font-size:11px;}
+body.ori-l.text-1 .pcat{font-size:10px;} body.ori-l.text-1 .pdur{font-size:11.5px;}
+body.ori-l.text-2 .pcat{font-size:11px;} body.ori-l.text-2 .pdur{font-size:13px;}
+/* お知らせ：見出し 28＋行 34（見本は行の下に 16 の余り＝お知らせの窓は今の 78 のまま） */
+body.ori-l .news-body{min-height:34px;padding:0 10px 16px;justify-content:flex-start;}
+body.ori-l .news-item{flex-direction:row;align-items:center;gap:8px;height:34px;}   /* 見本どおり札の右に題（4.74 までの横向きは札の下に題） */
+body.ori-l .news-ttl{min-width:0;}
+body.ori-l .news-tag{height:18px;display:inline-flex;align-items:center;padding:0 8px;font-size:10px;letter-spacing:.04em;align-self:center;margin:0;flex:none;}
+body.ori-l .news-ttl{font-size:12.5px;}
+body.ori-l.text-1 .news-ttl{font-size:13.5px;}
+body.ori-l.text-2 .news-ttl{font-size:15px;}
+
+/* ── テレビ ── */
+html.tvpc .h-gear{margin-right:-8px;}   /* 歯車の絵の右の端＝番組表の窓の右の端（1280×720 で 8px 内側だった） */
+html.tvpc .test-badge{font-size:1.25vw;border-width:2px;border-radius:99px;padding:0 1.25vw;gap:.625vw;}
+html.tvpc .test-badge .tdot{width:.625vw;height:.625vw;}
+html.tvpc .viewing-bar{gap:12px;padding:0 16px;}
+html.tvpc .live-tap{height:26px;padding:0 12px;gap:6px;}
+html.tvpc .live-tap .ldot{width:8px;height:8px;}
+html.tvpc.tvpc body .live-tap .llbl,html.tvpc.tvpc body .live-tap .llbl.r{font-size:13px;}
+html.tvpc.tvpc body .viewing-bar .cat-tag{height:22px;font-size:13px;padding:0 10px;}
+/* 操作の列は全画面（body.fs-open）の間は変えない（全画面は段4で扱う） */
+html.tvpc body:not(.fs-open) .custom-ctrl{padding:0 16px;gap:10px;}
+html.tvpc body:not(.fs-open) .ctrl-btn svg,html.tvpc body:not(.fs-open) .custom-ctrl .expand-open-btn svg{width:22px;height:22px;}
+html.tvpc body:not(.fs-open) #ctrl-play svg{width:19px;height:19px;}
+html.tvpc body:not(.fs-open) .custom-ctrl .bar-bg{height:8px;}
+html.tvpc .sb-head{height:40px;padding:0 14px;gap:6px;}
+html.tvpc.tvpc body .sb-ttl{letter-spacing:1px;}
+html.tvpc.tvpc body.text-1 .sb-ttl{font-size:17px;}   /* 字の大きさは「大」（テレビの既定）だけ見本の値。標準・特大は今の値 */
+html.tvpc.tvpc body .sb-new{height:22px;padding:0 10px;}
+html.tvpc.tvpc body.text-1 #today-date{font-size:12px;}
+html.tvpc.tvpc body .pinfo{padding:6px 14px 7px;gap:0;}
+html.tvpc.tvpc body .pname{display:block;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere;font-size:13px;line-height:17px;max-height:34px;}
+html.tvpc.tvpc body.text-1 .pname{font-size:17px;line-height:22px;max-height:44px;}
+html.tvpc.tvpc body.text-2 .pname{font-size:21px;line-height:27px;max-height:54px;}
+html.tvpc .pname .pc{white-space:nowrap;}
+html.tvpc.tvpc body .pmeta{height:20px;margin-top:3px;gap:8px;}
+html.tvpc.tvpc body .pcat{height:20px;font-size:12px;padding:0 9px;}
+html.tvpc.tvpc body .pdur{font-size:13.5px;}
+html.tvpc.tvpc body.text-2 .pcat{font-size:13px;} html.tvpc.tvpc body.text-2 .pdur{font-size:15px;}
+html.tvpc.tvpc body .pnew{width:20px;height:20px;font-size:11px;}
+html.tvpc .prow.active .pmeta::before{height:20px;font-size:11.5px;padding:0 9px;}
+/* お知らせ：見出しを 48→40 にした分を中の余白に回し、お知らせの窓の高さは今のまま（大 150.8・標準 124.6・特大 159.2。番組表の窓を伸ばさない） */
+html.tvpc #sb-news .news-body{padding:9px 14px 12px;}
+html.tvpc body:not(.text-1):not(.text-2) #sb-news .news-body{padding:4px 14px 7px;}
+html.tvpc body.text-2 #sb-news .news-body{padding:10px 14px 14px;}
+/* 題は見本どおり行の長さをそろえて折る（「市役／所で」のように2行目が2〜3字で終わる形を作らない） */
+html.tvpc .news-ttl{text-wrap:balance;}
+html.tvpc.tvpc body .news-tag{height:22px;display:inline-flex;align-items:center;padding:0 10px;}
+html.tvpc.tvpc body.text-1 .news-tag{font-size:12px;}
+
+/* ══════════════════════════════════════════════════════════════════
+   新デザイン A案 4段目：横向きのスマホとテレビの全画面のバナー（2026-11-27 lab 4.76。依頼者「全画面時の右上の小さいバナーを実装しろ」）
+   ・決定：はじめから小さく（lab 4.77 で 1.1倍＝スマホ 381×55%×1.1＝230.5・テレビ 33vw×55%×1.1）、金の枠 #d9ab45 を外側に重ねる
+     （太さは下の --fsl＝1.5px に一番近い画面の画素の整数倍。大きさは変わらない）、映像の右上に 10px 内側で重ねる。
+     動画保管庫の番組は映像の上の帯をやめて画面いっぱい。テレビも同じ 10px（記憶 tv-no-overscan-margin）
+   ・動画保管庫の番組は映像に重ねる。YouTube の番組（lab 4.77〜）は映像に重ねられないので、映像を下げた細い帯（上10＋バナー＋下10）の右上に置く
+   ・縦の全画面・iPad・パソコンは今のまま。印 .fs-mini と位置（--fsm-l/-t/-w）は fitPlayer が付ける
+   ══════════════════════════════════════════════════════════════════ */
+.player-wrap.fs-mini .fs-sponsor{left:var(--fsm-l)!important;top:var(--fsm-t)!important;right:auto!important;transform:none!important;
+  width:var(--fsm-w)!important;max-width:none!important;}
+.player-wrap.fs-mini .fs-sponsor .sponsor-img{width:100%;max-width:none;border-radius:calc(5px - var(--fsl,1.5px));
+  box-shadow:0 0 0 var(--fsl,1.5px) #d9ab45,0 1px 6px rgba(0,0,0,.45);}
+/* ★lab 4.77：バナーの右下に「sponsored」の札（はじめは「しそチャンNET sponsored」。下の直しで sponsored だけにした）（依頼者「バナーの右下（バナーの半分の長さ）に同じような金枠のウインドウを追加して、
+   しそチャンNET sponsored と小さい文字で」「くっつけて　もっと細く　しそチャンNETの大きさは sponsoredと同じでいい」「大きさは1.1倍」
+   「縦画面にした時も同じように金枠で表示しろ（大きさは画面の横幅に合わせて表示）」2026-11-27。見本：運営/07_開発・仕様/新デザインA案_見本_2026-11-27/全画面のバナーと札_見本_2026-11-27）
+   ・札は右の端をバナーにそろえ、バナーの下の金の線にくっつける
+   ・字はバナーの幅に比例（入れ物を container にして cqw で測る）：横・テレビは幅 230.5 で 字6.5、縦は幅 381 で 字9.75。札の幅と高さは字から決まる（下の直し）
+   ・つなぎ目の右の端がへこまないよう、札を出す時はバナーの右下の角を四角にする */
+#fs-sponsor{container-type:inline-size;}
+/* ★lab 4.77 の直し：札は「sponsored」だけ（依頼者「しそチャンNETは無しで、sponserdだけにしろ　幅も文字数に合わせて調整しろ」「縦幅もギリギリまで詰めて」2026-11-27）
+   ＋案B「刻印の金」（依頼者「もうちょっといいデザインにできないのか　sponserdは濃い金色にしろと言っただろうが」→「Bで」）
+   ＋縦幅を詰める（依頼者「札の縦幅をもっと狭くしろ」→「字を小さく、線を細く　スポンサーの枠線の上に札の影が乗らないようにしろ」）
+   ＋置き場所はバナーの右下（依頼者「やはり右下に札を出せ。」2026-11-27。一度右上に移したのを戻した）
+   ・字は横・テレビで幅 230.5 に 6.5（今までの 8 の 0.8125倍）、縦で幅 381 に 9.75。札の縁は下と左右 0.5px
+   ・札は上の端をバナーの絵の下の端に付け、バナーの下の金の線（--fsl）と重ねる（線の下に付けるだけだと、接する画素の行が背景と混ざって暗い帯になる）。
+     札の影は、札の外側だけ線の下の端で切る（clip-path の多角形）ので、線に影が乗らない
+   ・高さ＝線と重なる --fsl＋字の黒い部分の高さ（Zen Maru Gothic 700 の「sponsored」は字の大きさの 0.91）＋下の縁 0.5px
+   ・字の黒い部分は、高さ1の箱の真ん中より 0.177 下に出るので、その分だけ上げてそろえる
+   ・幅＝字の黒い部分（4.777）＋左右 0.25 ずつ（黒い部分の左の食い込み 0.046・右の字間の余り 0.101 を差し引いた余白）＋左右の縁 0.5px
+   ・地は線と重なる所がバナーの線と同じ金（#d9ab45）→下へ深い金（#c4943a）。字は濃い金 #6b4c0b（地との差 3.7〜3.1）で、下に細い光を入れて彫り込んだ見た目
+   ・右の端はバナーの外の線にそろえる（right:calc(-1 * var(--fsl))）。札はバナーの上に重ねる（バナーの影が札にかからない） */
+/* ★金の線の太さ --fsl（2026-11-27）：依頼者「androidで見ると札が0.1か0.2pxほど右にはみ出してるように見える」。
+   原因（moto で画素を測って確定）：バナーの線は影（box-shadow）なので、外の端＝画素にそろえたバナーの端＋1.5px（moto は 2.625 画素・端数はぼかし）。
+   札は箱なので、端を画素に丸めて描かれる。この丸め方の違いで、横で札が 0.375 画素（0.21px）右に出て、縦では 0.62 画素内側になった。
+   直し：線の太さを画面の画素のちょうど整数倍（1.5px に一番近い整数の画素。moto 3画素＝1.714px・iPhone 5画素＝1.667px・倍率2なら 1.5px のまま）にすると、
+   線の端と札の端が同じ画素にそろう。値は端末の画素の倍率（devicePixelRatio）から _fitPlayerYT が計算して :root に置く（無ければ 1.5px） */
+.fs-tag{display:none;position:absolute;right:calc(-1 * var(--fsl,1.5px));top:100%;height:calc(.91em + var(--fsl,1.5px) + .5px);
+  clip-path:polygon(0 0,100% 0,100% var(--fsl,1.5px),calc(100% + 8px) var(--fsl,1.5px),calc(100% + 8px) calc(100% + 8px),-8px calc(100% + 8px),-8px var(--fsl,1.5px),0 var(--fsl,1.5px));
+  padding:var(--fsl,1.5px) calc(.149em + .5px + var(--fstd,0px)) .5px calc(.204em + .5px + var(--fstd,0px));align-items:center;
+  white-space:nowrap;line-height:1;background:linear-gradient(#d9ab45 var(--fsl,1.5px),#c4943a);color:#6b4c0b;
+  border-radius:0 0 5px 5px;pointer-events:none;
+  box-shadow:0 1px 6px rgba(0,0,0,.45);-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+/* 角の丸みは、全画面のバナーと札のすべての角で外から見て 5px にそろえる（依頼者「スポンサーの札の右下のラウンドをバナーに合わせろ　文字の表示に合わせて幅は調整しろ」
+   →「バナーも含めてラウンドをもう少し小さくして、札も含めて揃えろ」2026-11-27。前はバナー 6px＋線＝7.7px）。バナーは金の線の分だけ丸みが外に広がるので、
+   絵の角は「5px − 線（--fsl）」。札は左下・右下とも 5px で、字の下の端（基準の線）の高さで丸みから字までが字の大きさ×0.25＋0.5px になるだけ、
+   左右を同じ量広げる（--fstd。円の式で _fitPlayerYT が計算する）。普段の画面のバナー（6px）は変えない */
+.fs-tag .sp{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;letter-spacing:.04em;position:relative;top:-.177em;
+  text-shadow:0 .07em 0 rgba(255,236,180,.6);}
+.player-wrap.fs-mini .fs-tag{display:flex;font-size:calc(100cqw * 6.5 / 230.505);}
+.player-wrap.fs-mini .fs-sponsor .sponsor-img{border-bottom-right-radius:0;}
+/* 縦の全画面：バナーの位置と大きさは今のまま（画面の幅に合わせた大きさ）、金の線と札を足す */
+body.ori-p .player-wrap.expanded .fs-tag,body.ori-p .player-wrap:fullscreen .fs-tag,body.ori-p .player-wrap:-webkit-full-screen .fs-tag{
+  display:flex;font-size:calc(100cqw * 9.75 / 381);}
+body.ori-p .player-wrap.expanded .fs-sponsor .sponsor-img,body.ori-p .player-wrap:fullscreen .fs-sponsor .sponsor-img,body.ori-p .player-wrap:-webkit-full-screen .fs-sponsor .sponsor-img{
+  border-radius:calc(5px - var(--fsl,1.5px));border-bottom-right-radius:0;box-shadow:0 0 0 var(--fsl,1.5px) #d9ab45,0 1px 6px rgba(0,0,0,.45);}
 </style>
+<script>
+// ★lab 4.78：保存した背景色を、最初の描画より前に当てる（依頼者「labのほうは放送開始の画面で上部が緑になってる」2026-11-27）。
+//   なぜ：iPhone のホーム画面に追加した lab は、開いた瞬間の色で画面の上の帯（時計の所）を決め、あとで色を変えても塗り直さない。
+//   これまでは色を当てる台本が本文の後ろ（YouTube の読み込みの後）にあり、待つ間に既定の深緑で最初の描画が出ていた
+//   → 上の帯が深緑で固まり、起動画面（設定の色）と違っていた。4.75 の直しはダウンロード版のアプリが塗る帯（appThemeNative）だけだった。
+//   色の表はここに1つだけ置く（本文の applyBg・設定の色の一覧もこの表を使う）。
+var BG_COLORS=[
+  // 暗めの6色
+  {id:'forest',name:'深緑',  bg:'#1e3a28',band:'#2f5f42',g1:'#2d5c3e',g2:'#3d7a54',g3:'#52a070',g4:'#a8d5b5',g5:'#e4f2e8'},
+  {id:'navy',  name:'紺',    bg:'#1b2a44',band:'#2c436b',g1:'#273d62',g2:'#365281',g3:'#486ba8',g4:'#a4b8db',g5:'#e1e8f4'},
+  {id:'teal',  name:'藍',    bg:'#12303a',band:'#26505e',g1:'#275462',g2:'#366f81',g3:'#4890a8',g4:'#a4cddb',g5:'#e1eff4'},
+  {id:'sumi',  name:'墨',    bg:'#22262a',band:'#3a424a',g1:'#3c454e',g2:'#515c66',g3:'#6b7884',g4:'#b7bfc8',g5:'#e7ebee'},
+  {id:'wine',  name:'えんじ',bg:'#3a1f22',band:'#603136',g1:'#5c2e33',g2:'#793f45',g3:'#9c535c',g4:'#d5aaaf',g5:'#f2e3e5'},
+  {id:'plum',  name:'濃紫',  bg:'#2e2440',band:'#473765',g1:'#3f305a',g2:'#544176',g3:'#6e5699',g4:'#baabd3',g5:'#e9e3f2'},
+  // 明るめの6色（背景が明るいぶん見出し帯は逆に暗くして白文字の読みやすさを保つ）
+  {id:'wakakusa',name:'若草',bg:'#5f7a4e',band:'#3f5333',g1:'#415634',g2:'#577147',g3:'#72925d',g4:'#bccfaf',g5:'#e9f1e4'},
+  {id:'slate', name:'青鼠',  bg:'#42586b',band:'#557590',g1:'#324657',g2:'#455d72',g3:'#5b7a94',g4:'#aec0d0',g5:'#e4ebf1'},
+  {id:'oudo',  name:'黄土',  bg:'#8a7340',band:'#5e4e2a',g1:'#604f2a',g2:'#7e6939',g3:'#a4884c',g4:'#d9c9a6',g5:'#f4eee1'},
+  {id:'sepia', name:'鳶茶',  bg:'#5c4436',band:'#815e49',g1:'#594031',g2:'#755543',g3:'#977059',g4:'#d2baad',g5:'#f2e9e4'},
+  {id:'sakura',name:'桜鼠',  bg:'#8a6b76',band:'#664c56',g1:'#503a42',g2:'#684f58',g3:'#876973',g4:'#c9b5bc',g5:'#efe6e9'},
+  {id:'fuji',  name:'藤',    bg:'#6f6a9e',band:'#504c7a',g1:'#373455',g2:'#4b4770',g3:'#635f91',g4:'#b3b0cf',g5:'#e6e5f1'}
+];
+var BG_KEY='shisochan_bg';
+(function(){
+  try{
+    var v=localStorage.getItem(BG_KEY); if(!v) return;
+    for(var i=0;i<BG_COLORS.length;i++) if(BG_COLORS[i].id===v){
+      var c=BG_COLORS[i], de=document.documentElement;
+      de.style.setProperty('--forest',c.bg); de.style.setProperty('--band',c.band);
+      de.style.setProperty('--green',c.g1); de.style.setProperty('--green2',c.g2); de.style.setProperty('--green3',c.g3);
+      de.style.setProperty('--green4',c.g4); de.style.setProperty('--green5',c.g5);
+      var mt=document.querySelector('meta[name="theme-color"]'); if(mt) mt.setAttribute('content',c.bg);
+      break;
+    }
+  }catch(_){}
+})();
+</script>
 </head>
 <body>
 
 <!-- 電源画面 -->
 <div id="power-screen">
+  <!-- ★新デザイン A案（2026-11-27 lab 4.74）：列は見本と同じ並び（ロゴ・版・試験放送中・日付・時計・金の丸・説明）。間隔は CSS の .ps-main の gap と各部品の余白で決める -->
   <div class="ps-main" id="ps-main">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.03</div>
+    <div class="ps-version">version 4.04</div>
     <div class="ps-test-badge">試験放送中</div>
-  </div>
-  <div style="height:18px"></div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
-  </div>
-  <button class="ps-btn" id="ps-btn">▶ 放送開始</button>
-  <div class="ps-hint" id="ps-hint">ボタンを押すと現在放送中の番組が自動で始まります</div>
+    <button class="ps-btn" id="ps-btn"><span class="ps-go-c" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><g transform="translate(1.15 0)"><path d="M6.6 4.4 L19.4 12 L6.6 19.6 Z" fill="currentColor" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round"/></g></svg></span><span class="ps-go-l">放送開始</span></button>
+    <div class="ps-hint" id="ps-hint">ボタンを押すと現在放送中の番組が自動で始まります</div>
   </div>
   <div class="ps-side" id="ps-side">
   <div class="ps-new" id="ps-new" style="display:none" aria-label="まだ見ていない新番組"></div>
+  <!-- ★吹き出し（A案）：新番組の日は「新番組が◯本あるよ！」、無い日は近い催し、どちらも無ければ出さない。話す人は日替わり（岡本→加藤→菊地）。しっぽは psLayout が話す人の頭へ向ける -->
+  <div class="ps-talk" id="ps-talk" style="display:none"><div class="ps-bub" id="ps-bub"></div><i class="ps-tail" id="ps-tail"></i></div>
   <div class="ps-chara" id="ps-chara" aria-hidden="true"><div class="ps-c" data-w="325" data-h="631" data-eye="o" data-mouth="o"><img class="b" src="ps_c3_okamoto_base_20261127.webp" alt="" decoding="async"><img class="l e-o" src="ps_c3_okamoto_eo_20261127.webp" alt="" decoding="async" style="left:15.6923%;top:22.8209%;width:43.0769%;height:11.252%"><img class="l e-h" src="ps_c3_okamoto_eh_20261127.webp" alt="" decoding="async" style="left:16.0%;top:27.0998%;width:42.4615%;height:6.8146%"><img class="l e-c" src="ps_c3_okamoto_ec_20261127.webp" alt="" decoding="async" style="left:16.3077%;top:29.6355%;width:41.5385%;height:3.3281%"><img class="l m-o" src="ps_c3_okamoto_mo_20261127.webp" alt="" decoding="async" style="left:20.3077%;top:37.401%;width:36.0%;height:13.7876%"><img class="l m-c" src="ps_c3_okamoto_mc_20261127.webp" alt="" decoding="async" style="left:20.6154%;top:40.0951%;width:34.4615%;height:5.2298%"></div><div class="ps-c" data-w="302" data-h="640" data-eye="o" data-mouth="o"><img class="b" src="ps_c3_kato_base_20261127.webp" alt="" decoding="async"><img class="l e-o" src="ps_c3_kato_eo_20261127.webp" alt="" decoding="async" style="left:6.2914%;top:27.3438%;width:55.298%;height:10.3125%"><img class="l e-h" src="ps_c3_kato_eh_20261127.webp" alt="" decoding="async" style="left:6.6225%;top:31.4063%;width:54.6358%;height:6.25%"><img class="l e-c" src="ps_c3_kato_ec_20261127.webp" alt="" decoding="async" style="left:6.6225%;top:33.4375%;width:53.9735%;height:2.6562%"><img class="l m-o" src="ps_c3_kato_mo_20261127.webp" alt="" decoding="async" style="left:9.9338%;top:40.3125%;width:52.3179%;height:8.9062%"><img class="l m-c" src="ps_c3_kato_mc_20261127.webp" alt="" decoding="async" style="left:10.596%;top:42.6562%;width:50.3311%;height:3.125%"></div><div class="ps-c" data-w="350" data-h="675" data-eye="o" data-mouth="o"><img class="b" src="ps_c3_kikuchi_base_20261127.webp" alt="" decoding="async"><img class="l e-o" src="ps_c3_kikuchi_eo_20261127.webp" alt="" decoding="async" style="left:10.8434%;top:28.0811%;width:51.2048%;height:8.8924%"><img class="l e-h" src="ps_c3_kikuchi_eh_20261127.webp" alt="" decoding="async" style="left:10.8434%;top:31.9813%;width:50.9036%;height:5.7722%"><img class="l e-c" src="ps_c3_kikuchi_ec_20261127.webp" alt="" decoding="async" style="left:11.4458%;top:33.3853%;width:49.6988%;height:2.0281%"><img class="l m-o" src="ps_c3_kikuchi_mo_20261127.webp" alt="" decoding="async" style="left:17.7711%;top:40.4056%;width:40.6627%;height:11.0764%"><img class="l m-c" src="ps_c3_kikuchi_mc_20261127.webp" alt="" decoding="async" style="left:18.3735%;top:42.7457%;width:39.4578%;height:4.5242%"></div></div>
   </div>
 </div>
@@ -2335,9 +2723,22 @@ html.tvapp #lnk-reg{display:none;}
         <div class="bdot" id="bdot"></div>
         <span>ON AIR</span>
       </div>
+      <!-- ★アイコンの案（2026-09-01・一時的に並べて実機で見比べるため）。
+           テレビ用アプリだけに出す。決まったら1つだけ残す。
+           ★歯車は「塗りつぶしで24の枠をほぼ埋める」形。線画で同じ大きさに見せるには
+             ①枠いっぱいまで広げる ②線を太くする の両方が要る（画素で測って合わせる） -->
+      <!-- ★「探す」ボタン（2026-09-01・Google TVアプリのみ）。
+           耳の聞こえない人が、音を使わず画面だけで情報に辿り着くための入口。
+           絵柄は虫めがねの中に一覧の線＝「一覧から探す」。
+           ★大きさは歯車に合わせてある（実機の画素で 41x41／歯車 41x42・差1px）。
+             歯車は 2.8vw で拡大され、絵柄は24の枠のうち 2.7〜21.3 を使う。
+             ここを外すと並んだ時に小さく見える（2026-09-01にユーザー指摘） -->
+      <button class="h-find" id="h-find" onclick="openSagasu()" title="探す" aria-label="探す">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11.1" cy="11.1" r="7.2"/><path d="M7.6 9.2h7M7.6 13h4.4"/><path d="M16.2 16.2L20.1 20.1"/></svg>
+      </button>
       <!-- 設定ボタン（歯車）。左右の幅は fixHeaderBalance が現行値に合わせるのでバナー位置は動かない -->
       <button class="h-gear" id="h-gear" onclick="openSettings()" title="設定" aria-label="設定">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="4.2" stroke-dasharray="3.38 3.375"/><circle cx="12" cy="12" r="7" fill="currentColor"/><circle cx="12" cy="12" r="2.8" fill="var(--forest)"/></svg>
       </button>
     </div>
   </header>
@@ -2359,6 +2760,7 @@ html.tvapp #lnk-reg{display:none;}
         <!-- 全画面時スポンサー（通常バナーと同一デザイン・縦向きのみ表示） -->
         <div class="fs-sponsor" id="fs-sponsor" onclick="openSponsorLink()">
           <div class="sponsor-img" id="fs-sponsor-img"></div>
+          <div class="fs-tag" aria-hidden="true"><span class="sp">sponsored</span></div>
         </div>
         <div id="ended-ov">
           <div class="ended-icon">📺</div>
@@ -2447,7 +2849,7 @@ html.tvapp #lnk-reg{display:none;}
     <!-- 右上：番組表 -->
     <div class="sidebar" id="sb-panel">
       <div class="sb-head">
-        <div class="sb-ttl">番 組 表</div>
+        <div class="sb-ttl">番組表</div>
         <span class="sb-new" id="sb-new-count" style="display:none"></span>
         
         <div id="today-date">—</div>
@@ -2466,7 +2868,7 @@ html.tvapp #lnk-reg{display:none;}
 <!-- ══ 設定画面（アプリの上にかぶせるパネル。別ページにすると戻る時に再読み込みされ動画が止まるため） ══ -->
 <div id="settings-panel">
   <div class="set-head">
-    <div class="set-ttl">設 定</div>
+    <div class="set-ttl">設定</div>
     <button class="set-close" id="set-close" onclick="closeSettings()" aria-label="閉じる">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
     </button>
@@ -2538,7 +2940,7 @@ html.tvapp #lnk-reg{display:none;}
         <button class="set-sw" id="opt-aicap" aria-label="答えを画面に出す"></button>
       </div>
 
-      <div class="set-row">
+      <div class="set-row" id="row-volsave">
         <div class="set-line"><b>音量を記憶する</b><i>設定した音量を記憶します</i></div>
         <button class="set-sw" id="opt-volsave" aria-label="音量を記憶する"></button>
       </div>
@@ -2714,8 +3116,11 @@ function vpContent(extra){
     sc=Math.round(sc*1000)/1000;
     return 'width=1280, initial-scale='+sc+', maximum-scale='+sc+', user-scalable=no'+(extra||'');
   }
+  // ★ダウンロード版 Android は、横向きのカメラの穴の帯（左右）まで常にページで塗る（lab 4.73。全画面から戻っても外さない）
+  if(IS_STOREAPP==='android' && !/viewport-fit=cover/.test(extra||'')) extra=(extra||'')+', viewport-fit=cover';
   return 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'+(extra||'');
 }
+if(IS_STOREAPP==='android'){ try{ var _vpA=document.querySelector('meta[name="viewport"]'); if(_vpA) _vpA.setAttribute('content', vpContent('')); }catch(_){} }
 if(IS_TVAPP){ try{
   document.documentElement.classList.add('tvapp');
   var _vp0=document.querySelector('meta[name="viewport"]');
@@ -3298,14 +3703,18 @@ function psFit(){
 //   ・上下に画面の6%、左右に4%の余白。縦で倍率が0.7を下回る小さい画面では、新番組の箱（と取っておく場所）を外して大きさを保つ
 //   ・3人は左から岡本・加藤・菊地。足の下端をそろえ、顎の高さが合うよう菊地は元の絵の1.053倍（帽子の分だけ少し背が高い）
 var PS_REF=641, PS_GAP=0.04, PS_V_TATE=150, PS_BOX=151, PS_KMIN=0.7, PS_KMAX=2.4;
+// ★吹き出し（lab 4.74）の場所：一番高い形（日付の行＋1行＝52）＋しっぽ10＋間隔14−重ね10＝66。新番組の箱と同じく、出ない日も取っておく＝3人の大きさは変わらない
+var PS_TALK=66, PS_HEADR=[0.521,0.466,0.485];   // 3人の頭の真ん中（土台の絵の幅に対する位置。岡本・加藤・菊地。絵の画素で測った値）
 function psLayout(){
   var ps=document.getElementById('power-screen'), main=document.getElementById('ps-main'), side=document.getElementById('ps-side');
-  var nw=document.getElementById('ps-new'), ch=document.getElementById('ps-chara');
+  var nw=document.getElementById('ps-new'), ch=document.getElementById('ps-chara'), tk=document.getElementById('ps-talk');
   if(!ps||!main||!side||!ch) return;
   var hasNew=!!(nw&&nw.childNodes.length);
   ps.classList.remove('tight'); ps.classList.remove('tight2'); ps.classList.remove('land');
   main.style.zoom='1'; side.style.zoom='1'; ps.style.gap=''; side.style.paddingTop='0px';
   if(nw) nw.style.display=hasNew?'':'none';
+  var hasTalk=!!(tk&&document.getElementById('ps-bub')&&document.getElementById('ps-bub').innerHTML);
+  if(tk) tk.style.display=hasTalk?'':'none';
   var sa=_cmSafe(), W=innerWidth-sa.l-sa.r, H=innerHeight-sa.t-sa.b;
   if(!(W>0&&H>0)) return;   // ★画面の幅か高さが0の瞬間（隠れている・復帰の途中）は並べ直さない。倍率が0になり列が消えたまま残る（lab 4.71）
   var land=innerWidth>innerHeight*1.15;
@@ -3314,8 +3723,9 @@ function psLayout(){
   var PERV=imgs.reduce(function(t,im){ return t+(+im.getAttribute('data-w')||300)/PS_REF; },0)+PS_GAP*2;   // 背1あたりの3人の幅
   var mW=main.offsetWidth, mH=main.offsetHeight;   // 見本（倍率1）の列の大きさ
   var reserve=true;   // 新番組の箱の場所を取っておくか
+  var talkRes=true;   // 吹き出しの場所を取っておくか（lab 4.74）
   // 箱の場所はいつも一番高い形（3本＋「ほか◯本」＝151）で取っておく＝本数が変わっても3人の大きさと位置は変わらない
-  var boxPart=function(){ return reserve?PS_BOX+14:0; };
+  var boxPart=function(){ return reserve?PS_BOX+14+(talkRes?PS_TALK:0):0; };   // ★吹き出しの場所も一緒に（lab 4.74）
   var V, k, G;
   function calc(){
     if(land){
@@ -3329,7 +3739,10 @@ function psLayout(){
     k=Math.min(PS_KMAX,k);
   }
   calc();
-  if(k<PS_KMIN&&!land){ reserve=false; if(nw) nw.style.display='none'; calc(); }   // 小さい画面：新番組の箱を外して大きさを保つ
+  // 小さい画面：まず吹き出しの場所だけ外して計算し直し、それでも足りない時だけ新番組の箱も外して大きさを保つ
+  //   （lab 4.74 初版は両方をまとめて外していた。吹き出しの 66 の分だけ境目が上がり、4.73 では出ていた新番組の箱が 360×640 より低い画面で消えていた）
+  if(k<PS_KMIN&&!land){ talkRes=false; if(tk) tk.style.display='none'; calc();
+    if(k<PS_KMIN){ reserve=false; if(nw) nw.style.display='none'; calc(); } }
   // 3人（倍率1の寸法で置き、外側の zoom でまとめて拡大・縮小する）
   var x=0, gap=V*PS_GAP, maxH=0;
   imgs.forEach(function(im,i){
@@ -3338,6 +3751,15 @@ function psLayout(){
     x+=w+(i<imgs.length-1?gap:0); maxH=Math.max(maxH,h);
   });
   ch.style.display='block'; ch.style.width=Math.ceil(x)+'px'; ch.style.height=Math.ceil(maxH)+'px';
+  // ★吹き出しのしっぽを、その日に話す人の頭の真ん中へ（吹き出しの箱と3人はどちらも列の真ん中にそろう）
+  //   354＝吹き出しの箱の幅（CSS の .ps-talk と同じ。zoom の中なので倍率1の値で計算する）
+  try{ var tl=document.getElementById('ps-tail'), who=psSpeaker(), im=imgs[who];
+    if(tl&&im&&tk){ var hx=parseFloat(im.style.left)+parseFloat(im.style.width)*PS_HEADR[who];
+      var tx=354/2 - Math.ceil(x)/2 + hx; tl.style.left=tx+'px';
+      // 吹き出しは真ん中に置き、しっぽが角の丸み（16）より内側（24）に来ない時だけ話す人の側へずらす。箱（354）の外へは出さない
+      var bb=document.getElementById('ps-bub'); if(bb){ bb.style.transform=''; var bw=bb.getBoundingClientRect().width;   // この時点の zoom は1（上で戻してある）
+        var l0=(354-bw)/2, sh=0; if(tx<l0+24) sh=tx-(l0+24); else if(tx>l0+bw-24) sh=tx-(l0+bw-24);
+        sh=Math.max(-l0, Math.min(354-bw-l0, sh)); bb.style.transform=sh?'translateX('+sh.toFixed(1)+'px)':''; } } }catch(_){}
   // 箱の本数が少ない・無い日は、余った分を詰めて全体を上下の真ん中に置く（3人の大きさは倍率の計算で箱の場所を入れてあるので変わらない）
   main.style.zoom=String(k); side.style.zoom=String(k);
   ps.style.gap=(G*k)+'px';
@@ -3389,6 +3811,120 @@ function psAnimWatch(){ var ok=psAnimOk(); if(ok&&!_psAnim.on) psAnimStart(); el
 document.addEventListener('visibilitychange',function(){ if(document.hidden) psAnimStop(); else psAnimWatch(); });
 setInterval(function(){ try{ psAnimWatch(); }catch(_){} },1000);
 
+// ══ 新デザイン A案の小さな道具（lab 4.74） ══
+// 放送開始のボタンの字（丸の下の金の字）だけを替える。丸と▶はそのまま
+function psBtnLabel(t){ try{ var l=document.querySelector('#ps-btn .ps-go-l'); if(l) l.textContent=t; }catch(_){} }
+// ジャンルの札の色（見本どおり4色。管理アプリで選べる「番組」「その他」や CM などは落ち着いた生成りの札）
+function catCls(c){ return ({'イベント':'c-ev','催し':'c-ev','バラエティ':'c-va','お知らせ':'c-in','風景':'c-fu'})[c]||'c-ot'; }
+// 番組名の折り目：空白の後と「（ の前だけで折れるようにする（区切りの中は折らない）。古い iOS でも動くよう、後ろを見る正規表現は使わない
+function nmHtml(t){
+  t=String(t==null?'':t); var parts=[], cur='';
+  for(var i=0;i<t.length;i++){ var ch=t.charAt(i);
+    if((ch==='「'||ch==='（')&&cur){ parts.push(cur); cur=''; }
+    cur+=ch;
+    if(ch===' '||ch==='　'){ parts.push(cur); cur=''; } }
+  if(cur) parts.push(cur);
+  return parts.map(function(x){ return '<span class="pc">'+escHtml(x)+'</span>'; }).join('​');
+}
+// なるべく1行：入らなければ字を 0.25px ずつ小さくする（下限は決まった値と元の85%の大きい方）。
+//   それでも入らない物：keep の時はその大きさで末尾を「…」、そうでない時は元の大きさに戻して2行（番組名）
+function fitOne(box, el, min, keep){
+  el.style.fontSize=''; box.style.whiteSpace='';
+  var base=parseFloat(getComputedStyle(el).fontSize)||0; if(!base) return 0;
+  var f=base; min=Math.max(min, Math.round(base*0.85*4)/4);
+  box.style.whiteSpace='nowrap';
+  if(box.clientWidth<=0){ box.style.whiteSpace=''; return 0; }
+  while(box.scrollWidth>box.clientWidth+0.5 && f>min){ f-=0.25; el.style.fontSize=f+'px'; }
+  if(box.scrollWidth>box.clientWidth+0.5){ if(keep) return 1; box.style.whiteSpace=''; el.style.fontSize=''; return 2; }
+  return 1;
+}
+var _fitSeg=null; try{ if(window.Intl&&Intl.Segmenter) _fitSeg=new Intl.Segmenter('ja',{granularity:'word'}); }catch(_){}
+function fitTextAll(){
+  // 放送開始の画面の新番組（どの向きでも）
+  [].forEach.call(document.querySelectorAll('#ps-new .ps-new-it span:last-child'),function(e){ fitOne(e,e,12.5,true); });
+  psBubFit();
+  var de=document.documentElement, bc=document.body.classList, tv=de.classList.contains('tvpc');
+  var on=(bc.contains('ori-p')&&!tv) || bc.contains('ori-l') || tv;   // 番組表とお知らせ：縦のスマホ（1段目）・横向きのスマホとテレビ（2段目 lab 4.75）。iPad は変えない
+  var onVt=bc.contains('ori-p')&&!tv;   // LIVE の帯の題は縦のスマホだけ（横とテレビは帯の高さが決まっているので今の折り方のまま）
+  [].forEach.call(document.querySelectorAll('.pname'),function(e){
+    [].forEach.call(e.querySelectorAll('.pc'),function(pc){ if(pc.getAttribute('data-t')!=null){ pc.textContent=pc.getAttribute('data-t'); pc.removeAttribute('data-t'); } pc.style.whiteSpace=''; });
+    if(!on){ e.style.fontSize=''; e.style.whiteSpace=''; return; }
+    if(fitOne(e,e,12,false)!==2) return;
+    pcSplit(e,false);
+  });
+  [].forEach.call(document.querySelectorAll('.news-ttl'),function(e){ if(on&&!tv) fitOne(e,e,11.5,true); else e.style.fontSize=''; });   // テレビのお知らせは3行まで折って全部見せる作りのまま
+  // LIVE の帯の題：なるべく1行（12.5→11px）。それでも入らない題だけ、番組名と同じ折り方で2行にする（「…」で切らない。縦のスマホだけ）
+  var vt=document.getElementById('viewing-title');
+  if(vt){
+    if(vt.firstElementChild) vt.textContent=vt.textContent.replace(/​/g,'');   // 前に入れた折り目を外して元の題に戻す
+    vt.style.whiteSpace='';
+    if(!onVt) vt.style.fontSize='';
+    else if(fitOne(vt,vt,11,false)===2){
+      vt.innerHTML=nmHtml(vt.textContent); pcSplit(vt,true);
+      // 折っても行が多い時は、行の数が減る所まで字を小さくする（下限は 1行の時と同じ。幅 360・375 で3行→2行）
+      var cs0=getComputedStyle(vt), base=parseFloat(cs0.fontSize), mn=Math.max(11, Math.round(base*0.85*4)/4);
+      var lines=function(){ var c=getComputedStyle(vt); return Math.round(vt.getBoundingClientRect().height/parseFloat(c.lineHeight)); };
+      var n0=lines(); vt.style.fontSize=mn+'px'; var n1=lines();
+      if(n1<n0){ for(var f=base-0.25;f>=mn;f-=0.25){ vt.style.fontSize=f+'px'; if(lines()<=n1) break; } }
+      else vt.style.fontSize='';
+    }
+  }
+}
+// 区切りの1つが窓の幅より長い時だけ、その区切りの中を言葉の切れ目で折る（カタカナ同士・助詞の前・開き括弧の後では折らない）
+//   行の頭に閉じ括弧・「！」「、」などが来る所でも折らない。題の最後の3字以内だけが次の行に残る所でも折らない（行末の余り）
+//   soft：言葉の切れ目が分からない古い端末（Intl.Segmenter が無い）では、その区切りだけどこででも折って全部見せる
+function pcSplit(e,soft){
+  var pcs=e.querySelectorAll('.pc'), lastPc=pcs[pcs.length-1];
+  [].forEach.call(pcs,function(pc){
+    if(pc.offsetWidth<=e.clientWidth+0.5) return;
+    if(!_fitSeg){ if(soft) pc.style.whiteSpace='normal'; return; }
+    var tx=pc.textContent, w=[]; try{ var it=_fitSeg.segment(tx); for(var s of it) w.push(s.segment); }catch(_){ return; }
+    var o=w[0]||'', pos=o.length;
+    for(var i=1;i<w.length;i++){
+      var kk=/[ァ-ヶー]$/.test(w[i-1])&&/^[ァ-ヶー]/.test(w[i]);
+      var no=kk||/^[のをにはがとでへもや&＆]$/.test(w[i])||/^[「『（(［【〔]$/.test(w[i-1])
+           ||/^[」』）)］】〕、。，．,.！!？?‼⁉…‥・]/.test(w[i])||(pc===lastPc&&tx.length-pos<=3);
+      o+=(no?'':'​')+w[i]; pos+=w[i].length;
+    }
+    pc.setAttribute('data-t',tx); pc.textContent=o; pc.style.whiteSpace='normal'; });
+}
+var _fitT=null;
+function fitTextSoon(){ if(_fitT) clearTimeout(_fitT); _fitT=setTimeout(function(){ _fitT=null; try{ fitTextAll(); }catch(_){} },30); }
+try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ fitTextSoon(); try{ psFit(); }catch(_){} }); }catch(_){}
+try{ if(document.fonts) document.fonts.addEventListener('loadingdone',function(){ fitTextSoon(); }); }catch(_){}
+window.addEventListener('resize', function(){ fitTextSoon(); });
+// 吹き出しで話す人：日替わり（岡本→加藤→菊地）。その日のうちは変わらない
+function psSpeaker(){ var d=new Date(); return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5)%3; }
+// 吹き出しに出す催し：お知らせのうち「イベント」「催し」で、今日以降のいちばん近い物
+function psNextEvent(){
+  var d=new Date(), f2=function(n){ return (n<10?'0':'')+n; }, today=d.getFullYear()+'-'+f2(d.getMonth()+1)+'-'+f2(d.getDate());
+  var all=[].concat((typeof CIVIC_NEWS!=='undefined'&&CIVIC_NEWS)||[], (typeof CITY_NEWS!=='undefined'&&CITY_NEWS)||[]), best=null;
+  all.forEach(function(n){ if(!n||!n.title||!n.when) return; if(n.tag!=='イベント'&&n.tag!=='催し') return; if(n.when<today) return; if(!best||n.when<best.when) best=n; });
+  if(!best) return null;
+  var p=best.when.split('-'), dt=new Date(+p[0],+p[1]-1,+p[2]), wd='日月火水木金土'.charAt(dt.getDay());
+  return {head:(+p[1])+'/'+(+p[2])+'（'+wd+'）のお知らせ・イベント', name:String(best.title).replace(/^\s*\d{1,2}\/\d{1,2}\s*/,'')};
+}
+function psBubbleRender(){
+  var b=document.getElementById('ps-bub'); if(!b) return;
+  var n=0; for(var i=0;i<CYCLE.length;i++){ var c=CYCLE[i]; if(c&&c.title&&isNewProg(c.ytId)) n++; }
+  var h='';
+  if(n>0) h='新番組が<b>'+n+'</b>本あるよ！';
+  else { var ev=psNextEvent(); if(ev) h='<small>'+escHtml(ev.head)+'</small><span class="msg"><span class="evn">「'+escHtml(ev.name)+'」</span><span class="ln2">があるよ！</span></span>'; }
+  if(b.innerHTML!==h){ b.innerHTML=h; b.className='ps-bub'+(h&&n===0?' ev':''); try{ psFit(); }catch(_){} psBubFit(); }
+}
+// 催しの吹き出し：まず1行（15→12.5px まで小さくしてよい）。入らない日だけ「名前／があるよ！」の2行。名前がそれでも長ければ末尾を「…」
+function psBubFit(){
+  var b=document.getElementById('ps-bub'), tk=document.getElementById('ps-talk'); if(!b||!tk||!b.classList.contains('ev')) return;
+  var m=b.querySelector('.msg'), e=b.querySelector('.evn'); if(!m||!e) return;
+  b.classList.remove('two'); m.style.fontSize=''; e.style.fontSize=''; e.style.cssText='';
+  var max=tk.clientWidth-32; if(max<=0) return;
+  var f=15; m.style.fontSize=f+'px'; while(m.scrollWidth>max&&f>12.5){ f-=0.5; m.style.fontSize=f+'px'; }
+  if(m.scrollWidth>max){ b.classList.add('two'); m.style.fontSize='15px';
+    e.style.display='block'; e.style.whiteSpace='nowrap'; e.style.overflow='hidden'; e.style.textOverflow='ellipsis'; e.style.maxWidth=max+'px';
+    f=15; while(e.scrollWidth>e.clientWidth+0.5&&f>12.5){ f-=0.5; e.style.fontSize=f+'px'; } }
+  try{ psFit(); }catch(_){}
+}
+
 // ★まだ見ていない新番組（番組表の「新」と同じ数え方）。0本の日は箱ごと出さない。4本以上は3本と「ほか◯本」
 function psNewRender(){
   var nw=document.getElementById('ps-new'); if(!nw) return;
@@ -3400,6 +3936,8 @@ function psNewRender(){
     if(list.length>3) h+='<div class="ps-new-more">ほか'+(list.length-3)+'本</div>';
   }
   if(nw.innerHTML!==h){ nw.innerHTML=h; try{ psFit(); }catch(_){} }
+  try{ psBubbleRender(); }catch(_){}   // ★吹き出しの本数も同じ一覧から（lab 4.74）
+  fitTextSoon();
 }
 function psTipInit(){
   try{ _psTipOn = !localStorage.getItem(FIRST_KEY); }catch(_){ _psTipOn=false; }
@@ -4474,6 +5012,47 @@ function regOfferBig(){
 //   バナーが大きくロゴが小さくなっていた（実測：高さ590pxでバナー422→578px・ロゴ32→20px）。
 //   入る条件は従来どおり600px以上。維持は400px以上＝URLバーの出没では絶対に外れない。
 var _tvMode=false;
+// ★「探す」ボタン（2026-09-01・Google TVアプリのみ）。
+//   耳の聞こえない人が、音を使わず画面だけで情報に辿り着くための入口。
+//   ページ側は何も判断せず、アプリへ知らせるだけ（判断はJava1か所に置く）
+// ★ジャンルの絵柄（2026-09-01のご指示「9個の大ジャンルにアイコンを用意しろ」）。
+//   ★飾りではなく、そのジャンルの中身そのものを描く。
+//     ごみ＝ごみ箱／バス＝バス／子育て＝親子／健康＝聴診器の心音…
+//   ★線の太さ・大きさ・余白を9つで揃える（24の枠のうち 3〜21 を使う）。
+//     揃っていないと、並んだ時に大小がちぐはぐに見える（絶対ルール25）
+function _aiIcon(k){
+  var P = {
+    // ごみ箱
+    gomi:'<path d="M4.5 7h15M9.5 7V4.6h5V7M6.5 7l1 13.4h9L17.5 7M10.2 10.6v6.6M13.8 10.6v6.6"/>',
+    // バス（前面）
+    bus:'<path d="M5 5.4h14v10.8H5zM5 9.6h14M8.2 13h1.2M14.6 13h1.2M7 16.2v2.4M17 16.2v2.4M4.2 5.4h15.6"/>',
+    // 親と子
+    kosodate:'<path d="M8.4 6.6a2.1 2.1 0 1 0 0-.02M16.2 9.4a1.6 1.6 0 1 0 0-.02M5.2 20.4v-4.6a3.2 3.2 0 0 1 6.4 0v4.6M13.6 20.4v-3.4a2.6 2.6 0 0 1 5.2 0v3.4"/>',
+    // 心音（健康・福祉）
+    kenko:'<path d="M4 12h3.4l1.8-4.4 2.6 9L14 12h6"/><circle cx="20" cy="12" r="1.6"/>',
+    // 書類とはんこ（手続き・税金）
+    tetsuzuki:'<path d="M6.4 3.6h8.2l4 4v12.8H6.4zM14.6 3.6v4h4M9.2 12.4h6M9.2 16h4"/>',
+    // 避難（防災・安全）
+    bosai:'<path d="M12 3.4l8 4v5.4c0 4.6-3.3 7.4-8 8.8-4.7-1.4-8-4.2-8-8.8V7.4z"/><path d="M12 8.6v4.4M12 16.2v.1"/>',
+    // 家と道具（住まい・仕事）
+    sumai:'<path d="M3.6 11.4L12 4.4l8.4 7M6 10.2v9.6h12v-9.6M10 19.8v-5.2h4v5.2"/>',
+    // 場所の印（施設をさがす）
+    shisetsu:'<path d="M12 21.2s7-6.3 7-11.2a7 7 0 1 0-14 0c0 4.9 7 11.2 7 11.2z"/><circle cx="12" cy="10" r="2.6"/>',
+    // 本（宍粟を知る）
+    shiru:'<path d="M12 6.6C10.2 5 7.6 4.4 4.2 4.4v13.4c3.4 0 6 .6 7.8 2.2 1.8-1.6 4.4-2.2 7.8-2.2V4.4c-3.4 0-6 .6-7.8 2.2zM12 6.6v13.4"/>'
+  };
+  var d = P[k]; if(!d) return '';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
+       + 'stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+}
+
+function openSagasu(){
+  try{
+    if(window.ShisoMeasure && typeof window.ShisoMeasure.sagasu==='function'){
+      window.ShisoMeasure.sagasu();
+    }
+  }catch(_){}
+}
 function isTvPcMode(){
   // ★テレビ用アプリは常にTV/PC扱い。WebViewの見かけの寸法（960x540等）に
   //   左右されない＝アプリがテレビだと知っているので推測しない
@@ -4875,6 +5454,8 @@ function renderCityNews(){
     else { note.textContent=''; note.style.display='none'; }
   }
   box.style.display='';
+  fitTextSoon();
+  try{ psBubbleRender(); }catch(_){}   // ★吹き出しの催しもお知らせにそろえる（lab 4.74）
 }
 function rotateCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex+1)%L.length; renderCityNews(); }
 function prevCityNews(){ var L=newsDisplayList(); if(L.length<2) return; cityNewsIndex=(cityNewsIndex-1+L.length)%L.length; renderCityNews(); }
@@ -5149,32 +5730,6 @@ function _tvMove(L,dir){
 //   放送のページはそのまま生きているので、音だけ止めて、戻った時に再開する。
 //   窓(openSiteViewer)と同じ考え方＝再生していた時だけ再開する
 var _tvExtWasPlaying=false;
-// ★lab から移した補助（2026-09-22。本番に無かった）
-function _aiIcon(k){
-  var P = {
-    // ごみ箱
-    gomi:'<path d="M4.5 7h15M9.5 7V4.6h5V7M6.5 7l1 13.4h9L17.5 7M10.2 10.6v6.6M13.8 10.6v6.6"/>',
-    // バス（前面）
-    bus:'<path d="M5 5.4h14v10.8H5zM5 9.6h14M8.2 13h1.2M14.6 13h1.2M7 16.2v2.4M17 16.2v2.4M4.2 5.4h15.6"/>',
-    // 親と子
-    kosodate:'<path d="M8.4 6.6a2.1 2.1 0 1 0 0-.02M16.2 9.4a1.6 1.6 0 1 0 0-.02M5.2 20.4v-4.6a3.2 3.2 0 0 1 6.4 0v4.6M13.6 20.4v-3.4a2.6 2.6 0 0 1 5.2 0v3.4"/>',
-    // 心音（健康・福祉）
-    kenko:'<path d="M4 12h3.4l1.8-4.4 2.6 9L14 12h6"/><circle cx="20" cy="12" r="1.6"/>',
-    // 書類とはんこ（手続き・税金）
-    tetsuzuki:'<path d="M6.4 3.6h8.2l4 4v12.8H6.4zM14.6 3.6v4h4M9.2 12.4h6M9.2 16h4"/>',
-    // 避難（防災・安全）
-    bosai:'<path d="M12 3.4l8 4v5.4c0 4.6-3.3 7.4-8 8.8-4.7-1.4-8-4.2-8-8.8V7.4z"/><path d="M12 8.6v4.4M12 16.2v.1"/>',
-    // 家と道具（住まい・仕事）
-    sumai:'<path d="M3.6 11.4L12 4.4l8.4 7M6 10.2v9.6h12v-9.6M10 19.8v-5.2h4v5.2"/>',
-    // 場所の印（施設をさがす）
-    shisetsu:'<path d="M12 21.2s7-6.3 7-11.2a7 7 0 1 0-14 0c0 4.9 7 11.2 7 11.2z"/><circle cx="12" cy="10" r="2.6"/>',
-    // 本（宍粟を知る）
-    shiru:'<path d="M12 6.6C10.2 5 7.6 4.4 4.2 4.4v13.4c3.4 0 6 .6 7.8 2.2 1.8-1.6 4.4-2.2 7.8-2.2V4.4c-3.4 0-6 .6-7.8 2.2zM12 6.6v13.4"/>'
-  };
-  var d = P[k]; if(!d) return '';
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
-       + 'stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
-}
 // ══ AIのウインドウ（テレビ用アプリのアプリ側から呼ばれる・2026-08-21）══
 //   声で聞いた答えを、画面中央に大きく出す。声だけでは覚えきれない
 //   分量や手順を読めるようにするのが目的。色は背景色の設定に連動する。
@@ -5741,6 +6296,9 @@ window.__aiAnswer=function(obj){
     var 量=(o.text||'').length + (o.title||'').length + L.join('').length;
     var 猶予=Math.max(12000, Math.min(90000, 量*220+8000));
     if(IM.length>0) 猶予=Math.max(猶予, 120000);
+    // ★電話番号を出している答えは、メモを取る時間ぶん長く置く（最低3分。2026-09-22）。
+    //   実機：電話番号の答えが12〜90秒で消え、書き留める前に無くなっていた
+    if(/\d{2,4}-\d{2,4}-\d{3,4}/.test((o.text||'')+(o.note||'')+(o.title||'')+L.join(''))) 猶予=Math.max(猶予, 180000);
     // ★お尋ねしている最中（続きがある）は、答えを考える時間を長くとる。
     //   バス停を39か所ならべて「どれから乗りますか」と聞いておきながら、
     //   21秒で消えてしまっては、お年寄りには考える間もない（2026-08-27のご指示）
@@ -5914,10 +6472,14 @@ window.__tvKey=function(k){
     // AIのウインドウが出ている間は、そこだけを相手にする。
     // 戻る＝閉じる／それ以外は放送側へ渡さない（後ろの画面が勝手に動かないように）
     if(window.__aiOpened && __aiOpened()){
-      // ★上下＝中を読み進める。それ以外のキーはすべて「閉じる」に使う。
-      //   以前は全部のキーを飲み込んでいたため、閉じるまで操作不能に見えた（2026-08-21指摘）
+      // ★閉じるのは「戻る」だけにする（2026-09-01のご指摘
+      //   「何かのはずみでボタンを押してしまったら、ウインドウが閉じてしまって、
+      //     それまでの検索結果も見れなくなるのが問題」）。
+      //   調べ物の結果が、押し間違い1回で消えてしまうのは作りとして誤り。
+      //   上下＝読み進める／左右＝ページ送り／決定＝そのまま／戻る＝閉じる
       if(k==='up'||k==='down'){ __aiScroll(k==='down'?1:-1); return true; }
-      __aiClose(); return true;
+      if(k==='back'){ __aiClose(); return true; }
+      return true;                 // ほかのキーは飲み込むだけ＝勝手に消さない
     }
     var L=_tvEnsure();
     if(L==='fs'){ try{ showFsUi(); }catch(_){} }   // 全画面の操作列は放っておくと消えるため
@@ -5962,22 +6524,7 @@ window.__tvKey=function(k){
 // 色の作り方: 背景の色相を保ったまま、緑系と同じ明度・彩度の関係を再現している。
 // 帯は必ず背景より明るく、かつ帯の上の白文字が読める明るさ（コントラスト比4.5以上）に収めてある。
 // ※深緑は現行の色をそのまま使う（既存の見た目を1色も変えないため）。
-var BG_COLORS=[
-  // 暗めの6色
-  {id:'forest',name:'深緑',  bg:'#1e3a28',band:'#2f5f42',g1:'#2d5c3e',g2:'#3d7a54',g3:'#52a070',g4:'#a8d5b5',g5:'#e4f2e8'},
-  {id:'navy',  name:'紺',    bg:'#1b2a44',band:'#2c436b',g1:'#273d62',g2:'#365281',g3:'#486ba8',g4:'#a4b8db',g5:'#e1e8f4'},
-  {id:'teal',  name:'藍',    bg:'#12303a',band:'#26505e',g1:'#275462',g2:'#366f81',g3:'#4890a8',g4:'#a4cddb',g5:'#e1eff4'},
-  {id:'sumi',  name:'墨',    bg:'#22262a',band:'#3a424a',g1:'#3c454e',g2:'#515c66',g3:'#6b7884',g4:'#b7bfc8',g5:'#e7ebee'},
-  {id:'wine',  name:'えんじ',bg:'#3a1f22',band:'#603136',g1:'#5c2e33',g2:'#793f45',g3:'#9c535c',g4:'#d5aaaf',g5:'#f2e3e5'},
-  {id:'plum',  name:'濃紫',  bg:'#2e2440',band:'#473765',g1:'#3f305a',g2:'#544176',g3:'#6e5699',g4:'#baabd3',g5:'#e9e3f2'},
-  // 明るめの6色（背景が明るいぶん見出し帯は逆に暗くして白文字の読みやすさを保つ）
-  {id:'wakakusa',name:'若草',bg:'#5f7a4e',band:'#3f5333',g1:'#415634',g2:'#577147',g3:'#72925d',g4:'#bccfaf',g5:'#e9f1e4'},
-  {id:'slate', name:'青鼠',  bg:'#42586b',band:'#557590',g1:'#324657',g2:'#455d72',g3:'#5b7a94',g4:'#aec0d0',g5:'#e4ebf1'},
-  {id:'oudo',  name:'黄土',  bg:'#8a7340',band:'#5e4e2a',g1:'#604f2a',g2:'#7e6939',g3:'#a4884c',g4:'#d9c9a6',g5:'#f4eee1'},
-  {id:'sepia', name:'鳶茶',  bg:'#5c4436',band:'#815e49',g1:'#594031',g2:'#755543',g3:'#977059',g4:'#d2baad',g5:'#f2e9e4'},
-  {id:'sakura',name:'桜鼠',  bg:'#8a6b76',band:'#664c56',g1:'#503a42',g2:'#684f58',g3:'#876973',g4:'#c9b5bc',g5:'#efe6e9'},
-  {id:'fuji',  name:'藤',    bg:'#6f6a9e',band:'#504c7a',g1:'#373455',g2:'#4b4770',g3:'#635f91',g4:'#b3b0cf',g5:'#e6e5f1'}
-];
+// 色の表 BG_COLORS は head の中へ移した（lab 4.78。最初の描画より前に保存した色を当てるため）
 // ══ 2027年1月1日からの表示切り替え（2026-08-10指示）══
 //  ・2026年内 : ロゴの右は「● 試験放送中」（金色の点滅）
 //  ・2027年〜 : 同じ場所が「● ON AIR」（赤の点滅）に変わり、試験放送中は消える
@@ -5994,7 +6541,7 @@ function applyBadgeMode(){
   }catch(_){}
 }
 
-var BG_KEY='shisochan_bg';
+// BG_KEY も head の中（lab 4.78）
 var _bgNow=BG_COLORS[0];
 // 今の背景色（全画面の解除オーバーレイや帯色の指定から参照する）
 function curBg(){ return (_bgNow && _bgNow.bg) || '#1e3a28'; }
@@ -6012,6 +6559,87 @@ function curBg(){ return (_bgNow && _bgNow.bg) || '#1e3a28'; }
 //   残る手段は viewport-fit の付け外しだが、これは v2.21 で「拡大表示のまま戻らない・
 //   全画面が解除できない」という重い故障を招いた操作なので使わない。
 //   → 帯の色は「アプリを開き直すと反映」で運用する。
+/* ══ AIの窓の色を「読める値」に作り直す（2026-08-29）══════════════════
+   なぜ：背景色は12色から選べるが、明るい色を選ぶと窓の中の文字が読めなくなる。
+     実測（WCAG 2.x の式で計算）：桜鼠のとき 一覧の見出し2.43／注記2.56／枠1.81。
+     基準は文字4.5・非文字3.0なので、**半分にも届いていなかった**。
+   どうするか：選んだ色の**色みはそのまま**に、窓の地だけ暗くして
+     白い字が12:1（暗い6色と同じ濃さ）になるようにする。
+     見出し・注記・経路の色は、その地に対して7:1に届くまで明るくする。
+   ★見た目の色みは変えない。明るさだけを動かすので、選んだ色の性格は残る。 */
+function _c解(h){h=(h||'').replace('#','');
+  return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function _c詰(v){var s=Math.max(0,Math.min(255,Math.round(v))).toString(16);
+  return s.length<2?'0'+s:s;}
+function _c組(r,g,b){return '#'+_c詰(r)+_c詰(g)+_c詰(b);}
+function _c線(v){v/=255;return v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4);}
+function _c輝(h){var a=_c解(h);
+  return 0.2126*_c線(a[0])+0.7152*_c線(a[1])+0.0722*_c線(a[2]);}
+function _c比(a,b){var x=_c輝(a),y=_c輝(b);if(x<y){var t=x;x=y;y=t;}
+  return (x+0.05)/(y+0.05);}
+function _c暗(h,k){var a=_c解(h);return _c組(a[0]*k,a[1]*k,a[2]*k);}
+function _c明(h,k){var a=_c解(h);
+  return _c組(255-(255-a[0])*k,255-(255-a[1])*k,255-(255-a[2])*k);}
+/* 白い字が目標比に届くまで暗くする。届いていれば そのまま返す */
+function _c地(bg,目標){
+  for(var k=1.0;k>0.04;k-=0.01){ var c=_c暗(bg,k);
+    if(_c比('#ffffff',c)>=目標) return {色:c,率:k}; }
+  return {色:_c暗(bg,0.05),率:0.05};
+}
+/* 地に対して目標比に届くまで明るくする。届いていれば そのまま返す */
+function _c字(基,地,目標){
+  for(var k=1.0;k>0.02;k-=0.01){ var c=_c明(基,k);
+    if(_c比(c,地)>=目標) return c; }
+  return '#ffffff';
+}
+function applyAiColors(c){
+  var de=document.documentElement;
+  var 地=_c地(c.bg,12.0);
+  var bg=地.色;
+  // ★見出しの帯は「地より明るく」かつ「白い字が4.5:1以上」。
+  //   地と同じ明るさにすると帯が消える（2026-08-29の実機で確認：
+  //   窓 rgb(65,50,55) と帯 rgb(65,48,55) がほぼ同じで、帯が見えなくなった）
+  var band=null;
+  for(var kk=100; kk>=30; kk--){
+    var t=_c暗(c.band, kk/100);
+    if(_c比(t,bg)>=1.7 && _c比('#ffffff',t)>=4.5){ band=t; break; }
+  }
+  if(!band) for(var k2=99; k2>=50; k2--){
+    var t2=_c明(bg, k2/100);
+    if(_c比(t2,bg)>=1.7 && _c比('#ffffff',t2)>=4.5){ band=t2; break; }
+  }
+  if(!band) band=_c明(bg,0.75);
+  // ★窓の中は白ベースにする（2026-09-01のご指示
+  //   「今の感じだとものすごく暗くて見づらい。一番上のタブだけ背景と同じ色にして、
+  //     あとは白ベースでもっと明るく見やすくしろ」）。
+  //   ★帯だけは背景から計算した色を使う＝放送画面と地続きに見える。
+  //   ★白の上の文字は #1d2126（本文で 14.6:1）。どの背景色でも常に読める。
+  //     以前は背景色から窓の地色まで作っていたため、暗い背景では窓ごと暗くなった
+  de.style.setProperty('--ai-bg',   '#fbfaf7');   // 窓の地＝ほぼ白
+  de.style.setProperty('--ai-band', band);        // 帯だけ背景から計算
+  de.style.setProperty('--ai-ink',  '#1d2126');   // 本文の字
+  de.style.setProperty('--ai-sub',  '#4c545c');   // 添えの字
+  de.style.setProperty('--ai-step', '#2b3138');
+  de.style.setProperty('--ai-note', '#6e4704');   // 注記（白地で 7.8:1＝基準の7を満たす）
+  de.style.setProperty('--ai-gold', '#b8860b');
+  // ★聞き取り中の帯。ふだんの帯より **はっきり明るく** して、
+  //   「いま聞いています」が離れて見ても分かるようにする。
+  //   条件：白い字が3.0:1以上／ふだんの帯との差が1.25以上／地との差が2.0以上
+  //   ★白の基準が3.0なのは、この帯の文字が30px（テレビ実寸45px）＝
+  //     WCAGの「大きい文字」に当たるため（大きい文字はAA 3.0:1）。
+  //     4.5で作ろうとすると青鼠だけ作れなかった（12色で実測）
+  var listen=null;
+  for(var k3=100; k3>=20; k3--){
+    var t3=_c明(band, k3/100);
+    if(_c比('#ffffff',t3)>=3.0 && _c比(t3,bg)>=2.0 && _c比(t3,band)>=1.25){ listen=t3; break; }
+  }
+  if(!listen) for(var k4=100; k4>=20; k4--){
+    var t4=_c暗(band, k4/100);
+    if(_c比('#ffffff',t4)>=3.0 && _c比(t4,bg)>=2.0 && _c比(t4,band)>=1.25){ listen=t4; break; }
+  }
+  if(!listen) listen=band;
+  de.style.setProperty('--ai-listen', listen);
+}
 function applyBg(id, save){
   var c=null;
   for(var i=0;i<BG_COLORS.length;i++) if(BG_COLORS[i].id===id) c=BG_COLORS[i];
@@ -6032,6 +6660,7 @@ function applyBg(id, save){
     try{ setThemeColor(c.bg); }catch(_){}
 
   }
+  try{ applyAiColors(c); }catch(_){}   // ★AIの窓の色を読める値に作り直す
   if(save!==false){ try{ localStorage.setItem(BG_KEY, c.id); }catch(_){} }
   try{ renderBgChoices(); }catch(_){}
 }
@@ -6170,6 +6799,7 @@ function applyOpts(){
     if(!OPTS.textSet && document.documentElement.classList.contains('tvpc')) OPTS.text=1;
     b.classList.toggle('text-1', OPTS.text===1);
     b.classList.toggle('text-2', OPTS.text===2);
+    fitTextSoon();   // ★字の大きさが変わったら、なるべく1行を合わせ直す（lab 4.74）
     // お知らせの自動切り替え
     if(OPTS.stopnews){ if(_newsTimer){ clearInterval(_newsTimer); _newsTimer=null; } }
     else if(!_newsTimer){ _newsTimer=setInterval(rotateCityNews, 8000); }
@@ -6432,6 +7062,7 @@ var SPONSORS=[
 ];
 var sponsorIndex=0;
 var _sponsorTimer=null;
+
 // ── スポンサー一覧を Firestore（broadcast/sponsors）から読む（2026-09-06・管理アプリ kanri.html と対）──
 //   ・管理アプリで並び順・行き先・表示ON/OFF・期間を変えると、アプリを更新せずに当日中に反映される
 //   ・読めない時（まだ無い・通信不良・形が不正）は上の内蔵一覧のまま動く＝壊れない
@@ -6463,7 +7094,11 @@ function activeSponsorList(list,today){
   });
 }
 // 一覧を差し替える。いま出しているスポンサーが新しい一覧にもあれば、その位置を保つ（画面が飛ばない）
-function applySponsorList(list){
+function applySponsorList(list,interval){
+  // 切り替えの秒数（3〜120秒の整数だけ受ける。それ以外は今のまま）
+  if(typeof interval==='number'&&interval>=3&&interval<=120&&interval===Math.floor(interval)){
+    var ms=interval*1000; if(ms!==SPONSOR_MS){SPONSOR_MS=ms; if(_sponsorTimer)resetSponsorTimer();}
+  }
   var act=activeSponsorList(list);
   if(!act.length)return false;                   // 全部OFFなら内蔵の一覧のまま（バナー枠を空にしない）
   var cur=(SPONSORS[sponsorIndex]&&SPONSORS[sponsorIndex].name)||'';
@@ -6477,16 +7112,16 @@ function loadRemoteSponsors(){
   if(!FIREBASE.projectId||!FIREBASE.apiKey)return;
   var cached=null;try{cached=JSON.parse(localStorage.getItem(_spKEY)||'null');}catch(_){}
   var appliedSig='';
-  if(cached&&cached.list&&validSponsorList(cached.list)===''){ if(applySponsorList(cached.list))appliedSig=JSON.stringify(cached.list); }
+  if(cached&&cached.list&&validSponsorList(cached.list)===''){ if(applySponsorList(cached.list,cached.interval))appliedSig=JSON.stringify([cached.list,cached.interval]); }
   var url='https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(FIREBASE.projectId)+'/databases/(default)/documents/broadcast/sponsors?key='+encodeURIComponent(FIREBASE.apiKey);
   fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
   .then(function(doc){
     var d={},f=doc.fields||{};for(var k in f)d[k]=fsVal(f[k]);
     var err=validSponsorList(d.list);
     if(err)throw new Error('データ不正: '+err);
-    try{localStorage.setItem(_spKEY,JSON.stringify({list:d.list,v:d.v}));}catch(_){}
-    var sig=JSON.stringify(d.list);
-    if(sig!==appliedSig){applySponsorList(d.list);appliedSig=sig;}
+    try{localStorage.setItem(_spKEY,JSON.stringify({list:d.list,v:d.v,interval:d.interval}));}catch(_){}
+    var sig=JSON.stringify([d.list,d.interval]);
+    if(sig!==appliedSig){applySponsorList(d.list,d.interval);appliedSig=sig;}
   }).catch(function(e){console.warn('[スポンサー] Firestoreから読めないので内蔵の一覧で続ける('+e.message+')');});
 }
 var _swipeSuppressClick=false;
@@ -6536,7 +7171,8 @@ function prevSponsor(){ if(_cmBnOn) return; sponsorIndex=(sponsorIndex-1+SPONSOR
 
 // 10秒ごとに自動切り替え（手動操作でリセット）
 function rotateSponsor(){ if(_cmBnOn) return; sponsorIndex=(sponsorIndex+1)%SPONSORS.length; updateSponsorDisplay(); }
-function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,7000); }  // 7秒ごと（2026-08-10指示）
+var SPONSOR_MS=7000;   // 切り替えの間隔。管理アプリ（broadcast/sponsors の interval 秒）で変えられる（2026-09-06）
+function resetSponsorTimer(){ if(_sponsorTimer)clearInterval(_sponsorTimer); _sponsorTimer=setInterval(rotateSponsor,SPONSOR_MS); }  // 7秒ごと（2026-08-10指示）
 // ★CMのあいだは、そのCMのバナーを出し続ける（2026-11-27 lab 4.70 依頼者「CMの間はそのCMに対応したバナーがずっと表示されるようにしろ」）
 //   ・どのバナーかは管理アプリのCMの「CMのあいだ出し続けるバナー」（CMの設定の banner＝バナーの一覧の名前）
 //   ・CMのあいだは7秒ごとの切り替えと指でめくる操作を止める。押した時の行き先は今までどおり
@@ -7170,7 +7806,8 @@ function playCm(cm,next){
   try{ cmCountStart(); }catch(_){}   // CMの残り秒数を右下に出す
   var vt=document.getElementById('viewing-title'), vc=document.getElementById('viewing-cat');
   if(vt) vt.textContent=cm.sponsor||cm.title||'CM';
-  if(vc) vc.textContent='CM';
+  if(vc){ vc.textContent='CM'; vc.className='cat-tag c-ot'; }
+  fitTextSoon();   // ★前の番組の題の大きさ・折り方を残さない（lab 4.74）
   hlSB(next.c,next.p); refreshLive();
 }
 // CMのあと・遅れて続けて見ている時：番組を頭から流し、時計からの遅れを覚える
@@ -7388,6 +8025,7 @@ function _ownOff(){
   OWN.active=false; OWN.st=-1;
   _ownStop(); _ownShow(false);
   OWN.vid=''; OWN.ytId='';
+  try{ if(isExpanded) fitPlayer(); }catch(_){}   // ★段4：全画面のまま YouTube の番組に変わったら、上の帯の出し方に戻す
 }
 function _ownPlay(){
   var v=OWN.v; if(!v) return;
@@ -7435,7 +8073,11 @@ function _ownLoad(ytId,vid,start,auto,raw){
     _ownHls(function(ok){
       if(!OWN.active||OWN.vid!==vid||OWN.hls) return;
       if(!ok||!window.Hls||!Hls.isSupported()){ _ownFail('hls.js が使えない'); return; }
-      var h=new Hls({startPosition:start, capLevelToPlayerSize:true, backBufferLength:30});
+      // ★lab 4.77：capLevelToPlayerSize を外した。全画面の出入りで映像の箱の大きさが変わると、hls.js がその場で画質を切り替え
+      //   （手元に溜めた映像を消して取り直す）、その最中に先の断片を「取り込んだ」扱いで最後まで進めて ENDED になり、
+      //   今の位置の続きが無いまま止まった（moto g06・4.75 と 4.76 の両方で記録：抜けた直後に sn29→sn41 を0.05秒おき、
+      //   後半の位置では sn110＝最後まで行って buffered が 631.6 で止まる）。画質は通信の速さだけで選ぶ（動画保管庫は転送0円）
+      var h=new Hls({startPosition:start, capLevelToPlayerSize:false, backBufferLength:30});
       OWN.hls=h;
       var tries={net:0,media:0};
       h.on(Hls.Events.MANIFEST_PARSED,function(){ if(OWN.active&&OWN.hls===h) _ownReady(auto); });
@@ -7626,10 +8268,28 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
+// ★段4（lab 4.76）：Android の指で触る端末（テレビのアプリは除く）は、全画面を本物の全画面にする
+function _droidRealFs(){
+  try{ return !IS_TVAPP && /Android/i.test(navigator.userAgent) && (('ontouchstart' in window)||navigator.maxTouchPoints>0); }catch(_){ return false; }
+}
+// ★lab 4.78：4.77 で足した「横向きは画面を触ると本物の全画面に入る」を外した。
+//   入るたびに Chrome が「全画面表示を終了するには…」を出し、横向きで触るたびに出ていた（依頼者「うざいポップアップ」2026-11-27）。
+//   承知を得ていたのは全画面のボタンを押した時だけ（決まったことの記録 75行）。本物の全画面は全画面のボタンの時だけにする（4.76 の形）。
+//   代わりに横向きの普段の画面では、Android が描く時計の帯（上）・下の帯・カメラ側の黒い帯が残る。
+//   ホーム画面に追加した lab（Chrome のアプリ）でページの外の帯を消す手段は、本物の全画面だけ（moto g06 で viewport-fit=cover を試して変わらないことを確認）
+function _droidFsEl(){ return document.fullscreenElement||document.webkitFullscreenElement||null; }
+// 全画面のままホーム画面などへ出ると、本物の全画面だけが解けて拡大の印が残る（moto で ex:true・fs:false を記録）→ 戻った時に拡大も閉じる。
+//   resize では判定しない（全画面のボタンを押してから本物の全画面になるまでの間に resize が来ると、開いた拡大を閉じてしまう）
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState!=='visible') return;
+  setTimeout(function(){ try{ if(_droidRealFs()&&isExpanded&&!_droidFsEl()) closeExpand(); }catch(_){} },300);
+});
 // PC全画面：ESCキーや外部操作で全画面解除された時の処理
 ['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){
   document.addEventListener(ev,function(){
     var isFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    // ★段4：Android の本物の全画面を端末の操作（上からのドラッグ・戻る）で抜けたら、拡大も閉じて通常の画面に戻す
+    if(!isFull&&isExpanded&&_droidRealFs()){ try{ closeExpand(); }catch(_){} return; }
     if(!isFull&&isExpanded){
       // 全画面が解除された（ESCなど）
       isExpanded=false;
@@ -7653,8 +8313,18 @@ var isExpanded=false,fsUiTimer=null;
 // ★内部サイズの固定は枠が非表示(サイズ0)でも必ず行う＝動画ロード前に確定させるのが肝。
 // 副次効果: YouTubeのUIも1920枠基準で描かれ縮小表示になり目立たない。将来4K素材なら3840×2160に。
 var _fitW0=1920,_fitH0=1080;
+// ★段4（lab 4.76）：全画面のバナーを右上に小さく出すか。横向きのスマホ（body.ori-l）かテレビ（html.tvapp）の時（lab 4.77〜 YouTube の番組も。YouTube は映像を下げた帯の中）
+function _fsMiniOn(){
+  try{
+    if(document.documentElement.classList.contains('tvapp')) return true;   // ★lab 4.77：YouTube の番組も（帯を作って重ねずに出す）
+    return document.body.classList.contains('ori-l') && isLandscapeNow();
+  }catch(_){ return false; }
+}
 function fitPlayer(){ _fitPlayerYT(); try{ _ownGeom(); }catch(_){} }   // ★自前の動画もYouTubeの枠と同じ位置・大きさに（2026-10-02）
 function _fitPlayerYT(){
+  // 全画面のバナーの金の線の太さ：1.5px に一番近い「画面の画素の整数倍」（札の端と線の端を同じ画素にそろえる。CSS の .fs-tag の説明）
+  var _dpr=window.devicePixelRatio||1, _fsl=Math.max(1,Math.round(1.5*_dpr))/_dpr;
+  document.documentElement.style.setProperty('--fsl', _fsl+'px');
   var yt=document.getElementById('yt-player-api');
   if(!yt) return;
   var pw=document.getElementById('player-wrap');
@@ -7664,6 +8334,7 @@ function _fitPlayerYT(){
   try{ if(!isFs && (pw.matches(':fullscreen')||pw.matches(':-webkit-full-screen'))) isFs=true; }catch(_){}
 
   if(!isFs){
+    pw.classList.remove('fs-mini');   // ★段4：全画面を出たら小さいバナーの印を外す
     if(isTvPcMode()){
       // ── TV/PCの通常表示：内部を1920×1080で描かせて縮小表示（2026-08-11・画質対策）──
       // YouTubeは「プレーヤーの大きさ」で画質を自動選択するため、実寸(例:981×552)のままだと
@@ -7726,7 +8397,18 @@ function _fitPlayerYT(){
   //   以前は matchMedia('(orientation:landscape)') を見ており、iOSでCSSの向きが凍結すると
   //   全画面の帯の有無を取り違えて映像位置がずれる余地があった。
   var topBand=0;
-  if(isLandscapeNow()){
+  var _mini=_fsMiniOn();   // ★段4（lab 4.76）：横向きのスマホとテレビの全画面は、バナーを右上に小さく出す
+  // ★lab 4.77：YouTube の番組も右上に小さく出す（依頼者「全画面時に右上に小さくバナーを表示できるようになるまでやり続けろ」2026-11-27）。
+  //   YouTube の映像には物を重ねられない（規約）ので、映像を下げて上に細い帯（上10＋バナー＋下10）を作り、その右上に置く。
+  //   動画保管庫の番組は今までどおり映像に重ねる（帯なし・映像いっぱい）
+  var _over=_mini && OWN.active;
+  var _bw=0, _bh=0;
+  // ★lab 4.77：大きさは 1.1倍（依頼者「大きさは1.1倍にしろ」）＝スマホ 381×0.55×1.1＝230.5・テレビ 33vw×0.55×1.1
+  if(_mini){ _bw=(document.documentElement.classList.contains('tvapp') ? cw*0.33 : 381)*0.55*1.1; _bh=_bw*193.2/2277; }   // 高さは .sponsor-img の縦横比（2277:193.2）
+  pw.classList.toggle('fs-mini', _mini);   // 印は帯を測る前に付け外しする（自前→YouTube に変わった時、小さいバナーの大きさで帯を測らない）
+  // YouTube の番組の帯：上10＋バナー＋下の金の線（--fsl）＋札の線より下の部分（字の大きさ×0.91＋下の縁0.5。字は幅 230.5 で 6.5 の割合＝CSS の .fs-tag と同じ式）＋下10
+  if(_mini && !_over) topBand=10 + _bh + _fsl + _bw*6.5/230.505*0.91 + 0.5 + 10;
+  if(isLandscapeNow() && !_mini){
     var _fss=document.getElementById('fs-sponsor');
     // バナー自身の上余白(CSSのtop値)も足す。これを勘定に入れておらず、
     // 全画面でバナーの下端が動画に被っていた（2026-08-11実機で判明）
@@ -7739,6 +8421,20 @@ function _fitPlayerYT(){
   // 平行移動は整数pxにスナップ（iOSのサブピクセル描画による微オフセット/にじみを防ぐ）
   var tx=Math.round((cw-_fitW0*scale)/2), ty=Math.round(topBand + (availH-_fitH0*scale)/2);
   yt.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  // ★段4：小さいバナーを映像の右上の 10px 内側に置く（幅はスマホ 381×55%×1.1・テレビ 33vw×55%×1.1。高さは絵の縦横比で決まる。YouTube の番組は帯の中の上から 10）
+  if(_mini){
+    pw.style.setProperty('--fsm-w', _bw+'px');
+    pw.style.setProperty('--fsm-l', (tx+_fitW0*scale-_bw-10)+'px');
+    pw.style.setProperty('--fsm-t', (_over ? ty+10 : 10)+'px');   // YouTube の番組は帯の中（上から10）
+  }
+  // 札の下の角の丸み（5px）に字がかからないよう、左右へ広げる量（CSS の .fs-tag の説明）。字の大きさは横・テレビ＝バナー幅×6.5/230.505、縦＝バナー幅×9.75/381
+  try{
+    var _fss2=document.getElementById('fs-sponsor');
+    var _em=_mini ? _bw*6.5/230.505 : (_fss2 ? _fss2.getBoundingClientRect().width*9.75/381 : 0);
+    var _R=5, _h=.91*_em+_fsl+.5, _yb=_fsl+.7125*_em, _dy=_yb-(_h-_R);   // 円の中心の高さ＝_h-_R、字の下の端（d の縦棒の下）＝_yb
+    var _add=(_em>0 && _dy>0) ? _R-Math.sqrt(Math.max(0,_R*_R-_dy*_dy)) : 0;
+    document.documentElement.style.setProperty('--fstd', _add+'px');
+  }catch(_){}
   // 全画面のフローティング操作バーの幅を「映像の横幅より少し短く」動的設定
   var vw=Math.round(_fitW0*scale); // 表示中の映像の横幅
   var fsb=document.getElementById('fs-ctrl-bar');
@@ -7796,6 +8492,13 @@ function openExpand(){
   // ★⓪映像もcover再レイアウトの横ガタつきを見せないため、位置確定後に表示（バナーと同方式）
   var _ytFade=document.getElementById('yt-player-api');
   if(_ytFade){ _ytFade.style.transition='none'; _ytFade.style.opacity='0'; }
+  // ★段4（lab 4.76）：Android（ダウンロード版・Chrome・ホーム画面に入れた物）は本物の全画面にする（2026-11-27 依頼者「本物の全画面にする」）。
+  //   見かけの全画面だと時計の帯・下の帯（設定の色や深緑）・横向きのカメラ側の黒い帯が残る。本物の全画面はどれも消える（moto g06 で 937×411 いっぱいを実測）。
+  //   ページ全体（html）を全画面にする＝操作の列・解除のボタンなど player-wrap の外の物も今のまま出る。指で押した流れの中でしか効かない
+  if(_droidRealFs()){
+    try{ var _de=document.documentElement, _rq=_de.requestFullscreen||_de.webkitRequestFullscreen;
+      if(_rq){ var _pr=_rq.call(_de,{navigationUI:'hide'}); if(_pr&&_pr.catch) _pr.catch(function(){}); } }catch(_){}
+  }
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
   // ★全画面中はルート(html)背景も黒に：帯色の採取元候補(html/body)を全て黒に揃える。
@@ -7962,6 +8665,7 @@ applyOrientationClass();
 window.addEventListener('orientationchange', function(){ applyOrientationClass(); setTimeout(applyOrientationClass,200); setTimeout(applyOrientationClass,600); });
 window.addEventListener('resize', applyOrientationClass);
 window.addEventListener('resize', function(){ try{ psFit(); psTipSync(); }catch(_){} });
+window.addEventListener('orientationchange', function(){ setTimeout(fitTextSoon,250); setTimeout(fitTextSoon,700); });
 uiInterval(applyOrientationClass, 500);   // 凍結からの復帰も含め常に正しい向きへ追従
 
 // ══ ビューポート凍結の検知と復旧（2026-08-10・実機の生データで機構を確定）══
@@ -8120,6 +8824,11 @@ function closeExpand(){
     return;
   }
 
+  // ★段4：Android の本物の全画面も抜ける（isExpanded は先に false にしたので、抜けた合図で二重に閉じない）
+  //   ★lab 4.78：横向きでも抜ける（4.77 の「横向きは普段の画面も本物の全画面」を外したため）
+  if(document.fullscreenElement||document.webkitFullscreenElement){
+    try{ var _ex=document.exitFullscreen||document.webkitExitFullscreen; if(_ex){ var _xp=_ex.call(document); if(_xp&&_xp.catch) _xp.catch(function(){}); } }catch(_){}
+  }
   // タッチデバイス：疑似全画面を解除（wrapは関数先頭で取得済み）
   // ★帯(左右)の黒残り根治＝深緑オーバーレイを「解除より先に」重ねる：
   //   黒(全画面)→緑→通常画面 の一方向切替になり、通常画面の上で緑が点滅して見える構造自体を排除。
@@ -8387,6 +9096,7 @@ function gotoOffAir(){
   showSpinner(false);showEnded(true);
   document.getElementById('viewing-title').textContent='本日の放送は終了しました';
   document.getElementById('viewing-cat').textContent='';
+  fitTextSoon();   // ★前の番組の題の大きさ・折り方を残さない（lab 4.74）
   document.getElementById('onair-badge').classList.add('off');
   document.getElementById('bdot').className='bdot grey';
   setLiveBtn('off');
@@ -8472,8 +9182,9 @@ function onLiveClick(){
 // ── UI更新 ──
 function setViewUI(c,p){
   document.getElementById('viewing-title').textContent=CYCLE[p].title;
-  document.getElementById('viewing-cat').textContent=CYCLE[p].cat;
+  var _vc=document.getElementById('viewing-cat'); _vc.textContent=CYCLE[p].cat; _vc.className='cat-tag '+catCls(CYCLE[p].cat);
   hlSB(c,p);
+  fitTextSoon();
 }
 function refreshLive(){
   if(isOff)return;
@@ -8757,9 +9468,9 @@ function renderSB(){
       // 番組名・分類はFirestoreから来る文字列。「A&B」「＜特集＞」のような記号が入っても
       // 表示が壊れないよう、HTMLとして解釈されない形に直してから流し込む（お知らせ側と同じ扱い）
       pinfo.innerHTML=
-        '<div class="pname">'+escHtml(prog.title)+'</div>'+
-        '<div class="pmeta"><span class="pcat">'+escHtml(prog.cat)+'</span>'+
-        '<span class="pdur">/ '+lenText(plen(prog))+'</span></div>';
+        '<div class="pname">'+nmHtml(prog.title)+'</div>'+
+        '<div class="pmeta"><span class="pcat '+catCls(prog.cat)+'">'+escHtml(prog.cat)+'</span>'+
+        '<span class="pdur">'+lenText(plen(prog))+'</span></div>';   // ★A案：題は折り目つき・ジャンルは色の札・長さの前の「/」は外す（lab 4.74）
       addTap(pinfo,function(){playPick(pIdx);});   // ★番組表から選んだ時はCMの判断を通す（2026-11-25）
 
       row.appendChild(pinfo);
@@ -8768,6 +9479,7 @@ function renderSB(){
   }
   try{ newMarksUpdate(); }catch(_){}    // 新しく入った番組を数え直す
   try{ renderNewMarks(); }catch(_){}    // その印を行と見出しに出す
+  fitTextSoon();                         // ★なるべく1行（lab 4.74）
 }
 
 // ══════════════════════════════════════════════
@@ -9026,7 +9738,7 @@ function updateClock(){
   var ds=d.getFullYear()+'/'+f2(d.getMonth()+1)+'/'+f2(d.getDate());
   var dsJP=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   var el;
-  el=document.getElementById('ps-clock');if(el)el.textContent=t;
+  el=document.getElementById('ps-clock');if(el&&el.textContent!==t)el.innerHTML=t.split('').map(function(c){ return '<i'+(c===':'?' class="cc"':'')+'>'+c+'</i>'; }).join('');   // ★1字ずつ同じ幅の箱（Zen Maru Gothic は数字の幅がそろわない・lab 4.74）
   el=document.getElementById('ps-date');if(el)el.textContent=dsJP;
   el=document.getElementById('h-time');if(el)el.textContent=t;
   el=document.getElementById('h-date');if(el)el.textContent=ds;
@@ -9034,7 +9746,7 @@ function updateClock(){
 // 放送開始ボタンを有効化（YT API準備完了で呼ぶ）
 function armStartBtn(){
   var b=document.getElementById('ps-btn');
-  if(b){ b.classList.remove('loading'); b.textContent='▶ 放送開始'; }
+  if(b){ b.classList.remove('loading'); psBtnLabel('放送開始'); }
 }
 
 function powerOn(){
@@ -9045,6 +9757,7 @@ function powerOn(){
   //   ページのスクロール位置を0に固定（本文が固定ヘッダーの裏に潜り込む上ズレの保険）
   setHdrVar();
   requestAnimationFrame(function(){ setHdrVar(); window.scrollTo(0,0); recordNormBanner(); });
+  fitTextSoon(); setTimeout(fitTextSoon,400);   // ★本編が見えてから、なるべく1行を合わせる（隠れている間は幅0で測れない・lab 4.74）
   hasPoweredOn=true;
   try{ _ownUnlock(); }catch(_){}   // ★自前の動画の再生の許しを、指で押したこの時に取る（iPhone・2026-10-02）
   userWantsPlay=true;
@@ -9212,6 +9925,8 @@ function init(){
   }
   // iPhone判定でiphone-modeクラスを付与（全画面時の丸角対策）
   if(isIOS){ document.body.classList.add('iphone-mode'); }
+  // Android のスマホも縦向きは1画面に固定する（droid-fit。CSSは ori-p と組み合わせた時だけ効く＝横・タブレット・テレビは今までどおり）
+  if(!isIOS && /Android/.test(navigator.userAgent)){ document.body.classList.add('droid-fit'); }
   var d=new Date();
   document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
   applyBadgeMode();
@@ -9268,7 +9983,7 @@ function init(){
   statsInit(); // 視聴計測（未設定なら何もしない）
   addTap(document.getElementById('ps-btn'),function(){ if(droidApplyColor(_bgNow.bg, true)) return; powerOn(); });   // ★Android 1.0.1：アプリの色と設定の色がずれていたら、そろえてから流す（lab 4.73）
   // YT API準備完了までボタンを「準備中」に（早押しによる再生失敗を防ぐ）
-  (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); b.textContent='準備中…'; } })();
+  (function(){ var b=document.getElementById('ps-btn'); if(b&&!ytReady){ b.classList.add('loading'); psBtnLabel('準備中…'); } })();
   setTimeout(armStartBtn,4000); // フォールバック: 4秒で必ず有効化
   // 初回だけ「使い方の説明を見ますか？」と尋ねる。画面が組み上がってから出す
   setTimeout(function(){ try{ tourAskIfFirst(); }catch(_){} }, 400);
