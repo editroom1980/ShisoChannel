@@ -2439,8 +2439,6 @@ body.ori-p .ctrl-btn,body.ori-p .custom-ctrl .expand-open-btn{min-width:26px;wid
 body.ori-p .custom-ctrl .bar-bg{margin:0 8px;}
 body.ori-p .custom-ctrl .vol-slider{width:44px;}
 body.ori-p .sb-head{height:28px;padding:0 12px;}
-/* 横向きのスマホの見出しの高さは 4.73 のまま（題を 13px・丸い書体にした分で 番組表 30→31・お知らせ 29→31 に伸びていた。位置と大きさは段2まで変えない） */
-body.ori-l .sidebar .sb-head{height:30px;} body.ori-l #sb-news .sb-head{height:29px;}
 body.ori-p .pinfo{padding:3px 10px 4px;gap:0;}   /* 題と札の行の間は .pmeta の margin-top 1px だけ（gap も足すと行が 44 になる。見本は 43） */
 body.ori-p .pname{display:block;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere;font-size:12px;line-height:16px;max-height:32px;}
 body.ori-p.text-1 .pname{font-size:14px;line-height:18px;max-height:36px;}
@@ -2514,6 +2512,80 @@ html.ori-p .set-sw::after{top:3px;left:3px;width:20px;height:20px;}
 .set-about b{color:var(--ink);}
 .set-link-reset{border-top-color:var(--rule);}
 .set-link-reset .set-link-txt b{color:var(--shu);}
+
+/* ══════════════════════════════════════════════════════════════════
+   新デザイン A案 2段目：横向きのスマホとテレビ（2026-11-27 lab 4.75。依頼者「その範囲で始める」）
+   ・見本の「横向きのスマホ・番組・A案」「テレビ・番組・A案」の値。大きな箱（バナー・映像・題の帯・操作の列・番組表・お知らせ）の位置と大きさは今のまま
+   ・横向きのスマホ（body.ori-l）は縦と同じ部品の大きさ（見出し 28・行 43・丸 26）。帯と操作の列は今の 34
+   ・テレビ（html.tvpc）は見本の値（見出し 40・行 59・札 20〜22・LIVE 26・位置の棒 8）。字の大きさは「文字の大きさ」の設定ごと（見本はテレビの既定の「大」）
+   ・歯車は絵の右の端を番組表の窓の右の端にそろえる。iPad（ori-tp・ori-tl）と縦の画面は変えない
+   ══════════════════════════════════════════════════════════════════ */
+/* ── 横向きのスマホ ── */
+body.ori-l .h-gear svg{width:22px;height:22px;}
+body.ori-l .h-gear{margin-right:-4px;}   /* 歯車の絵の右の端＝番組表の窓の右の端（852×393 で 4px 内側だった） */
+/* 操作の列は全画面（body.fs-open）の間は変えない（全画面は段4で扱う） */
+body.ori-l:not(.fs-open) .custom-ctrl{padding:0 10px;gap:6px;}
+body.ori-l:not(.fs-open) .ctrl-btn,body.ori-l:not(.fs-open) .custom-ctrl .expand-open-btn{min-width:26px;width:26px;height:26px;margin:0;}
+body.ori-l:not(.fs-open) .custom-ctrl .bar-bg{margin:0 8px;}
+body.ori-l:not(.fs-open) .custom-ctrl .vol-slider{width:44px;}
+body.ori-l .sb-head{height:28px;padding:0 12px;}
+body.ori-l .pinfo{padding:3px 10px 4px;gap:0;}
+body.ori-l .pname{display:block;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere;font-size:12px;line-height:16px;max-height:32px;}
+body.ori-l.text-1 .pname{font-size:14px;line-height:18px;max-height:36px;}
+body.ori-l.text-2 .pname{font-size:16px;line-height:21px;max-height:42px;}
+body.ori-l .pname .pc{white-space:nowrap;}
+body.ori-l .pmeta{height:16px;margin-top:1px;}
+body.ori-l .pcat{font-size:9.5px;}
+body.ori-l .pdur{font-size:11px;}
+body.ori-l.text-1 .pcat{font-size:10px;} body.ori-l.text-1 .pdur{font-size:11.5px;}
+body.ori-l.text-2 .pcat{font-size:11px;} body.ori-l.text-2 .pdur{font-size:13px;}
+/* お知らせ：見出し 28＋行 34（見本は行の下に 16 の余り＝お知らせの窓は今の 78 のまま） */
+body.ori-l .news-body{min-height:34px;padding:0 10px 16px;justify-content:flex-start;}
+body.ori-l .news-item{flex-direction:row;align-items:center;gap:8px;height:34px;}   /* 見本どおり札の右に題（4.74 までの横向きは札の下に題） */
+body.ori-l .news-ttl{min-width:0;}
+body.ori-l .news-tag{height:18px;display:inline-flex;align-items:center;padding:0 8px;font-size:10px;letter-spacing:.04em;align-self:center;margin:0;flex:none;}
+body.ori-l .news-ttl{font-size:12.5px;}
+body.ori-l.text-1 .news-ttl{font-size:13.5px;}
+body.ori-l.text-2 .news-ttl{font-size:15px;}
+
+/* ── テレビ ── */
+html.tvpc .h-gear{margin-right:-8px;}   /* 歯車の絵の右の端＝番組表の窓の右の端（1280×720 で 8px 内側だった） */
+html.tvpc .test-badge{font-size:1.25vw;border-width:2px;border-radius:99px;padding:0 1.25vw;gap:.625vw;}
+html.tvpc .test-badge .tdot{width:.625vw;height:.625vw;}
+html.tvpc .viewing-bar{gap:12px;padding:0 16px;}
+html.tvpc .live-tap{height:26px;padding:0 12px;gap:6px;}
+html.tvpc .live-tap .ldot{width:8px;height:8px;}
+html.tvpc.tvpc body .live-tap .llbl,html.tvpc.tvpc body .live-tap .llbl.r{font-size:13px;}
+html.tvpc.tvpc body .viewing-bar .cat-tag{height:22px;font-size:13px;padding:0 10px;}
+/* 操作の列は全画面（body.fs-open）の間は変えない（全画面は段4で扱う） */
+html.tvpc body:not(.fs-open) .custom-ctrl{padding:0 16px;gap:10px;}
+html.tvpc body:not(.fs-open) .ctrl-btn svg,html.tvpc body:not(.fs-open) .custom-ctrl .expand-open-btn svg{width:22px;height:22px;}
+html.tvpc body:not(.fs-open) #ctrl-play svg{width:19px;height:19px;}
+html.tvpc body:not(.fs-open) .custom-ctrl .bar-bg{height:8px;}
+html.tvpc .sb-head{height:40px;padding:0 14px;gap:6px;}
+html.tvpc.tvpc body .sb-ttl{letter-spacing:1px;}
+html.tvpc.tvpc body.text-1 .sb-ttl{font-size:17px;}   /* 字の大きさは「大」（テレビの既定）だけ見本の値。標準・特大は今の値 */
+html.tvpc.tvpc body .sb-new{height:22px;padding:0 10px;}
+html.tvpc.tvpc body.text-1 #today-date{font-size:12px;}
+html.tvpc.tvpc body .pinfo{padding:6px 14px 7px;gap:0;}
+html.tvpc.tvpc body .pname{display:block;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere;font-size:13px;line-height:17px;max-height:34px;}
+html.tvpc.tvpc body.text-1 .pname{font-size:17px;line-height:22px;max-height:44px;}
+html.tvpc.tvpc body.text-2 .pname{font-size:21px;line-height:27px;max-height:54px;}
+html.tvpc .pname .pc{white-space:nowrap;}
+html.tvpc.tvpc body .pmeta{height:20px;margin-top:3px;gap:8px;}
+html.tvpc.tvpc body .pcat{height:20px;font-size:12px;padding:0 9px;}
+html.tvpc.tvpc body .pdur{font-size:13.5px;}
+html.tvpc.tvpc body.text-2 .pcat{font-size:13px;} html.tvpc.tvpc body.text-2 .pdur{font-size:15px;}
+html.tvpc.tvpc body .pnew{width:20px;height:20px;font-size:11px;}
+html.tvpc .prow.active .pmeta::before{height:20px;font-size:11.5px;padding:0 9px;}
+/* お知らせ：見出しを 48→40 にした分を中の余白に回し、お知らせの窓の高さは今のまま（大 150.8・標準 124.6・特大 159.2。番組表の窓を伸ばさない） */
+html.tvpc #sb-news .news-body{padding:9px 14px 12px;}
+html.tvpc body:not(.text-1):not(.text-2) #sb-news .news-body{padding:4px 14px 7px;}
+html.tvpc body.text-2 #sb-news .news-body{padding:10px 14px 14px;}
+/* 題は見本どおり行の長さをそろえて折る（「市役／所で」のように2行目が2〜3字で終わる形を作らない） */
+html.tvpc .news-ttl{text-wrap:balance;}
+html.tvpc.tvpc body .news-tag{height:22px;display:inline-flex;align-items:center;padding:0 10px;}
+html.tvpc.tvpc body.text-1 .news-tag{font-size:12px;}
 </style>
 </head>
 <body>
@@ -2523,7 +2595,7 @@ html.ori-p .set-sw::after{top:3px;left:3px;width:20px;height:20px;}
   <!-- ★新デザイン A案（2026-11-27 lab 4.74）：列は見本と同じ並び（ロゴ・版・試験放送中・日付・時計・金の丸・説明）。間隔は CSS の .ps-main の gap と各部品の余白で決める -->
   <div class="ps-main" id="ps-main">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.74-lab（新デザイン 1段目）</div>
+    <div class="ps-version">version 4.75-lab（新デザイン 2段目）</div>
     <div class="ps-test-badge">試験放送中</div>
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
@@ -3678,20 +3750,22 @@ function fitTextAll(){
   // 放送開始の画面の新番組（どの向きでも）
   [].forEach.call(document.querySelectorAll('#ps-new .ps-new-it span:last-child'),function(e){ fitOne(e,e,12.5,true); });
   psBubFit();
-  var de=document.documentElement, on=document.body.classList.contains('ori-p') && !de.classList.contains('tvpc');   // 1段目は縦のスマホだけ（横・テレビは2段目）
+  var de=document.documentElement, bc=document.body.classList, tv=de.classList.contains('tvpc');
+  var on=(bc.contains('ori-p')&&!tv) || bc.contains('ori-l') || tv;   // 番組表とお知らせ：縦のスマホ（1段目）・横向きのスマホとテレビ（2段目 lab 4.75）。iPad は変えない
+  var onVt=bc.contains('ori-p')&&!tv;   // LIVE の帯の題は縦のスマホだけ（横とテレビは帯の高さが決まっているので今の折り方のまま）
   [].forEach.call(document.querySelectorAll('.pname'),function(e){
     [].forEach.call(e.querySelectorAll('.pc'),function(pc){ if(pc.getAttribute('data-t')!=null){ pc.textContent=pc.getAttribute('data-t'); pc.removeAttribute('data-t'); } pc.style.whiteSpace=''; });
     if(!on){ e.style.fontSize=''; e.style.whiteSpace=''; return; }
     if(fitOne(e,e,12,false)!==2) return;
     pcSplit(e,false);
   });
-  [].forEach.call(document.querySelectorAll('.news-ttl'),function(e){ if(on) fitOne(e,e,11.5,true); else e.style.fontSize=''; });
+  [].forEach.call(document.querySelectorAll('.news-ttl'),function(e){ if(on&&!tv) fitOne(e,e,11.5,true); else e.style.fontSize=''; });   // テレビのお知らせは3行まで折って全部見せる作りのまま
   // LIVE の帯の題：なるべく1行（12.5→11px）。それでも入らない題だけ、番組名と同じ折り方で2行にする（「…」で切らない。縦のスマホだけ）
   var vt=document.getElementById('viewing-title');
   if(vt){
     if(vt.firstElementChild) vt.textContent=vt.textContent.replace(/​/g,'');   // 前に入れた折り目を外して元の題に戻す
     vt.style.whiteSpace='';
-    if(!on) vt.style.fontSize='';
+    if(!onVt) vt.style.fontSize='';
     else if(fitOne(vt,vt,11,false)===2){
       vt.innerHTML=nmHtml(vt.textContent); pcSplit(vt,true);
       // 折っても行が多い時は、行の数が減る所まで字を小さくする（下限は 1行の時と同じ。幅 360・375 で3行→2行）
