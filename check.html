@@ -2643,6 +2643,43 @@ body.ori-p .player-wrap.expanded .fs-tag,body.ori-p .player-wrap:fullscreen .fs-
 body.ori-p .player-wrap.expanded .fs-sponsor .sponsor-img,body.ori-p .player-wrap:fullscreen .fs-sponsor .sponsor-img,body.ori-p .player-wrap:-webkit-full-screen .fs-sponsor .sponsor-img{
   border-radius:calc(5px - var(--fsl,1.5px));border-bottom-right-radius:0;box-shadow:0 0 0 var(--fsl,1.5px) #d9ab45,0 1px 6px rgba(0,0,0,.45);}
 </style>
+<script>
+// ★lab 4.78：保存した背景色を、最初の描画より前に当てる（依頼者「labのほうは放送開始の画面で上部が緑になってる」2026-11-27）。
+//   なぜ：iPhone のホーム画面に追加した lab は、開いた瞬間の色で画面の上の帯（時計の所）を決め、あとで色を変えても塗り直さない。
+//   これまでは色を当てる台本が本文の後ろ（YouTube の読み込みの後）にあり、待つ間に既定の深緑で最初の描画が出ていた
+//   → 上の帯が深緑で固まり、起動画面（設定の色）と違っていた。4.75 の直しはダウンロード版のアプリが塗る帯（appThemeNative）だけだった。
+//   色の表はここに1つだけ置く（本文の applyBg・設定の色の一覧もこの表を使う）。
+var BG_COLORS=[
+  // 暗めの6色
+  {id:'forest',name:'深緑',  bg:'#1e3a28',band:'#2f5f42',g1:'#2d5c3e',g2:'#3d7a54',g3:'#52a070',g4:'#a8d5b5',g5:'#e4f2e8'},
+  {id:'navy',  name:'紺',    bg:'#1b2a44',band:'#2c436b',g1:'#273d62',g2:'#365281',g3:'#486ba8',g4:'#a4b8db',g5:'#e1e8f4'},
+  {id:'teal',  name:'藍',    bg:'#12303a',band:'#26505e',g1:'#275462',g2:'#366f81',g3:'#4890a8',g4:'#a4cddb',g5:'#e1eff4'},
+  {id:'sumi',  name:'墨',    bg:'#22262a',band:'#3a424a',g1:'#3c454e',g2:'#515c66',g3:'#6b7884',g4:'#b7bfc8',g5:'#e7ebee'},
+  {id:'wine',  name:'えんじ',bg:'#3a1f22',band:'#603136',g1:'#5c2e33',g2:'#793f45',g3:'#9c535c',g4:'#d5aaaf',g5:'#f2e3e5'},
+  {id:'plum',  name:'濃紫',  bg:'#2e2440',band:'#473765',g1:'#3f305a',g2:'#544176',g3:'#6e5699',g4:'#baabd3',g5:'#e9e3f2'},
+  // 明るめの6色（背景が明るいぶん見出し帯は逆に暗くして白文字の読みやすさを保つ）
+  {id:'wakakusa',name:'若草',bg:'#5f7a4e',band:'#3f5333',g1:'#415634',g2:'#577147',g3:'#72925d',g4:'#bccfaf',g5:'#e9f1e4'},
+  {id:'slate', name:'青鼠',  bg:'#42586b',band:'#557590',g1:'#324657',g2:'#455d72',g3:'#5b7a94',g4:'#aec0d0',g5:'#e4ebf1'},
+  {id:'oudo',  name:'黄土',  bg:'#8a7340',band:'#5e4e2a',g1:'#604f2a',g2:'#7e6939',g3:'#a4884c',g4:'#d9c9a6',g5:'#f4eee1'},
+  {id:'sepia', name:'鳶茶',  bg:'#5c4436',band:'#815e49',g1:'#594031',g2:'#755543',g3:'#977059',g4:'#d2baad',g5:'#f2e9e4'},
+  {id:'sakura',name:'桜鼠',  bg:'#8a6b76',band:'#664c56',g1:'#503a42',g2:'#684f58',g3:'#876973',g4:'#c9b5bc',g5:'#efe6e9'},
+  {id:'fuji',  name:'藤',    bg:'#6f6a9e',band:'#504c7a',g1:'#373455',g2:'#4b4770',g3:'#635f91',g4:'#b3b0cf',g5:'#e6e5f1'}
+];
+var BG_KEY='shisochan_bg';
+(function(){
+  try{
+    var v=localStorage.getItem(BG_KEY); if(!v) return;
+    for(var i=0;i<BG_COLORS.length;i++) if(BG_COLORS[i].id===v){
+      var c=BG_COLORS[i], de=document.documentElement;
+      de.style.setProperty('--forest',c.bg); de.style.setProperty('--band',c.band);
+      de.style.setProperty('--green',c.g1); de.style.setProperty('--green2',c.g2); de.style.setProperty('--green3',c.g3);
+      de.style.setProperty('--green4',c.g4); de.style.setProperty('--green5',c.g5);
+      var mt=document.querySelector('meta[name="theme-color"]'); if(mt) mt.setAttribute('content',c.bg);
+      break;
+    }
+  }catch(_){}
+})();
+</script>
 </head>
 <body>
 
@@ -2651,7 +2688,7 @@ body.ori-p .player-wrap.expanded .fs-sponsor .sponsor-img,body.ori-p .player-wra
   <!-- ★新デザイン A案（2026-11-27 lab 4.74）：列は見本と同じ並び（ロゴ・版・試験放送中・日付・時計・金の丸・説明）。間隔は CSS の .ps-main の gap と各部品の余白で決める -->
   <div class="ps-main" id="ps-main">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.77-lab（全画面のバナー・横向きの帯）</div>
+    <div class="ps-version">version 4.78-lab（上の帯の色・横向きのポップアップ）</div>
     <div class="ps-test-badge">試験放送中</div>
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
@@ -6488,22 +6525,7 @@ window.__tvKey=function(k){
 // 色の作り方: 背景の色相を保ったまま、緑系と同じ明度・彩度の関係を再現している。
 // 帯は必ず背景より明るく、かつ帯の上の白文字が読める明るさ（コントラスト比4.5以上）に収めてある。
 // ※深緑は現行の色をそのまま使う（既存の見た目を1色も変えないため）。
-var BG_COLORS=[
-  // 暗めの6色
-  {id:'forest',name:'深緑',  bg:'#1e3a28',band:'#2f5f42',g1:'#2d5c3e',g2:'#3d7a54',g3:'#52a070',g4:'#a8d5b5',g5:'#e4f2e8'},
-  {id:'navy',  name:'紺',    bg:'#1b2a44',band:'#2c436b',g1:'#273d62',g2:'#365281',g3:'#486ba8',g4:'#a4b8db',g5:'#e1e8f4'},
-  {id:'teal',  name:'藍',    bg:'#12303a',band:'#26505e',g1:'#275462',g2:'#366f81',g3:'#4890a8',g4:'#a4cddb',g5:'#e1eff4'},
-  {id:'sumi',  name:'墨',    bg:'#22262a',band:'#3a424a',g1:'#3c454e',g2:'#515c66',g3:'#6b7884',g4:'#b7bfc8',g5:'#e7ebee'},
-  {id:'wine',  name:'えんじ',bg:'#3a1f22',band:'#603136',g1:'#5c2e33',g2:'#793f45',g3:'#9c535c',g4:'#d5aaaf',g5:'#f2e3e5'},
-  {id:'plum',  name:'濃紫',  bg:'#2e2440',band:'#473765',g1:'#3f305a',g2:'#544176',g3:'#6e5699',g4:'#baabd3',g5:'#e9e3f2'},
-  // 明るめの6色（背景が明るいぶん見出し帯は逆に暗くして白文字の読みやすさを保つ）
-  {id:'wakakusa',name:'若草',bg:'#5f7a4e',band:'#3f5333',g1:'#415634',g2:'#577147',g3:'#72925d',g4:'#bccfaf',g5:'#e9f1e4'},
-  {id:'slate', name:'青鼠',  bg:'#42586b',band:'#557590',g1:'#324657',g2:'#455d72',g3:'#5b7a94',g4:'#aec0d0',g5:'#e4ebf1'},
-  {id:'oudo',  name:'黄土',  bg:'#8a7340',band:'#5e4e2a',g1:'#604f2a',g2:'#7e6939',g3:'#a4884c',g4:'#d9c9a6',g5:'#f4eee1'},
-  {id:'sepia', name:'鳶茶',  bg:'#5c4436',band:'#815e49',g1:'#594031',g2:'#755543',g3:'#977059',g4:'#d2baad',g5:'#f2e9e4'},
-  {id:'sakura',name:'桜鼠',  bg:'#8a6b76',band:'#664c56',g1:'#503a42',g2:'#684f58',g3:'#876973',g4:'#c9b5bc',g5:'#efe6e9'},
-  {id:'fuji',  name:'藤',    bg:'#6f6a9e',band:'#504c7a',g1:'#373455',g2:'#4b4770',g3:'#635f91',g4:'#b3b0cf',g5:'#e6e5f1'}
-];
+// 色の表 BG_COLORS は head の中へ移した（lab 4.78。最初の描画より前に保存した色を当てるため）
 // ══ 2027年1月1日からの表示切り替え（2026-08-10指示）══
 //  ・2026年内 : ロゴの右は「● 試験放送中」（金色の点滅）
 //  ・2027年〜 : 同じ場所が「● ON AIR」（赤の点滅）に変わり、試験放送中は消える
@@ -6520,7 +6542,7 @@ function applyBadgeMode(){
   }catch(_){}
 }
 
-var BG_KEY='shisochan_bg';
+// BG_KEY も head の中（lab 4.78）
 var _bgNow=BG_COLORS[0];
 // 今の背景色（全画面の解除オーバーレイや帯色の指定から参照する）
 function curBg(){ return (_bgNow && _bgNow.bg) || '#1e3a28'; }
@@ -8251,29 +8273,12 @@ function onYouTubeIframeAPIReady(){
 function _droidRealFs(){
   try{ return !IS_TVAPP && /Android/i.test(navigator.userAgent) && (('ontouchstart' in window)||navigator.maxTouchPoints>0); }catch(_){ return false; }
 }
-// ★lab 4.77：Android の横向きは、ページ全体を本物の全画面にして、時計の帯（上40）・下の帯・カメラ側の黒い帯を消す
-//   （依頼者「android版で横画面にした時に、上部に無駄なスペースが発生しているのもなんとかしろ」「全部直して」2026-11-27）。
-//   Chrome は指の操作の中でしか全画面にしないので、横向きの時に画面を触った指で入る。縦に戻したら抜ける（縦は時計の帯を残す）。
-//   入るたびに Chrome が「全画面表示を終了するには…」を数秒出す（承知の上・決まったことの記録 75行）
+// ★lab 4.78：4.77 で足した「横向きは画面を触ると本物の全画面に入る」を外した。
+//   入るたびに Chrome が「全画面表示を終了するには…」を出し、横向きで触るたびに出ていた（依頼者「うざいポップアップ」2026-11-27）。
+//   承知を得ていたのは全画面のボタンを押した時だけ（決まったことの記録 75行）。本物の全画面は全画面のボタンの時だけにする（4.76 の形）。
+//   代わりに横向きの普段の画面では、Android が描く時計の帯（上）・下の帯・カメラ側の黒い帯が残る。
+//   ホーム画面に追加した lab（Chrome のアプリ）でページの外の帯を消す手段は、本物の全画面だけ（moto g06 で viewport-fit=cover を試して変わらないことを確認）
 function _droidFsEl(){ return document.fullscreenElement||document.webkitFullscreenElement||null; }
-function _droidLandFsTry(){
-  try{
-    if(!_droidRealFs()||_droidFsEl()) return;
-    if(!document.body.classList.contains('ori-l')||!isLandscapeNow()) return;
-    var de=document.documentElement, rq=de.requestFullscreen||de.webkitRequestFullscreen;
-    if(rq){ var p=rq.call(de,{navigationUI:'hide'}); if(p&&p.catch) p.catch(function(){}); }
-  }catch(_){}
-}
-// 縦に戻したら、拡大していない時は全画面を抜けて時計の帯を戻す
-function _droidLandFsCheck(){
-  try{
-    if(!_droidRealFs()||isExpanded||!_droidFsEl()||isLandscapeNow()) return;
-    var ex=document.exitFullscreen||document.webkitExitFullscreen; if(ex){ var q=ex.call(document); if(q&&q.catch) q.catch(function(){}); }
-  }catch(_){}
-}
-['touchend','click'].forEach(function(ev){ document.addEventListener(ev,_droidLandFsTry,true); });
-window.addEventListener('resize',function(){ setTimeout(_droidLandFsCheck,0); });
-try{ screen.orientation.addEventListener('change',function(){ setTimeout(_droidLandFsCheck,0); }); }catch(_){}
 // 全画面のままホーム画面などへ出ると、本物の全画面だけが解けて拡大の印が残る（moto で ex:true・fs:false を記録）→ 戻った時に拡大も閉じる。
 //   resize では判定しない（全画面のボタンを押してから本物の全画面になるまでの間に resize が来ると、開いた拡大を閉じてしまう）
 document.addEventListener('visibilitychange',function(){
@@ -8821,8 +8826,8 @@ function closeExpand(){
   }
 
   // ★段4：Android の本物の全画面も抜ける（isExpanded は先に false にしたので、抜けた合図で二重に閉じない）
-  //   ★lab 4.77：横向きのままなら抜けない（横向きは通常の画面も本物の全画面＝時計の帯を出さない）
-  if((document.fullscreenElement||document.webkitFullscreenElement) && !(_droidRealFs()&&document.body.classList.contains('ori-l')&&isLandscapeNow())){
+  //   ★lab 4.78：横向きでも抜ける（4.77 の「横向きは普段の画面も本物の全画面」を外したため）
+  if(document.fullscreenElement||document.webkitFullscreenElement){
     try{ var _ex=document.exitFullscreen||document.webkitExitFullscreen; if(_ex){ var _xp=_ex.call(document); if(_xp&&_xp.catch) _xp.catch(function(){}); } }catch(_){}
   }
   // タッチデバイス：疑似全画面を解除（wrapは関数先頭で取得済み）
