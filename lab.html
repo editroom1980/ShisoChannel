@@ -2586,6 +2586,18 @@ html.tvpc body.text-2 #sb-news .news-body{padding:10px 14px 14px;}
 html.tvpc .news-ttl{text-wrap:balance;}
 html.tvpc.tvpc body .news-tag{height:22px;display:inline-flex;align-items:center;padding:0 10px;}
 html.tvpc.tvpc body.text-1 .news-tag{font-size:12px;}
+
+/* ══════════════════════════════════════════════════════════════════
+   新デザイン A案 4段目：横向きのスマホとテレビの全画面のバナー（2026-11-27 lab 4.76。依頼者「全画面時の右上の小さいバナーを実装しろ」）
+   ・決定：はじめから小さく（スマホ 381×55%＝209.55×17.8・テレビ 33vw×55%）、金の枠 1.5px #d9ab45 を外側に重ねる（大きさは変わらない）、
+     映像の右上に 10px 内側で重ねる。映像は上の帯をやめて画面いっぱい。テレビも同じ 10px（記憶 tv-no-overscan-margin）
+   ・動画保管庫の番組（OWN.active）だけ。YouTube の番組は上に物を置けないので今の出し方（上の帯）のまま
+   ・縦の全画面・iPad・パソコンは今のまま。印 .fs-mini と位置（--fsm-l/-t/-w）は fitPlayer が付ける
+   ══════════════════════════════════════════════════════════════════ */
+.player-wrap.fs-mini .fs-sponsor{left:var(--fsm-l)!important;top:var(--fsm-t)!important;right:auto!important;transform:none!important;
+  width:var(--fsm-w)!important;max-width:none!important;}
+.player-wrap.fs-mini .fs-sponsor .sponsor-img{width:100%;max-width:none;border-radius:6px;
+  box-shadow:0 0 0 1.5px #d9ab45,0 1px 6px rgba(0,0,0,.45);}
 </style>
 </head>
 <body>
@@ -2595,7 +2607,7 @@ html.tvpc.tvpc body.text-1 .news-tag{font-size:12px;}
   <!-- ★新デザイン A案（2026-11-27 lab 4.74）：列は見本と同じ並び（ロゴ・版・試験放送中・日付・時計・金の丸・説明）。間隔は CSS の .ps-main の gap と各部品の余白で決める -->
   <div class="ps-main" id="ps-main">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.75-lab（新デザイン 2段目）</div>
+    <div class="ps-version">version 4.76-lab（新デザイン 4段目・全画面）</div>
     <div class="ps-test-badge">試験放送中</div>
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
@@ -7947,6 +7959,7 @@ function _ownOff(){
   OWN.active=false; OWN.st=-1;
   _ownStop(); _ownShow(false);
   OWN.vid=''; OWN.ytId='';
+  try{ if(isExpanded) fitPlayer(); }catch(_){}   // ★段4：全画面のまま YouTube の番組に変わったら、上の帯の出し方に戻す
 }
 function _ownPlay(){
   var v=OWN.v; if(!v) return;
@@ -8185,10 +8198,16 @@ function onYouTubeIframeAPIReady(){
   });
 }
 
+// ★段4（lab 4.76）：Android の指で触る端末（テレビのアプリは除く）は、全画面を本物の全画面にする
+function _droidRealFs(){
+  try{ return !IS_TVAPP && /Android/i.test(navigator.userAgent) && (('ontouchstart' in window)||navigator.maxTouchPoints>0); }catch(_){ return false; }
+}
 // PC全画面：ESCキーや外部操作で全画面解除された時の処理
 ['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){
   document.addEventListener(ev,function(){
     var isFull=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    // ★段4：Android の本物の全画面を端末の操作（上からのドラッグ・戻る）で抜けたら、拡大も閉じて通常の画面に戻す
+    if(!isFull&&isExpanded&&_droidRealFs()){ try{ closeExpand(); }catch(_){} return; }
     if(!isFull&&isExpanded){
       // 全画面が解除された（ESCなど）
       isExpanded=false;
@@ -8212,6 +8231,14 @@ var isExpanded=false,fsUiTimer=null;
 // ★内部サイズの固定は枠が非表示(サイズ0)でも必ず行う＝動画ロード前に確定させるのが肝。
 // 副次効果: YouTubeのUIも1920枠基準で描かれ縮小表示になり目立たない。将来4K素材なら3840×2160に。
 var _fitW0=1920,_fitH0=1080;
+// ★段4（lab 4.76）：全画面のバナーを右上に小さく重ねるか。動画保管庫の番組で、横向きのスマホ（body.ori-l）かテレビ（html.tvapp）の時だけ
+function _fsMiniOn(){
+  try{
+    if(!OWN.active) return false;
+    if(document.documentElement.classList.contains('tvapp')) return true;
+    return document.body.classList.contains('ori-l') && isLandscapeNow();
+  }catch(_){ return false; }
+}
 function fitPlayer(){ _fitPlayerYT(); try{ _ownGeom(); }catch(_){} }   // ★自前の動画もYouTubeの枠と同じ位置・大きさに（2026-10-02）
 function _fitPlayerYT(){
   var yt=document.getElementById('yt-player-api');
@@ -8223,6 +8250,7 @@ function _fitPlayerYT(){
   try{ if(!isFs && (pw.matches(':fullscreen')||pw.matches(':-webkit-full-screen'))) isFs=true; }catch(_){}
 
   if(!isFs){
+    pw.classList.remove('fs-mini');   // ★段4：全画面を出たら小さいバナーの印を外す
     if(isTvPcMode()){
       // ── TV/PCの通常表示：内部を1920×1080で描かせて縮小表示（2026-08-11・画質対策）──
       // YouTubeは「プレーヤーの大きさ」で画質を自動選択するため、実寸(例:981×552)のままだと
@@ -8285,7 +8313,9 @@ function _fitPlayerYT(){
   //   以前は matchMedia('(orientation:landscape)') を見ており、iOSでCSSの向きが凍結すると
   //   全画面の帯の有無を取り違えて映像位置がずれる余地があった。
   var topBand=0;
-  if(isLandscapeNow()){
+  var _mini=_fsMiniOn();   // ★段4（lab 4.76）：横向きのスマホとテレビの動画保管庫の番組は、上の帯をやめて右上に小さく重ねる
+  pw.classList.toggle('fs-mini', _mini);   // 印は帯を測る前に付け外しする（自前→YouTube に変わった時、小さいバナーの大きさで帯を測らない）
+  if(isLandscapeNow() && !_mini){
     var _fss=document.getElementById('fs-sponsor');
     // バナー自身の上余白(CSSのtop値)も足す。これを勘定に入れておらず、
     // 全画面でバナーの下端が動画に被っていた（2026-08-11実機で判明）
@@ -8298,6 +8328,13 @@ function _fitPlayerYT(){
   // 平行移動は整数pxにスナップ（iOSのサブピクセル描画による微オフセット/にじみを防ぐ）
   var tx=Math.round((cw-_fitW0*scale)/2), ty=Math.round(topBand + (availH-_fitH0*scale)/2);
   yt.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  // ★段4：小さいバナーを映像の右上の 10px 内側に置く（幅はスマホ 381×55%・テレビ 33vw×55%。高さは絵の縦横比で決まる）
+  if(_mini){
+    var _bw=document.documentElement.classList.contains('tvapp') ? cw*0.33*0.55 : 381*0.55;
+    pw.style.setProperty('--fsm-w', _bw+'px');
+    pw.style.setProperty('--fsm-l', (tx+_fitW0*scale-_bw-10)+'px');
+    pw.style.setProperty('--fsm-t', (ty+10)+'px');
+  }
   // 全画面のフローティング操作バーの幅を「映像の横幅より少し短く」動的設定
   var vw=Math.round(_fitW0*scale); // 表示中の映像の横幅
   var fsb=document.getElementById('fs-ctrl-bar');
@@ -8355,6 +8392,13 @@ function openExpand(){
   // ★⓪映像もcover再レイアウトの横ガタつきを見せないため、位置確定後に表示（バナーと同方式）
   var _ytFade=document.getElementById('yt-player-api');
   if(_ytFade){ _ytFade.style.transition='none'; _ytFade.style.opacity='0'; }
+  // ★段4（lab 4.76）：Android（ダウンロード版・Chrome・ホーム画面に入れた物）は本物の全画面にする（2026-11-27 依頼者「本物の全画面にする」）。
+  //   見かけの全画面だと時計の帯・下の帯（設定の色や深緑）・横向きのカメラ側の黒い帯が残る。本物の全画面はどれも消える（moto g06 で 937×411 いっぱいを実測）。
+  //   ページ全体（html）を全画面にする＝操作の列・解除のボタンなど player-wrap の外の物も今のまま出る。指で押した流れの中でしか効かない
+  if(_droidRealFs()){
+    try{ var _de=document.documentElement, _rq=_de.requestFullscreen||_de.webkitRequestFullscreen;
+      if(_rq){ var _pr=_rq.call(_de,{navigationUI:'hide'}); if(_pr&&_pr.catch) _pr.catch(function(){}); } }catch(_){}
+  }
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
   // ★全画面中はルート(html)背景も黒に：帯色の採取元候補(html/body)を全て黒に揃える。
@@ -8680,6 +8724,10 @@ function closeExpand(){
     return;
   }
 
+  // ★段4：Android の本物の全画面も抜ける（isExpanded は先に false にしたので、抜けた合図で二重に閉じない）
+  if(document.fullscreenElement||document.webkitFullscreenElement){
+    try{ var _ex=document.exitFullscreen||document.webkitExitFullscreen; if(_ex){ var _xp=_ex.call(document); if(_xp&&_xp.catch) _xp.catch(function(){}); } }catch(_){}
+  }
   // タッチデバイス：疑似全画面を解除（wrapは関数先頭で取得済み）
   // ★帯(左右)の黒残り根治＝深緑オーバーレイを「解除より先に」重ねる：
   //   黒(全画面)→緑→通常画面 の一方向切替になり、通常画面の上で緑が点滅して見える構造自体を排除。
