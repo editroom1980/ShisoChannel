@@ -1,16 +1,7 @@
 {
- "updated": "2026-11-28T12:17:21+09:00",
+ "updated": "2026-11-28T21:21:19+09:00",
  "source": "宍粟市公式サイト／山崎文化会館／しそう森林王国観光協会／市内の小中学校",
  "items": [
-  {
-   "tag": "イベント",
-   "title": "11/28 引原ダム再生はじまりの集い",
-   "url": "https://www.city.shiso.lg.jp/soshiki/chikusashiminkyoku/hagashiminkyoku/hagashiminkyokumachizukurisuishinka/oshirase/22705.html",
-   "date": "11月28日",
-   "ts": "2026-11-28T00:00:00+09:00",
-   "src": "宍粟市公式サイト",
-   "when": "2026-11-28"
-  },
   {
    "tag": "催し",
    "title": "12/3 宍粟市やまさき文化大学音楽鑑賞講座",
@@ -118,6 +109,16 @@
    "ts": "2027-01-07T00:00:00+09:00",
    "src": "山崎文化会館",
    "when": "2027-01-07",
+   "place": "山崎文化会館"
+  },
+  {
+   "tag": "催し",
+   "title": "1/10 令和9年しそう二十歳の祝典",
+   "url": "http://www.yamabun.org/%e4%bb%a4%e5%92%8c%ef%bc%99%e5%b9%b4%e3%81%97%e3%81%9d%e3%81%86%e4%ba%8c%e5%8d%81%e6%ad%b3%e3%81%ae%e7%a5%9d%e5%85%b8/",
+   "date": "1月10日",
+   "ts": "2027-01-10T00:00:00+09:00",
+   "src": "山崎文化会館",
+   "when": "2027-01-10",
    "place": "山崎文化会館"
   }
  ]
