@@ -2688,7 +2688,7 @@ var BG_KEY='shisochan_bg';
   <!-- ★新デザイン A案（2026-11-27 lab 4.74）：列は見本と同じ並び（ロゴ・版・試験放送中・日付・時計・金の丸・説明）。間隔は CSS の .ps-main の gap と各部品の余白で決める -->
   <div class="ps-main" id="ps-main">
     <div class="ps-logo-main">しそチャン<em>NET</em></div>
-    <div class="ps-version">version 4.79-lab（横向きの時計の帯・全画面の案内を出さない）</div>
+    <div class="ps-version">version 4.80-lab（Android の横向きと全画面を本物の全画面に）</div>
     <div class="ps-test-badge">試験放送中</div>
     <div class="ps-date-str" id="ps-date">—</div>
     <div class="ps-clock" id="ps-clock">00:00:00</div>
@@ -3103,7 +3103,9 @@ var SC_DROID=(function(){ try{
 //   （依頼者「横画面の時の上の余白がなおってない」→「アプリを更新して消す」・「全画面云々のポップアップもうざすぎる 出ないようにしろ」2026-11-28）。
 //   ページから全画面を頼む（requestFullscreen）と Chrome が「全画面表示を終了するには…」を毎回出すので、アプリに開き直してもらって帯を隠す。
 //   1.0.1 以前のアプリ・ブラウザでは形を頼まない（'' を返す）
-function droidWantMode(){ try{ if(!SC_DROID||!SC_DROID.mode) return ''; return isLandscapeNow()?'imm':'std'; }catch(_){ return ''; } }
+// ★lab 4.80：横向きは imm を頼まない（imm でも Chrome が上に約40の空きを取り、消せないと moto g06・1.0.2 で実測。2026-11-28）。
+//   横向きの帯は本物の全画面で消す（_droidLandFsTry）。縦は std（時計の帯を出す）に戻すだけ＝4.79〜4.05 で imm になったままの人を縦で戻す
+function droidWantMode(){ try{ if(!SC_DROID||!SC_DROID.mode) return ''; return isLandscapeNow()?'':'std'; }catch(_){ return ''; } }
 function droidApplyColor(hex, wantPlay){
   try{
     if(!SC_DROID||!/^#[0-9a-fA-F]{6}$/.test(hex||'')) return false;
@@ -8279,16 +8281,56 @@ function onYouTubeIframeAPIReady(){
 // ★lab 4.79：やめた。Android でページから全画面を頼むと、Chrome が「全画面表示を終了するには…」を毎回出す
 //   （依頼者「全画面云々のポップアップもうざすぎる 出ないようにしろ」2026-11-28）。全画面のボタンは 4.75 までと同じ見かけの全画面に戻す。
 //   帯を隠すのはアプリ 1.0.2 の表示の形（droidWantMode）が受け持つ
-function _droidRealFs(){ return false; }
+// ★lab 4.80：戻した（依頼者「案内がでてもいいから全画面にしろ」「案２でやれ」2026-11-28）。
+//   見かけの全画面では、時計の帯・下の帯が残る。アプリ 1.0.2 の imm でも上に約40の空きが残る（ページの外。moto g06 で目印を置いて実測）。
+//   消せるのは本物の全画面だけ。Chrome の「全画面表示を終了するには…」の案内は承知の上
+function _droidRealFs(){
+  try{ return !IS_TVAPP && /Android/i.test(navigator.userAgent) && (('ontouchstart' in window)||navigator.maxTouchPoints>0); }catch(_){ return false; }
+}
 // ★lab 4.78：4.77 で足した「横向きは画面を触ると本物の全画面に入る」を外した。
 //   入るたびに Chrome が「全画面表示を終了するには…」を出し、横向きで触るたびに出ていた（依頼者「うざいポップアップ」2026-11-27）。
 //   承知を得ていたのは全画面のボタンを押した時だけ（決まったことの記録 75行）。本物の全画面は全画面のボタンの時だけにする（4.76 の形）。
 //   代わりに横向きの普段の画面では、Android が描く時計の帯（上）・下の帯・カメラ側の黒い帯が残る。
 //   ホーム画面に追加した lab（Chrome のアプリ）でページの外の帯を消す手段は、本物の全画面だけ（moto g06 で viewport-fit=cover を試して変わらないことを確認）
 function _droidFsEl(){ return document.fullscreenElement||document.webkitFullscreenElement||null; }
+// ★lab 4.80：Android の横向きは、画面を触った指でページ全体を本物の全画面にする（4.77 の形に戻した・依頼者「案２でやれ」2026-11-28）。
+//   時計の帯・下の帯・カメラ側の黒い帯・上の約40の空きが全部消える（moto g06 で 937×411 いっぱい）。
+//   Chrome は指の操作の中でしか全画面にしない＝向きを変えただけでは入れない。入っている間は頼み直さない（案内を出し直さない）。
+//   放送開始のボタンで色の係が開き直す時は、開き直しの後に触った時に入る（同時に頼むと開き直しで消えるだけ）
+function _droidColorPending(){
+  try{ return !!(SC_DROID&&_bgNow&&/^#[0-9a-fA-F]{6}$/.test(_bgNow.bg||'')&&SC_DROID.color!==_bgNow.bg.slice(1).toLowerCase()); }catch(_){ return false; }
+}
+var _droidFsAskAt=0;   // 1回のタップで touchend と click の両方が来る＝続けて2回頼まない
+function _droidLandFsTry(e){
+  try{
+    if(!_droidRealFs()||_droidFsEl()) return;
+    if(!document.body.classList.contains('ori-l')||!isLandscapeNow()) return;
+    if(e&&e.target&&e.target.closest&&e.target.closest('#ps-btn')&&_droidColorPending()) return;
+    if(Date.now()-_droidFsAskAt<1500) return;
+    var de=document.documentElement, rq=de.requestFullscreen||de.webkitRequestFullscreen;
+    //   断られたら（番組表をめくった指の離れなど、Chrome が全画面を許す操作に数えない時）歯止めを外し、次のタップで入れるようにする
+    if(rq){ _droidFsAskAt=Date.now(); var p=rq.call(de,{navigationUI:'hide'}); if(p&&p.catch) p.catch(function(){ _droidFsAskAt=0; }); }
+  }catch(_){}
+}
+// 縦に戻したら、拡大していない時は全画面を抜けて時計の帯を戻す（拡大中は全画面のまま）
+function _droidLandFsCheck(){
+  try{
+    if(!_droidRealFs()||isExpanded||!_droidFsEl()||isLandscapeNow()) return;
+    var ex=document.exitFullscreen||document.webkitExitFullscreen; if(ex){ var q=ex.call(document); if(q&&q.catch) q.catch(function(){}); }
+  }catch(_){}
+}
+//   ★lab 4.80：指を離した瞬間（touchend）に頼むと、画面が 897→937 に広がってから「押した」（click）が来るため、
+//   押した物の位置がずれて別の物に当たる（moto g06 で、横向きの最初のタップが拡大のボタンの時に拡大が開かなかった）。
+//   → 頼むのは click の時（押した物の処理は同じ合図の中で先に済む）。click が来ない部品（放送開始など指を離した合図で動く物）のために、
+//     touchend では 0.25 秒遅らせて頼む（click で頼み済みなら、全画面中か1.5秒の歯止めで止まる）
+document.addEventListener('click',_droidLandFsTry,true);
+document.addEventListener('touchend',function(e){ setTimeout(function(){ _droidLandFsTry(e); },250); },true);
+window.addEventListener('resize',function(){ setTimeout(_droidLandFsCheck,0); });
+try{ screen.orientation.addEventListener('change',function(){ setTimeout(_droidLandFsCheck,0); }); }catch(_){}
 // ★lab 4.79：アプリ 1.0.2 で、向きと表示の形がずれていたら、画面を触った指でアプリに開き直してもらう
 //   （Chrome は指の操作の中でしかアプリへ渡さない＝向きを変えただけでは頼めない）。見ていた時は続きから流す。
 //   放送開始のボタンは自分で色・形・再生をまとめて頼むので、ここでは除く
+//   ★lab 4.80：横向きでは頼まない（droidWantMode が '' を返す）。縦で imm のままの時だけ std に戻す
 ['touchend','click'].forEach(function(ev){ document.addEventListener(ev,function(e){
   try{
     if(!SC_DROID||!SC_DROID.mode) return;
@@ -8514,9 +8556,11 @@ function openExpand(){
   // ★段4（lab 4.76）：Android（ダウンロード版・Chrome・ホーム画面に入れた物）は本物の全画面にする（2026-11-27 依頼者「本物の全画面にする」）。
   //   見かけの全画面だと時計の帯・下の帯（設定の色や深緑）・横向きのカメラ側の黒い帯が残る。本物の全画面はどれも消える（moto g06 で 937×411 いっぱいを実測）。
   //   ページ全体（html）を全画面にする＝操作の列・解除のボタンなど player-wrap の外の物も今のまま出る。指で押した流れの中でしか効かない
-  if(_droidRealFs()){
+  //   ★lab 4.80：横向きで触って本物の全画面に入っている時は頼み直さない（頼み直すと Chrome が案内をもう一度出す）
+  //   ★lab 4.80：横向きの最初のタップがこのボタンだと、同じタップの touchend で _droidLandFsTry がもう頼んでいる＝1.5秒の歯止めを共に使い、2回頼まない
+  if(_droidRealFs()&&!_droidFsEl()&&Date.now()-_droidFsAskAt>=1500){
     try{ var _de=document.documentElement, _rq=_de.requestFullscreen||_de.webkitRequestFullscreen;
-      if(_rq){ var _pr=_rq.call(_de,{navigationUI:'hide'}); if(_pr&&_pr.catch) _pr.catch(function(){}); } }catch(_){}
+      if(_rq){ _droidFsAskAt=Date.now(); var _pr=_rq.call(_de,{navigationUI:'hide'}); if(_pr&&_pr.catch) _pr.catch(function(){ _droidFsAskAt=0; }); } }catch(_){}
   }
   wrap.classList.add('expanded');
   document.body.classList.add('fs-open');
@@ -8845,7 +8889,8 @@ function closeExpand(){
 
   // ★段4：Android の本物の全画面も抜ける（isExpanded は先に false にしたので、抜けた合図で二重に閉じない）
   //   ★lab 4.78：横向きでも抜ける（4.77 の「横向きは普段の画面も本物の全画面」を外したため）
-  if(document.fullscreenElement||document.webkitFullscreenElement){
+  //   ★lab 4.80：横向きのままなら抜けない（横向きは普段の画面も本物の全画面に戻したため・4.77 と同じ）
+  if((document.fullscreenElement||document.webkitFullscreenElement) && !(_droidRealFs()&&document.body.classList.contains('ori-l')&&isLandscapeNow())){
     try{ var _ex=document.exitFullscreen||document.webkitExitFullscreen; if(_ex){ var _xp=_ex.call(document); if(_xp&&_xp.catch) _xp.catch(function(){}); } }catch(_){}
   }
   // タッチデバイス：疑似全画面を解除（wrapは関数先頭で取得済み）
